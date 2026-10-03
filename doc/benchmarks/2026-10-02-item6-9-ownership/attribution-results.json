@@ -1,0 +1,1722 @@
+[
+  {
+    "run": "R-01",
+    "kind": "R",
+    "answers": [
+      0.5035618543624878,
+      0.5081198215484619,
+      0.505643367767334,
+      0.5090432167053223
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2497585266828537,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello world",
+      "there hello",
+      "loving world",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": -0.0011581182479858398,
+    "max_deviation_from_half": 0.009043216705322266,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "R-02",
+    "kind": "R",
+    "answers": [
+      0.48956504464149475,
+      0.5091843008995056,
+      0.4894412159919739,
+      0.509196937084198
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25013142824172974,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "hello there",
+      "world loving",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": 0.00013646483421325684,
+    "max_deviation_from_half": 0.010558784008026123,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "R-03",
+    "kind": "R",
+    "answers": [
+      0.503394365310669,
+      0.5029124617576599,
+      0.4953523576259613,
+      0.4947974979877472
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.24999892711639404,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "world there",
+      "hello world",
+      "world hello"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -7.295608520507812e-05,
+    "max_deviation_from_half": 0.005202502012252808,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "R-04",
+    "kind": "R",
+    "answers": [
+      0.4948975145816803,
+      0.4949466288089752,
+      0.49485206604003906,
+      0.4948127567768097
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2500041425228119,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "loving world",
+      "loving there",
+      "loving world",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -8.842349052429199e-05,
+    "max_deviation_from_half": 0.005187243223190308,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "R-05",
+    "kind": "R",
+    "answers": [
+      0.5062682628631592,
+      0.5024515986442566,
+      0.5029195547103882,
+      0.4999266266822815
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2502194046974182,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "there hello",
+      "world hello",
+      "there hello"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": 0.0008237361907958984,
+    "max_deviation_from_half": 0.00626826286315918,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "R-06",
+    "kind": "R",
+    "answers": [
+      0.49251317977905273,
+      0.49594148993492126,
+      0.4984794557094574,
+      0.5026822686195374
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2502141296863556,
+    "correct": 1,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "there there",
+      "world world",
+      "there hello"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 0.0007745027542114258,
+    "max_deviation_from_half": 0.007486820220947266,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "R-07",
+    "kind": "R",
+    "answers": [
+      0.49221259355545044,
+      0.4974032938480377,
+      0.49718350172042847,
+      0.49925369024276733
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.24923884868621826,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world loving",
+      "there there",
+      "world there",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.003120511770248413,
+    "max_deviation_from_half": 0.0077874064445495605,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "R-08",
+    "kind": "R",
+    "answers": [
+      0.49981486797332764,
+      0.5022240877151489,
+      0.5014281272888184,
+      0.5039853453636169
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25004273653030396,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world loving",
+      "there world",
+      "world loving",
+      "there world"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 1,
+    "reconstruction_bar": false,
+    "contrast": 0.00014799833297729492,
+    "max_deviation_from_half": 0.003985345363616943,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "R-09",
+    "kind": "R",
+    "answers": [
+      0.5055129528045654,
+      0.49984896183013916,
+      0.5021706223487854,
+      0.4998560845851898
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25084614753723145,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world loving",
+      "there world",
+      "loving world",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": 0.0033494532108306885,
+    "max_deviation_from_half": 0.00551295280456543,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "R-10",
+    "kind": "R",
+    "answers": [
+      0.4960479140281677,
+      0.49448567628860474,
+      0.4916204512119293,
+      0.4922208786010742
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2505848705768585,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "there hello",
+      "world world",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": 0.0021626651287078857,
+    "max_deviation_from_half": 0.008379548788070679,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-01",
+    "kind": "RA",
+    "answers": [
+      -0.04954808950424194,
+      0.8059738278388977,
+      1.069214940071106,
+      2.197377920150757
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 1.2183403968811035,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "world there",
+      "world loving",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": 0.27264106273651123,
+    "max_deviation_from_half": 1.6973779201507568,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-02",
+    "kind": "RA",
+    "answers": [
+      0.3084193468093872,
+      0.8672448992729187,
+      0.8149456977844238,
+      0.5675739049911499
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.1172829121351242,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "world there",
+      "world there",
+      "there world"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.8061973452568054,
+    "max_deviation_from_half": 0.3672448992729187,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-03",
+    "kind": "RA",
+    "answers": [
+      0.036367595195770264,
+      0.8970454335212708,
+      0.8159725666046143,
+      0.02572411298751831
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.01161251775920391,
+    "correct": 4,
+    "class_bar": true,
+    "read_backs": [
+      "hello world",
+      "hello world",
+      "there hello",
+      "hello there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 1,
+    "reconstruction_bar": false,
+    "contrast": -1.6509262919425964,
+    "max_deviation_from_half": 0.4742758870124817,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-04",
+    "kind": "RA",
+    "answers": [
+      0.43746262788772583,
+      0.5346689820289612,
+      0.41399097442626953,
+      0.43831634521484375
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.23585857450962067,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "there world",
+      "loving world",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.07288098335266113,
+    "max_deviation_from_half": 0.08600902557373047,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-05",
+    "kind": "RA",
+    "answers": [
+      0.4561585783958435,
+      0.6882715821266174,
+      0.8206579685211182,
+      0.3550058603286743
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.11586199700832367,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there there",
+      "world loving",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.6977651119232178,
+    "max_deviation_from_half": 0.32065796852111816,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-06",
+    "kind": "RA",
+    "answers": [
+      0.3202775716781616,
+      0.3196547031402588,
+      0.3417837619781494,
+      0.35573863983154297
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2813115119934082,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "there hello",
+      "world loving",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": 0.014577746391296387,
+    "max_deviation_from_half": 0.1803452968597412,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-07",
+    "kind": "RA",
+    "answers": [
+      0.5985971093177795,
+      0.6702916026115417,
+      0.5708842277526855,
+      0.4177078902721405
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.20641160011291504,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there there",
+      "world hello",
+      "there hello"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.22487083077430725,
+    "max_deviation_from_half": 0.17029160261154175,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-08",
+    "kind": "RA",
+    "answers": [
+      0.724466860294342,
+      0.6451587677001953,
+      0.8029381632804871,
+      0.5754988789558411
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25519922375679016,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there there",
+      "world there",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.14813119173049927,
+    "max_deviation_from_half": 0.30293816328048706,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-09",
+    "kind": "RA",
+    "answers": [
+      0.638574481010437,
+      0.6285464763641357,
+      0.6473347544670105,
+      0.722053050994873
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2978721261024475,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "there loving",
+      "there loving",
+      "there world",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 0.08474630117416382,
+    "max_deviation_from_half": 0.22205305099487305,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RA-10",
+    "kind": "RA",
+    "answers": [
+      0.15286070108413696,
+      0.9814236164093018,
+      0.5996158123016357,
+      0.26305896043777466
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.06330474466085434,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "world there",
+      "loving world",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -1.1651197671890259,
+    "max_deviation_from_half": 0.48142361640930176,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-01",
+    "kind": "RE",
+    "answers": [
+      0.5009227991104126,
+      0.5025990605354309,
+      0.4947216510772705,
+      0.4903183877468109
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2485124170780182,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world loving",
+      "there there",
+      "world world",
+      "there hello"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.006079524755477905,
+    "max_deviation_from_half": 0.009681612253189087,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-02",
+    "kind": "RE",
+    "answers": [
+      0.49949008226394653,
+      0.5005676746368408,
+      0.5001890659332275,
+      0.5004974007606506
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2498079091310501,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "world there",
+      "world there",
+      "world there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.0007692575454711914,
+    "max_deviation_from_half": 0.0005676746368408203,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-03",
+    "kind": "RE",
+    "answers": [
+      0.5004860758781433,
+      0.503474771976471,
+      0.5043014883995056,
+      0.507268488407135
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2500154972076416,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world loving",
+      "there there",
+      "hello world",
+      "there hello"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -2.1696090698242188e-05,
+    "max_deviation_from_half": 0.00726848840713501,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-04",
+    "kind": "RE",
+    "answers": [
+      0.4985816776752472,
+      0.5025618672370911,
+      0.5027800798416138,
+      0.49972525238990784
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.24824534356594086,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "hello world",
+      "there hello",
+      "world loving",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": -0.007035017013549805,
+    "max_deviation_from_half": 0.0027800798416137695,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-05",
+    "kind": "RE",
+    "answers": [
+      0.49266335368156433,
+      0.49371764063835144,
+      0.4933018088340759,
+      0.4956367313861847
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.250359445810318,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "hello there",
+      "world loving",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": 0.0012806355953216553,
+    "max_deviation_from_half": 0.007336646318435669,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-06",
+    "kind": "RE",
+    "answers": [
+      0.5012266039848328,
+      0.503402054309845,
+      0.5007292032241821,
+      0.5028941631317139
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2500028610229492,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "there hello",
+      "world loving",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": -1.049041748046875e-05,
+    "max_deviation_from_half": 0.0034020543098449707,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-07",
+    "kind": "RE",
+    "answers": [
+      0.49493980407714844,
+      0.49660152196884155,
+      0.49530598521232605,
+      0.4977758526802063
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25021806359291077,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there there",
+      "world there",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 0.0008081495761871338,
+    "max_deviation_from_half": 0.0050601959228515625,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-08",
+    "kind": "RE",
+    "answers": [
+      0.504016637802124,
+      0.5032387971878052,
+      0.5021964311599731,
+      0.5014560222625732
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2500177323818207,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "there hello",
+      "world there",
+      "there world"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": 3.743171691894531e-05,
+    "max_deviation_from_half": 0.0040166378021240234,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-09",
+    "kind": "RE",
+    "answers": [
+      0.5064715147018433,
+      0.504982054233551,
+      0.5056701898574829,
+      0.5068509578704834
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2507040202617645,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there there",
+      "world loving",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": 0.0026702284812927246,
+    "max_deviation_from_half": 0.0068509578704833984,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "RE-10",
+    "kind": "RE",
+    "answers": [
+      0.5011076927185059,
+      0.49984440207481384,
+      0.4999948740005493,
+      0.49948811531066895
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25018951296806335,
+    "correct": 1,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "there hello",
+      "world loving",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": 0.0007565319538116455,
+    "max_deviation_from_half": 0.0011076927185058594,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-01",
+    "kind": "REA",
+    "answers": [
+      0.33631861209869385,
+      0.305396169424057,
+      0.26620057225227356,
+      0.3092987835407257
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.3074280023574829,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "there hello",
+      "world loving",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": 0.07402065396308899,
+    "max_deviation_from_half": 0.23379942774772644,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-02",
+    "kind": "REA",
+    "answers": [
+      0.165704607963562,
+      0.5865484476089478,
+      0.687192440032959,
+      0.470900297164917
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.12949895858764648,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "there world",
+      "there there",
+      "loving world",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.6371359825134277,
+    "max_deviation_from_half": 0.334295392036438,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-03",
+    "kind": "REA",
+    "answers": [
+      0.2005620300769806,
+      0.6087489724159241,
+      0.31797629594802856,
+      0.2211425006389618
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.17684070765972137,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "hello world",
+      "there hello",
+      "loving world",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": -0.5050207376480103,
+    "max_deviation_from_half": 0.2994379699230194,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-04",
+    "kind": "REA",
+    "answers": [
+      0.49293264746665955,
+      0.5686244368553162,
+      0.5593195557594299,
+      0.3895837068557739
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.19376055896282196,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "there world",
+      "there there",
+      "loving world",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.24542763829231262,
+    "max_deviation_from_half": 0.11041629314422607,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-05",
+    "kind": "REA",
+    "answers": [
+      0.14929628372192383,
+      0.49905019998550415,
+      0.3786761462688446,
+      0.5658426880836487
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2448653280735016,
+    "correct": 1,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there there",
+      "world there",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.16258737444877625,
+    "max_deviation_from_half": 0.35070371627807617,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-06",
+    "kind": "REA",
+    "answers": [
+      0.36386293172836304,
+      1.1669437885284424,
+      1.0640485286712646,
+      0.3861124515533447
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.07836287468671799,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there there",
+      "world loving",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -1.4810169339179993,
+    "max_deviation_from_half": 0.6669437885284424,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-07",
+    "kind": "REA",
+    "answers": [
+      0.39248016476631165,
+      0.673565149307251,
+      0.7309016585350037,
+      0.10633254051208496
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.08608023077249527,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "hello world",
+      "there hello",
+      "world world",
+      "there world"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.905654102563858,
+    "max_deviation_from_half": 0.39366745948791504,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-08",
+    "kind": "REA",
+    "answers": [
+      0.7910106182098389,
+      0.5958688855171204,
+      0.7146011590957642,
+      0.27657783031463623
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.23674188554286957,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there there",
+      "world there",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.24288159608840942,
+    "max_deviation_from_half": 0.29101061820983887,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-09",
+    "kind": "REA",
+    "answers": [
+      0.4123302698135376,
+      0.7753698825836182,
+      0.53962641954422,
+      0.41062915325164795
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.15025876462459564,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "world loving",
+      "there there",
+      "world world",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.4920368790626526,
+    "max_deviation_from_half": 0.27536988258361816,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  },
+  {
+    "run": "REA-10",
+    "kind": "REA",
+    "answers": [
+      0.3808309733867645,
+      0.46082955598831177,
+      0.6520864367485046,
+      0.5118544101715088
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.20469394326210022,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello world",
+      "there hello",
+      "loving world",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": -0.2202306091785431,
+    "max_deviation_from_half": 0.15208643674850464,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+  }
+]

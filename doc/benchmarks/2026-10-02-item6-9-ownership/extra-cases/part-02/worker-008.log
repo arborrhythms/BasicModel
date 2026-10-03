@@ -1,0 +1,3 @@
+...
+3 passed in 24.11s
+! _pytest.outcomes.Exit: Resource boundary: recycle worker after this completed test !

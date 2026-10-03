@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary"
+  ],
+  "slow_selected": [
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 161.71738199997344,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 33.33%)\r\nbatch = 4 (\u0394=4.455s, 41.67%)\r\nbatch = 8 (\u0394=5.043s, 50.00%)\r\nbatch = 12 (\u0394=5.041s, 58.33%)\r\nbatch = 16 (\u0394=2.285s, 66.67%)\r\nbatch = 20 (\u0394=2.128s, 75.00%)\r\nbatch = 24 (\u0394=2.004s, 83.33%)\r\nbatch = 28 (\u0394=1.894s, 91.67%)\r\nbatch = 32 (\u0394=2.167s, 100.00%)\r\nbatch = 36 (\u0394=1.635s, 100.00%)\r\nbatch = 40 (\u0394=2.282s, 100.00%)\r\nbatch = 44 (\u0394=2.194s, 100.00%)\r\nTraining throughput: 12 batches in 36.222s; word units 17.1% of 205 words (letters-only 17.1% of 205).\r\nbatch = 0 (\u0394=2.125s, 33.33%)\r\nbatch = 4 (\u0394=1.808s, 41.67%)\r\nbatch = 8 (\u0394=2.266s, 50.00%)\r\nbatch = 12 (\u0394=2.039s, 58.33%)\r\nbatch = 16 (\u0394=2.198s, 66.67%)\r\nbatch = 20 (\u0394=2.088s, 75.00%)\r\nbatch = 24 (\u0394=1.984s, 83.33%)\r\nbatch = 28 (\u0394=1.924s, 91.67%)\r\nbatch = 32 (\u0394=2.189s, 100.00%)\r\nbatch = 36 (\u0394=1.652s, 100.00%)\r\nbatch = 40 (\u0394=2.259s, 100.00%)\r\nbatch = 44 (\u0394=2.193s, 100.00%)\r\nTraining throughput: 12 batches in 24.726s; word units 23.4% of 205 words (letters-only 23.4% of 205).\r\nbatch = 0 (\u0394=2.166s, 33.33%)\r\nbatch = 4 (\u0394=1.837s, 41.67%)\r\nbatch = 8 (\u0394=2.210s, 50.00%)\r\nbatch = 12 (\u0394=2.124s, 58.33%)\r\nbatch = 16 (\u0394=2.226s, 66.67%)\r\nbatch = 20 (\u0394=2.157s, 75.00%)\r\nbatch = 24 (\u0394=2.029s, 83.33%)\r\nbatch = 28 (\u0394=1.927s, 91.67%)\r\nbatch = 32 (\u0394=2.210s, 100.00%)\r\nbatch = 36 (\u0394=1.677s, 100.00%)\r\nbatch = 40 (\u0394=2.322s, 100.00%)\r\nbatch = 44 (\u0394=2.231s, 100.00%)\r\nTraining throughput: 12 batches in 25.117s; word units 23.4% of 205 words (letters-only 23.4% of 205).\r\nbatch = 0 (\u0394=2.164s, 33.33%)\r\nbatch = 4 (\u0394=1.840s, 41.67%)\r\nbatch = 8 (\u0394=2.183s, 50.00%)\r\nbatch = 12 (\u0394=2.170s, 58.33%)\r\nbatch = 16 (\u0394=2.238s, 66.67%)\r\nbatch = 20 (\u0394=2.147s, 75.00%)\r\nbatch = 24 (\u0394=1.999s, 83.33%)\r\nbatch = 28 (\u0394=1.832s, 91.67%)\r\nbatch = 32 (\u0394=2.281s, 100.00%)\r\nbatch = 36 (\u0394=1.652s, 100.00%)\r\nbatch = 40 (\u0394=2.303s, 100.00%)\r\nbatch = 44 (\u0394=2.192s, 100.00%)\r\nTraining throughput: 12 batches in 24.997s; word units 23.4% of 205 words (letters-only 23.4% of 205).\r\nbatch = 0 (\u0394=2.021s, 33.33%)\r\nbatch = 4 (\u0394=1.904s, 41.67%)\r\nbatch = 8 (\u0394=2.133s, 50.00%)\r\nbatch = 12 (\u0394=2.116s, 58.33%)\r\nbatch = 16 (\u0394=2.232s, 66.67%)\r\nbatch = 20 (\u0394=2.071s, 75.00%)\r\nbatch = 24 (\u0394=2.007s, 83.33%)\r\nbatch = 28 (\u0394=1.845s, 91.67%)\r\nbatch = 32 (\u0394=2.332s, 100.00%)\r\nbatch = 36 (\u0394=1.683s, 100.00%)\r\nbatch = 40 (\u0394=2.329s, 100.00%)\r\nbatch = 44 (\u0394=2.221s, 100.00%)\r\nTraining throughput: 12 batches in 24.895s; word units 23.4% of 205 words (letters-only 23.4% of 205).\r\nbatch = 0 (\u0394=2.082s, 33.33%)\r\nbatch = 4 (\u0394=1.946s, 41.67%)\r\nbatch = 8 (\u0394=2.233s, 50.00%)\r\nbatch = 12 (\u0394=2.236s, 58.33%)\r\nbatch = 16 (\u0394=2.255s, 66.67%)\r\nbatch = 20 (\u0394=2.052s, 75.00%)\r\nbatch = 24 (\u0394=2.127s, 83.33%)\r\nbatch = 28 (\u0394=1.846s, 91.67%)\r\nbatch = 32 (\u0394=2.323s, 100.00%)\r\nbatch = 36 (\u0394=1.667s, 100.00%)\r\nbatch = 40 (\u0394=2.239s, 100.00%)\r\nbatch = 44 (\u0394=2.339s, 100.00%)\r\nTraining throughput: 12 batches in 25.345s; word units 23.4% of 205 words (letters-only 23.4% of 205).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

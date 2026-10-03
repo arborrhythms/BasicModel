@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-031.recycle.json"
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "test/test_free_reconstruction.py",
+    "-q"
+  ],
+  "pid": 84176,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 556696968,
+  "elapsed_seconds": 4.421102207998047,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/free-before/output.log"
+}

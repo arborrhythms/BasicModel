@@ -1,0 +1,10 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_not_keeps_the_explicit_pole_exchange ___________________
+doc/benchmarks/2026-09-30-item6-9/probe_step4.py:18: in test_not_keeps_the_explicit_pole_exchange
+    layer = NotLayer(representation='poles')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: NotLayer.__init__() got an unexpected keyword argument 'representation'
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange
+1 failed in 1.97s

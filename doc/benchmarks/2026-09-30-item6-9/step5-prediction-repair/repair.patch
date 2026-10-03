@@ -1,0 +1,18 @@
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -12077,9 +12077,12 @@
+                             pred, logits = prediction.roles, prediction.presence_logits
+                             kind_logit = prediction.kind_logit
+                             if (isinstance(pending, _PendingMeaningExpectation)
+-                                    and pending.inputs is not None
+-                                    and (not pred.requires_grad or pending.versions != tuple(
+-                                        p._version for p in self._inter_predictor.parameters()))):
++                                    and pending.inputs is not None):
++                                # Equal-parameter trials still need separate
++                                # prediction graphs: the first backward frees
++                                # its graph before the second trial trains.
++                                # Replay only the stored prior inputs, keeping
++                                # the pending record and its estimate intact.
+                                 replay, presence, kinds = self._inter_predictor(
+                                     *(v.detach() for v in pending.inputs))
+                                 pred, logits = replay[0], presence[0]

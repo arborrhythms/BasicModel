@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_tied_reconstruction_migration.py::test_empty_rows_and_padding_carry_no_reconstruction_cost[False]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-601.recycle.json"
+}

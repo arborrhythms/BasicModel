@@ -1,0 +1,42 @@
+{
+  "kind": "R",
+  "answers": [
+    0.49221259355545044,
+    0.4974032938480377,
+    0.49718350172042847,
+    0.49925369024276733
+  ],
+  "targets": [
+    0.0,
+    1.0,
+    1.0,
+    0.0
+  ],
+  "inputs": [
+    "hello world",
+    "hello there",
+    "loving world",
+    "loving there"
+  ],
+  "mse": 0.24923884868621826,
+  "correct": 2,
+  "class_bar": false,
+  "read_backs": [
+    "world loving",
+    "there there",
+    "world there",
+    "there there"
+  ],
+  "unavailable": [
+    false,
+    false,
+    false,
+    false
+  ],
+  "reconstructed": 0,
+  "reconstruction_bar": false,
+  "contrast": -0.003120511770248413,
+  "max_deviation_from_half": 0.0077874064445495605,
+  "half_at_float32_precision": false,
+  "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+}

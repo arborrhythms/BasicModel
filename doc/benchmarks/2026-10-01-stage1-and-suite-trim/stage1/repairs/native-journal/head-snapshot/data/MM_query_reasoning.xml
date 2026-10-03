@@ -1,0 +1,130 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_query_reasoning: explicit grammatical query and policy fixture.
+       The completed linguistic meaning selects a native VP from complete.grammar's
+       <thought> catalogue. reason_about and answer_query use ten shared work units;
+       think_about uses sixteen. Reads and children spend the same allowance, so
+       these small budgets may return incomplete evidence. No raw-word detector
+       selects an executor and no second kernel result is attached.
+
+       selectedThoughtPolicyWeight trains the normal controller from supplied
+       answer error and actual work. Reading these plain English truths depends
+       on a trained chooser. A token subject can form an idea while a generic
+       subject forms a part relation; chaining is a learning result.
+       See doc/SelectedMeaning.md. -->
+  <architecture>
+    <symbolicOrder>0</symbolicOrder>
+    <!-- Provisioning and runtime inference share the sentence driver. -->
+    <serial>true</serial>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <mereologyRaise>true</mereologyRaise>
+    <radialStmReduce>true</radialStmReduce>
+    <readingAttention>true</readingAttention>
+    <conceptIndexRead>true</conceptIndexRead>
+    <!-- (B) free attention over the typed truth-space; parks the soft read. -->
+    <globalAttention>true</globalAttention>
+    <!-- The normal answer objective can train attention through its consume residual. -->
+    <globalAttentionConsume>true</globalAttentionConsume>
+    <!-- the LTM "book": the TruthSet (the syllogism) parsed into ltm_store. -->
+    <ltmConsolidation>true</ltmConsolidation>
+
+    <!-- Shared work allowance for the explicit reason_about / answer_query APIs. -->
+    <reasoningIterations>10</reasoningIterations>
+
+    <!-- Same controller; the explicit think_about API has this work allowance. -->
+    <thinkingBudget>16</thinkingBudget>
+
+    <!-- A parthood syllogism the reasoner can chain extensionally:
+         socrates <= human <= mortal. -->
+    <truthSet>
+      <truth text="socrates is a human" trust="0.9"/>
+      <truth text="humans are mortal" trust="0.9"/>
+    </truthSet>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>queries</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>6</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <!-- One normal thought policy; credit follows supplied answers and work. -->
+      <selectedThoughtPolicyWeight>0.1</selectedThoughtPolicyWeight>
+    </training>
+  </architecture>
+
+  <SymbolSpace>
+    <language>
+      <!-- Compose, thought and generation share canonical operator identity.
+           Only <thought> entries grant checked execution authority. -->
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>512</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <!-- meronomy: word-bounded promotion + per-word tiling (todo item 2
+         2026-07-13 — radix had NO per-word PS tiling, so words could
+         never promote/recognize here; threshold 2 lets the tiny
+         truthSet corpus promote its recurring words). -->
+    <synthesis>meronomy</synthesis>
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>64</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>raw</lexer>
+    <analysis>word</analysis>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>512</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>8</nOutputDim>
+
+    <invertible>true</invertible>
+    <!-- quantize: the WS codebook is the word-substrate face the
+         autobind/recognition seams write (none = they no-op;
+         2026-07-13 depth-3 wiring). -->
+    <codebook>quantize</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

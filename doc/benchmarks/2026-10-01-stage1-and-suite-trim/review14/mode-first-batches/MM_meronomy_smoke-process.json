@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+    "--child",
+    "--config",
+    "data/MM_meronomy_smoke.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-first-batches/MM_meronomy_smoke.json"
+  ],
+  "pid": 56293,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 8266669136,
+  "elapsed_seconds": 15.477573666008539,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-first-batches/MM_meronomy_smoke.log"
+}

@@ -1,0 +1,58 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+_________________ test_thought_free_request_opens_no_dialogue __________________
+test/test_serve_thinking.py:83: in test_thought_free_request_opens_no_dialogue
+    assert resp.status_code == 200, resp.get_json()
+E   AssertionError: {'error': 'Internal model error'}
+E   assert 500 == 200
+E    +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.status_code
+------------------------------ Captured log call -------------------------------
+ERROR    basicmodel:serve.py:315 Inference error
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/serve.py", line 272, in chat_completions
+    predictions = _model.infer(user_msg, max_length=gen_budget)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7471, in infer
+    return self._infer_ir(text)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7487, in _infer_ir
+    execution = self.forward(inputTensor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 154, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8707, in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 24085, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13825, in _lex_embed_stem
+    self.perceptualSpace.embed_stem(in_sub)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 12347, in embed_stem
+    return self._embed_ladder(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 11784, in _embed_ladder
+    return self._embed_radix(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 12228, in _embed_radix
+    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py", line 27, in encode
+    intervals = self.intervals(name, indices)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py", line 42, in intervals
+    torch._assert_async((~valid | (indices < end - start)).all(),
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: occurrence exceeds its configured where-space capacity
+=============================== warnings summary ===============================
+test/test_serve_thinking.py::test_thinking_payload_is_attached_for_a_thinking_model
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_serve_thinking.py::test_thought_free_request_opens_no_dialogue
+1 failed, 2 passed, 1 warning in 2.22s

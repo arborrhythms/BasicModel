@@ -1,0 +1,15 @@
+{
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "source_files": 717,
+  "source_matches": true,
+  "supporting_inputs_match": true,
+  "historical_records_unchanged": 4,
+  "nothing_staged": true,
+  "diff_check_passes": true,
+  "documentation": {
+    "reason": "passed",
+    "selected": 193,
+    "completed": 193,
+    "elapsed_seconds": 220.7418503339868
+  }
+}

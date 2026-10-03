@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+    "--worker",
+    "data/MM_20M_grammar.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_20M_grammar.json"
+  ],
+  "pid": 89757,
+  "exit_code": 137,
+  "reason": "memory",
+  "peak_memory_bytes": 8810863744,
+  "elapsed_seconds": 11.915885499998694,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_20M_grammar.log"
+}

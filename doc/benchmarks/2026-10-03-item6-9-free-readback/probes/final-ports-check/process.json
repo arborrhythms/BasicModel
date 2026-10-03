@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_sentence_compose.py",
+    "test/test_tied_reconstruction_objective.py",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "test/test_doc_links.py"
+  ],
+  "pid": 43078,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 655164976,
+  "elapsed_seconds": 6.965496207994875,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/final-ports-check/run.log"
+}

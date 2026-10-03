@@ -1,0 +1,17 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "test/objective_conflicts_probe.py",
+    "--config",
+    "BasicModel_answers_tied_benchmark",
+    "--output",
+    "doc/benchmarks/2026-10-02-item6-9-ownership/repairs/native-observer-before",
+    "--validate-only"
+  ],
+  "pid": 20650,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 526763232,
+  "elapsed_seconds": 3.595999875004054,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/native-observer-before.log"
+}

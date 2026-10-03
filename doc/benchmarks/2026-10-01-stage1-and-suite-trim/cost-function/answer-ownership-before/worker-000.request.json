@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/answer-ownership-before/worker-000.recycle.json"
+}

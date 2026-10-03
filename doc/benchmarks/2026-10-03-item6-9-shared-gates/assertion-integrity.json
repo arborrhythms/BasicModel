@@ -1,0 +1,10 @@
+[
+  {
+    "test": "TestXorGrammarLearnsXor::test_xor_class_accuracy",
+    "unchanged_except_model_assignment": true
+  },
+  {
+    "test": "TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+    "unchanged_except_model_assignment": true
+  }
+]

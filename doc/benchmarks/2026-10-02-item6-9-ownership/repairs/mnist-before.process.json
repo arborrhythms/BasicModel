@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_mnist.py",
+    "--tb=short"
+  ],
+  "pid": 19159,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 593429848,
+  "elapsed_seconds": 5.151975958011462,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/mnist-before.log"
+}

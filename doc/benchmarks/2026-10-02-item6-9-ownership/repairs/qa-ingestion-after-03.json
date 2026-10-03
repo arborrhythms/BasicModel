@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-02-item6-9-ownership/probe_qa_ingestion.py"
+  ],
+  "pid": 21037,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 3448049000,
+  "elapsed_seconds": 9.542198459006613,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/qa-ingestion-after-03.log"
+}

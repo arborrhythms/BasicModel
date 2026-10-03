@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_mereology_serial.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 6.002161791999242,
+  "batch": 12,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 9.015825333000976,
+  "output_loss": 0.17499999701976776,
+  "reconstruction_loss": 0.0001191929986816831,
+  "completed": true,
+  "total_seconds": 15.017993292000028
+}

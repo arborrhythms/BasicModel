@@ -1,0 +1,16 @@
+--- old/run_measurements.py
++++ new/run_measurements.py
+@@ -101,7 +101,12 @@
+             command = ([sys.executable, str(HERE / 'measure_mm_grammar.py'), str(path / 'measurement.json')]
+                        if job['kind'] == 'mm' else
+                        [sys.executable, str(HERE / 'probe_run.py'), job['kind'], str(path)])
+-            worker = bounded.GuardedProcess(command, cwd=ROOT, env=env,
++            job_env = dict(env)
++            job_env['MODEL_COMPILE'] = 'eager' if job['kind'] == 'mm' else 'none'
++            bounded.write_json(path / 'dispatch.json', dict(kind=job['kind'],
++                model_compile=job_env['MODEL_COMPILE'], device=job_env['BASICMODEL_DEVICE'],
++                seed=job_env.get('BASIC_SEED'), autoload=job_env['BASIC_AUTOLOAD']))
++            worker = bounded.GuardedProcess(command, cwd=ROOT, env=job_env,
+                 log_path=path / 'driver.log', memory_bytes=8 * bounded.GIB, timeout=2150).start()
+             active.append(dict(job=job, worker=worker, path=path))
+             started_count += 1

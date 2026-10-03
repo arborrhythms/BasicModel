@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_reader_trial_ownership.py",
+    "test/test_reconstruction_momentum.py",
+    "test/test_gradient_factorization.py",
+    "test/test_reverse_traversal.py",
+    "test/test_sentence_journal.py",
+    "test/test_sentence_end_state.py",
+    "test/test_stage_caches_retired.py",
+    "test/test_query_phase_fullgraph.py"
+  ],
+  "pid": 42220,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 903497432,
+  "elapsed_seconds": 8.015108999999939,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/momentum-readers/run.log"
+}

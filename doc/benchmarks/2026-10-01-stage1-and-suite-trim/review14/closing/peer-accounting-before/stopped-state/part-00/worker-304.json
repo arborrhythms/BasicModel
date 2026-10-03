@@ -1,0 +1,94 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_interleave_lifecycle.py::test_context_pass_cannot_backpropagate_or_step",
+    "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+    "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[True]",
+    "test/test_interleave_lifecycle.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+    "test/test_interleave_lifecycle.py::test_interleave_epoch_reads_a_short_final_group_once",
+    "test/test_interleave_lifecycle.py::test_interleave_checkpoint_resumes_unread_serial_prefix",
+    "test/test_interleave_lifecycle.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "test/test_interleave_lifecycle.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups"
+  ],
+  "completed": [
+    "test/test_interleave_lifecycle.py::test_context_pass_cannot_backpropagate_or_step",
+    "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+    "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[True]",
+    "test/test_interleave_lifecycle.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+    "test/test_interleave_lifecycle.py::test_interleave_epoch_reads_a_short_final_group_once",
+    "test/test_interleave_lifecycle.py::test_interleave_checkpoint_resumes_unread_serial_prefix",
+    "test/test_interleave_lifecycle.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "test/test_interleave_lifecycle.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_context_pass_cannot_backpropagate_or_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.25724108300346415,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 287.4539111250051,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 239.37486004100356,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015395799709949642,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_interleave_epoch_reads_a_short_final_group_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 40.22222895800951,
+      "message": "",
+      "stdout": "Training throughput: 3 batches in 39.912s; word units 100.0% of 18 words (letters-only 100.0% of 18).\r\n"
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_interleave_checkpoint_resumes_unread_serial_prefix",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.000253000005614,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-700/test_interleave_checkpoint_res0/pending.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-700/test_interleave_checkpoint_res0/pending.ckpt\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021083299361635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017712500994093716,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

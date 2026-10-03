@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal"
+  ],
+  "completed": [
+    "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001315166002314072,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

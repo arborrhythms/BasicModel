@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_training_diagnostic_contracts.py::test_query_signatures_use_only_checked_subsystems"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-505.recycle.json"
+}

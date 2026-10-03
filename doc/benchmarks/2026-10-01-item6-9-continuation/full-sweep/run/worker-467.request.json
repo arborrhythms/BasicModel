@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-467.recycle.json"
+}

@@ -28,7 +28,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
 from Spaces import (SubSpace, WhereEncoding, WhenRangeEncoding, Codebook,
-                    _WHEN_TENSE_DEFAULT, _WHEN_PERIOD)
+                    _WHEN_PERIOD)
 
 
 def _fresh_codebook(nInput, nVectors, nDim, customVQ=True):
@@ -119,7 +119,7 @@ class TestCSWidthGuard(unittest.TestCase):
         sel = torch.tensor([[0, 1, 2], [3, 4, 0]])
         event = cs.lookup(sel).clone()
         when_idx = whenEnc.resolve(dim)
-        event[..., when_idx] = whenEnc.encode(0, D=_WHEN_TENSE_DEFAULT).expand(B, V, -1)
+        event[..., when_idx] = whenEnc.encode(0).expand(B, V, -1)
 
         # Store the muxed event (snaps through the codebook), reconstruct from
         # the selection. The muxed .event view must come back at the full width

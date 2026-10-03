@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_transform_chooser_parity.py::test_unary_score_matches_raw_einsum"
+  ],
+  "completed": [
+    "test/test_transform_chooser_parity.py::test_unary_score_matches_raw_einsum"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_transform_chooser_parity.py::test_unary_score_matches_raw_einsum",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001477458998124348,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

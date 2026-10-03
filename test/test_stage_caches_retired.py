@@ -68,25 +68,6 @@ def _one_input(model):
     return model.inputSpace.prepInput(inp_items)
 
 
-class TestPerStageCachesRetiredAtConstruction(unittest.TestCase):
-    """``_ws_cache`` / ``_cs_cache`` attributes are NOT created by the
-    constructor. The master plan doctrine: "No per-stage forward
-    caches." (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md
-    Stage 1.F.)"""
-
-    def test_ws_cache_not_present_after_construction(self):
-        model = _make_plain_model()
-        self.assertFalse(
-            hasattr(model, '_ws_cache'),
-            "BasicModel._ws_cache must be retired by Stage 1.F "
-            "(no per-stage forward caches; reverse reads terminal STM).")
-
-    def test_cs_cache_not_present_after_construction(self):
-        model = _make_plain_model()
-        self.assertFalse(
-            hasattr(model, '_cs_cache'),
-            "BasicModel._cs_cache must be retired by Stage 1.F "
-            "(no per-stage forward caches; reverse reads terminal STM).")
 
 
 class TestPerStageCachesRetiredAfterForward(unittest.TestCase):

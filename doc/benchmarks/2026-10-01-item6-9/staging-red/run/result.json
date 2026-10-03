@@ -1,0 +1,129 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record"
+  ],
+  "completed": [
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/staging-red/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/staging-red/run/worker-000.json"
+      ],
+      "pid": 78741,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 638797312,
+      "elapsed_seconds": 4.700643874937668,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/staging-red/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+        "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record"
+      ],
+      "completed": [
+        "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+        "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.18903991603292525,
+          "message": "test/test_item7_unindexed_relations.py:88: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows\n    assert model._word_symbol_concept_ids() is None\nE   assert tensor([[ 3, -1,  5, -1, -1, -1, -1, -1],\\n        [ 3, -1,  7, -1, -1, -1, -1, -1],\\n        [ 9, -1,  5, -1, -1, -1, -1, -1],\\n        [ 9, -1,  7, -1, -1, -1, -1, -1]]) is None\nE    +  where tensor([[ 3, -1,  5, -1, -1, -1, -1, -1],\\n        [ 3, -1,  7, -1, -1, -1, -1, -1],\\n        [ 9, -1,  5, -1, -1, -1, -1, -1],\\n        [ 9, -1,  7, -1, -1, -1, -1, -1]]) = _word_symbol_concept_ids()\nE    +    where _word_symbol_concept_ids = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-2): 3 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n)._word_symbol_concept_ids",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.47679545800201595,
+          "message": "test/test_item7_definition_integrity.py:161: in test_new_definitions_do_not_alias_later_sentence_identities\n    assert symbols.isdisjoint(store.row_ids[rows].tolist())\nE   assert False\nE    +  where False = <built-in method isdisjoint of set object at 0x1261ba500>([3, 4611686018427387909, 4611686018427387911])\nE    +    where <built-in method isdisjoint of set object at 0x1261ba500> = {2, 3, 4, 5, 6, 7, ...}.isdisjoint\nE    +    and   [3, 4611686018427387909, 4611686018427387911] = <built-in method tolist of Tensor object at 0x10761bf70>()\nE    +      where <built-in method tolist of Tensor object at 0x10761bf70> = tensor([                  3, 4611686018427387909, 4611686018427387911]).tolist",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        },
+        {
+          "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.12416266603395343,
+          "message": "test/test_runtime_split_ingestion.py:97: in test_store_truths_records_truths\n    torch.testing.assert_close(store.c_plus[rows], torch.zeros(2))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 2 / 2 (100.0%)\nE   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)\nE   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0506076249293983,
+          "message": "test/test_runtime_split_ingestion.py:109: in test_store_truths_idempotent_clear_then_record\n    torch.testing.assert_close(store.c_plus[rows], torch.zeros(1))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 1 / 1 (100.0%)\nE   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)\nE   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/staging-red/run",
+  "elapsed_seconds": 8.73028412507847,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 638797312,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/staging-red/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/staging-red/run/collect.json"
+    ],
+    "pid": 78689,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 500139280,
+    "elapsed_seconds": 3.6727545829489827,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/staging-red/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+        "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+        "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

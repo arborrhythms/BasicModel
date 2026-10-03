@@ -1,0 +1,12 @@
+F......s                                                                 [100%]
+=================================== FAILURES ===================================
+_ TestSSCodebookPairedInsertRetired.test_lexicon_insert_leaves_ws_codebook_untouched _
+test/test_unified_lexicon_codebook.py:749: in test_lexicon_insert_leaves_ws_codebook_untouched
+    vec = torch.zeros(int(emb.wv._vectors.shape[1]))
+                          ^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'wv'
+=========================== short test summary info ============================
+FAILED test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_lexicon_insert_leaves_ws_codebook_untouched
+1 failed, 6 passed, 1 skipped in 2.20s

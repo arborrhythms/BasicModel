@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating"
+  ],
+  "completed": [
+    "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating"
+  ],
+  "slow_selected": [
+    "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07777166698360816,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

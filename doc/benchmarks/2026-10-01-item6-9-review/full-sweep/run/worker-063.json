@@ -1,0 +1,113 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+    "test/test_item9b_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:0]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[mixed]",
+    "test/test_item9b_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder"
+  ],
+  "completed": [
+    "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+    "test/test_item9b_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+    "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:0]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]",
+    "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[mixed]",
+    "test/test_item9b_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.028020666999509558,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008666249996167608,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007207909984572325,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007567910033685621,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022375000116880983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011083299978054129,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.850000060396269e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.937499999068677e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_rejects_invalid_values[mixed]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010058299812953919,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013612499969894998,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

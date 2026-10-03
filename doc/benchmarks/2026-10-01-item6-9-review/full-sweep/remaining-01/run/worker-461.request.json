@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_marker_replay_canonical.py::test_string_marker_path_unchanged"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-461.recycle.json"
+}

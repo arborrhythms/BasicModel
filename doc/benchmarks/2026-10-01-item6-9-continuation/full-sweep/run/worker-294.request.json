@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_ltm_consolidation.py::TestSurviveResetAndPersistence::test_state_dict_keys_present"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-294.recycle.json"
+}

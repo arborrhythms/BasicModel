@@ -1,0 +1,56 @@
+{
+  "selected": 5090,
+  "raw_report_counts": {
+    "passed": 4764,
+    "skipped": 318,
+    "failed": 11,
+    "xfailed": 1,
+    "process_failed": 0
+  },
+  "raw_report_total": 5094,
+  "unique_reported_cases": 5090,
+  "duplicate_case_reports": {
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected": [
+      {
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0.40772658299829345,
+        "message": "",
+        "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\nuStarting with dynamic 6-dim embedding (words added at runtime)\nuStarting with dynamic 96-dim embedding (words added at runtime)\nuStarting with dynamic 6-dim embedding (words added at runtime)\nu"
+      }
+    ]
+  }
+}

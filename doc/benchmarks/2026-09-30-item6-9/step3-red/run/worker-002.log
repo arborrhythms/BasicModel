@@ -1,0 +1,8 @@
+.                                                                        [100%]
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py:475: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 26.88s

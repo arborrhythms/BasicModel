@@ -17,9 +17,11 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current sequence (reconciled at the September 30 item-7 landing):** 6.9 →
-the conference freeze (with item 4's pulled-forward word-level evaluator) →
-the grammatical operators update → 6.8 → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0. Items 9 and 8 are implemented and
+**Current sequence (6.9 closed as the October 3 §25 baseline; Alec,
+2026-10-03: "no conference freeze. We push through to item zero"):**
+the grammatical operators update → 6.8 → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
+The word-level evaluator once pulled forward for the conference returns to
+its place in items 4 and 6.8. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
 million-sentence checkpoint that item 0's run provides, so they are not
 in the implementation queue.
@@ -121,47 +123,9 @@ generation is expected at this stage and is recorded, not tuned away.
    Alec, 2026-09-30: "equal comparison").
    The unchanged depth-three campaign remains red; retain its assertion and
    the XOR/MM evidence ([accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
-- **6.9. XOR_grammar: the baseline of grammatical learning**
-   ([plan](doc/plans/2026-09-29-item-6-9-xor-grammar.md); Alec, 2026-09-29:
-   "let's make item 6.9 an effort to fix xor-grammar ... so that we can
-   prevent any grammatical regression"). Item 7 is accepted; this is next, before
-   the operators update, which is then made under this baseline, and 6.8.
-   **Ready for a new Codex session** (plan §8). Found: a
-   sentence's two trials are compared across an optimizer step, so the
-   explore trial is kept in most rows whatever its derivation (a control
-   that repeats the greedy derivation "wins" 88–93%), and the answer is
-   trained mostly on understandings that evaluation never sees (plan
-   §3.12). Decided (Alec, 2026-09-30): "equal comparison", done efficiently,
-   with a snapshot where the two trials branch left to future work. Decided
-   (Alec, 2026-09-29): the class gate asks for all four answers right with
-   an error below .05, "but let's make sure it's theoretically possible"
-   (it is, when the grammar composes object concepts, and not for symbols
-   composed the same way for every sentence: plan §3.11); "Answers begin
-   with the understanding left in the 1 or 3 slot representation"; "The
-   grammar operations are conducted over the object concepts, not the word
-   concepts"; reconstruction is "a lower bar", its only admitted errors
-   transpositions, since "the grammar is symmetric"; the rules stay
-   `conjunction` and `disjunction`, "since meaning is not significant".
-   Measured (plan §3): the class
-   gate reads a placeholder zero for every `embedding` configuration and
-   cannot pass; read correctly, its bar is met by chance nine times in
-   sixteen; the answer reads one concept per word position, not the root
-   the grammar composed; the grammar is given each word as its own event,
-   with no object and two numbers that differ between words; the
-   reconstruction gate never calls the grammar's reverse. The operator set
-   is not the obstacle: `intersection` and `union` change nothing, and in
-   isolation any operator that is not a sum learns XOR from full codes.
-   With the answer reading the root and each word given as its object's
-   code (two probes), the four roots are exactly separable; the remaining
-   gap is the answer map's convergence (plan §3.7). Also here: the slow
-   MM_20M_xor exact round trip fails 1 of 15 unseeded runs at HEAD (3 of 15
-   on the item 7 candidate), decoding half the inputs; an XOR proof that is
-   not reliable, whose cause is to be found (two truths §19 AA). Exit: both gates pass
-   without a seed at the settled bar, a `sum`-only negative control fails,
-   and no other XOR proof, nor MM_grammar's ten-run table, is worse.
 - **The grammatical operators update** (not yet numbered. **Decided, Alec,
-   2026-09-29:** after item 7 is accepted, after the conference freeze and
-   before 6.8: "let's iron out the operators after getting 7 accepted";
+   2026-09-29:** after item 7 is accepted and before 6.8 (the conference
+   freeze that once stood between was dropped on 2026-10-03): "let's iron out the operators after getting 7 accepted";
    later the same day, after item 6.9).
    It carries into code what the
    operator pass of 2026-09-27 to 09-29 decided in documents: `not` and `non`
@@ -211,8 +175,11 @@ generation is expected at this stage and is recorded, not tuned away.
    adverb cannot write on a dimension their operand is silent on. Open
    there, for when the pass reaches them: `bind`, `expect` in place of
    `arma`, and what says a sentence is absolute once `exist` is retired.
-   **Requirement gate (Alec, 2026-09-29):** XOR_grammar's two gates pass
-   without a seed; it is item 6.9, taken first. No configuration is given
+   **Standing gate (6.9 closing decision, October 3):** no regression
+   against the [accepted 6.9 baseline](doc/benchmarks/2026-10-03-item6-9-closing/README.md);
+   its class and reconstruction gates remain red. First add decoder exploration
+   under [6.9 plan §26.3](doc/plans/2026-09-29-item-6-9-xor-grammar.md#263-for-the-catalog),
+   then implement the remaining catalogue. No configuration is given
    more rows (decided, spec §17.7). A sentence that states a definition is
    an `equal` (Alec, 2026-09-29: "I guess we only need equal?"; catalogue
    §6.3).
@@ -284,13 +251,13 @@ generation is expected at this stage and is recorded, not tuned away.
    4); item 9's prediction gates re-declared at the word bracket. Costs to
    measure, not assume: the open pass against item 1's per-word baseline;
    the reliability of the field's *both* that the policy turns on.
-   **6.8-2, after the conference (FutureWork):** the dynamic stop —
+   **6.8-2, after 6.8-1 (FutureWork):** the dynamic stop —
    glossing above the word bracket and descending below it only at
    novelty — decided against item 1's throughput baseline.
-   **Conference sequencing (Alec, 2026-09-27):** finish 7.5, land 7,
-   freeze the demo checkpoint; before the freeze pull forward only the
-   word-level predictor as the NanoChat gate's evaluator (recorded under
-   item 4); start 6.8 after the freeze.
+   **Conference sequencing (Alec, 2026-09-27), superseded 2026-10-03:**
+   there is no conference freeze; 6.8 follows the operators update, and the
+   word-level predictor is built in 6.8-1 as the first level of expectation
+   (item 4 evaluates with it).
    *Architecture (Alec, 2026-09-28):* words are a formula for narrowing
    attention — the bracket narrows the input and the symbols on one shared
    budget, the words narrow the domain of discourse and keep it as Ground;
@@ -420,8 +387,9 @@ generation is expected at this stage and is recorded, not tuned away.
    age term "can probably just be an increasing document index: more
    important within a document will be its salience"
    ([5.5 spec §9](doc/specs/2026-09-30-occurrence-tense-aspect.md#9-what-it-touches)).
-- **4. Run harness and resume test.** *Pulled forward for the conference
-   (Alec, 2026-09-27):* the word-level predictor as the NanoChat gate's
+- **4. Run harness and resume test.** *Once pulled forward for the
+   conference (Alec, 2026-09-27; no freeze since 2026-10-03, so it is built
+   in 6.8-1 and evaluated here):* the word-level predictor as the NanoChat gate's
    evaluator — the model's own expectation of the next word scored on the
    frozen item manifest (top-1, reciprocal rank, shuffled-prefix control),
    living in `eval_nanochat_grammar.py` rather than the training loop; it
@@ -515,6 +483,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- Item 6.9: accepted grammatical-learning baseline, one reconstruction/output decoder and one writer per weight; class MSE .11475 and reconstruction 0/4 remain red, with zero ownership conflicts ([closing receipt](doc/benchmarks/2026-10-03-item6-9-closing/README.md), [round history](doc/benchmarks/2026-10-03-item6-9-closing/todo-history.md)).
 - `9810fc7` Item 7: two truths, indexed definitions, ended clause state and shared row-free predicates; accepted under review §25 after all three fixture ports and required checks ([landing receipt](doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md)).
 - `6906727` Item 7.5: one-operation exploit/explore derivations trained at each sentence closing, reduction pressure/deadlines and closing-gradient reporting; accepted with the unchanged depth-three campaign red ([receipt](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
 - `8bc710a` Item 9b: shared fields, parallel-first context, association-first interpretation, fixed capacities and corrected occurrence/time objectives; Claude accepted the source-matched 4,948-case sweep ([receipt](doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md)).

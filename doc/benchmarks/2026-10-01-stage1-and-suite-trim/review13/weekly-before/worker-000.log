@@ -1,0 +1,22 @@
+FF.                                                                      [100%]
+=================================== FAILURES ===================================
+________________ test_weekly_includes_the_parked_inline_suites _________________
+test/test_test_modes.py:12: in test_weekly_includes_the_parked_inline_suites
+    assert slow_weekly.INLINE_SUITES == (
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'slow_weekly' has no attribute 'INLINE_SUITES'
+__________ test_weekly_source_copy_survives_edits_to_the_working_tree __________
+test/test_test_modes.py:24: in test_weekly_source_copy_survives_edits_to_the_working_tree
+    slow_weekly.snapshot_source(source, destination)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'slow_weekly' has no attribute 'snapshot_source'
+=============================== warnings summary ===============================
+test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_test_modes.py::test_weekly_includes_the_parked_inline_suites
+FAILED test/test_test_modes.py::test_weekly_source_copy_survives_edits_to_the_working_tree
+2 failed, 1 passed, 1 warning in 2.07s

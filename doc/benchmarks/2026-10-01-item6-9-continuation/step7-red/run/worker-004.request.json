@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step7-red/run/worker-004.recycle.json"
+}

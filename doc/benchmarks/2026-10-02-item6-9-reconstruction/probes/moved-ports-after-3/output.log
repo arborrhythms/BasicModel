@@ -1,0 +1,76 @@
+F.........F...............................F............................. [ 30%]
+.....................................................................F.. [ 61%]
+........................................................................ [ 92%]
+.................                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_stm_depth_tracks_valid_len_not_N _____________________
+test/test_per_word_ss_padding_noop.py:67: in test_stm_depth_tracks_valid_len_not_N
+    assert int(active.sum()) < active.numel()
+E   assert 8 < 8
+E    +  where 8 = int(tensor(8))
+E    +    where tensor(8) = <built-in method sum of Tensor object at 0x120fe77f0>()
+E    +      where <built-in method sum of Tensor object at 0x120fe77f0> = tensor([[True, True, True, True, True, True, True, True]]).sum
+E    +  and   8 = <built-in method numel of Tensor object at 0x120fe77f0>()
+E    +    where <built-in method numel of Tensor object at 0x120fe77f0> = tensor([[True, True, True, True, True, True, True, True]]).numel
+----------------------------- Captured stdout call -----------------------------
+Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)
+____________________ test_ws_routing_after_serial_migration ____________________
+test/test_dual_towers.py:173: in test_ws_routing_after_serial_migration
+    assert counts is not None and counts.sum() > 0
+E   assert (None is not None)
+_________ test_concept_index_read_sizes_inventory_by_explicit_nvectors _________
+test/test_word_store.py:633: in test_concept_index_read_sizes_inventory_by_explicit_nvectors
+    with open(cfg) as f:
+         ^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: '/Users/arogers/github/WikiOracle/basicmodel/data/matrix/MM_20M_grammar_wordstore.xml'
+__________________ TestLoadEmbeddingsEnwiki.test_load_enwiki ___________________
+test/test_basicmodel.py:1692: in test_load_enwiki
+    self.assertIsNotNone(self.wv)
+E   AssertionError: unexpectedly None
+=============================== warnings summary ===============================
+test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1705: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1705: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1705: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:17100: RuntimeWarning: concept pool order 0 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7148: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 16, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1705: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1705: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N
+FAILED test/test_dual_towers.py::test_ws_routing_after_serial_migration - ass...
+FAILED test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors
+FAILED test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_enwiki - ...
+4 failed, 229 passed, 10 warnings in 31.09s

@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_dataset.py::test_xor_dataset_is_unchanged"
+  ],
+  "completed": [
+    "test/test_math_dataset.py::test_xor_dataset_is_unchanged"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_math_dataset.py::test_xor_dataset_is_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033558299764990807,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

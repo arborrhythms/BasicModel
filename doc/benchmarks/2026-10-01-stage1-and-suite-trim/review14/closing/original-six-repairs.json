@@ -1,0 +1,36 @@
+{
+  "expected": 6,
+  "found": 6,
+  "cases": [
+    {
+      "case": "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+      "outcome": "passed",
+      "seconds": 155.66576737500145
+    },
+    {
+      "case": "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+      "outcome": "passed",
+      "seconds": 228.58934229100123
+    },
+    {
+      "case": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+      "outcome": "passed",
+      "seconds": 38.15976162500738
+    },
+    {
+      "case": "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+      "outcome": "passed",
+      "seconds": 413.50979666700005
+    },
+    {
+      "case": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+      "outcome": "passed",
+      "seconds": 158.23790654199547
+    },
+    {
+      "case": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+      "outcome": "passed",
+      "seconds": 0.14096499999868684
+    }
+  ]
+}

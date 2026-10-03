@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_meronomy_smoke.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 6.406209332999424,
+  "batch": 12,
+  "scope": "understanding",
+  "reconstruct_in_loop": true,
+  "training_seconds": 7.047481749992585,
+  "output_loss": 0.12470147013664246,
+  "reconstruction_loss": 0.30343538522720337,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": 0,
+  "total_seconds": 13.45458645799954
+}

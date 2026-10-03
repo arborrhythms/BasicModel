@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/probe_promotion_geometry.py"
+  ],
+  "pid": 14518,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 477988136,
+  "elapsed_seconds": 3.6146131249988684,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/promotion-geometry.log"
+}

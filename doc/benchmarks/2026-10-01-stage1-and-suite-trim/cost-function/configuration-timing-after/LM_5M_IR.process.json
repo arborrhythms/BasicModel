@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+    "--worker",
+    "data/LM_5M_IR.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/LM_5M_IR.json"
+  ],
+  "pid": 89722,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 400131200,
+  "elapsed_seconds": 3.338574916997459,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/LM_5M_IR.log"
+}

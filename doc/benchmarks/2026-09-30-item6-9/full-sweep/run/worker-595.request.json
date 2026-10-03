@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_sync_without_attachment_is_noop"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-595.recycle.json"
+}

@@ -1,0 +1,15 @@
+{
+  "seed": null,
+  "config": "data/BasicModel_answers_tied_benchmark.xml",
+  "backend": "eager",
+  "measurement": "first training batch at production batch 28, including cold capture; no evaluation",
+  "journals": [
+    [
+      28,
+      784,
+      3096
+    ]
+  ],
+  "build_seconds": 2.8356280839943793,
+  "batch": 28
+}

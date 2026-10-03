@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[tense]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-161.recycle.json"
+}

@@ -1,0 +1,35 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+  ],
+  "completed": [
+    "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+  ],
+  "slow_selected": [
+    "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.5499449998606,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001038749935105443,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

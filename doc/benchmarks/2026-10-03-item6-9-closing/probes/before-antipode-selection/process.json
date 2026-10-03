@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_echoic_decoder.py::test_antipode_aligns_the_same_surface_word_as_the_byte_readback"
+  ],
+  "pid": 77593,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 432194880,
+  "elapsed_seconds": 3.614045249996707,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-closing/probes/before-antipode-selection/run.log"
+}

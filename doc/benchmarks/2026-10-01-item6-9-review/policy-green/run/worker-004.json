@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]"
+  ],
+  "completed": [
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.27952216700214194,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

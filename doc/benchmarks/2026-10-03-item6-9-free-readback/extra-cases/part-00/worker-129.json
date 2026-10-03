@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph"
+  ],
+  "completed": [
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph"
+  ],
+  "slow_selected": [
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 35.69439625000814,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

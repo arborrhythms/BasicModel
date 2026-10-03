@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_config_loads",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_dataset_is_inline",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_input_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_output_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_input_contains_sentences",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_output_labels",
+    "test/test_xor_spaces.py::TestLoadInline::test_four_training_examples",
+    "test/test_xor_spaces.py::TestLoadInline::test_labels_as_float_tensors"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/part-00/worker-884.recycle.json"
+}

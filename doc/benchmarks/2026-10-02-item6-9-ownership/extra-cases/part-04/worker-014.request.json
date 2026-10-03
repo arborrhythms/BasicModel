@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_word_store.py::test_leaf_distill_default_off",
+    "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-014.recycle.json"
+}

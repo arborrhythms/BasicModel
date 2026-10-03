@@ -1,0 +1,10 @@
+--- data/XOR_grammar.xml
++++ receipt/XOR_grammar_reconstruction.xml
+@@ -32,6 +32,7 @@
+     <symbolicOrder>1</symbolicOrder>
+ 
+     <training>
++      <reconstructInLoop>true</reconstructInLoop>
+       <numEpochs>400</numEpochs>
+       <learningRate>0.01</learningRate>
+       <reconstructionScale>0.1</reconstructionScale>

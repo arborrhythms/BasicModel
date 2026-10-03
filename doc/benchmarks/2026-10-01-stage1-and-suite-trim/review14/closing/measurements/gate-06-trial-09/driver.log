@@ -1,0 +1,4 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.8s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 187.7s; peak 1.02 GiB

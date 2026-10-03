@@ -292,6 +292,7 @@ class TestExtrapolate(unittest.TestCase):
 
 class TestWriteMask(unittest.TestCase):
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_partition_isolation(self):
         """After forward, each order's partition should be isolated."""
         model = _make_model('RamsifiedModel.xml')

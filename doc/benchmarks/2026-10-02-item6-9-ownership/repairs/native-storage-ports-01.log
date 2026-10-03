@@ -1,0 +1,71 @@
+...........F...F............s.........s...............                   [100%]
+=================================== FAILURES ===================================
+_________ TestCheckpointBundle.test_ckpt_includes_vocab_and_bpe_extras _________
+
+self = <test_lexicon_ownership.TestCheckpointBundle testMethod=test_ckpt_includes_vocab_and_bpe_extras>
+
+    def test_ckpt_includes_vocab_and_bpe_extras(self):
+        """The bundle carries Python-side mappings (vocab_extras) and
+        ChunkLayer state (bpe_extras) alongside the tensor state_dict.
+        """
+        import torch
+        m = _build_text_model()
+        with tempfile.TemporaryDirectory() as td:
+            ckpt_path = os.path.join(td, "weights.ckpt")
+            m.save_weights(ckpt_path)
+            saved = torch.load(ckpt_path, map_location="cpu",
+                               weights_only=False)
+            self.assertIn("state_dict", saved)
+            self.assertIn("vocab_extras", saved)
+            # bpe_extras is None for non-BPE models; just assert the key
+            # is present (it's always written, possibly as None).
+>           self.assertIn("ps_percept_store", saved["vocab_extras"])
+E           AssertionError: 'ps_percept_store' not found in {'index_to_key': [], 'counts': [], 'total_count': 0, 'conceptual_structure': {'version': 2, 'role': 'conceptual_structure', 'percept_readout_references': {'version': 1, 'references': {}}}, 'whole_properties': {'version': 2, 'role': 'property_basis', 'property_rows': {'letter': 0, 'digit': 1, 'whitespace': 2, 'punctuation': 3, 'capital': 4, 'control': 5, 'high_byte': 6, 'pad': 7}}}
+
+test/test_lexicon_ownership.py:257: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpddsy6kcg/weights.ckpt
+__________ TestPsLocalOrthStorage.test_local_parameter_is_registered ___________
+
+self = <test_tied_orth_storage.TestPsLocalOrthStorage testMethod=test_local_parameter_is_registered>
+
+    def test_local_parameter_is_registered(self):
+        model = _make_plain_model()
+        store = model.perceptualSpace.vocabulary
+        basis = model.perceptualSpace.subspace.what
+        from Layers import RadixLayer
+        self.assertIsInstance(store, RadixLayer)
+        self.assertIn("W", basis._parameters)
+        self.assertIs(store._basis, basis)
+>       self.assertIs(store.codebook, basis.W)
+E       AssertionError: tensor([[0.0000, 0.0000, 0.8571, 0.0000],
+E               [0.0000, 0.9611, 0.5642, 0.3937],
+E               [0.0000, 0.0000, 0.0000, 0.8468],
+E               ...,
+E               [0.0000, 0.0000, 0.4189, 0.0000],
+E               [0.0000, 0.1267, 0.0000, 0.0000],
+E               [0.0000, 0.0759, 0.0000, 0.0000]], grad_fn=<AddBackward0>) is not Parameter containing:
+E       tensor([[-1.0000, -1.0000,  0.8571, -0.9939],
+E               [-1.0000,  0.9611,  0.5642,  0.3937],
+E               [-1.0000, -1.0000, -0.6676,  0.8468],
+E               ...,
+E               [-0.4630, -0.1770,  0.4189, -1.0000],
+E               [-0.2754,  0.1267, -0.8004, -1.0000],
+E               [-1.0000,  0.0759, -1.0000, -1.0000]], requires_grad=True)
+
+test/test_tied_orth_storage.py:67: AssertionError
+=============================== warnings summary ===============================
+test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span
+test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words
+test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans
+test/test_within_whole_division.py::test_live_no_store_is_inert
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1739: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras
+FAILED test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_local_parameter_is_registered
+2 failed, 50 passed, 2 skipped, 6 warnings in 60.81s (0:01:00)

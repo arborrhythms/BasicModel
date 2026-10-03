@@ -1,0 +1,12 @@
+--- a/test/test_sentence_compose.py
++++ b/test/test_sentence_compose.py
+@@ -52,7 +52,8 @@
+     assert perceptions[0].tolist() == [0, 0, 0]
+     assert perceptions[1].tolist() == [10, 1, 1]
+     assert observations[-1].tolist() == [20, 2, 2]
+-    assert updates[1] > updates[0] and updates[3] > updates[2]
++    assert updates[1] == updates[0] and updates[3] == updates[2]
++    assert updates[2] > updates[1]
+ 
+ 
+ def test_evaluation_has_one_trial_and_no_step():

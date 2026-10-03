@@ -407,8 +407,8 @@ ladder; temporal extents ride the record store / exact clock, not the band.
 **2026-07-09:** the muxed `.where` band itself moved to a 2-rung quadrature
 *ladder* over the byte START only (`WhereEncoding`, `bin/Spaces.py`) — range
 rung + resolution rung, no END in the band. `WhereEncoding.decode_span` is
-retired; the endpoint-sum bracket codec survives only on the analyzer side,
-as `EndpointSumWhere` (`bin/perceptual_analyzer.py`), a distinct codec. The
+retired. The standalone analyzer's distinct `EndpointSumWhere` codec was
+also retired in the October 1 suite trim; the live WhereEncoding tests remain. The
 runtime containment test above no longer goes through a `WhereEncoding`
 decode at all: `WholeSpace.record_cross_tower_meronomy` (`bin/Spaces.py`) and
 `RunStructureLayer.contained_mask` (`bin/Layers.py`) read `.where` span
@@ -752,17 +752,23 @@ Rank is mereological level in both towers, and all ranks use the same
 
 ### Live Routing and Implementation Boundary
 
-`MeronymicRouter` in [`bin/perceptual_analyzer.py`](../bin/perceptual_analyzer.py)
-scores candidate merges against the perceptual codebook and routes them with
-the shared `binary_tiling_viterbi` / `binary_tiling_soft_dp` primitives (see
-[Language.md](Language.md), *Shared Weighted-Deduction Framework*). In a cold
-state the codebook contains the whole-input vector and byte vectors, so the
-router decomposes the surface to byte terminals. As merge promotion learns
-words bottom-up, the same router reproduces word-level runs.
-`analyze_routed` preserves the raw bytes of UTF-8 segments and reconstructs a
-byte-exact surface for replay.
+The live reading boundary is `Models._lex_embed_stem`: InputSpace supplies the
+byte slab and WholeSpace stages the property-defined unit spans; PartSpace's
+meronomy ladder retains every unit's ordered byte witness and admits recurring
+units into the percept store. The compiled word loop consumes the staged part
+IDs, masks and offsets. Grammar operations consume object references above this
+boundary; a white-space unit remains in perception and byte reconstruction.
 
-The live router and span bookkeeping establish the path and the complete order
+The standalone `perceptual_analyzer.py` prototype, including its cosine-based
+merge router and endpoint-sum span codec, was removed in the October 1 suite
+trim. It is not the live routing implementation. Its exact byte-replay behavior
+is covered by `test/test_meronomy_utf8.py` and `test/test_meronomy_ladder.py`;
+within-whole division is covered on WholeSpace by
+`test/test_within_whole_division.py`. The live start-only WhereEncoding and its
+`test/test_where_bracket.py` tests remain. The use and coverage audit is in
+[the trim receipt](benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/precursor-coverage-map.json).
+
+The live span bookkeeping and ordered byte witness establish the path and order
 specification. **(2026-06-25, LANDED standalone.)** The hard `join-from-bottom`
 plus isotonic-projection guarantee is implemented in
 [`bin/Mereology.py`](../bin/Mereology.py) (`join_from_bottom`, `meet_from_top`,

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_tied_operator_reconstruction.py::test_inactive_batch_row_does_not_poison_the_selected_inverse_gradient"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-157.recycle.json"
+}

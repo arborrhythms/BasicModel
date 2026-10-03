@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

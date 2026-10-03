@@ -1,0 +1,32 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "test/test_accessible_mind.py",
+    "test/test_field_learning.py",
+    "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction",
+    "test/test_existence_metadata.py::test_actual_model_checkpoint_preserves_scoped_fact_identity",
+    "test/test_taxonomy_boundary.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup",
+    "test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity",
+    "test/test_generation_lesson.py",
+    "test/test_sentence_compose.py",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract",
+    "test/test_output_walk.py",
+    "-k",
+    "not compiled",
+    "test/test_inter_sentence_prediction_shape.py",
+    "test/test_sentence_expectation.py",
+    "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update",
+    "test/test_sentence_comparison.py",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "-q"
+  ],
+  "pid": 85601,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1589218616,
+  "elapsed_seconds": 59.76747125000111,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/sweep-ports-after-1/output.log"
+}

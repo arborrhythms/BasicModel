@@ -1,0 +1,9 @@
+{
+  "reason": "test_failure",
+  "exit_code": 1,
+  "selected": 5161,
+  "completed": 5161,
+  "missing": [],
+  "duplicate_completed": {},
+  "resource_stops": []
+}

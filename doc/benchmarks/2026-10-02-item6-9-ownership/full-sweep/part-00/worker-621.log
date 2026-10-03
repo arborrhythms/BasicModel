@@ -1,0 +1,23 @@
+...Fs.F.                                                                 [100%]
+=================================== FAILURES ===================================
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+test/test_sentence_compose.py:171: in test_real_packed_ends_train_before_the_next_sentence
+    assert model._sentence_winners[sid].tolist() == [True, False]
+E   assert [False, False] == [True, False]
+E     
+E     At index 0 diff: False != True
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+________ test_disabled_sentence_prediction_leaves_adam_momentum_unused _________
+test/test_sentence_compose.py:227: in test_disabled_sentence_prediction_leaves_adam_momentum_unused
+    cost, *_ = BasicModel._sentence_path_cost(
+bin/Models.py:20608: in _sentence_path_cost
+    record = self._trial_understanding(state, sid, active)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute '_trial_understanding'
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+FAILED test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused
+2 failed, 5 passed, 1 skipped in 3.68s

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_dataset.py::test_stage_zero_split_holds_out_unseen_pairs"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-310.recycle.json"
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+    "--worker",
+    "data/MM_ladder_text.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder_text.json"
+  ],
+  "pid": 90005,
+  "exit_code": 137,
+  "reason": "memory",
+  "peak_memory_bytes": 8913378792,
+  "elapsed_seconds": 12.172667834005551,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder_text.log"
+}

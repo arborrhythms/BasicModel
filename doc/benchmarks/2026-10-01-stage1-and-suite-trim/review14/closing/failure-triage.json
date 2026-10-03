@@ -1,0 +1,514 @@
+{
+  "stage": "complete",
+  "completed": 5057,
+  "category_counts": {
+    "retained fixture expects the retired lexicon interface": 41,
+    "category role-assignment behavior; cause unresolved": 1,
+    "incomplete configuration fixture port": 1,
+    "input occurrence exceeds configured address capacity": 7,
+    "resume fixture compares byte-cursor ticks with meronomy trial steps": 1,
+    "inverse reference-side invariant; cause unresolved": 1,
+    "retained fixture expects retired reading-mode dispatch": 4,
+    "repeated-understanding reconstruction stability; cause unresolved": 1,
+    "promotion fixture omits separating surface bytes": 2,
+    "retired dead-reconstruction warning expectation": 1,
+    "consolidated retired-name guard targets a removed method": 1,
+    "eager-loop fixture enters compiled reconstruction": 2,
+    "strict expected-failure test meets its unchanged reconstruction bar": 1,
+    "live span fixture still selects retired word analysis": 6,
+    "Inductor reconstruction while-loop lowering failure": 1,
+    "bounded worker memory stop": 1,
+    "bounded worker aborted stop": 1,
+    "bounded worker interrupted stop": 1
+  },
+  "cases": [
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_doc_spans_store_token_offsets",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1368: in test_doc_spans_store_token_offsets\n    for spans in emb.doc_spans:\n                 ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'doc_spans'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_forward_produces_correct_shape",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1355: in test_forward_produces_correct_shape\n    output = _text_embed(inp, psp, inputTensor)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_basicmodel.py:115: in _text_embed\n    psp_sub = psp._embed(inp_sub)\n              ^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'PartSpace' object has no attribute '_embed'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_object_encoding_applied",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1385: in test_object_encoding_applied\n    output = _text_embed(inp, psp, inputTensor)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_basicmodel.py:115: in _text_embed\n    psp_sub = psp._embed(inp_sub)\n              ^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'PartSpace' object has no attribute '_embed'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_token_stream_available",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1326: in test_token_stream_available\n    tokens = emb._token_stream(\"hello world\")\n             ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute '_token_stream'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_consecutive_no_nwhere",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1486: in test_reconstruct_consecutive_no_nwhere\n    codebook = psp.vocabulary.getW().detach()\n               ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'getW'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_from_known_vectors",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1450: in test_reconstruct_from_known_vectors\n    codebook = psp.vocabulary.getW().detach()\n               ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'getW'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_to_buffer",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1521: in test_reconstruct_to_buffer\n    codebook = psp.vocabulary.getW().detach()\n               ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'getW'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_vectors_constructor_enables_reconstruction",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1432: in test_vectors_constructor_enables_reconstruction\n    self.assertTrue(os_.text_mode)\nE   AssertionError: False is not true"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reconstruct_data_joins_words",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1601: in test_reconstruct_data_joins_words\n    latent = psp._embed(inp.forward(inputTensor)[0])\n             ^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'PartSpace' object has no attribute '_embed'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestLexerConfig::test_embedding_can_tokenize",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1630: in test_embedding_can_tokenize\n    tokens = psp.vocabulary._token_stream(\"test input\")\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute '_token_stream'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestLexerConfig::test_embedding_creates_reversible_dictionary",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1639: in test_embedding_creates_reversible_dictionary\n    self.assertIsInstance(psp.vocabulary, Models.Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestXorForwardPass::test_xor_forward_produces_output",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "Map the underlying behavior to the meronomy owner before a port or retirement; do not restore compatibility methods to make the fixture pass.",
+      "evidence": "test/test_basicmodel.py:1876: in test_xor_forward_produces_output\n    result = _text_embed(inp, psp, inputTensor)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_basicmodel.py:115: in _text_embed\n    psp_sub = psp._embed(inp_sub)\n              ^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'PartSpace' object has no attribute '_embed'"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestTrainEmbeddingsFlag::test_frozen_embeddings_default",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The old Embedding type assertion blocks the optimizer-membership assertions. Determine the live training-control contract and retain the relevant membership checks.",
+      "evidence": "test/test_basicmodel.py:2123: in test_frozen_embeddings_default\n    self.assertIsInstance(m.perceptualSpace.vocabulary, Models.Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestTrainEmbeddingsFlag::test_train_embeddings_includes_emb_params",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The old Embedding type assertion blocks the optimizer-membership assertions. Determine the live training-control contract and retain the relevant membership checks.",
+      "evidence": "test/test_basicmodel.py:2113: in test_train_embeddings_includes_emb_params\n    self.assertIsInstance(m.perceptualSpace.vocabulary, Models.Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestVocabSaveRestore::test_save_load_with_vocab",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture cannot find the former Embedding owner, before any save/load. Map the vocabulary/optimizer persistence assertions to the current owner; this failure does not test the current checkpoint round trip.",
+      "evidence": "test/test_basicmodel.py:2267: in test_save_load_with_vocab\n    self.assertIsNotNone(emb1)\nE   AssertionError: unexpectedly None"
+    },
+    {
+      "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+      "category": "category role-assignment behavior; cause unresolved",
+      "followup": "The codebook is enabled, role count matches and percept ids are present, but no centroid assignment exists after fifteen forwards and hard resets. Inspect role observations, pending learning and assignment publication. The following nonzero-centroid-role assertion was not reached.",
+      "evidence": "test/test_category_em_smoke.py:143: in test_codebook_enables_and_em_populates_on_real_model\n    assert len(getattr(ws, \"_category_assign\", {})) > 0, (\nE   AssertionError: no MetaSymbol -> centroid assignment recorded\nE   assert 0 > 0\nE    +  where 0 = len({})\nE    +    where {} = getattr(ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...AttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n  (_category_vq): VectorQuantize()\\n), '_category_assign', {})"
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_cs_ws_recurrent_input_mismatch_raises",
+      "category": "incomplete configuration fixture port",
+      "followup": "The port changes MM_20M_legacy.xml to MM_20M_xor.xml but keeps the old literal nOutput=1024 matcher; the replacement has nOutput=8. The original HEAD fixture contains the matcher. See dimensional-fixture-static-review.json. Preserve the intended CS-to-WS mismatch and all validation-message assertions in a future port.",
+      "evidence": "test/test_dimensional_governance.py:167: in test_cs_ws_recurrent_input_mismatch_raises\n    assert broken != src, \"fixture edit did not apply (SS block changed?)\"\nE   AssertionError: fixture edit did not apply (SS block changed?)\nE   assert '<?xml version=\"1.0\" ?>\\n<model xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\\n       xsi:noNamespaceSchemaLoc...l\\'s default. -->\\n  <SymbolSpace>\\n    <downwardGeneration>false</downwardGeneration>\\n  </SymbolSpace>\\n\\n</model>\\n' != '<?xml version=\"1.0\" ?>\\n<model xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\\n       xsi:noNamespaceSchemaLoc...l\\'s default. -->\\n  <SymbolSpace>\\n    <downwardGeneration>false</downwardGeneration>\\n  </SymbolSpace>\\n\\n</model>\\n'"
+    },
+    {
+      "nodeid": "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column",
+      "category": "input occurrence exceeds configured address capacity",
+      "followup": "The same MM_math capacity exception was recorded by the configuration first-batch audit. It occurs in _embed_radix when stamping word_offset_grid into the input registry, before the tests reach their result assertions. Inspect units and capacity ownership without raising the configured limit. The thought-free serving case exposes it as HTTP 500; its captured server trace retains the same WhereRegistry capacity exception.",
+      "evidence": "test/test_eval_math_thinking.py:24: in test_eval_script_emits_every_report_column\n    rows = ev.main([\"--config\", str(_ROOT / \"data\" / \"MM_math.xml\"),\nbin/eval_math_thinking.py:205: in main\n    rows = evaluate(model, split=args.split, budget=budget, rows=args.rows,\nbin/eval_math_thinking.py:118: in evaluate\n    result = model.think(questions, x, max_iterations=int(budget))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10892: in think\n    first = self.what(question, input_data, executor=executor, record=True,\nbin/Models.py:10681: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8895: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8707: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24085: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13825: in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\nbin/Spaces.py:12347: in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:11784: in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:12228: in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:27: in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:42: in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: occurrence exceeds its configured where-space capacity"
+    },
+    {
+      "nodeid": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
+      "category": "resume fixture compares byte-cursor ticks with meronomy trial steps",
+      "followup": "All preceding optimizer, counter and RNG restoration assertions pass. The fixture then constructs a cursor with slab_bytes explicitly; runEpoch uses slab_bytes=None when the resolved lexer is not byte/bytes. The migrated MM_xor configuration uses meronomy. Compare the same cursor semantics while retaining all persistence and resume assertions; do not change counters merely to equal the obsolete byte-tick total.",
+      "evidence": "test/test_fineweb_preflight.py:166: in test_checkpoint_restores_optimizer_counters_and_rng\n    assert restored._training_step_count == before + total_ticks - 1\nE   assert 2 == ((1 + 4) - 1)\nE    +  where 2 = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-2): 3 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n)._training_step_count"
+    },
+    {
+      "nodeid": "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+      "category": "inverse reference-side invariant; cause unresolved",
+      "followup": "The inverse spy sees reference_side[1] true during trial reconstruction, before the commit observer checks that changing the concluded state changes the inverse parent. Determine whether this is a valid staged object operand or a reference-ownership regression before any assertion port. The separate least-residual soft-gradient and single-forward read-back capture cases pass.",
+      "evidence": "test/test_grammar_reconstruction_gate.py:64: in test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal\n    model.forward(model.inputSpace.prepInput(list(data.test_input)))\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8707: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24102: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18031: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22511: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22040: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21202: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:173: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21158: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20695: in _sentence_path_cost\n    reconstruction = self._compiled_reconstruct()(\nbin/Models.py:12810: in _reconstruct_sentences\n    recovered) = _reconstruction_while_loop(\nbin/Models.py:381: in _reconstruction_while_loop\n    values = body(*values)\n             ^^^^^^^^^^^^^\nbin/Models.py:12780: in body\n    stack, depth, bad_round = undo_operation(stack, depth, slot, wa, sid)\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:12698: in undo_operation\n    stack, depth, bad_binary = _undo_binary(stack, depth, slot, ready, ref, side, sentence=sentence)\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:12670: in _undo_binary\n    left, right, unavailable = language.reverse_binary_step(\ntest/test_grammar_reconstruction_gate.py:45: in reverse\n    assert not bool(kwargs['reference_side'][1].any())\nE   assert not True\nE    +  where True = bool(tensor(True))\nE    +    where tensor(True) = <built-in method any of Tensor object at 0x12e811fe0>()\nE    +      where <built-in method any of Tensor object at 0x12e811fe0> = tensor([True, True, True, True]).any"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_lives_on_perceptual_space",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:49: in test_embedding_lives_on_perceptual_space\n    self.assertIsInstance(m.perceptualSpace.vocabulary, Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_symbolic_back_ref_wired",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:64: in test_embedding_symbolic_back_ref_wired\n    self.assertIsInstance(emb, Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_getW_wraps_into_unit_cell",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:115: in test_getW_wraps_into_unit_cell\n    raw = torch.zeros_like(emb.wv._vectors[0])\n                           ^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'wv'"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_get_embedding_returns_perceptual",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:74: in test_get_embedding_returns_perceptual\n    self.assertIs(emb, m.perceptualSpace.vocabulary)\nE   AssertionError: None is not RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   )"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_excludes_emb_params_when_frozen",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:105: in test_optimizer_excludes_emb_params_when_frozen\n    emb_weight = m.perceptualSpace.vocabulary.wv._vectors\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'wv'"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_includes_emb_params_when_trainable",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:98: in test_optimizer_includes_emb_params_when_trainable\n    emb_weight = m.perceptualSpace.vocabulary.wv._vectors\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'wv'"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_output_space_text_mode_reads_perceptual",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:78: in test_output_space_text_mode_reads_perceptual\n    self.assertIs(m.outputSpace._vocabulary, m.perceptualSpace.vocabulary)\nE   AssertionError: None is not RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   )"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_and_load_embeddings_round_trip",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:88: in test_save_and_load_embeddings_round_trip\n    self.assertIsInstance(m.perceptualSpace.vocabulary, Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_embedding_vectors",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:274: in test_ckpt_includes_embedding_vectors\n    vec = m._get_embedding().wv._vectors.detach().cpu().float()\n          ^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'wv'"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "78089136, 3215547070, 2957081333,  261867514,\nE          1488378256, 1327347946,  626174582, 2667053721, 3942357581,\nE          3008787905, 2265974660, 4048695155, 2995015618, 1462176848,\nE          3105396252, 1064246990, 2701007272,  721175787,  209253900,\nE           742929193, 3284831276, 2063668214, 3886953802, 3076339260,\nE          4187476705,  335201901, 3446048050, 2130793504, 4142109413,\nE          2417347682,  475743903, 4190996332, 1313301073, 2103427656,\nE          2042766326, 1180527164, 3477498848, 3229714294, 1993039983,\nE          1133237226, 3816904119, 3188242591, 3538629375, 1643819483,\nE          1527532490, 1135603416, 3791807622, 4207262052, 2991709319,\nE          3553459674, 1367541879,  525289006,  153590337, 1361160662,\nE           233789323, 4275948476,   73864337, 3821767772, 1834056325,\nE          2842224201, 2024304430, 3694669903, 3076666662, 1100774205,\nE          2920580482, 3840629756,  682873095, 2087297544, 1257052363,\nE           628786317, 1354522264, 4110749540,  213756171, 1771391234,\nE          2045654650, 3644630301,  292060974, 1209154917, 2085040707,\nE          1680872337,  847854815, 2626538650,  565635266,  929024574,\nE          1618346128, 2459177059, 1753061785, 3841618843, 3586029000,\nE           797573149, 4214205563,  901657759, 1034168482, 1643505538,\nE          2388694948, 2896998413, 1269992100,  725828180, 3581402179,\nE          3111695129, 3451995239, 1503504490, 3941703509, 2706919225,\nE           369065673, 3533058561,  235938052, 3087193635, 1071524376,\nE          3843039847,  506895282, 2722513895, 3884295251, 3916624229,\nE          3632238731, 2941960251, 4013447006, 3935221881, 3215599310,\nE          3021809532, 2793186186, 1629106317, 1826404872, 1799652965,\nE          2332350338, 4165054006,  122013185, 4256853275, 1830158720,\nE          3287788256, 3507968419,  226669027, 3353276664, 3380054656,\nE          4240708064, 3153111953, 1301826350, 3387933560, 2907296733,\nE          1990599815, 1564257914, 1010461517, 1141823754, 1813150131,\nE           559885833, 3855835076, 2030649725, 3812440156, 1103152166,\nE          1910152493, 1172088120, 3407363705, 3422883187,  371003274,\nE          2506969913, 3644343833,  825223977, 1535802365, 1752371383,\nE          3912258449, 1864658226, 1743170801, 3388330433, 3854615969,\nE          1448545521, 2221690779, 4137321022,  776757805, 4143561423,\nE          4173656659, 1029825397, 2144367601, 1298353061,  702634134,\nE          2025151537, 4293820495, 1368823104,  150794987,  311326074,\nE          3761679703,  519886746,  727406508,  416882877, 2832466357,\nE          2913569631, 2855162297,  611443109, 3453685498, 1735125741,\nE          1790778058, 2250974831, 3332368446,  947829224,  344020886,\nE          1793318231, 1054975104, 3902005429, 3452719163,  211574968,\nE          2764163744, 1274015833,  586993259, 3299182897,  974375474,\nE           236874328, 3155737967, 1436699046, 4128851384, 4225900468,\nE          3528574534, 2601098365,  784523171, 4209208325, 2877203849,\nE           468157443, 2145201340, 3221064075, 2637522594, 3573809232,\nE          2474225240, 2228096968, 3698417158, 4238789474,  417022074,\nE          3784668803, 2810905244, 4218895427, 2581489599, 1862422692,\nE          3703812404, 2343458826, 3369118385, 3797181282, 2613313364,\nE          1519679360, 3286460866, 1834837659, 4229150564,  165096019,\nE          3479509700, 2192481144, 1634874725, 4061414624], dtype=uint32), 623, 0, 0.0), 'cuda_rng_state_all': None, 'mps_rng_state': tensor([  1,   0,   0,   0,   1,   0,   0,   0,   1,   0,   0,   0,   1,   0,\nE             0,   0,   1,   0,   0,   0,  27, 163, 119, 190, 212,  69, 139,  85,\nE            27, 163, 119, 190, 212,  69, 139,  85,   0,   0,   0,   0,   0,   0,\nE             0,   0], dtype=torch.uint8), 'data_manifest': {'dataset': 'xor', 'content_sha256': 'f6ae3b92e25052d47c9ba82d0e37a08341cb45236a96b04c4d4df675965b94cd'}}, 'checkpoint_schema': {'version': 2, 'whole_space_role': 'property_basis'}}"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_perceptualspace_lex_and_embed_renamed_to_embed",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_lexicon_ownership.py:334: in test_perceptualspace_lex_and_embed_renamed_to_embed\n    assert hasattr(Spaces.PartSpace, '_embed'), \\\nE   AssertionError: _embed must exist after Task 4 rename\nE   assert False\nE    +  where False = hasattr(<class 'bin.Spaces.PartSpace'>, '_embed')\nE    +    where <class 'bin.Spaces.PartSpace'> = <module 'bin.Spaces' from '/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py'>.PartSpace"
+    },
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch",
+      "category": "input occurrence exceeds configured address capacity",
+      "followup": "The same MM_math capacity exception was recorded by the configuration first-batch audit. It occurs in _embed_radix when stamping word_offset_grid into the input registry, before the tests reach their result assertions. Inspect units and capacity ownership without raising the configured limit. The thought-free serving case exposes it as HTTP 500; its captured server trace retains the same WhereRegistry capacity exception.",
+      "evidence": "test/test_math_thinking_training.py:80: in test_iterations_one_is_byte_identical_to_a_plain_batch\n    result, _ = m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14279: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14461: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14831: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9198: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10681: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8895: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8707: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24085: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13825: in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\nbin/Spaces.py:12347: in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:11784: in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:12228: in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:27: in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:42: in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: occurrence exceeds its configured where-space capacity"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical",
+      "category": "retained fixture expects retired reading-mode dispatch",
+      "followup": "The old-mode constants and bypass dispatch were expressly retired by plan section 14. Keep the native meronomy assertions when separating that live contract from the old parked-mode assertions; do not restore dispatch to satisfy a stale stub analysis_mode field.",
+      "evidence": "test/test_meronomy_ladder.py:36: in test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical\n    assert Legacy.LEGACY_WHOLE_ANALYSIS_MODES == {\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: module 'Legacy' has no attribute 'LEGACY_WHOLE_ANALYSIS_MODES'"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[byte]",
+      "category": "retained fixture expects retired reading-mode dispatch",
+      "followup": "The old-mode constants and bypass dispatch were expressly retired by plan section 14. Keep the native meronomy assertions when separating that live contract from the old parked-mode assertions; do not restore dispatch to satisfy a stale stub analysis_mode field.",
+      "evidence": "test/test_meronomy_ladder.py:57: in test_undivided_legacy_modes_stage_no_spans\n    assert WholeSpace.stage_analysis_spans(fake, _bytes(\"abc def\")) is None\nE   AssertionError: assert tensor([[[0, 3],\\n         [4, 7]]]) is None\nE    +  where tensor([[[0, 3],\\n         [4, 7]]]) = <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0>(namespace(analysis_mode='byte', subspace=namespace(what=namespace(primitive_properties=PrimitiveProperties())), well_k...]]]), tensor([[[0, 3],\\n         [4, 7]]])), _staged_unit_parent=tensor([[0, 1]]), _staged_unit_clause=tensor([[0, 0]])), tensor([[ 97,  98,  99,  32, 100, 101, 102]]))\nE    +    where <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0> = WholeSpace.stage_analysis_spans\nE    +    and   tensor([[ 97,  98,  99,  32, 100, 101, 102]]) = _bytes('abc def')"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[raw]",
+      "category": "retained fixture expects retired reading-mode dispatch",
+      "followup": "The old-mode constants and bypass dispatch were expressly retired by plan section 14. Keep the native meronomy assertions when separating that live contract from the old parked-mode assertions; do not restore dispatch to satisfy a stale stub analysis_mode field.",
+      "evidence": "test/test_meronomy_ladder.py:57: in test_undivided_legacy_modes_stage_no_spans\n    assert WholeSpace.stage_analysis_spans(fake, _bytes(\"abc def\")) is None\nE   AssertionError: assert tensor([[[0, 3],\\n         [4, 7]]]) is None\nE    +  where tensor([[[0, 3],\\n         [4, 7]]]) = <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0>(namespace(analysis_mode='raw', subspace=namespace(what=namespace(primitive_properties=PrimitiveProperties())), well_kn...]]]), tensor([[[0, 3],\\n         [4, 7]]])), _staged_unit_parent=tensor([[0, 1]]), _staged_unit_clause=tensor([[0, 0]])), tensor([[ 97,  98,  99,  32, 100, 101, 102]]))\nE    +    where <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0> = WholeSpace.stage_analysis_spans\nE    +    and   tensor([[ 97,  98,  99,  32, 100, 101, 102]]) = _bytes('abc def')"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[sentence]",
+      "category": "retained fixture expects retired reading-mode dispatch",
+      "followup": "The old-mode constants and bypass dispatch were expressly retired by plan section 14. Keep the native meronomy assertions when separating that live contract from the old parked-mode assertions; do not restore dispatch to satisfy a stale stub analysis_mode field.",
+      "evidence": "test/test_meronomy_ladder.py:57: in test_undivided_legacy_modes_stage_no_spans\n    assert WholeSpace.stage_analysis_spans(fake, _bytes(\"abc def\")) is None\nE   AssertionError: assert tensor([[[0, 3],\\n         [4, 7]]]) is None\nE    +  where tensor([[[0, 3],\\n         [4, 7]]]) = <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0>(namespace(analysis_mode='sentence', subspace=namespace(what=namespace(primitive_properties=PrimitiveProperties())), we...]]]), tensor([[[0, 3],\\n         [4, 7]]])), _staged_unit_parent=tensor([[0, 1]]), _staged_unit_clause=tensor([[0, 0]])), tensor([[ 97,  98,  99,  32, 100, 101, 102]]))\nE    +    where <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0> = WholeSpace.stage_analysis_spans\nE    +    and   tensor([[ 97,  98,  99,  32, 100, 101, 102]]) = _bytes('abc def')"
+    },
+    {
+      "nodeid": "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+      "category": "repeated-understanding reconstruction stability; cause unresolved",
+      "followup": "Both within-understanding noninterference assertions pass: output does not change reconstruction and reconstruction does not change output. The failure compares reconstruction from two separate understand(x) calls. Inspect admission, mutable state and forward context between readings; do not attribute it to generation mutating one saved understanding. Preserve the allclose assertion pending that diagnosis.",
+      "evidence": "test/test_output_synthesis.py:144: in test_reconstruction_and_output_are_order_independent\n    assert torch.allclose(rev_first, rev_after)     # same understanding, either order\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10a3093a0>(tensor([[[0.0000e+00, 0.0000e+00, 0.0000e+00, 1.7369e-02, 2.0452e-03,\\n          1.1318e-03, 9.8017e-02, 9.9518e-01, 1.....0364e-03, 1.8304e-01, 9.8311e-01, 3.5990e-01, 9.3299e-01,\\n          0.0000e+00, 1.0000e+00, 0.0000e+00, 1.0000e+00]]]), tensor([[[0.0000e+00, 0.0000e+00, 0.0000e+00, 1.7369e-02, 2.0452e-03,\\n          1.1318e-03, 9.8017e-02, 9.9518e-01, 1.....4105e-02, 1.8304e-01, 9.8311e-01, 3.5990e-01, 9.3299e-01,\\n          0.0000e+00, 1.0000e+00, 0.0000e+00, 1.0000e+00]]]))\nE    +    where <built-in method allclose of type object at 0x10a3093a0> = torch.allclose"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_embed_radix_respects_promotion_threshold",
+      "category": "promotion fixture omits separating surface bytes",
+      "followup": "The hand-built _host_tokens list contains adjacent words without spaces. With meronomy word isolation, _embed_radix joins those bytes before tiling: hello/world becomes helloworld, and promotable/ab becomes promotableab. The assertions then look up the unobserved separate words. Stage a valid surface in a future port, retaining promotion thresholds, the short-word exclusion and exact inverse-table assertions. No promotion code was changed or rerun for this static diagnosis.",
+      "evidence": "test/test_perceptual_loopback.py:439: in test_embed_radix_respects_promotion_threshold\n    self.assertIsNotNone(\nE   AssertionError: unexpectedly None : 'promotable' should have promoted on hit 3 (threshold reached)"
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_percept_store_roundtrips_inserted_words",
+      "category": "promotion fixture omits separating surface bytes",
+      "followup": "The hand-built _host_tokens list contains adjacent words without spaces. With meronomy word isolation, _embed_radix joins those bytes before tiling: hello/world becomes helloworld, and promotable/ab becomes promotableab. The assertions then look up the unobserved separate words. Stage a valid surface in a future port, retaining promotion thresholds, the short-word exclusion and exact inverse-table assertions. No promotion code was changed or rerun for this static diagnosis.",
+      "evidence": "test/test_perceptual_loopback.py:366: in test_radix_percept_store_roundtrips_inserted_words\n    self.assertIsNotNone(\nE   AssertionError: unexpectedly None : word 'world' should have been promoted into the PerceptStore by _embed_radix after 4 hits"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once",
+      "category": "retired dead-reconstruction warning expectation",
+      "followup": "The live output-shape warn-once checks pass. The failure is the second site, which assumes mask_rate=0 and no D3 leave a dead reconstruction channel. That warning site is absent after the reconstruction-path retirement, and meronomy has a live perceptual reconstruction owner. Keep the output-shape assertions; decide the second site against the current reconstruction and unavailable-candidate reporting contract.",
+      "evidence": "test/test_reconstruction_roundtrip.py:350: in test_silent_zero_sites_warn_once\n    assert len(recon_msgs) == 1, recon_msgs\nE   AssertionError: []\nE   assert 0 == 1\nE    +  where 0 = len([])"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+      "category": "input occurrence exceeds configured address capacity",
+      "followup": "The full-epoch recon_bench path reaches the input-registry bound in _embed_radix. The earlier first-batch timing completed, which does not establish full-epoch coverage. Retain the finite-loss/version-counter regression and inspect the staged surfaces and address units; do not raise the configured limit to obtain a pass.",
+      "evidence": "test/test_reconstruction_roundtrip.py:580: in test_idempotent_config_trains_one_epoch_clean\n    rec = run_config(\"data/idempotent.xml\", epochs=1, seed=None,\nbin/recon_bench.py:213: in run_config\n    _epoch_loop()\nbin/recon_bench.py:197: in _epoch_loop\n    out_loss, rec_loss, _, _ = model.runEpoch(\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16437: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14279: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14461: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14831: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9198: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10681: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8895: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8707: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24085: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13825: in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\nbin/Spaces.py:12347: in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:11784: in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:12228: in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:27: in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:42: in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: occurrence exceeds its configured where-space capacity"
+    },
+    {
+      "nodeid": "test/test_retired_names.py::test_retired_names_remain_absent",
+      "category": "consolidated retired-name guard targets a removed method",
+      "followup": "The source guard still resolves Spaces.PartSpace._embed, which the mode retirement removes. Retarget each corresponding absence assertion to its live source owner or explicitly verify the retired owner is absent. Do not treat the unvisited entries after this exception as checked.",
+      "evidence": "test/test_retired_names.py:121: in test_retired_names_remain_absent\n    source = inspect.getsource(_resolve(address))\n                               ^^^^^^^^^^^^^^^^^\ntest/test_retired_names.py:90: in _resolve\n    value = getattr(value, field)\n            ^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'PartSpace' has no attribute '_embed'"
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+      "category": "eager-loop fixture enters compiled reconstruction",
+      "followup": "The routing fixture monkeypatches torch.while_loop to a Python while bool(condition(...)) loop. Reconstruction through the understanding now captures that patched loop and fails its data-dependent guard. Use an eager boundary for this routing-subject fixture, or preserve the real loop when testing capture; retain the operation-layer assertions. The independent compiled-understanding and fullgraph-across-lengths cases pass on this source.",
+      "evidence": " forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24102: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18031: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22511: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22040: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21202: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:173: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21158: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20695: in _sentence_path_cost\n    reconstruction = self._compiled_reconstruct()(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)\nE   \nE   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.\nE   Caused by: while bool(condition(*values)):  # test/test_router_fires_per_word.py:142 in eager_while (_dynamo/variables/tensor.py:2849 in evaluate_expr)\nE   For more information, run with TORCH_LOGS=\"dynamic\"\nE   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL=\"u0\"\nE   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing\nE   \nE   User Stack (most recent call last):\nE     (snipped, see stack below for prefix)\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12624, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py\", line 142, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12624, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py\", line 142, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+      "category": "eager-loop fixture enters compiled reconstruction",
+      "followup": "The routing fixture monkeypatches torch.while_loop to a Python while bool(condition(...)) loop. Reconstruction through the understanding now captures that patched loop and fails its data-dependent guard. Use an eager boundary for this routing-subject fixture, or preserve the real loop when testing capture; retain the operation-layer assertions. The independent compiled-understanding and fullgraph-across-lengths cases pass on this source.",
+      "evidence": " forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24102: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18031: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22511: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22040: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21202: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:173: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21158: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20695: in _sentence_path_cost\n    reconstruction = self._compiled_reconstruct()(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)\nE   \nE   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.\nE   Caused by: while bool(condition(*values)):  # test/test_router_fires_per_word.py:142 in eager_while (_dynamo/variables/tensor.py:2849 in evaluate_expr)\nE   For more information, run with TORCH_LOGS=\"dynamic\"\nE   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL=\"u0\"\nE   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing\nE   \nE   User Stack (most recent call last):\nE     (snipped, see stack below for prefix)\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12624, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py\", line 142, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12624, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py\", line 142, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\""
+    },
+    {
+      "nodeid": "test/test_serve_thinking.py::test_thought_free_request_opens_no_dialogue",
+      "category": "input occurrence exceeds configured address capacity",
+      "followup": "The same MM_math capacity exception was recorded by the configuration first-batch audit. It occurs in _embed_radix when stamping word_offset_grid into the input registry, before the tests reach their result assertions. Inspect units and capacity ownership without raising the configured limit. The thought-free serving case exposes it as HTTP 500; its captured server trace retains the same WhereRegistry capacity exception.",
+      "evidence": "test/test_serve_thinking.py:83: in test_thought_free_request_opens_no_dialogue\n    assert resp.status_code == 200, resp.get_json()\nE   AssertionError: {'error': 'Internal model error'}\nE   assert 500 == 200\nE    +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.status_code"
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+      "category": "strict expected-failure test meets its unchanged reconstruction bar",
+      "followup": "This attempt passes the retained .8 overlap assertion and is reported as a failure only because its historical xfail marker is strict. Earlier unseeded pass and .5 failure are both saved in the migration receipt. Keep this unexpected pass distinct from a regression; review the marker against that history without converting this outcome or rerunning it.",
+      "evidence": "[XPASS(strict)] Historical .8 per-position top-k reconstruction criterion remains unsettled across unseeded runs; same bar on the retained inverse."
+    },
+    {
+      "nodeid": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_local_parameter_is_registered",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_tied_orth_storage.py:62: in test_local_parameter_is_registered\n    self.assertIsInstance(emb, Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>"
+    },
+    {
+      "nodeid": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ps_storage_is_separate_from_ws_codebook",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_tied_orth_storage.py:78: in test_ps_storage_is_separate_from_ws_codebook\n    wv = model.perceptualSpace.vocabulary.wv\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'wv'"
+    },
+    {
+      "nodeid": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ws_write_does_not_leak_into_ps_rows",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_tied_orth_storage.py:90: in test_ws_write_does_not_leak_into_ps_rows\n    wv = model.perceptualSpace.vocabulary.wv\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'wv'"
+    },
+    {
+      "nodeid": "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_insert_grows_ps_only",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_tying_storage_shared.py:61: in test_insert_grows_ps_only\n    self.assertIsInstance(emb, Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>"
+    },
+    {
+      "nodeid": "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_inserted_row_reads_back_through_local_parameter",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_tying_storage_shared.py:86: in test_inserted_row_reads_back_through_local_parameter\n    wv = emb.wv\n         ^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'wv'"
+    },
+    {
+      "nodeid": "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_key_to_index_stays_ps_local",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_tying_storage_shared.py:100: in test_key_to_index_stays_ps_local\n    wv = emb.wv\n         ^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'wv'"
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_lexicon_insert_leaves_ws_codebook_untouched",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases.",
+      "evidence": "test/test_unified_lexicon_codebook.py:749: in test_lexicon_insert_leaves_ws_codebook_untouched\n    vec = torch.zeros(int(emb.wv._vectors.shape[1]))\n                          ^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'wv'"
+    },
+    {
+      "nodeid": "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+      "category": "input occurrence exceeds configured address capacity",
+      "followup": "The same MM_math capacity exception was recorded by the configuration first-batch audit. It occurs in _embed_radix when stamping word_offset_grid into the input registry, before the tests reach their result assertions. Inspect units and capacity ownership without raising the configured limit. The thought-free serving case exposes it as HTTP 500; its captured server trace retains the same WhereRegistry capacity exception.",
+      "evidence": "test/test_what_thinking_episode.py:63: in test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser\n    result = model.think((What.supervised(0), What.supervised(1)), x)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10892: in think\n    first = self.what(question, input_data, executor=executor, record=True,\nbin/Models.py:10681: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8895: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8707: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24085: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13825: in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\nbin/Spaces.py:12347: in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:11784: in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:12228: in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:27: in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:42: in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: occurrence exceeds its configured where-space capacity"
+    },
+    {
+      "nodeid": "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+      "category": "input occurrence exceeds configured address capacity",
+      "followup": "The same MM_math capacity exception was recorded by the configuration first-batch audit. It occurs in _embed_radix when stamping word_offset_grid into the input registry, before the tests reach their result assertions. Inspect units and capacity ownership without raising the configured limit. The thought-free serving case exposes it as HTTP 500; its captured server trace retains the same WhereRegistry capacity exception.",
+      "evidence": "test/test_what_thinking_episode.py:94: in test_think_never_consults_the_desired_answer\n    result = model.think((What.supervised(0), What.supervised(1)), x[1:2])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10892: in think\n    first = self.what(question, input_data, executor=executor, record=True,\nbin/Models.py:10681: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8895: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8707: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24085: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13825: in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\nbin/Spaces.py:12347: in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:11784: in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:12228: in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:27: in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:42: in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: occurrence exceeds its configured where-space capacity"
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+      "category": "live span fixture still selects retired word analysis",
+      "followup": "The shared _whole_space fixture explicitly selects analysis=word, so construction rejects it before any span assertion. These are retained live behaviors, not reasons to restore the retired mode or delete the tests. Port their setup to the native reading boundary while retaining attested-whole preference, complete tiling, seeded-byte exclusion, the division toggle and no-store behavior assertions.",
+      "evidence": "test/test_within_whole_division.py:94: in test_live_default_on_divides_punct_run\n    ws = _whole_space()\n         ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired"
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+      "category": "live span fixture still selects retired word analysis",
+      "followup": "The shared _whole_space fixture explicitly selects analysis=word, so construction rejects it before any span assertion. These are retained live behaviors, not reasons to restore the retired mode or delete the tests. Port their setup to the native reading boundary while retaining attested-whole preference, complete tiling, seeded-byte exclusion, the division toggle and no-store behavior assertions.",
+      "evidence": "test/test_within_whole_division.py:109: in test_live_attested_whole_stays_one_concept\n    ws = _whole_space()\n         ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired"
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+      "category": "live span fixture still selects retired word analysis",
+      "followup": "The shared _whole_space fixture explicitly selects analysis=word, so construction rejects it before any span assertion. These are retained live behaviors, not reasons to restore the retired mode or delete the tests. Port their setup to the native reading boundary while retaining attested-whole preference, complete tiling, seeded-byte exclusion, the division toggle and no-store behavior assertions.",
+      "evidence": "test/test_within_whole_division.py:125: in test_live_no_complete_tiling_keeps_span\n    ws_on = _whole_space()\n            ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired"
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+      "category": "live span fixture still selects retired word analysis",
+      "followup": "The shared _whole_space fixture explicitly selects analysis=word, so construction rejects it before any span assertion. These are retained live behaviors, not reasons to restore the retired mode or delete the tests. Port their setup to the native reading boundary while retaining attested-whole preference, complete tiling, seeded-byte exclusion, the division toggle and no-store behavior assertions.",
+      "evidence": "test/test_within_whole_division.py:141: in test_live_seeded_bytes_alone_do_not_divide_words\n    ws = _whole_space()\n         ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired"
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+      "category": "live span fixture still selects retired word analysis",
+      "followup": "The shared _whole_space fixture explicitly selects analysis=word, so construction rejects it before any span assertion. These are retained live behaviors, not reasons to restore the retired mode or delete the tests. Port their setup to the native reading boundary while retaining attested-whole preference, complete tiling, seeded-byte exclusion, the division toggle and no-store behavior assertions.",
+      "evidence": "test/test_within_whole_division.py:150: in test_live_knob_off_restores_pre_t3_spans\n    ws = _whole_space(divideWithinWhole=False)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired"
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_store_is_inert",
+      "category": "live span fixture still selects retired word analysis",
+      "followup": "The shared _whole_space fixture explicitly selects analysis=word, so construction rejects it before any span assertion. These are retained live behaviors, not reasons to restore the retired mode or delete the tests. Port their setup to the native reading boundary while retaining attested-whole preference, complete tiling, seeded-byte exclusion, the division toggle and no-store behavior assertions.",
+      "evidence": "test/test_within_whole_division.py:159: in test_live_no_store_is_inert\n    ws = _whole_space()\n         ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired"
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "category": "Inductor reconstruction while-loop lowering failure",
+      "followup": "The native compiled reconstruction fails before the word-admission assertions. Inductor WhileLoop.create expects an FX node but receives an int and raises AttributeError: int has no attribute meta. The full trace is retained in full-sweep/part-03/worker-226.log. This is distinct from the completed XOR learning campaign and from an admission invariant failure. Keep the saved compilation case; do not substitute another backend or a retry for its first result.",
+      "evidence": "_fn(index):\nE             i0 = index\nE             tmp0 = ops.index_expr(i0, torch.int64)\nE             tmp1 = ops.constant(1, torch.int64)\nE             tmp2 = tmp0 < tmp1\nE             tmp3 = ops.constant(False, torch.bool)\nE             tmp4 = ops.constant(False, torch.bool)\nE             tmp5 = ops.where(tmp2, tmp3, tmp4)\nE             return tmp5\nE         ,\nE         ranges=[2],\nE         origin_node=lift_fresh_copy,\nE         origins=OrderedSet([lift_fresh_copy, _tensor_constant0]),\nE         stack_traces = {,\nE           File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12539, in _reconstruct_sentences,\nE             prefer_left = torch.tensor([,\nE                           ^^^^^^^^^^^^^^,\nE           File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__,\nE             return func(*args, **kwargs),\nE                    ^^^^^^^^^^^^^^^^^^^^^,\nE         ,\nE         }\nE       )\nE     )), TensorBox(StorageBox(\nE       InputBuffer(name='arg2_1', layout=FixedLayout('cpu', torch.float32, size=[4, s38, 10], stride=[10*s38, 10, 1]))\nE     )), TensorBox(StorageBox(\nE       InputBuffer(name='arg13_1', layout=FixedLayout('cpu', torch.float32, size=[4, s56, s90], stride=[s56*s90, s90, 1]))\nE     )), s13, s19, s37, s38, s56, s60, s8, s80, s90, s96, s98, TensorBox(\nE       View(\nE         StorageBox(\nE           Pointwise(\nE             'cpu',\nE             torch.int64,\nE             def inner_fn(index):\nE                 _ = index\nE                 tmp0 = ops.index_expr(0, torch.int64)\nE                 return tmp0\nE             ,\nE             ranges=[1],\nE             origin_node=iota_1,\nE             origins=OrderedSet([iota_1]),\nE             stack_traces = {,\nE               File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12706, in _reconstruct_sentences,\nE                 slot_ids = torch.arange(slots, device=dev).reshape(1, slots),\nE                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^,\nE               File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__,\nE                 return func(*args, **kwargs),\nE                        ^^^^^^^^^^^^^^^^^^^^^,\nE             ,\nE             }\nE           )\nE         ),\nE         size=[1, 1],\nE         reindex=lambda i0, i1: [0],\nE         origins=OrderedSet([view_2, iota_1]),\nE         stack_traces = {,\nE           File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12706, in _reconstruct_sentences,\nE             slot_ids = torch.arange(slots, device=dev).reshape(1, slots),\nE                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^,\nE           File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__,\nE             return func(*args, **kwargs),\nE                    ^^^^^^^^^^^^^^^^^^^^^,\nE         ,\nE         }\nE       )\nE     ), 10)\nE   Found from : \nE      File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12745, in _reconstruct_sentences\nE       _s, pre_stack, pre_depth, pre_bad = _reconstruction_while_loop(\nE                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\nE       return func(*args, **kwargs)\nE              ^^^^^^^^^^^^^^^^^^^^^\nE   \nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_output_shape",
+      "category": "input occurrence exceeds configured address capacity",
+      "followup": "The output-shape case reaches the input-registry capacity check on XOR_spaces; the earlier forward-pass case in the shared model fixture passes. Both use prepInput on the inline loader. Inspect repeated-reading state and address units before deciding a fixture or production repair. Keep the output-shape assertions and configured bound.",
+      "evidence": "test/test_xor_spaces.py:219: in test_output_shape\n    _, _, output, _ = self.model.forward(inp)\n                      ^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8707: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24085: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13825: in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\nbin/Spaces.py:12347: in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:11784: in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:12228: in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:27: in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:42: in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: occurrence exceeds its configured where-space capacity"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_space_char_in_vocab",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases. Preserve the whitespace/byte and NUL-termination behavior when mapping ASCII bootstrap and reconstruction expectations to the live owner.",
+      "evidence": "test/test_xor_spaces.py:174: in test_space_char_in_vocab\n    self.assertIsInstance(emb, Models.Embedding,\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'> : InputSpace should use Embedding for text model"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_xor_words_in_vocab",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases. Preserve the whitespace/byte and NUL-termination behavior when mapping ASCII bootstrap and reconstruction expectations to the live owner.",
+      "evidence": "test/test_xor_spaces.py:188: in test_xor_words_in_vocab\n    self.assertIn(ch, emb.pretrain.key_to_index,\n                      ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestSpacePrediction::test_consecutive_join_no_auto_spaces",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases. Preserve the whitespace/byte and NUL-termination behavior when mapping ASCII bootstrap and reconstruction expectations to the live owner.",
+      "evidence": "test/test_xor_spaces.py:252: in test_consecutive_join_no_auto_spaces\n    self.assertIsInstance(emb, Models.Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestSpacePrediction::test_space_token_predicted_by_reverse",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases. Preserve the whitespace/byte and NUL-termination behavior when mapping ASCII bootstrap and reconstruction expectations to the live owner.",
+      "evidence": "test/test_xor_spaces.py:303: in test_space_token_predicted_by_reverse\n    self.assertIn(\" \", emb.pretrain.key_to_index)\n                       ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases. Preserve the whitespace/byte and NUL-termination behavior when mapping ASCII bootstrap and reconstruction expectations to the live owner.",
+      "evidence": "test/test_xor_spaces.py:369: in test_null_char_in_embedding_vocab\n    \"\\x00\", self.emb.pretrain.key_to_index,\n            ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases. Preserve the whitespace/byte and NUL-termination behavior when mapping ASCII bootstrap and reconstruction expectations to the live owner.",
+      "evidence": "test/test_xor_spaces.py:382: in test_null_embedding_is_regular_vector\n    self.assertIn(\"\\x00\", self.emb.pretrain.key_to_index)\n                          ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases. Preserve the whitespace/byte and NUL-termination behavior when mapping ASCII bootstrap and reconstruction expectations to the live owner.",
+      "evidence": "test/test_xor_spaces.py:399: in test_reconstruct_buffer_stops_at_null_token\n    self.assertIn(\"\\x00\", emb.pretrain.key_to_index)\n                          ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction",
+      "category": "retained fixture expects the retired lexicon interface",
+      "followup": "The fixture expects Embedding/getW/wv/pretrain/_embed or its former checkpoint fields, while meronomy owns a RadixLayer. Map current dictionary ownership, optimizer membership, storage isolation and persistence to the live owner; retain their behavioral assertions. A retired method-name guard is a separate retirement decision, not a reason to remove the behavioral cases. Preserve the whitespace/byte and NUL-termination behavior when mapping ASCII bootstrap and reconstruction expectations to the live owner.",
+      "evidence": "test/test_xor_spaces.py:445: in test_trailing_null_produces_clean_reconstruction\n    self.assertIn(\"\\x00\", emb.pretrain.key_to_index)\n                          ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "category": "bounded worker memory stop",
+      "followup": "The first attempt did not finish and remains the canonical outcome. Preserve the existing ceiling and saved process record; distinguish the worker lifetime/peak from an isolated per-case measurement. Any faulty continuation duplicates are disclosed separately and never replace this first result.",
+      "evidence": {
+        "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+        "reason": "memory",
+        "peak_gib": 8.000999577343464,
+        "worker_seconds": 1754.2652537920076,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-575.log"
+      }
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]",
+      "category": "bounded worker aborted stop",
+      "followup": "The first attempt did not finish and remains the canonical outcome. Preserve the existing ceiling and saved process record; distinguish the worker lifetime/peak from an isolated per-case measurement. Any faulty continuation duplicates are disclosed separately and never replace this first result.",
+      "evidence": {
+        "nodeid": "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]",
+        "reason": "aborted",
+        "peak_gib": 5.153478063642979,
+        "worker_seconds": 316.8201437079988,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-623.log"
+      }
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+      "category": "bounded worker interrupted stop",
+      "followup": "The first attempt did not finish and remains the canonical outcome. Preserve the existing ceiling and saved process record; distinguish the worker lifetime/peak from an isolated per-case measurement. Any faulty continuation duplicates are disclosed separately and never replace this first result.",
+      "evidence": {
+        "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+        "reason": "interrupted",
+        "peak_gib": 1.1179374158382416,
+        "worker_seconds": 107.36201170799905,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-01/worker-012.log"
+      }
+    }
+  ],
+  "process_events": [
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "reason": "memory",
+      "peak_gib": 8.000999577343464,
+      "worker_seconds": 1754.2652537920076,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-575.log"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]",
+      "reason": "aborted",
+      "peak_gib": 5.153478063642979,
+      "worker_seconds": 316.8201437079988,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-623.log"
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+      "reason": "interrupted",
+      "peak_gib": 1.1179374158382416,
+      "worker_seconds": 107.36201170799905,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-01/worker-012.log"
+    }
+  ],
+  "duplicate_cases": 10,
+  "extra_attempts": 17,
+  "scope": "Static review of saved failures only; no new training, reruns, deletions or ports."
+}

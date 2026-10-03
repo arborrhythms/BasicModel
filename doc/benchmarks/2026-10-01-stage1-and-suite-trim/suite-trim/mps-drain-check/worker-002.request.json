@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/mps-drain-check/worker-002.recycle.json"
+}

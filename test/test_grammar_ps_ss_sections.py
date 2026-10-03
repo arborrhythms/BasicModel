@@ -96,20 +96,6 @@ _DATA_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
 
-def test_cfg_loader_removed():
-    """The legacy ``.cfg`` grammar path is gone: loader code + files.
-
-    doc/plans/2026-05-30-...-terminal-emitter.md "Remove legacy .cfg":
-    ``load_from_cfg`` / ``_parse_cfg_lines`` and the grammarCfg branch are
-    deleted from bin/Language.py, and data/grammar2.cfg /
-    data/grammar_legacy.cfg are removed.
-    """
-    import Language
-    assert not hasattr(Language.Grammar, "load_from_cfg")
-    assert not hasattr(Language.Grammar, "_parse_cfg_lines")
-    assert not hasattr(Language, "_parse_cfg_lines")
-    assert not os.path.exists(os.path.join(_DATA_DIR, "grammar2.cfg"))
-    assert not os.path.exists(os.path.join(_DATA_DIR, "grammar_legacy.cfg"))
 
 
 def test_bare_compose_generate_loads_as_symbolic_space(monkeypatch, tmp_path):

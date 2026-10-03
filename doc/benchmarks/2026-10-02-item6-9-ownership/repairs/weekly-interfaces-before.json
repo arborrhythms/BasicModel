@@ -1,0 +1,20 @@
+{
+  "command": [
+    "env",
+    "RUN_SLOW=1",
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature",
+    "test/test_rule_gate_isolates_side_effects.py",
+    "test/test_compiled_expectation_boundary.py",
+    "test/test_router_fires_per_word.py"
+  ],
+  "pid": 21309,
+  "exit_code": 143,
+  "reason": "signal",
+  "peak_memory_bytes": 3599176072,
+  "elapsed_seconds": 569.7739918750012,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/weekly-interfaces-before.log"
+}

@@ -1,0 +1,52 @@
+[
+  {
+    "file": "test/test_where_bracket.py",
+    "old": "retired standalone ``EndpointSumWhere`` span key was a separate codec and\nkeeps the bracket -- test_ps_where.py covers it.",
+    "new": "standalone ``EndpointSumWhere`` span key was a separate codec. That prototype\nand its tests were retired in the October 1 suite trim; these tests cover the\nlive start-position ladder."
+  },
+  {
+    "file": "bin/Legacy.py",
+    "old": "bin/py (2026-07-17)",
+    "new": "bin/Legacy.py (2026-07-17)"
+  },
+  {
+    "file": "bin/Layers.py",
+    "old": "    # -- back-compat shims --------------------------------------------\n    # The pre-2026-05-14 contrastive API exposed predict/snapshot/\n    # contrastive_loss/predictive_loss/prime.  Keep thin shims so the\n    # runBatch + Language wiring transitions smoothly until callers\n    # migrate to the explicit observe/predict_next/Reset API.",
+    "new": "    # Current convenience API over explicit prediction/observation state.\n    # The retired priming and snapshot shims have been removed."
+  },
+  {
+    "file": "bin/Layers.py",
+    "old": "# Sentinel for the unified lift / lower dispatcher: distinguishes the\n# legacy positional form Ops._lift_kernel(left, right) (deprecated; routes to the\n# old elementwise-product body) from the new keyword form\n# Ops._lift_kernel(X1, X2, mode='OR', ...).",
+    "new": "# The lift/lower kernels require an explicit mode. Their retired positional\n# and smooth analytic paths were removed in the October 1 suite trim."
+  },
+  {
+    "file": "bin/Layers.py",
+    "old": "    # form. The codebook-search inverse routes through Basis (which has\n    # access to the codebook W); a standalone Ops caller can use\n    # Ops.liftReverse / Ops.lowerReverse for the analytic inverse on the\n    # smoothed point body.",
+    "new": "    # form. The codebook-search inverse routes through Basis, which owns\n    # the codebook candidates. Standalone Ops inverse helpers recommend\n    # candidates that recompose under the requested lattice operation."
+  },
+  {
+    "file": "bin/Spaces.py",
+    "old": "        # ``self.word`` for legacy consumers. The scalar ``add_word`` overload\n        # is preserved for direct callers (tests, ``_compose_activation``).",
+    "new": "        # ``self.word`` for consumers. ``add_word`` accepts tensor records;\n        # the retired scalar overload no longer participates in this buffer."
+  },
+  {
+    "file": "data/model.xsd",
+    "old": "           more reconstruction. 0 = output-only training.\n           warning) by util.TheXMLConfig.",
+    "new": "           more reconstruction. 0 = output-only training."
+  },
+  {
+    "file": "data/model.xsd",
+    "old": "      <!-- Deprecated legacy alias for reconstructionScale; util.TheXMLConfig\n           remaps it (with a deprecation warning). Accepted here so\n           unmigrated configs still validate. -->",
+    "new": "      <!-- Per-band comparison weights for event losses. These are distinct\n           from the reconstruction objective's overall priority. -->"
+  },
+  {
+    "file": "test/test_stm_reverse_roundtrip_lift_lower.py",
+    "old": "  * mode in {AND, OR}, kind='smooth' \u2014 the legacy analytic bodies\n    (AND/smooth = elementwise product, OR/smooth = arithmetic mean).\n    Their two-argument analytic inverses are ``Ops.liftReverse``\n    (``result / (right + epsilon)``) and ``Ops.lowerReverse``\n    (``2*result - right``). MEAN is exact; PRODUCT carries the\n    ``epsilon`` denominator slack, pinned at ``atol=1e-3`` (the\n    ``test_ops_lift_lower`` analytic-reverse tests use ``1e-5`` / ``1e-6``\n    on benign operands; we draw random operands in [-1, 1] which can sit\n    near zero, so we use the looser-but-still-tight ``1e-3``).\n\n",
+    "new": ""
+  },
+  {
+    "file": "test/test_relative_rule_detection_collapsed.py",
+    "old": "# A back-compat grammar whose relative start is the bare ``REL_T`` symbol\n# with NO name attribute (the literal-fallback path).\n_REL_T_NO_NAME_GRAMMAR = textwrap.dedent(\"\"\"\\\n    <?xml version=\"1.0\"?>\n    <grammar name=\"rel_t_probe\">\n      <Symbolic>\n        <start>REL_T</start>\n        <compose>\n          <rule>REL_T = equal.forward(NP_A, NP_B)</rule>\n        </compose>\n        <generate>\n          <rule>NP_A, NP_B = equal.reverse(REL_T)</rule>\n        </generate>\n      </Symbolic>\n    </grammar>\n\"\"\")\n",
+    "new": ""
+  }
+]

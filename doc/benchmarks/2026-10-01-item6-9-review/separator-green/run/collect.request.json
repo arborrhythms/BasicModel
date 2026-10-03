@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_grammar_separator.py",
+    "test/test_grammar_object_leaves.py",
+    "test/test_grammar_reconstruction_gate.py",
+    "test/test_sentence_comparison.py",
+    "test/test_sentence_prediction_trials.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

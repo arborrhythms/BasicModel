@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/extra-cases/part-01/worker-011.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/extra-cases/part-01/worker-011.json"
+  ],
+  "pid": 32250,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 666764608,
+  "elapsed_seconds": 5.7644128749961965,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/extra-cases/part-01/worker-011.log"
+}

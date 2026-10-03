@@ -1,0 +1,18 @@
+{
+  "runs_per_kind": 10,
+  "kinds": [
+    "sum",
+    "class",
+    "reconstruction"
+  ],
+  "epochs": 400,
+  "seed": null,
+  "class_bar": {
+    "correct": 4,
+    "mse_less_than": 0.05
+  },
+  "worker_bytes": 8589934592,
+  "aggregate_bytes": 25769803776,
+  "max_workers": 3,
+  "harness_sha256": "cd002828b8cfe7eee972536a996431140fbdfa42556ae83cb3518b6caa05e3bb"
+}

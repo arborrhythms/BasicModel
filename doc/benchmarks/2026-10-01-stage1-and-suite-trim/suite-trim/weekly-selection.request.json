@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test"
+  ],
+  "collect": true,
+  "marker": "slow"
+}

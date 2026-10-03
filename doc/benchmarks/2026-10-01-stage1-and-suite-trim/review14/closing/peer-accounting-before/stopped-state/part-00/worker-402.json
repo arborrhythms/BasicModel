@@ -1,0 +1,94 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[hi, there]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[12 plus 1]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[a...b]",
+    "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[byte]",
+    "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[raw]",
+    "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[sentence]"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[hi, there]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[12 plus 1]",
+    "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[a...b]",
+    "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[byte]",
+    "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[raw]",
+    "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[sentence]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0001340830058325082,
+      "message": "test/test_meronomy_ladder.py:36: in test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical\n    assert Legacy.LEGACY_WHOLE_ANALYSIS_MODES == {\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: module 'Legacy' has no attribute 'LEGACY_WHOLE_ANALYSIS_MODES'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[abc123]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010372834003646858,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[hi, there]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009552041999995708,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[12 plus 1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009492957993643358,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_and_grammatical_cuts_equal_the_meronomy_cut[a...b]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0094196669961093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[byte]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.003917708003427833,
+      "message": "test/test_meronomy_ladder.py:57: in test_undivided_legacy_modes_stage_no_spans\n    assert WholeSpace.stage_analysis_spans(fake, _bytes(\"abc def\")) is None\nE   AssertionError: assert tensor([[[0, 3],\\n         [4, 7]]]) is None\nE    +  where tensor([[[0, 3],\\n         [4, 7]]]) = <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0>(namespace(analysis_mode='byte', subspace=namespace(what=namespace(primitive_properties=PrimitiveProperties())), well_k...]]]), tensor([[[0, 3],\\n         [4, 7]]])), _staged_unit_parent=tensor([[0, 1]]), _staged_unit_clause=tensor([[0, 0]])), tensor([[ 97,  98,  99,  32, 100, 101, 102]]))\nE    +    where <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0> = WholeSpace.stage_analysis_spans\nE    +    and   tensor([[ 97,  98,  99,  32, 100, 101, 102]]) = _bytes('abc def')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[raw]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0035380839981371537,
+      "message": "test/test_meronomy_ladder.py:57: in test_undivided_legacy_modes_stage_no_spans\n    assert WholeSpace.stage_analysis_spans(fake, _bytes(\"abc def\")) is None\nE   AssertionError: assert tensor([[[0, 3],\\n         [4, 7]]]) is None\nE    +  where tensor([[[0, 3],\\n         [4, 7]]]) = <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0>(namespace(analysis_mode='raw', subspace=namespace(what=namespace(primitive_properties=PrimitiveProperties())), well_kn...]]]), tensor([[[0, 3],\\n         [4, 7]]])), _staged_unit_parent=tensor([[0, 1]]), _staged_unit_clause=tensor([[0, 0]])), tensor([[ 97,  98,  99,  32, 100, 101, 102]]))\nE    +    where <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0> = WholeSpace.stage_analysis_spans\nE    +    and   tensor([[ 97,  98,  99,  32, 100, 101, 102]]) = _bytes('abc def')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[sentence]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.003489333001198247,
+      "message": "test/test_meronomy_ladder.py:57: in test_undivided_legacy_modes_stage_no_spans\n    assert WholeSpace.stage_analysis_spans(fake, _bytes(\"abc def\")) is None\nE   AssertionError: assert tensor([[[0, 3],\\n         [4, 7]]]) is None\nE    +  where tensor([[[0, 3],\\n         [4, 7]]]) = <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0>(namespace(analysis_mode='sentence', subspace=namespace(what=namespace(primitive_properties=PrimitiveProperties())), we...]]]), tensor([[[0, 3],\\n         [4, 7]]])), _staged_unit_parent=tensor([[0, 1]]), _staged_unit_clause=tensor([[0, 0]])), tensor([[ 97,  98,  99,  32, 100, 101, 102]]))\nE    +    where <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0> = WholeSpace.stage_analysis_spans\nE    +    and   tensor([[ 97,  98,  99,  32, 100, 101, 102]]) = _bytes('abc def')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

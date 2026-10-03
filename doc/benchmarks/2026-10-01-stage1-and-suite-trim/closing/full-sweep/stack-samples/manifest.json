@@ -1,0 +1,22 @@
+[
+  {
+    "worker": "worker-467",
+    "pid": 32399,
+    "seconds": 1,
+    "interval_ms": 10,
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "Sampling process 32399 for 1 second with 10 milliseconds of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 32399 written to file doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/stack-samples/worker-467.txt\n",
+    "file": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/stack-samples/worker-467.txt"
+  },
+  {
+    "worker": "worker-475",
+    "pid": 33143,
+    "seconds": 1,
+    "interval_ms": 10,
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "Sampling process 33143 for 1 second with 10 milliseconds of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 33143 written to file doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/stack-samples/worker-475.txt\n",
+    "file": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/stack-samples/worker-475.txt"
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-431.recycle.json"
+}

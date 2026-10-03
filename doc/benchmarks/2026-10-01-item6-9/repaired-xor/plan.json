@@ -1,0 +1,37 @@
+{
+  "roots": {
+    "candidate": "/Users/arogers/github/WikiOracle/basicmodel"
+  },
+  "selectors": [
+    "test/test_grounded_xor.py",
+    "test/test_concept_output.py",
+    "test/test_mm_xor.py",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+    "test/test_basicmodel.py::TestSPNN::test_xor_training",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+  ],
+  "mm_trials": 0,
+  "no_seed": true,
+  "per_worker_bytes": 8589934592,
+  "aggregate_bytes": 25769803776,
+  "max_workers": 10,
+  "harness": {
+    "measure.py": "0f30c682798853bd6ad9a7c8fa99b3b06500c1e1220471381e1588c76258939e",
+    "audit.py": "e421b1d89da65dfa3f07a06befdb970ffde21b2147e70afcc713e7e24fcdc3a4",
+    "check.py": "492e3a35db59d6e95919064067e38070f2f6d0ca98aa0eff981e14169cbd6590",
+    "measure_mm_grammar.py": "1c5fcdad2665693aedb3bd57a32578fc6f64ead0179555fbcddc8368aab92d77",
+    "deriv69.py": "43ecdcc0dc494524e90abaf9a21b63ae2a45c030531ee388706b382b96074890",
+    "xor_observer.py": "5f3e39869fc5822bb67793307c7dbeee76f4c04e0c0ff4d40916591323a6a4ba",
+    "summarize_xor.py": "5690f6eb16c5a0201a4328582c845ad939ec0e7ecf3f563bfb7e54db1e814523"
+  },
+  "started_at": 1790840694.683496
+}

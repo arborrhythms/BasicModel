@@ -1,0 +1,6 @@
+START a-01
+START b-01
+START c-01
+{"kind": "a", "trial": 1, "name": "a-01", "mse": 0.25638472542180035, "correct": 2, "settled_bar": false}
+{"kind": "c", "trial": 1, "name": "c-01", "mse": 0.28738049120739917, "correct": 3, "settled_bar": false}
+{"kind": "b", "trial": 1, "name": "b-01", "mse": 0.29033117772448325, "correct": 2, "settled_bar": false}

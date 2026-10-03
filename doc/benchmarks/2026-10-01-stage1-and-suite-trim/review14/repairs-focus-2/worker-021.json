@@ -1,0 +1,54 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+  ],
+  "completed": [
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 22.298706750007113,
+      "message": "test/test_stm_recon_from_cleared_cache.py:255: in test_reverse_body_preserves_finiteness_on_finite_seed\n    W = _codebook_W(model)\n        ^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:129: in _codebook_W\n    cb = ps._basis if ps is not None else None\n         ^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'PartSpace' object has no attribute '_basis'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 21.90004479199706,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 22.626187333007692,
+      "message": "test/test_stm_recon_from_cleared_cache.py:322: in test_reverse_perceptual_preserves_finiteness_on_finite_seed\n    W = _codebook_W(model)\n        ^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:129: in _codebook_W\n    cb = ps._basis if ps is not None else None\n         ^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'PartSpace' object has no attribute '_basis'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+      "phase": "call",
+      "outcome": "xfailed",
+      "duration": 22.023212208994664,
+      "message": "test/test_stm_recon_from_cleared_cache.py:365: in test_topk_recovered_words_overlap_input\n    W = _codebook_W(model)\n        ^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:129: in _codebook_W\n    cb = ps._basis if ps is not None else None\n         ^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'PartSpace' object has no attribute '_basis'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

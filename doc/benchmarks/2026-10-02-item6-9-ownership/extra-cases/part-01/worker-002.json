@@ -1,0 +1,48 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+    "test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards"
+  ],
+  "completed": [
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+    "test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards"
+  ],
+  "slow_selected": [
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+    "test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.539361415998428,
+      "message": "test/test_conceptual_recurrence.py:382: in test_bind_contained_in_conceptual_space\n    ps_rec, ws_rec = rec\n    ^^^^^^^^^^^^^^\nE   ValueError: too many values to unpack (expected 2)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.5686116660072,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4484066669974709,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

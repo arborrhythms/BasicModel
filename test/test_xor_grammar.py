@@ -81,12 +81,6 @@ class TestXORGrammarConfigParsing(unittest.TestCase):
         self.assertIn("architecture", self.cfg)
         self.assertIn("SymbolSpace", self.cfg)
 
-    def test_router_kind_is_signal(self):
-        """Stage 3: routerKind retired -- the signal router is the
-        canonical (and only) parser. The XML no longer carries the
-        knob; this test verifies the absence."""
-        ss_cfg = self.cfg["SymbolSpace"]
-        self.assertNotIn("routerKind", ss_cfg)
 
     def test_grammar_has_not_conjunction_disjunction(self):
         ss_cfg = self.cfg["SymbolSpace"]

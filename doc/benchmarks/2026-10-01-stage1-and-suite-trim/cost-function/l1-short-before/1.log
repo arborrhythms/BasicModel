@@ -1,0 +1,35 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/l1_probe.py", line 17, in <module>
+    test_real_runbatch_stages_l1_once_and_reports_it_separately(Path(directory),monkeypatch,bool(int(sys.argv[1])))
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_concept_readout_l1.py", line 250, in test_real_runbatch_stages_l1_once_and_reports_it_separately
+    model = _tiny_canonical_model(
+            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/l1_probe.py", line 12, in small
+    model=original(tmp_path,monkeypatch,input_width=32,word_buckets='8',dimension=8,stm_capacity=4,**kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py", line 400, in _tiny_canonical_model
+    model, _ = Models.BasicModel.from_config(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1824, in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7136, in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1924, in create_from_config
+    self.create(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7156, in create
+    return self._create_per_stage(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17018, in _create_per_stage
+    self.perceptualSpace = self._make_perceptual_space(
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7173, in _make_perceptual_space
+    return PartSpace(inputShape, spaceShape, outputShape)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 11271, in __init__
+    self.percept_store = _PerceptStore(
+                         ^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 13527, in __init__
+    raise ValueError(
+ValueError: RadixLayer: dim must be positive, got 0

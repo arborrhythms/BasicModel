@@ -1,0 +1,2701 @@
+--- before/bin/GrammarLessons.py
++++ after/bin/GrammarLessons.py
+@@ -7,6 +7,7 @@
+ """
+ from __future__ import annotations
+ 
++import math
+ import torch
+ from torch.nn import functional as F
+ 
+@@ -94,7 +95,7 @@
+     return binary, unary
+ 
+ 
+-def compose_loss(language, programs, lessons):
++def compose_loss(language, programs, lessons, *, errors=None):
+     """Supervise supplied forms in the same joint compose softmax.
+ 
+     A lesson's unlabelled waiting sites are not no-operation targets. Only
+@@ -107,7 +108,8 @@
+     # A supplied syntax tree has no question context. Each teacher state is
+     # scored alone, independently of the last reading's context or batch size.
+     context_width = getattr(layer.chooser, 'WHAT_CONTEXT_DIM', 0)
+-    costs = []
++    from Layers import Error
++    errors = Error() if errors is None else errors
+     for program, lesson in zip(programs, lessons):
+         if lesson is None:
+             continue
+@@ -119,16 +121,20 @@
+             if target >= 0:
+                 _, _, route = layer(window.detach()[None], slots=1,
+                     what_ctx=window.new_zeros(1, context_width))
+-                costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
++                probabilities = route['probabilities']
++                errors.error('compose.choice', -probabilities[0, target].clamp_min(1e-30).log(),
++                             math.log(probabilities.shape[-1]), category='grammar')
+         for value, target in unary:
+             if target >= 0:
+                 _, _, route = layer(value.detach()[None, None], slots=1,
+                     what_ctx=value.new_zeros(1, context_width))
+-                costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
+-    return torch.stack(costs).mean() if costs else None
+-
+-
+-def generate_loss(language, programs, lessons, registry, word_code):
++                probabilities = route['probabilities']
++                errors.error('compose.choice', -probabilities[0, target].clamp_min(1e-30).log(),
++                             math.log(probabilities.shape[-1]), category='grammar')
++    return errors.total()
++
++
++def generate_loss(language, programs, lessons, registry, word_code, *, errors=None):
+     """Learn declared generate choices from separately supplied answer trees.
+ 
+     Called only after the student's own output is fixed. The input's selected
+@@ -137,6 +143,8 @@
+     and one tree for each canonical role. Leaves resolve through the ordinary
+     vocabulary; target spelling is unavailable to the inference walk.
+     """
++    from Layers import Error
++    errors = Error() if errors is None else errors
+     rules = {arity: {name: (i, op) for i, (name, op) in enumerate(zip(
+         getattr(language, f"_generate_{'binary' if arity == 2 else 'unary'}_names"),
+         getattr(language, f"_generate_{'binary' if arity == 2 else 'unary'}_ops")))}
+@@ -199,7 +207,7 @@
+             predicted = op.generate(parent)
+             predicted = predicted if len(children) == 2 else (predicted,)
+             for actual, child in zip(predicted, children):
+-                numerical.append((actual - child[0]).square().sum())
++                errors.squared('generate.operands', actual, child[0], category='grammar', objective='output')
+                 teach(child, child[0])
+ 
+         for root, role in zip(roots, roles):
+@@ -208,7 +216,6 @@
+         return None
+     values = torch.stack(values)
+     target = torch.tensor(targets, device=values.device, dtype=torch.long)
+-    cost = F.cross_entropy(language.generate_policy_logits(values), target)
+-    if numerical:
+-        cost = cost + torch.stack(numerical).mean()
+-    return cost
++    errors.categorical('generate.choice', language.generate_policy_logits(values), target,
++                       category='grammar', objective='output')
++    return errors.total()
+--- before/bin/Language.py
++++ after/bin/Language.py
+@@ -8831,6 +8831,8 @@
+         tanh-bounded MSE against exact detached leaves, excluding the trailing
+         ``nWhen`` field-time dimensions supplied by the model's input layout.
+         """
++        from Layers import Error
++        self._last_errors = Error()
+         h = self._hidden(S)
+         leaves = trace.leaves() if trace is not None else None
+         if (h is None or trace is None or not torch.is_tensor(leaves)
+@@ -8891,6 +8893,10 @@
+             rule_loss = ((rule_each * valid_f).sum()
+                          / valid_f.sum().clamp_min(1.0))
+             trace_loss = kind_loss + rule_loss
++            self._last_errors.error('reverse.kind', kind_each, math.log(3), mask=domain,
++                                    category='reconstruction')
++            self._last_errors.error('reverse.rule', rule_each, math.log(self.n_rules), mask=valid_rule,
++                                    category='reconstruction')
+ 
+         pred = self.leaf_decoder(self._conform_idea(S))[:, :word_count, :]
+         target = leaves[:, :word_count, :].detach().to(
+@@ -8900,6 +8906,10 @@
+         surface_loss = ((surface_each * word_f).sum()
+                         / word_f.sum().clamp_min(1.0))
+         total = trace_loss + float(surface_weight) * surface_loss
++        width = pred.shape[-1] - int(nWhen)
++        self._last_errors.squared('reverse.surface', .5*torch.tanh(pred[..., :width]),
++            .5*torch.tanh(target[..., :width]), mask=word_valid, weight=surface_weight,
++            category='reconstruction')
+         return total, {
+             "reverse_kind": kind_loss,
+             "reverse_rule": rule_loss,
+@@ -9111,6 +9121,16 @@
+ 
+         kind_loss = kind_numerator / kind_denominator.clamp_min(1.0)
+         rule_loss = rule_numerator / rule_denominator.clamp_min(1.0)
++        from Layers import Error
++        self._last_errors = Error()
++        self._last_errors.error('reverse.kind', kind_loss, math.log(3), entry_weight=kind_denominator,
++                                category='reconstruction')
++        self._last_errors.error('reverse.rule', rule_loss, math.log(self.n_rules), entry_weight=rule_denominator,
++                                category='reconstruction')
++        width = pred.shape[-1] - int(nWhen)
++        self._last_errors.squared('reverse.surface', .5*torch.tanh(pred[..., :width]),
++            .5*torch.tanh(target[..., :width]), mask=word_valid, weight=surface_weight,
++            category='reconstruction')
+         total = (
+             kind_loss + rule_loss
+             + float(surface_weight) * surface_loss)
+@@ -10137,7 +10157,10 @@
+         # forward ReconstructionStack is its teacher only; its semantic input
+         # is stopgrad(S).
+         self.detached_reverse = bool(TheXMLConfig.training(
+-            "detachedReverse", False))
++            "detachedReverse", False)) and not (
++                getattr(perceptualSpace, '_meronomy', False)
++                and getattr(wholeSpace, 'analysis_mode', None) == 'meronomy'
++                and getattr(self.languageLayer, 'operation_layer', None) is not None)
+         self.reverse_chooser = None
+         if self.detached_reverse:
+             try:
+@@ -12151,6 +12174,9 @@
+         multiplier = (1 + luminosity_weight * (1 - lum_norm)
+                       + universality_weight * (1 - u_norm))
+         total_loss = total_loss * multiplier
++        registry = getattr(model, 'errors', None) if model is not None else None
++        if registry is not None:
++            registry.scale(multiplier)
+         if gradient_objectives is not None:
+             for name, objective in gradient_objectives.items():
+                 gradient_objectives[name] = objective * multiplier
+@@ -12162,6 +12188,9 @@
+                 truth_penalty = self.truth_layer.falsity_penalty(
+                     symbol_acts, basis)
+                 total_loss = total_loss + truth_loss_weight * truth_penalty
++                if registry is not None:
++                    registry.add('truth.falsity', truth_penalty, weight=truth_loss_weight,
++                                 category='truth', kind='penalty')
+ 
+         # Quaternary-corner balance penalty: discourages forbidden
+         # corners (N, B). The bivector substrate was retired (Phase 3):
+@@ -12184,6 +12213,9 @@
+                 allow_excluded_middle=int(allow_excluded_middle),
+                 allow_contradiction=int(allow_contradiction))
+             total_loss = total_loss + balance_weight * balance
++            if registry is not None:
++                registry.add('truth.balance', balance, weight=balance_weight,
++                             category='truth', kind='penalty')
+ 
+         return total_loss
+ 
+--- before/bin/Layers.py
++++ after/bin/Layers.py
+@@ -10857,6 +10857,8 @@
+         # accumulation off when the knob is non-positive (set by the host at
+         # construction; defaults to 0.1 so the layer is self-contained).
+         self._inter_loss_accum = None
++        self._inter_errors = Error()
++        self._inter_contrastive_errors = Error()
+         self._inter_loss_count = 0
+         self._inter_last_pred_root = [None] * self._batch
+         self._inter_loss_weight = 0.1
+@@ -11038,6 +11040,10 @@
+         diff = (s_hat - pooled.detach()) * pm             # [B, D]
+         n_primed = primed.sum().clamp(min=1).to(diff.dtype)
+         loss = diff.pow(2).sum() / (n_primed * s_hat.shape[-1])
++        registry = getattr(self, '_arma_errors', None)
++        if registry is None:
++            registry = self._arma_errors = Error()
++        registry.squared('arma', s_hat, pooled.detach(), mask=primed, category='expectation')
+         # Update rings -- VECTORIZED. The prior per-row Python loop +
+         # ``_push_row`` issued ``_s_count[b].item()`` /
+         # ``bool(active[b])`` per row: B host syncs per call, the
+@@ -11294,6 +11300,12 @@
+                     self._inter_loss_accum = (step if self._inter_loss_accum is None
+                                               else self._inter_loss_accum + step)
+                     self._inter_loss_count += 1
++                    errors = self._inter_error_registry()
++                    errors.squared('roles', train_roles, target, category='expectation')
++                    errors.binary('presence', train_logits, target_mask.to(train_logits), category='expectation')
++                    if kind is not None:
++                        errors.binary('kind', train_kind, train_kind.new_tensor(float(kind == 'relation')),
++                                      category='expectation')
+                 if (isinstance(pending, _PendingMeaningExpectation) and pending.policy
+                         and self.training and torch.is_grad_enabled()):
+                     self._expectation_policy_outcomes.append((
+@@ -11878,6 +11890,8 @@
+         """
+         before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+         like = next((p for p in payloads if p is not None), self._s_history)
++        errors, contrast_errors = Error(row_mask=mask), Error(row_mask=mask)
++        self._sentence_prediction_errors = (errors, contrast_errors)
+         if self._external_observations_suspended or not self.expectation_enabled:
+             zero = like.new_zeros(len(payloads))
+             return zero, zero.clone(), before
+@@ -11917,6 +11931,12 @@
+                                 logits, occupied.to(logits))
+                             cost = cost + self._kind_loss(kind_logit,
+                                 None if sentence_kinds is None else sentence_kinds[b], cost)
++                            errors.squared('roles', pred, target, row=b, category='expectation')
++                            errors.binary('presence', logits, occupied.to(logits), row=b, category='expectation')
++                            kind = None if sentence_kinds is None else sentence_kinds[b]
++                            if kind is not None:
++                                errors.binary('kind', kind_logit, kind_logit.new_tensor(float(kind == 'relation')),
++                                              row=b, category='expectation')
+                             negatives = [p.detach().to(target).flatten()
+                                          for _, p, _ in self._inter_context[b]]
+                     else:
+@@ -11928,6 +11948,7 @@
+                         if pred is not None and target is not None:
+                             target = target.to(pred)
+                             cost = F.mse_loss(pred, target)
++                            errors.squared('root', pred, target, row=b, category='expectation')
+                             negatives = [root.detach().to(pred) for _, p, _ in self._inter_context[b]
+                                          if (root := self._reduce_end_state_to_root(p)) is not None]
+                     if (self._inter_contrastive_weight > 0 and pred is not None
+@@ -11936,14 +11957,26 @@
+                         candidates = torch.stack([target.flatten()] + [n.flatten() for n in negatives])
+                         logits = (F.normalize(candidates, dim=-1) @ q) / self._inter_contrastive_temp
+                         contrast = F.cross_entropy(logits[None], logits.new_zeros(1, dtype=torch.long))
++                        contrast_errors.categorical('contrast', logits[None], logits.new_zeros(1, dtype=torch.long),
++                                                    row=b, category='expectation')
+                 if not bool(torch.isfinite(cost) and torch.isfinite(contrast)):
+                     raise FloatingPointError('non-finite sentence prediction cost')
+                 costs.append(cost)
+                 contrastive.append(contrast)
+             pending = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+-            return torch.stack(costs), torch.stack(contrastive), pending
++            relative = errors.total()
++            relative_contrast = contrast_errors.total()
++            return (torch.stack(costs) if relative is None else relative,
++                    torch.stack(contrastive) if relative_contrast is None else relative_contrast, pending)
+         finally:
+             self._inter_last_meaning, self._inter_last_pred_root = before
++
++    def _inter_error_registry(self):
++        registry = getattr(self, '_inter_errors', None)
++        if registry is None:
++            registry = Error()
++            self._inter_errors = registry
++        return registry
+ 
+     def _accumulate_inter_loss(self, pred_root, actual_root):
+         """Accumulate one sentence of ``L_inter = MSE(pred_root,
+@@ -11964,6 +11997,7 @@
+         if pred_root is None or actual_root is None:
+             return
+         step_loss = F.mse_loss(pred_root, actual_root)
++        self._inter_error_registry().squared('root', pred_root, actual_root, category='expectation')
+         if not torch.isfinite(step_loss).all():
+             raise FloatingPointError(
+                 "InterSentenceLayer._accumulate_inter_loss: L_inter step "
+@@ -11987,13 +12021,15 @@
+         once, post-body / pre-backward, next to the ARMA + intra terms.
+         """
+         self.detach_prediction_context()
++        self._consumed_inter_errors = getattr(self, '_inter_errors', Error())
++        self._inter_errors = Error()
+         if self._inter_loss_accum is None:
+             self._inter_loss_count = 0
+             return None
+         mean_loss = self._inter_loss_accum / max(1, self._inter_loss_count)
+         self._inter_loss_accum = None
+         self._inter_loss_count = 0
+-        return mean_loss
++        return self._consumed_inter_errors.total()
+ 
+     def detach_prediction_context(self):
+         """End the current encoder graph without erasing observed context.
+@@ -12111,6 +12147,11 @@
+         step = F.cross_entropy(
+             logits.unsqueeze(0),
+             torch.zeros(1, dtype=torch.long, device=logits.device))
++        errors = getattr(self, '_inter_contrastive_errors', None)
++        if errors is None:
++            errors = self._inter_contrastive_errors = Error()
++        errors.categorical('contrast', logits[None],
++                           torch.zeros(1, dtype=torch.long, device=logits.device), category='expectation')
+         if not torch.isfinite(step).all():
+             raise FloatingPointError(
+                 "InterSentenceLayer._accumulate_inter_contrastive: InfoNCE "
+@@ -12126,13 +12167,15 @@
+         ``None`` when nothing accumulated (eval / weight off / no warm chain).
+         Mirrors :meth:`consume_inter_loss`; ``runBatch`` consumes it once,
+         post-body / pre-backward."""
++        self._consumed_contrastive_errors = getattr(self, '_inter_contrastive_errors', Error())
++        self._inter_contrastive_errors = Error()
+         if self._inter_contrastive_accum is None:
+             self._inter_contrastive_count = 0
+             return None
+         mean = self._inter_contrastive_accum / max(1, self._inter_contrastive_count)
+         self._inter_contrastive_accum = None
+         self._inter_contrastive_count = 0
+-        return mean
++        return self._consumed_contrastive_errors.total()
+ 
+     # -- lifecycle ----------------------------------------------------
+     def Reset(self, batch=None, hard=True):
+@@ -12173,6 +12216,8 @@
+             self._inter_last_meaning = [None] * self._batch
+             self._expectation_documents = [None] * self._batch
+             self._inter_loss_accum = None
++            self._inter_errors = Error()
++            self._inter_contrastive_errors = Error()
+             self._inter_loss_count = 0
+             self._inter_contrastive_accum = None
+             self._inter_contrastive_count = 0
+@@ -17692,6 +17737,24 @@
+             loss = loss + self.when_scale * _seg(nWhat + nWhere, D)
+         return loss
+ 
++    def register(self, registry, name, pred, target, *, mask=None,
++                 nWhere=None, nWhen=None, weight=1., category='reconstruction',
++                 objective=None, row=None):
++        """Name and normalize each event band; raw metric methods stay raw."""
++        n_where = self.nWhere if nWhere is None else int(nWhere)
++        n_when = self.nWhen if nWhen is None else int(nWhen)
++        width = min(pred.shape[-1], target.shape[-1])
++        n_what = width - n_where - n_when
++        for band, start, stop, priority in (
++                ('what', 0, n_what, self.what_scale),
++                ('where', n_what, n_what+n_where, self.where_scale),
++                ('when', n_what+n_where, width, self.when_scale)):
++            if stop > start:
++                registry.squared(name+'.'+band, pred[..., start:stop], target[..., start:stop],
++                    mask=mask, weight=weight*priority, category=category,
++                    objective=objective, row=row)
++        return registry
++
+     def compute_piecewise(self, pred, target):
+         """Piecewise reconstruction loss via Chamfer distance.
+ 
+@@ -17780,7 +17843,9 @@
+             else:
+                 torch._assert_async(torch.isfinite(lossIn).all())
+             rr = self.reconstruction_scale
+-            total = (1 - rr) * lossOut + rr * lossIn
++            # Each normalized term has its own priority. Reconstruction no
++            # longer takes weight away from the supplied answer.
++            total = lossOut + rr * lossIn
+         if sbow is not None:
+             total = total + self.embedding_scale * sbow
+         return total
+@@ -17793,53 +17858,30 @@
+         return self(lossOut, lossIn, sbow)
+ 
+ class Error:
+-    """Central registry for per-batch error/loss terms.
+-
+-    ``Error`` is a bookkeeping client of ``Loss``: individual sites still
+-    compute their pred-vs-target comparisons via a ``Loss`` instance (or
+-    any other path that produces a scalar tensor), and then register the
+-    result here with a name, weight, originating space, and category.
+-
+-    Why a registry? There are currently 12+ loss terms accumulated across
+-    four different call sites (``ModelLoss``, ``BasicModel.runBatch``,
+-    ``WholeSpace.accumulate_symbol_objective``, ``SymbolSpace.truth_modulated_loss``).
+-    Debugging convergence problems used to require grepping each site to
+-    answer "what fraction of today's gradient came from which term?".
+-    The registry makes that a one-call breakdown, and supports:
+-
+-      * ``.total()``      -- weighted sum for backprop
+-      * ``.breakdown()``  -- per-term scalars for logging
+-      * ``.snapshot()`` + ``.covariance()`` -- running covariance across
+-                            batches, so you can detect terms that fight
+-                            each other (anti-correlation) or that carry
+-                            no signal (zero variance).
+-      * ``.disable(cat)`` / ``.enable(cat)`` -- one-line ablation by
+-                            category (``"reconstruction"``, ``"symbol"``,
+-                            ``"truth"``, ``"discourse"``, ``"embedding"``,
+-                            ``"prediction"``).
+-
+-    ``Error`` never enforces specific math -- the caller decides how each
+-    term is computed and chooses its weight (usually from a config knob).
+-    The class just collects, sums, and reports.
+-
+-    Usage pattern inside ``runBatch``:
+-
+-        TheError.reset()
+-        TheError.compute("reconstruction", pred, target,
+-                          method="compute", weight=self.loss.reconstruction_scale,
+-                          space="InputSpace", category="reconstruction")
+-        TheError.add("symbol_residual", sym_term, weight=1.0,
+-                      space="WholeSpace", category="symbol")
+-        total = TheError.total()          # for backprop
+-        TheError.snapshot()                # record for covariance
++    """The owner of named trial and batch costs.
++
++    Targeted errors enter through ``error``, ``squared``, ``categorical`` or
++    ``binary``. Their detached uninformed baselines are respectively target
++    squared norm and log of the outcome count. Contributions combine before
++    division: one ratio of means per named term, without a floor or running
++    loss scale. Zero-target squared terms and targetless regularizers are
++    penalties, with their own strengths. ``add`` registers those penalties
++    or reporting-only metrics; it cannot manufacture an error's baseline.
++
++    ``total`` supplies the trained sum and can select an objective or kind.
++    ``breakdown`` retains raw error, baseline, priority, contextual weight,
++    active count and ownership. Row registries produce selection costs whose
++    active-row mean is the same relative objective used for training.
++    Summation stays chunked to respect Metal's kernel argument bound.
+     """
+ 
+     _CATEGORIES = (
+         "reconstruction", "prediction", "symbol",
+-        "truth", "discourse", "embedding", "other",
++        "truth", "discourse", "embedding", "other", "expectation",
++        "grammar", "policy", "reg", "count", "intra", "inter",
+     )
+ 
+-    def __init__(self, loss: Loss = None, history_max: int = 1024):
++    def __init__(self, loss: Loss = None, history_max: int = 1024, *, row_mask=None):
+         """Initialize Error; allocate state for the class contract.
+         
+         See class docstring for invariants.
+@@ -17849,6 +17891,7 @@
+         self._history: list = []  # each entry is {name: weighted_scalar}
+         self._history_max = int(history_max)
+         self._disabled: set = set()
++        self.row_mask = None if row_mask is None else torch.as_tensor(row_mask, dtype=torch.bool)
+ 
+     # ---- setup ---------------------------------------------------------
+ 
+@@ -17906,7 +17949,8 @@
+     # ---- accumulation --------------------------------------------------
+ 
+     def add(self, name: str, value, *, weight: float = 1.0,
+-            space: str = None, category: str = "other"):
++            space: str = None, category: str = "other", kind="penalty",
++            objective=None, trained=True):
+         """Register a pre-computed scalar term.
+ 
+         Repeated ``name`` values are summed (useful when a term is
+@@ -17925,6 +17969,9 @@
+                 "space": space,
+                 "category": category,
+                 "count": 1,
++                "kind": kind,
++                "objective": objective or category,
++                "trained": trained,
+             }
+         else:
+             # Same-name contributions are kept as a LIST and summed lazily
+@@ -17942,6 +17989,137 @@
+             if not torch.compiler.is_compiling():
+                 rec["count"] += 1
+ 
++    def error(self, name, error, baseline, *, mask=None, weight=1.,
++              space=None, category='other', objective=None, trained=True, row=None,
++              entry_weight=None):
++        """Register active error and uninformed-baseline sums, never an EMA.
++
++        Repeated contributions are combined before division. The baseline is
++        detached. Exactly zero target energy is an ordinary penalty; an empty
++        active set contributes zero. No numerical floor changes a baseline.
++        With ``row_mask``, row contributions average to the one global ratio,
++        so a small-target row cannot acquire its own large normalization.
++        """
++        error = torch.as_tensor(error)
++        baseline = torch.as_tensor(baseline, device=error.device, dtype=error.dtype).detach()
++        error, baseline = torch.broadcast_tensors(error, baseline)
++        valid = torch.ones_like(error, dtype=torch.bool)
++        if mask is not None:
++            mask = mask.to(device=error.device, dtype=torch.bool)
++            while mask.ndim < error.ndim:
++                mask = mask.unsqueeze(-1)
++            valid = valid & mask
++        if self.row_mask is not None and row is None:
++            rows = self.row_mask.to(error.device)
++            if error.ndim == 0:
++                error, baseline, valid = (v.expand(rows.shape[0]) for v in (error, baseline, valid))
++            valid = valid & rows.reshape((-1,) + (1,) * (error.ndim - 1))
++            dims = tuple(range(1, error.ndim))
++            reduce = lambda value: value.sum(dims) if dims else value
++        else:
++            reduce = lambda value: value.sum()
++        weights = valid.to(error.dtype)
++        if entry_weight is not None:
++            weights = weights * torch.as_tensor(entry_weight, device=error.device, dtype=error.dtype).detach()
++        numerator = reduce(torch.where(valid, error, torch.zeros_like(error)) * weights)
++        denominator = reduce(torch.where(valid, baseline, torch.zeros_like(baseline)) * weights)
++        entries = reduce(weights).detach()
++        if row is not None:
++            if self.row_mask is None:
++                raise ValueError('an indexed contribution requires a row registry')
++            selector = (torch.arange(self.row_mask.numel(), device=error.device) == row)
++            selector = (selector & self.row_mask.to(error.device)).to(error.dtype)
++            numerator, denominator, entries = (v * selector for v in (numerator, denominator, entries))
++        rec = self._terms.get(name)
++        if rec is None:
++            rec = dict(weight=float(weight), space=space, category=category,
++                objective=objective or category, trained=trained, kind='relative', count=0,
++                numerators=[], baselines=[], entries=[], row_mask=self.row_mask)
++            self._terms[name] = rec
++        if 'numerators' not in rec or rec['weight'] != float(weight):
++            raise ValueError(f'inconsistent error registration for {name}')
++        rec['numerators'].append(numerator)
++        rec['baselines'].append(denominator)
++        rec['entries'].append(entries)
++        if not torch.compiler.is_compiling():
++            rec['count'] += 1
++        return self._value(rec)
++
++    def squared(self, name, pred, target, **kwargs):
++        return self.error(name, (pred-target).square(), target.detach().square(), **kwargs)
++
++    def categorical(self, name, logits, target, **kwargs):
++        outcomes = logits.shape[-1]
++        error = F.cross_entropy(logits.reshape(-1, outcomes), target.reshape(-1),
++                                reduction='none').reshape(target.shape)
++        # A one-outcome categorical variable has no choice to learn.
++        return self.error(name, error, math.log(outcomes), **kwargs)
++
++    def binary(self, name, logits, target, **kwargs):
++        return self.error(name, F.binary_cross_entropy_with_logits(logits, target,
++                          reduction='none'), math.log(2), **kwargs)
++
++    @staticmethod
++    def squared_value(pred, target, *, mask=None):
++        registry = Error()
++        registry.squared('squared', pred, target, mask=mask)
++        return registry.total()
++
++    def merge(self, other, *, prefix='', weight=1., objective=None, trained=None, detach=False):
++        """Import named constituents, retaining their baselines and ownership."""
++        for name, source in other._terms.items():
++            if source['category'] in other._disabled:
++                continue
++            rec = dict(source)
++            for key in ('values', 'numerators', 'baselines', 'entries'):
++                if key in rec:
++                    rec[key] = [v.detach() if detach else v for v in rec[key]]
++            if 'numerators' in rec and self.row_mask is None and rec.get('row_mask') is not None:
++                for key in ('numerators', 'baselines', 'entries'):
++                    rec[key] = [v.sum() for v in rec[key]]
++                rec['row_mask'] = None
++            rec['weight'] *= float(weight)
++            if objective is not None:
++                rec['objective'] = objective
++            if trained is not None:
++                rec['trained'] = trained
++            key = prefix + name
++            previous = self._terms.get(key)
++            if previous is None:
++                self._terms[key] = rec
++            else:
++                if (previous['weight'], previous['kind'], previous['trained']) != (
++                        rec['weight'], rec['kind'], rec['trained']):
++                    raise ValueError(f'inconsistent merged error {key}')
++                for field in ('values', 'numerators', 'baselines', 'entries'):
++                    if field in rec:
++                        previous[field].extend(rec[field])
++                previous['count'] += rec['count']
++
++    def scale(self, multiplier):
++        """Apply an explicit detached contextual weight to the current terms."""
++        for rec in self._terms.values():
++            if rec.get('trained', True):
++                rec['multiplier'] = rec.get('multiplier', 1.) * multiplier.detach()
++
++    @staticmethod
++    def _sum(values):
++        total = None
++        for start in range(0, len(values), 8):
++            group = values[start:start+8]
++            part = group[0] if len(group) == 1 else torch.stack(group).sum(0)
++            total = part if total is None else total + part
++        return total
++
++    @staticmethod
++    def _statistics(rec):
++        numerator = Error._sum(rec['numerators'])
++        baseline = Error._sum(rec['baselines'])
++        entries = Error._sum(rec['entries'])
++        count = entries.sum()
++        mean_count = torch.where(count > 0, count, torch.ones_like(count))
++        return numerator, baseline.sum(), count, mean_count
++
+     @staticmethod
+     def _value(rec):
+         """Materialize a term's value: chunked sum of its contributions.
+@@ -17952,6 +18130,15 @@
+         0-dim contributions stack; mixed/multi-element ones fall back to a
+         chained add (rare).
+         """
++        if 'numerators' in rec:
++            numerator, baseline, count, mean_count = Error._statistics(rec)
++            # An exactly zero origin baseline is a penalty, not a small
++            # relative-error denominator. Empty masks remain exact zeros.
++            denominator = torch.where(baseline > 0, baseline, mean_count)
++            result = numerator / denominator
++            if rec.get('row_mask') is not None:
++                result = result * rec['row_mask'].sum().to(result)
++            return result
+         vals = rec["values"]
+         if len(vals) == 1:
+             return vals[0]
+@@ -17994,7 +18181,7 @@
+ 
+     # ---- aggregation / inspection --------------------------------------
+ 
+-    def total(self):
++    def total(self, *, kind=None, objective=None):
+         """Return the weighted sum of all enabled terms (or ``None``).
+ 
+         Chunked accumulation (2026-07-08): a plain add-chain over the 30+
+@@ -18011,9 +18198,17 @@
+             return None
+         scalars, others = [], []
+         for rec in self._terms.values():
+-            if rec["category"] in self._disabled:
++            if (rec["category"] in self._disabled or not rec.get('trained', True)
++                    or (objective is not None and rec.get('objective') != objective)):
+                 continue
+-            contrib = rec["weight"] * self._value(rec)
++            contrib = rec["weight"] * rec.get('multiplier', 1.) * self._value(rec)
++            if kind is not None:
++                if 'numerators' in rec:
++                    _, baseline, _, _ = self._statistics(rec)
++                    selected = baseline > 0 if kind == 'relative' else baseline == 0
++                    contrib = torch.where(selected, contrib, torch.zeros_like(contrib))
++                elif rec.get('kind', 'penalty') != kind:
++                    contrib = torch.zeros_like(contrib)
+             if isinstance(contrib, torch.Tensor) and contrib.numel() == 1:
+                 scalars.append(contrib.reshape(()))
+             else:
+@@ -18025,30 +18220,50 @@
+             total = part if total is None else total + part
+         for contrib in others:
+             total = contrib if total is None else total + contrib
++        if total is not None and self.row_mask is not None and total.ndim == 0:
++            # A one-row trial still has a row axis. The scalar summation
++            # above must not change its public selection-cost contract.
++            total = total.expand(self.row_mask.shape)
+         return total
+ 
+     def breakdown(self):
+         """Per-term snapshot keyed by name.
+ 
+-        Each entry is ``{weight, value, weighted, space, category, count}``
+-        where ``value`` and ``weighted`` are Python floats when the term
+-        is a scalar, or ``None`` for multi-element tensors.
++        ``value`` is the trained active-row mean for a row registry, with
++        individual selection values retained in ``row_values``. ``weighted``
++        includes both the configured priority and detached contextual weight.
+         """
+         out = {}
+         for name, rec in self._terms.items():
+             v_tensor = self._value(rec)
+             if isinstance(v_tensor, torch.Tensor) and v_tensor.numel() == 1:
+                 value_f = float(v_tensor.detach().item())
++            elif rec.get('row_mask') is not None:
++                active = rec['row_mask'].to(v_tensor)
++                value_f = float((v_tensor.detach() * active).sum() / active.sum().clamp_min(1))
+             else:
+                 value_f = None
++            context_weight = float(torch.as_tensor(rec.get('multiplier', 1.)).detach())
+             out[name] = {
+                 "weight": rec["weight"],
+                 "value": value_f,
+-                "weighted": rec["weight"] * value_f if value_f is not None else None,
++                "weighted": rec["weight"] * context_weight * value_f if value_f is not None else None,
+                 "space": rec["space"],
+                 "category": rec["category"],
+                 "count": rec["count"],
++                "kind": rec.get('kind', 'penalty'),
++                "objective": rec.get('objective'),
++                "trained": rec.get('trained', True),
++                "context_weight": context_weight,
+             }
++            if v_tensor.ndim:
++                out[name]['row_values'] = v_tensor.detach().cpu().tolist()
++            if 'numerators' in rec:
++                numerator, baseline, count, mean_count = self._statistics(rec)
++                out[name].update(raw=float((numerator.sum()/mean_count).detach()),
++                    baseline=float((baseline/mean_count).detach()),
++                    active_entries=float(count.detach()),
++                    kind='relative' if float(baseline.detach()) > 0 else 'penalty')
+         return out
+ 
+     def snapshot(self):
+@@ -18059,10 +18274,9 @@
+         to the history).
+         """
+         snap = {}
+-        for name, rec in self._terms.items():
+-            v = self._value(rec)
+-            if isinstance(v, torch.Tensor) and v.numel() == 1:
+-                snap[name] = rec["weight"] * float(v.detach().item())
++        for name, rec in self.breakdown().items():
++            if rec['weighted'] is not None:
++                snap[name] = rec['weighted']
+         if snap:
+             self._history.append(snap)
+             if len(self._history) > self._history_max:
+--- before/bin/Models.py
++++ after/bin/Models.py
+@@ -1412,9 +1412,9 @@
+         loss_sum = (
+             squared
+             * score_rows.reshape(B, 1).to(dtype=squared.dtype)
+-        ).sum()
++        ).sum(-1)
+         loss_weight = (
+-            score_rows.to(dtype=squared.dtype).sum()
++            score_rows.to(dtype=squared.dtype)
+             * float(int(squared.shape[1])))
+         return prediction, loss_sum, loss_weight
+ 
+@@ -2568,13 +2568,15 @@
+         # stop-gradient; no reconstruction derivative can traverse the W-fold
+         # forward recurrence. Compose uses the probability-weighted selected
+         # candidate's straight-through gradient, with no auxiliary policy loss.
++        self.reconstruction_scope = self._understanding_reconstruction_scope()
++        live_reconstruction = self.reconstruction_scope == 'understanding'
+         self.detached_reverse = bool(
+-            TheXMLConfig.training("detachedReverse", False))
++            TheXMLConfig.training("detachedReverse", False)) and not live_reconstruction
+         # Compiled reverse-loops plan (2026-09-12): one bounded compiled
+         # traversal of the completed sentence's recorded derivation with the
+         # tied inverses, scored as the reconstruction cost.  Mutually
+         # exclusive with the detached idea-only student.
+-        self.reconstruct_in_loop = bool(
++        self.reconstruct_in_loop = live_reconstruction or bool(
+             TheXMLConfig.training("reconstructInLoop", False))
+         self._recon_keep_ideas = self.reconstruct_in_loop
+         self._recon_completed = False
+@@ -2887,10 +2889,11 @@
+                     warnings.warn(f"{label} gradient diagnostic skipped: {exc}", RuntimeWarning)
+ 
+     def _backward_training_loss(self, total_loss, amp_scaler=None):
+-        """Ordinary summed-objective backward; one later optimizer step.
+-
+-        Boundaries belong to the computation, not a global gradient surgery.
+-        Operator diagnostics only read the graph before this call.
++        """Backpropagate the registered total before one optimizer step.
++
++        Supplied sentence trials then add their precomputed answer-only
++        correction on parameters shared with reconstruction. Diagnostics
++        only read the graph; batch-end answers retain the state cut.
+         """
+         loss = amp_scaler.scale(total_loss) if amp_scaler is not None else total_loss
+         pullback = (getattr(self, '_sentence_pullback', None)
+@@ -2898,8 +2901,15 @@
+         loss.backward()
+         if pullback is not None:
+             pullback()
+-
+-    def _configure_concept_readout_l1(self, optimizer):
++        if getattr(self, '_sentence_backward', False):
++            from GradientDiagnostics import _sum_gradients
++            parameters, correction = getattr(self, '_sentence_answer_correction', ((), ()))
++            scale = amp_scaler.get_scale() if amp_scaler is not None else 1.
++            for parameter, value in zip(parameters, correction):
++                if value is not None:
++                    parameter.grad = _sum_gradients(parameter.grad, value * scale)
++
++    def _configure_concept_readout_l1(self, optimizer, *, stage=True):
+         """Stage one weak-L1 update and return its detached reporting cost.
+ 
+         Match the first-stage owner used by _stage_sparse_concept_support;
+@@ -2917,11 +2927,17 @@
+         roles = getattr(isp, "_ar_percept_reference_roles", None)
+         if not torch.is_tensor(rows) or not torch.is_tensor(roles):
+             return None  # no live indexed concept readout in this presentation
++        sentence = getattr(self, '_open_sentence_slot', None)
++        ids = getattr(isp, '_packed_sentence_ids', None)
++        if sentence is not None and torch.is_tensor(ids):
++            rows = torch.where(ids == sentence, rows, -1)
+         batch = readout.l1_batch(rows, roles)
+         if batch is None:
+             return None
+         selected, mask, strength, cost = batch
+-        configure_l1_proximal(optimizer, readout.coefficients, selected, mask, strength)
++        self._concept_readout_l1_strength = readout.l1_lambda
++        if stage:
++            configure_l1_proximal(optimizer, readout.coefficients, selected, mask, strength)
+         return cost
+ 
+     def getOptimizer(self, lr=0.01):
+@@ -7692,7 +7708,8 @@
+             "irreconcilable after reduction; supervised output loss zeroed")
+         return None
+ 
+-    def _reverse_event_loss(self, rev_ev, fwd_ev, *, score_when=True):
++    def _reverse_event_loss(self, rev_ev, fwd_ev, *, score_when=True,
++                            registry=None, name='reconstruction', objective='reconstruction'):
+         """lossRev seam (nWhere=0 wiring fix, 2026-07-04): clip to the shared
+         [K, D] window, then weight with the INPUT event layout's where/when
+         band. ModelLoss's constructor band is canonical_shape("OutputSpace")
+@@ -7727,11 +7744,14 @@
+         if not score_when:
+             Dr -= int(nn_)
+             nn_ = 0
++        if registry is not None:
++            self.loss.register(registry, name, rev_ev[:, :Kr, :Dr], fwd_ev[:, :Kr, :Dr].detach(),
++                nWhere=int(nw), nWhen=int(nn_), objective=objective)
+         return self.loss.compute(rev_ev[:, :Kr, :Dr],
+                                  fwd_ev[:, :Kr, :Dr].detach(),
+                                  nWhere=int(nw), nWhen=int(nn_))
+ 
+-    def _masked_event_loss(self, pred, target, mask):
++    def _masked_event_loss(self, pred, target, mask, *, registry=None):
+         """lossIn seam (silent-band wiring fix, 2026-07-04): the masked-LM
+         compares PERCEPTUAL events (muxed ``[what|where|when]``,
+         canonical_shape("PartSpace") == (2, 2)) -- weight the trailing band
+@@ -7758,6 +7778,9 @@
+                 f"target {int(target.shape[-1])}) misaligns the trailing "
+                 f"where/when band; the clipped event takes what_scale")
+             nw, nn_ = 0, 0
++        if registry is not None:
++            self.loss.register(registry, 'reconstruction', pred[:, :K, :], target[:, :K, :],
++                mask=mask[:, :K], nWhere=int(nw), nWhen=int(nn_), objective='reconstruction')
+         return self.loss.compute_masked(pred[:, :K, :], target[:, :K, :],
+                                         mask[:, :K],
+                                         nWhere=int(nw), nWhen=int(nn_))
+@@ -8997,7 +9020,7 @@
+         return understanding
+ 
+     @_sentence_query_mask
+-    def reverseReconstruct(self, understanding, *, target=None, train=False):
++    def reverseReconstruct(self, understanding, *, target=None, train=False, registry=None):
+         """Reconstruct the presented input from ``understanding`` (Step 2).
+ 
+         Named ``reverseReconstruct`` because it is the dual of ``forward()``
+@@ -9023,7 +9046,8 @@
+             event = owned.event.clone()
+             target_event = target.materialize() if hasattr(target, "materialize") else target
+             score = (self._reverse_event_loss(event, target_event,
+-                score_when=not (self.serial and getattr(self.inputSpace, '_per_word_enabled', False)))
++                score_when=not (self.serial and getattr(self.inputSpace, '_per_word_enabled', False)),
++                registry=registry, name='reconstruction_reverse')
+                      if torch.is_tensor(target_event) else None)
+             return event, score
+         if self.reconstruct_in_loop:
+@@ -9078,7 +9102,8 @@
+                 # continuous native rows produced by that same attribution.
+                 score_event = getattr(rev_sub, '_reconstruction_percepts', rev_ev)
+                 cost = self._reverse_event_loss(score_event, fwd_ev,
+-                    score_when=not (self.serial and getattr(self.inputSpace, '_per_word_enabled', False)))
++                    score_when=not (self.serial and getattr(self.inputSpace, '_per_word_enabled', False)),
++                registry=registry, name='reconstruction_reverse')
+                 # Spec section 11: an EXACT, unmasked inverse identity has zero
+                 # error and therefore no learning signal.  Flag it rather than
+                 # let a perfect round trip pass as reconstruction learning.
+@@ -10453,10 +10478,10 @@
+         return TheError
+ 
+     def record_loss(self, name, value, *, weight=1.0, space=None,
+-                    category="other"):
+-        """Register one loss component on the model's registry."""
++                    category="other", kind="penalty", objective=None, trained=True):
++        """Register an explicit penalty or a reported metric; errors keep targets."""
+         self.errors.add(name, value, weight=weight, space=space,
+-                        category=category)
++                        category=category, kind=kind, objective=objective, trained=trained)
+ 
+     def _primary_loss(self, loss_out, loss_in=None, sbow=None):
+         """Compose the established task and reconstruction objective."""
+@@ -11246,7 +11271,7 @@
+         'outputPred', 'symbols', 'lossOut', 'lossIn', 'inputPred', 'forwardInput',
+     ])
+ 
+-    def trainEmbeddings(self, trainMod, index, split):
++    def trainEmbeddings(self, trainMod, index, split, *, errors=None):
+         """Run one SBOW training step on the sample at (index, split).
+ 
+         ``trainMod`` is the iterable of training-embedding modes that
+@@ -11269,14 +11294,14 @@
+                     sentence = sentences[index]
+                     words = [t for t, _ in parse(sentence, lex='words')]
+                     if te in ('JOINT'):
+-                        sbow = self.perceptualSpace.sbow_loss(words)
++                        sbow = self.perceptualSpace.sbow_loss(words, errors=errors)
+                     elif te in ('CBOW', 'SBOW', 'BOTH'):
+                         # CBOW uses padded context; SBOW and BOTH use the faster centroid method
+                         method = 'CBOW' if te == 'CBOW' else 'SBOW'
+                         self.perceptualSpace.train_embeddings(words, method=method)
+         return sbow
+ 
+-    def perceptual_sbow_loss(self):
++    def perceptual_sbow_loss(self, *, errors=None):
+         """SBOW loss over the percepts USED in the forward, WITH negative
+         sampling (the pode/antipode repulsion).
+ 
+@@ -11320,14 +11345,14 @@
+                     if null_pid is None or int(p) != null_pid]
+             if len(used) < 1:
+                 continue
+-            t = pretrain.sbow_loss_indices(used)
++            t = pretrain.sbow_loss_indices(used, errors=errors)
+             if t is not None:
+                 terms.append(t)
+         if not terms:
+             return None
+         return torch.stack(terms).mean()
+ 
+-    def conceptual_sbow_loss(self):
++    def conceptual_sbow_loss(self, *, errors=None):
+         """Rotation SBOW (CBOW-NS) over the per-concept similarity codebook.
+ 
+         Snaps each parked all-siblings concept-slab position to its nearest
+@@ -11374,13 +11399,13 @@
+         if slab.requires_grad:
+             # Sparse-active live codes (plan C1): the window IS the composed
+             # code slab; situating it differentiates the sparse binding.
+-            return conceptual_sbow_loss_codes(slab, pool=rows, scale=1.0)
++            return conceptual_sbow_loss_codes(slab, pool=rows, scale=1.0, errors=errors)
+         with torch.no_grad():
+             s = slab / slab.norm(dim=-1, keepdim=True).clamp_min(eps)
+             r = rows / rows.norm(dim=-1, keepdim=True).clamp_min(eps)
+             assign = torch.einsum('bnd,vd->bnv', s, r).argmax(dim=-1)   # [B, N]
+         window = rows[assign]                                           # [B, N, D]
+-        return conceptual_sbow_loss_codes(window, pool=rows, scale=1.0)
++        return conceptual_sbow_loss_codes(window, pool=rows, scale=1.0, errors=errors)
+ 
+     def _reconstruction_seed(self):
+         """The terminal C-space event seeding the reconstruction reverse.
+@@ -12208,12 +12233,28 @@
+         isp._ar_bank_bytes, isp._ar_bank_valid = tensor_bytes(surfaces, lookahead=1)
+         isp._ar_target_word_bytes, isp._ar_target_word_mask = tensor_bytes(targets)
+ 
++    def _understanding_reconstruction_scope(self):
++        """The retained reading paths always reconstruct their understanding.
++
++        Historical modes are held until the explicit reading-mode migration.
++        A grammar-free path has no concluded grammar field to invert.
++        """
++        ps = getattr(self, 'perceptualSpace', None)
++        ws = getattr(self, 'wholeSpace', None)
++        if not (getattr(ps, '_meronomy', False)
++                and getattr(ws, 'analysis_mode', None) == 'meronomy'):
++            return 'exempt: old reading mode'
++        language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
++        if not self.serial or getattr(language, 'operation_layer', None) is None:
++            return 'perception: no grammar'
++        return 'understanding'
++
+     def _validate_reconstruction_bank(self):
+         """Check sentence coverage at the eager boundary, after admission.
+ 
+         The bank is a snapshot of admitted WORD/OBJECT concepts, not an
+-        independently growing vocabulary. A missing snapshot or a sentence
+-        with no usable surface candidates cannot train a tied inverse.
++        independently growing vocabulary. A missing snapshot is an error;
++        a sentence with no admitted surfaces contributes no reconstruction.
+         Tensor invariants stay on device; only structural metadata is read
+         by Python. Accelerator assertion failures surface asynchronously.
+         """
+@@ -12253,11 +12294,10 @@
+         usable = (rows >= 0) & valid.any(-1)
+         counts = torch.zeros_like(active, dtype=torch.long).scatter_add(
+             1, owners.clamp(0, W - 1), usable.long())
+-        missing = active & (counts.gather(1, ids.clamp(0, W - 1)) == 0)
+-        torch._assert_async(
+-            ~missing.any(),
+-            "tied reconstruction has no surface candidates after concept admission; "
+-            "populate the concept inventory and stage its WORD surfaces before reconstruction")
++        present = torch.zeros_like(counts).scatter_add(
++            1, ids.clamp(0, W - 1), active.long()) > 0
++        isp._reconstruction_sentence_available = present & (counts > 0)
++        isp._reconstruction_missing_sentence_count = (present & (counts == 0)).sum()
+ 
+     def _word_symbol_rows(self):
+         """``[B, W]`` the symbol row of each staged word: its object
+@@ -12898,9 +12938,12 @@
+         if not keep_ideas:
+             recovered = S.new_zeros(B, W, D)
+         present_all = count > 0                                             # [B, slots]
++        if candidate_basis is None:
++            available = getattr(isp, '_reconstruction_sentence_available')[:, :slots]
++            present_all = present_all & available
+         denom = count.clamp_min(1.0)
+-        idea_all = idea_sum / denom
+-        byte_all = byte_sum / denom
++        idea_all = torch.where(present_all, idea_sum / denom, torch.zeros_like(idea_sum))
++        byte_all = torch.where(present_all, byte_sum / denom, torch.zeros_like(byte_sum))
+         n_present = present_all.to(S.dtype).sum(dim=1).clamp_min(1.0)
+         idea_cost = idea_all.sum(dim=1) / n_present
+         byte_cost = byte_all.sum(dim=1) / n_present
+@@ -13120,7 +13163,8 @@
+         target = torch.where(target_eow, torch.zeros_like(target), target)
+         pos = (F.pad(valid.to(torch.int32), (0, 1)).bool() | target_eow).to(idea.dtype)
+         logp = torch.log(pred.gather(2, target.unsqueeze(-1)).squeeze(-1).clamp_min(1e-6))
+-        return (-logp * pos).sum(-1) / pos.sum(-1).clamp_min(1.0)
++        cost = (-logp * pos).sum(-1) / pos.sum(-1).clamp_min(1.0)
++        return torch.where(present.any(-1), cost, torch.zeros_like(cost))
+     _BYTE_ASSIGNMENT_TAU = 0.1
+ 
+     # -- compiled reverse-loops plan, slice 3: the output generate walk ----
+@@ -14071,6 +14115,7 @@
+                 if self.symbolSpace is not None else None)
+         if disc is None or self._current_discourse_s is None:
+             return None
++        disc._arma_errors = Error()
+         isp = getattr(self, "inputSpace", None)
+         roots = getattr(self, "_packed_sentence_roots", None)
+         if (isp is not None
+@@ -14331,9 +14376,12 @@
+                 raise ValueError("grammar lesson text does not match its captured forward words")
+             lessons.append(lesson)
+         from GrammarLessons import compose_loss, generate_loss
+-        costs = {"compose": compose_loss(self.languageSpace, programs, lessons),
++        self._grammar_lesson_errors = {'compose': Error(), 'generate': Error()}
++        costs = {"compose": compose_loss(self.languageSpace, programs, lessons,
++                                       errors=self._grammar_lesson_errors['compose']),
+                  "generate": generate_loss(self.languageSpace, programs, lessons,
+-                               self.grammatical_thoughts, self._grammar_target_word)}
++                               self.grammatical_thoughts, self._grammar_target_word,
++                               errors=self._grammar_lesson_errors['generate'])}
+         return {name: cost for name, cost in costs.items() if cost is not None} or None
+ 
+     def runBatch(self, *args, schedule_context=None, **kwargs):
+@@ -15003,6 +15051,7 @@
+             # shape edge case degrades to zero contribution rather
+             # than crashing the step).
+             lossOut = torch.zeros((), device=TheDevice.get())
++            output_errors, input_errors, reverse_errors = Error(), Error(), Error()
+             output_weight = 0.0
+             output_policy_loss = None
+             selected_answer_credit = None
+@@ -15026,7 +15075,8 @@
+                     # Text answer: constructed surface vs embedded
+                     # target sentence, band-aware, masked to answerable rows.
+                     lossOut = self._reverse_event_loss(
+-                        _surface[_answer_mask], _surface_target[_answer_mask])
++                        _surface[_answer_mask], _surface_target[_answer_mask],
++                        registry=output_errors, name='answer', objective='output')
+                     output_weight = 1.0
+                     if train and float(getattr(self, "selected_thought_policy_weight", 0.0)) > 0:
+                         selected_answer_credit = self._selected_thought_answer_errors(
+@@ -15060,6 +15110,8 @@
+                             _pred = _pred[_answer_mask]
+                             _scored_target = _scored_target[_answer_mask]
+                         lossOut = self.loss.compute(_pred, _scored_target)
++                        self.loss.register(output_errors, 'answer', _pred, _scored_target,
++                            category='prediction', objective='output')
+                         output_weight = 1.0
+             except Exception as _out_exc:
+                 # Best-effort degrade to zero, but never SILENTLY (5b fail-loud).
+@@ -15074,8 +15126,9 @@
+             self.record_loss(
+                 "output", lossOut,
+                 weight=output_weight,
+-                space="OutputSpace", category="prediction",
++                space="OutputSpace", category="prediction", trained=False,
+             )
++            self.errors.merge(output_errors)
+ 
+             # IR masked-LM loss: compare the post-body perceptual event
+             # at masked positions against the pre-mask embedding the
+@@ -15125,6 +15178,7 @@
+                     raise RuntimeError(
+                         "detachedReverse is enabled, but the idea-only reverse "
+                         "chooser or its ReconstructionStack teacher is missing")
++                input_errors.merge(self.symbolSpace.reverse_chooser._last_errors)
+             elif getattr(self, "reconstruct_in_loop", False):
+                 # Tied contract: the traversal's byte cost is the only
+                 # reconstruction objective; the legacy per-word reverse
+@@ -15135,7 +15189,7 @@
+                 # sentence's tied objective has already trained both paths.
+                 with torch.set_grad_enabled(torch.is_grad_enabled() and not
+                         getattr(self, '_sentence_reconstruction', False)):
+-                    d3_loss, d3_metric = (self._d3_reconstruction_loss()
++                    d3_loss, d3_metric = (self._d3_reconstruction_loss(registry=input_errors)
+                                           if _per_word else (None, None))
+             if self.reconstruct_in_loop:
+                 # Completion belongs to understanding, before reasoning and
+@@ -15145,6 +15199,9 @@
+                 if owned is None or not torch.is_tensor(owned.byte_cost):
+                     raise RuntimeError("tied reconstruction completed without its byte objective")
+                 lossIn = owned.byte_cost.mean()
++                input_errors.error('reconstruction.bytes', owned.byte_cost, math.log(256),
++                    mask=self.inputSpace._reconstruction_sentence_available.any(-1),
++                    category='reconstruction')
+                 if not train:
+                     inputDataPred = owned.event.detach()
+                 self._d3_active = False
+@@ -15159,7 +15216,7 @@
+                     and pred_full is not None):
+                 # Band-aware seam: percept-layout where/when scales (silent-band wiring fix, 2026-07-04).
+                 lossIn = self._masked_event_loss(pred_full, pre_mask,
+-                                                 mask_pos)
++                                                 mask_pos, registry=input_errors)
+             else:
+                 lossIn = torch.zeros((), device=TheDevice.get())
+                 # 5b fail-loud: a dead reconstruction channel must announce itself (warn-once, names the gate).
+@@ -15178,8 +15235,11 @@
+             self.record_loss(
+                 "reconstruction", lossIn,
+                 weight=1.0,
+-                space="InputSpace", category="reconstruction",
++                space="InputSpace", category="reconstruction", trained=False,
+             )
++            self.errors.merge(input_errors, weight=self.loss.reconstruction_scale)
++            missing = getattr(self.inputSpace, '_reconstruction_missing_sentence_count', None)
++            self.record_loss('reconstruction_unavailable_sentences', missing, trained=False, category='count')
+ 
+             # Legacy event reconstruction starts from the owned conceptual
+             # understanding. Tied completion already supplied lossIn, so both
+@@ -15205,7 +15265,7 @@
+                             _forward_result)
+                     self._last_understanding = understanding
+                     rev_ev, lossRev_rec = self.reverseReconstruct(
+-                        understanding, target=forwardInput, train=train)
++                        understanding, target=forwardInput, train=train, registry=reverse_errors)
+                     if (not train and rev_ev is not None
+                             and torch.is_tensor(rev_ev)):
+                         inputDataPred = rev_ev.detach()
+@@ -15221,8 +15281,9 @@
+                     "reconstruction_reverse", lossRev,
+                     weight=float(getattr(self.loss, 'reconstruction_scale',
+                                          0.0) or 0.0),
+-                    space="InputSpace", category="reconstruction",
++                    space="InputSpace", category="reconstruction", trained=False,
+                 )
++                self.errors.merge(reverse_errors, weight=self.loss.reconstruction_scale)
+ 
+             # C3 (spec sec 7): the legacy forward-only C/S reconstruction
+             # branch (gated on the retired ``<reconstruct>`` enum) was a
+@@ -15250,19 +15311,21 @@
+             # JOINT mode: compute SBOW embedding loss
+             sbow = None
+             if train:
+-                sbow = self.trainEmbeddings(('JOINT'), sentenceIdx, split)
++                embedding_errors = Error()
++                sbow = self.trainEmbeddings(('JOINT'), sentenceIdx, split, errors=embedding_errors)
+                 # Perceptual SBOW: when lexer=byte, train percept vectors
+                 # via leave-one-out centroid prediction
+                 if getattr(self, 'lexer', None) in ('byte', 'bytes'):
+-                    psbow = self.perceptual_sbow_loss()
++                    psbow = self.perceptual_sbow_loss(errors=embedding_errors)
+                     if psbow is not None:
+                         sbow = psbow if sbow is None else sbow + psbow
+                 if sbow is not None:
+                     self.record_loss(
+                         "embedding_sbow", sbow,
+                         weight=self.loss.embedding_scale,
+-                        space="SymbolSpace", category="embedding",
++                        space="SymbolSpace", category="embedding", trained=False,
+                     )
++                    self.errors.merge(embedding_errors, prefix='embedding.', weight=self.loss.embedding_scale)
+ 
+             # Inter-sentence ARMA(p, q) loss term -- model-owned
+             # (``_discourse_arma_loss``): predicts ``s_hat_t`` from the
+@@ -15327,7 +15390,7 @@
+                 arma_loss = None
+                 intra_loss = None
+ 
+-            totalLoss = self._primary_loss(lossOut, lossIn, sbow)
++            # The registry owns the trained sum; raw gate metrics stay separate.
+             # Keep the actual weighted objectives distinct for diagnostics.
+             # A missing answer is not substituted with reconstruction credit.
+             gradient_objectives = None
+@@ -15343,11 +15406,9 @@
+                 grammar_lesson = torch.stack(lesson_reports).mean()
+                 # Already trained inside the sentence; this detached term
+                 # keeps the batch's reported total complete without replay.
+-                totalLoss = totalLoss + self.grammar_lesson_weight * grammar_lesson
+                 self.record_loss('grammar_lesson', grammar_lesson,
+-                    weight=self.grammar_lesson_weight, space='LanguageSpace', category='grammar')
++                    weight=self.grammar_lesson_weight, space='LanguageSpace', category='grammar', trained=False)
+             if train and trial_mode != "predict" and output_policy_loss is not None:
+-                totalLoss = totalLoss + self.output_policy_weight * output_policy_loss
+                 if gradient_objectives is not None:
+                     gradient_objectives["output"] = (gradient_objectives["output"]
+                         + self.output_policy_weight * output_policy_loss)
+@@ -15358,94 +15419,54 @@
+             _cscale = float(getattr(
+                 self.loss, "conceptual_similarity_scale", 0.0) or 0.0)
+             if train and not self.serial and _cscale > 0.0:
+-                csbow = self.conceptual_sbow_loss()
++                concept_errors = Error()
++                csbow = self.conceptual_sbow_loss(errors=concept_errors)
+                 if csbow is not None:
+-                    totalLoss = totalLoss + _cscale * csbow
+                     self.record_loss(
+                         "conceptual_sbow", csbow, weight=_cscale,
+-                        space="ConceptualSpace", category="embedding",
++                        space="ConceptualSpace", category="embedding", trained=False,
+                     )
++                    self.errors.merge(concept_errors, prefix='conceptual_sbow.', weight=_cscale)
+             # Rank-ordered soft-L0 that keeps concept definitions compact
+             # (snap contract sec 5). Default lambda 0.0 -- byte-identical off.
+             _dss = float(getattr(
+                 self.loss, "definition_sparsity_scale", 0.0) or 0.0)
+             if train and _dss > 0.0 and self.conceptualSpace is not None:
+-                defsp = self.conceptualSpace.definition_sparsity_loss(lam=_dss)
++                defsp = self.conceptualSpace.definition_sparsity_loss(lam=1.)
+                 if defsp is not None:
+-                    totalLoss = totalLoss + defsp
+                     self.record_loss(
+                         "definition_sparsity", defsp, weight=_dss,
+                         space="ConceptualSpace", category="reg")
+             if lossRev is not None:
+-                totalLoss = totalLoss + (
+-                    float(getattr(self.loss, 'reconstruction_scale', 0.0)
+-                          or 0.0) * lossRev)
+                 if gradient_objectives is not None:
+                     gradient_objectives["reconstruction"] = (
+                         gradient_objectives["reconstruction"] + _rr * lossRev)
+             if arma_loss is not None:
+-                totalLoss = totalLoss + self.arma_scale * arma_loss
+                 if gradient_objectives is not None:
+                     gradient_objectives["expectation"] += self.arma_scale * arma_loss
+-                self.record_loss(
+-                    "arma", arma_loss,
+-                    weight=self.arma_scale,
+-                    space="DiscourseSpace", category="discourse",
+-                )
++                self.errors.merge(self.symbolSpace.discourse._arma_errors,
++                                  prefix='expectation.', weight=self.arma_scale)
+             if intra_loss is not None:
+-                totalLoss = (totalLoss
+-                             + self.conceptualSpace.intra_loss_weight
+-                             * intra_loss)
+-                self.record_loss(
+-                    "intra", intra_loss,
+-                    weight=self.conceptualSpace.intra_loss_weight,
+-                    space="ConceptualSpace", category="intra",
+-                )
++                self.errors.merge(self.conceptualSpace._consumed_intra_errors,
++                                  prefix='expectation.', weight=self.conceptualSpace.intra_loss_weight)
+             if inter_loss is not None and self.inter_loss_weight > 0.0:
+-                totalLoss = (totalLoss
+-                             + self.inter_loss_weight * inter_loss)
+                 if gradient_objectives is not None:
+                     gradient_objectives["expectation"] += self.inter_loss_weight * inter_loss
+-                self.record_loss(
+-                    "inter", inter_loss,
+-                    weight=self.inter_loss_weight,
+-                    space="DiscourseSpace", category="inter",
+-                )
++                self.errors.merge(_disc._consumed_inter_errors, prefix='expectation.',
++                                  weight=self.inter_loss_weight)
+             if inter_contrastive is not None and self.inter_contrastive_weight > 0.0:
+-                totalLoss = (totalLoss
+-                             + self.inter_contrastive_weight * inter_contrastive)
+                 if gradient_objectives is not None:
+                     gradient_objectives["expectation"] += self.inter_contrastive_weight * inter_contrastive
+-                self.record_loss(
+-                    "inter_contrastive", inter_contrastive,
+-                    weight=self.inter_contrastive_weight,
+-                    space="DiscourseSpace", category="inter",
+-                )
+-            # Phase 3: every stage's WholeSpace.forward wrote its
+-            # auxiliary terms to ``vspace.errors``; ``copy_context`` shares
+-            # a single Error instance through the pipeline, so the terminal
+-            # OutputSpace subspace now carries every term.
++                self.errors.merge(_disc._consumed_contrastive_errors, prefix='expectation.',
++                                  weight=self.inter_contrastive_weight)
+             if hasattr(self, 'outputSpace'):
+                 pipeline_errors = self.outputSpace.subspace.errors
+-                aux_total = pipeline_errors.total()
+-                if aux_total is not None:
+-                    totalLoss = totalLoss + aux_total
+-                    for name, tensor, weight, space, category in pipeline_errors.terms():
+-                        if (gradient_objectives is not None
+-                                and category == "reconstruction"
+-                                and category not in pipeline_errors._disabled):
+-                            gradient_objectives["reconstruction"] = (
+-                                gradient_objectives["reconstruction"]
+-                                + weight * tensor)
+-                        self.record_loss(
+-                            name, tensor, weight=weight,
+-                            space=space, category=category)
++                self.errors.merge(pipeline_errors)
+                 pipeline_errors.clear()
+ 
+             if expectation_policy_loss is not None and self.expectation_policy_weight > 0:
+                 self.record_loss("expectation_policy", expectation_policy_loss,
+                     weight=self.expectation_policy_weight, space="SymbolSpace", category="policy")
+-                totalLoss = totalLoss + self.expectation_policy_weight * expectation_policy_loss
+                 if gradient_objectives is not None:
+                     gradient_objectives["expectation"] = (gradient_objectives["expectation"]
+                         + self.expectation_policy_weight * expectation_policy_loss)
+@@ -15456,8 +15477,6 @@
+                 selected_pol_loss = self._selected_thought_policy_loss(
+                     selected_answer_credit[0], mask=selected_answer_credit[1])
+                 if selected_pol_loss is not None:
+-                    totalLoss = (totalLoss + self.selected_thought_policy_weight
+-                                 * selected_pol_loss)
+                     self.record_loss(
+                         "selected_thought_policy", selected_pol_loss,
+                         weight=self.selected_thought_policy_weight,
+@@ -15473,19 +15492,16 @@
+                     and not getattr(self, "detached_reverse", False) \
+                     and not self.reconstruct_in_loop:
+                 try:
+-                    ld_loss = self._leaf_distill_loss()
++                    leaf_errors = Error()
++                    ld_loss = self._leaf_distill_loss(registry=leaf_errors)
+                 except Exception:
+                     ld_loss = None     # distillation must not abort training
+                 if ld_loss is not None:
+-                    totalLoss = totalLoss + self.leaf_distill_weight * ld_loss
+                     if gradient_objectives is not None:
+                         gradient_objectives["reconstruction"] = (
+                             gradient_objectives["reconstruction"]
+                             + self.leaf_distill_weight * ld_loss)
+-                    self.record_loss(
+-                        "leaf_distill", ld_loss,
+-                        weight=self.leaf_distill_weight,
+-                        space="ConceptualSpace", category="reconstruction")
++                    self.errors.merge(leaf_errors, weight=self.leaf_distill_weight)
+                     # The head is built lazily on first use — hand its
+                     # params to the LIVE optimizer once (getOptimizer ran
+                     # before the head existed).
+@@ -15506,8 +15522,9 @@
+                 symbol_acts = None
+                 if hasattr(self, 'symbol_states') and self.symbol_states:
+                     symbol_acts = self.symbol_states[-1]
+-                totalLoss = self.symbolSpace.truth_modulated_loss(
+-                    totalLoss,
++                truth_base = self.errors.total()
++                self.symbolSpace.truth_modulated_loss(
++                    lossOut*0 if truth_base is None else truth_base,
+                     symbolic_space=self.conceptualSpace,
+                     symbol_acts=symbol_acts,
+                     universality_score=getattr(self, '_universality_score', None),
+@@ -15525,9 +15542,8 @@
+                 # low-rank slice of its host operator. Default lambda
+                 # is 0.0 -- no penalty unless a config opts in.
+                 gate_l1 = self.symbolSpace.gate_l1_loss(
+-                    lam=getattr(self, 'gate_l1_lambda', 0.0))
++                    lam=1. if getattr(self, 'gate_l1_lambda', 0.0) > 0 else 0.)
+                 if gate_l1 is not None:
+-                    totalLoss = totalLoss + gate_l1
+                     self.record_loss(
+                         "gate_l1", gate_l1,
+                         weight=getattr(self, 'gate_l1_lambda', 0.0),
+@@ -15539,15 +15555,27 @@
+                 # signal-router rule load-balancing; no consumer yet.
+ 
+             if train:
+-                readout_l1 = self._configure_concept_readout_l1(optimizer)
++                batch_objective = self.errors.total()
++                readout_l1 = self._configure_concept_readout_l1(optimizer,
++                    stage=batch_objective is not None and batch_objective.requires_grad)
+                 if readout_l1 is not None:
+                     # Reporting only: the single optimizer step handles the
+                     # non-smooth L1 term in Adam's diagonal metric. Adding its
+                     # subgradient here would penalize every connection twice.
+-                    totalLoss = totalLoss + readout_l1
+                     self.record_loss(
+-                        "concept_readout_l1", readout_l1, weight=1.0,
+-                        space="ConceptualSpace", category="reg")
++                        "concept_readout_l1", readout_l1 / self._concept_readout_l1_strength,
++                        weight=self._concept_readout_l1_strength,
++                        space="ConceptualSpace", category="reg", trained=False)
++
++            if train and trial_mode == 'predict':
++                for term in self.errors._terms.values():
++                    if term['category'] in ('reconstruction', 'prediction', 'embedding', 'grammar'):
++                        term['trained'] = False
++            totalLoss = self.errors.total()
++            if totalLoss is None:
++                totalLoss = lossOut + lossIn * 0
++            gradient_objectives = {name: self.errors.total(objective=name)
++                for name in ('reconstruction', 'output', 'expectation')} if train else None
+ 
+             # Snapshot the breakdown before the backward pass so later
+             # calls to TheError.covariance() can see it in the history
+@@ -19515,6 +19543,7 @@
+         cs._intra_loss_accum = None
+         cs._intra_loss_weight_accum = None
+         cs._intra_loss_count = 0
++        cs._intra_errors = Error()
+         concept_slots = [None, None]
+         percept_slots = [None, None]
+         self._per_word_percept_contributions = percept_slots
+@@ -19553,6 +19582,7 @@
+         cs._intra_loss_accum = None
+         cs._intra_loss_weight_accum = None
+         cs._intra_loss_count = 0
++        cs._intra_errors = Error()
+         concept_slots = [None]
+         percept_slots = [None]
+         self._per_word_percept_contributions = percept_slots
+@@ -19647,6 +19677,8 @@
+         loss_terms = list(getattr(cs, "_intra_loss_accum", None) or [])
+         loss_weights = list(
+             getattr(cs, "_intra_loss_weight_accum", None) or [])
++        cost_terms = Error()
++        cost_terms.merge(cs._intra_errors)
+         last_cs = None
+         was_replaying = bool(getattr(
+             self, "_compiled_word_chunk_replaying", False))
+@@ -19737,6 +19769,7 @@
+                     list(getattr(cs, "_intra_loss_accum", None) or []))
+                 loss_weights.extend(list(
+                     getattr(cs, "_intra_loss_weight_accum", None) or []))
++                cost_terms.merge(cs._intra_errors)
+                 last_cs = cs.subspace
+         finally:
+             for name, value in full.items():
+@@ -19755,6 +19788,7 @@
+         cs._intra_loss_accum = loss_terms or None
+         cs._intra_loss_weight_accum = loss_weights or None
+         cs._intra_loss_count = len(loss_terms)
++        cs._intra_errors = cost_terms
+         stm = cs.stm
+         if stm is not None and torch.is_tensor(getattr(stm, "_depth", None)):
+             # One boundary sync, outside every compiled replay.  Snapshot and
+@@ -20755,7 +20789,11 @@
+         finally:
+             self._sentence_backward = False
+             self._sentence_pullback = None
++            self._sentence_answer_correction = ((), ())
+         self._assert_finite_train_state('after sentence backward')
++        # The same proximal regularizer belongs to each actual smooth update.
++        # Input-only batches may have no additional batch-end backward at all.
++        self._configure_concept_readout_l1(optimizer)
+         if self.ergodic:
+             self.paramUpdate()
+         if self._sentence_amp_scaler is not None:
+@@ -20836,27 +20874,24 @@
+                     layout=layout, roles=roles, clauses=clauses)
+ 
+     def _sentence_path_cost(self, state, sid, active):
+-        """The same reconstruction and prediction objective for either trial."""
++        """Both trials use the registry's named, relative objectives."""
+         self._publish_sentence_scratch(state)
+         current_stm, lang, _feedback = state
+         B, W, D = self._tensor_pushed_ideas.shape
+         slots = lang[13][:, sid].reshape(B, 3, D)
+-        depths = lang[14][:, sid]
+-        root = lang[9][:, sid]
++        depths, root = lang[14][:, sid], lang[9][:, sid]
++        errors = Error(row_mask=active)
+         if getattr(self, '_sentence_reconstruction', self.reconstruct_in_loop):
+             reconstruction = self._compiled_reconstruct()(
+                 root.clone(), self._tensor_pushed_ideas, lang[13], lang[14], slots.clone(), depths.clone(),
+                 torch.tensor(sid, device=root.device))
+-            cost = self.loss.reconstruction_scale * reconstruction[2]
++            available = self.inputSpace._reconstruction_sentence_available[:, sid] & active
++            errors.error('reconstruction.bytes', reconstruction[2], math.log(256), mask=available,
++                weight=self.loss.reconstruction_scale, category='reconstruction')
+         else:
+-            # Configurations without the tied traversal retain their existing
+-            # batch-end objectives. Their sentence cost has no reconstruction
+-            # contribution; the zero edge keeps the two training calls valid.
+-            cost = root.sum(-1) * 0
+-            reconstruction = (root.new_zeros(B, W, D), cost, cost,
+-                              torch.zeros(B, dtype=torch.bool, device=root.device),
+-                              lang[14].to(root) * 0)
+-        reconstruction_cost, expectation_cost, output_cost = cost, None, None
++            zero = root.sum(-1) * 0
++            reconstruction = (root.new_zeros(B, W, D), zero, zero,
++                              torch.zeros(B, dtype=torch.bool, device=root.device), lang[14].to(root) * 0)
+         observation = self._sentence_observation(state, sid, active)
+         if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
+             programs, sources = [], []
+@@ -20872,11 +20907,10 @@
+             objectives = self._grammar_lesson_objectives(programs,
+                 split=self._reading_lesson_split, source_rows=sources)
+             if objectives:
+-                lesson = torch.stack(tuple(objectives.values())).sum()
+-                cost = cost + self.grammar_lesson_weight * lesson
+-                if 'generate' in objectives:
+-                    output_cost = self.grammar_lesson_weight * objectives['generate']
+-                self._reading_lesson_reports.append(lesson.detach())
++                for name, value in objectives.items():
++                    errors.merge(self._grammar_lesson_errors[name], prefix='grammar.',
++                                 weight=self.grammar_lesson_weight)
++                self._reading_lesson_reports.append(torch.stack(tuple(objectives.values())).sum().detach())
+         disc = getattr(self.symbolSpace, 'discourse', None)
+         pending = None
+         if disc is not None:
+@@ -20885,25 +20919,30 @@
+                 documents=self._expectation_documents_for_slot(sid, B),
+                 layout=observation['layout'], role_masks=observation['roles'],
+                 sentence_kinds=[None if m is None else m.sentence_kind for m in observation['meanings']])
++            prediction_errors, contrast_errors = disc._sentence_prediction_errors
+             if self.inter_loss_weight > 0:
+-                expectation_cost = self.inter_loss_weight * inter
+-                cost = cost + expectation_cost
++                errors.merge(prediction_errors, prefix='expectation.', weight=self.inter_loss_weight)
+             if self.inter_contrastive_weight > 0:
+-                contrast_cost = self.inter_contrastive_weight * contrast
+-                expectation_cost = (contrast_cost if expectation_cost is None else
+-                                    expectation_cost + contrast_cost)
+-                cost = cost + contrast_cost
+-        answer_error = BasicModel._sentence_answer_error(self, state, sid, active, observation)
+-        if answer_error is not None:
+-            cost = cost + answer_error
+-            output_cost = answer_error if output_cost is None else output_cost + answer_error
+-        if getattr(self, '_sentence_operator_gradients', None) is not None:
+-            self._sentence_gradient_objectives = dict(
+-                reconstruction=reconstruction_cost, expectation=expectation_cost,
+-                output=output_cost)
++                errors.merge(contrast_errors, prefix='expectation.', weight=self.inter_contrastive_weight)
++        BasicModel._sentence_answer_error(self, state, sid, active, observation, registry=errors)
++        if getattr(self, '_sentence_training', False):
++            configure_l1 = getattr(self, '_configure_concept_readout_l1', None)
++            penalty = None if configure_l1 is None else configure_l1(None, stage=False)
++            if penalty is not None:
++                strength = self._concept_readout_l1_strength
++                errors.add('concept_readout_l1', penalty / strength, weight=strength,
++                           category='reg', trained=False)
++        self._sentence_cost_registry = errors
++        self._sentence_gradient_objectives = {name: errors.total(objective=name)
++            for name in ('reconstruction', 'expectation', 'output')}
++        cost = errors.total()
++        if cost is None:
++            cost = root.sum(-1) * 0
++        elif cost.ndim == 0:
++            cost = cost.expand(B)
+         return cost, reconstruction, observation, pending
+ 
+-    def _sentence_answer_error(self, state, sid, active, observation):
++    def _sentence_answer_error(self, state, sid, active, observation, *, registry=None):
+         """A supplied answer trains this trial's readout, grammar and codes.
+ 
+         The target is loss-side metadata: it never enters composition. Both
+@@ -20911,6 +20950,11 @@
+         caller retains each trial's own perception pullback for its backward.
+         """
+         self._sentence_answer_cost = None
++        destination = registry
++        # Keep the supplied answer distinct from generation lessons. Only this
++        # objective is projected against reconstruction; both still enter the
++        # trial's registered total.
++        registry = Error(row_mask=active)
+         target = getattr(self, '_sentence_supplied_answers', None)
+         if (not getattr(self, '_sentence_training', False)
+                 or not torch.is_tensor(target) or not target.numel()
+@@ -20959,7 +21003,19 @@
+                 surface = self._answer_surface_from_percepts(construction.percepts)
+                 error = torch.stack([self._reverse_event_loss(surface[b:b+1], target_surface[b:b+1])
+                                      for b in range(root.shape[0])])
+-                self._sentence_answer_cost = torch.where(mask, error, torch.zeros_like(error))
++                for b in range(root.shape[0]):
++                    if bool(mask[b]):
++                        local = Error()
++                        self._reverse_event_loss(surface[b:b+1], target_surface[b:b+1],
++                            registry=local, name='answer', objective='output')
++                        for name, rec in local._terms.items():
++                            numerator, baseline, count, mean_count = local._statistics(rec)
++                            registry.error(name, numerator/mean_count, baseline/mean_count,
++                                row=b, entry_weight=count, weight=rec['weight'], objective='output')
++                self._sentence_answer_raw_cost = torch.where(mask, error, torch.zeros_like(error))
++                self._sentence_answer_cost = registry.total(objective='output')
++                if destination is not None:
++                    destination.merge(registry)
+                 return self._sentence_answer_cost
+             template = next(value for value in values if value is not None)
+             target = self.outputSpace.prepOutput([template if value is None else value for value in values])
+@@ -20972,7 +21028,11 @@
+         if pred is None:
+             raise RuntimeError('sentence answer and supplied target do not align')
+         error = (pred - target.to(pred)).square().reshape(root.shape[0], -1).mean(-1)
+-        self._sentence_answer_cost = torch.where(active, error, torch.zeros_like(error))
++        self._sentence_answer_raw_cost = torch.where(active, error, torch.zeros_like(error))
++        self.loss.register(registry, 'answer', pred, target.to(pred), mask=active, category='prediction', objective='output')
++        self._sentence_answer_cost = registry.total(objective='output')
++        if destination is not None:
++            destination.merge(registry)
+         return self._sentence_answer_cost
+ 
+     @staticmethod
+@@ -21287,29 +21347,51 @@
+                 cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                 if self._sentence_training and self.legacy_prediction_enabled:
+                     numerator = path[1][1] - before[1][1]
+-                    denominator = path[1][2] - before[1][2]
+-                    intra = self.conceptualSpace.intra_loss_weight * numerator / denominator.clamp_min(1)
+-                    cost = cost + intra
++                    counts = path[1][2] - before[1][2]
++                    denominator = counts[:, 0].clamp_min(1)
++                    self._sentence_cost_registry.error('expectation.intra', numerator / denominator,
++                        counts[:, 1] / denominator, mask=counts[:, 0] > 0,
++                        entry_weight=counts[:, 0], weight=self.conceptualSpace.intra_loss_weight, category='expectation')
++                    cost = self._sentence_cost_registry.total()
++                    intra = self._sentence_cost_registry.total(objective='expectation')
+                     if self._sentence_gradient_objectives is not None:
+-                        old = self._sentence_gradient_objectives['expectation']
+-                        self._sentence_gradient_objectives['expectation'] = intra if old is None else old + intra
++                        self._sentence_gradient_objectives['expectation'] = intra
+                 if self._sentence_gradient_objectives is not None:
+                     self._capture_sentence_operator_gradients(self._sentence_gradient_objectives, present)
+                     self._sentence_gradient_objectives = None
++                if self._sentence_training and torch.is_grad_enabled():
++                    from SentenceCompose import reconstruction_answer_correction
++                    parameters = tuple(dict.fromkeys(p for group in self._sentence_optimizer.param_groups
++                                                     for p in group['params'] if p.requires_grad))
++                    registry = self._sentence_cost_registry
++                    def objective(name):
++                        value = registry.total(objective=name)
++                        if value is None or value.ndim == 0:
++                            return value
++                        return (value * present.to(value)).sum() / present.sum().clamp_min(1)
++                    answer_cost = self._sentence_answer_cost
++                    if answer_cost is not None and answer_cost.ndim:
++                        answer_cost = (answer_cost * present.to(answer_cost)).sum() / present.sum().clamp_min(1)
++                    correction = reconstruction_answer_correction(objective('reconstruction'),
++                        answer_cost, parameters,
++                        gradient_fn=getattr(self._sentence_pullback, 'gradients', None))
++                    pending_steps[-1] = (*pending_steps[-1], parameters, correction)
+                 observations.append(observation)
+                 predictions.append(pending)
+                 return cost, (path, reconstruction)
+             def train_trial(loss):
+                 # Both graphs now exist. Restore this trial's perception
+                 # pullback and scratch bindings before its own backward.
+-                trial, pullback, path = pending_steps.pop(0)
++                trial, pullback, path, parameters, correction = pending_steps.pop(0)
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
++                self._sentence_answer_correction = (parameters, correction)
+                 self._restore_sentence_state(path)
+                 self._sentence_train_step(loss)
+             try:
+                 (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+                     train_trial, active=present,
+-                    training=self._sentence_training and torch.is_grad_enabled())
++                    training=self._sentence_training and torch.is_grad_enabled(),
++                    reconstruction=lambda value: value[1][2])
+             finally:
+                 pending_steps.clear()
+                 self._sentence_pullback = None
+@@ -21367,7 +21449,8 @@
+             values = self._sentence_reconstructions
+             self._recon_ideas = torch.stack([v[0] for v in values]).sum(0)
+             self._recon_sentence_costs = torch.stack([v[4] for v in values]).sum(0)
+-            count = slots.sum(-1).clamp_min(1)
++            available = self.inputSpace._reconstruction_sentence_available[:, :slots.shape[1]]
++            count = (slots & available).sum(-1).clamp_min(1)
+             self._recon_idea_cost = torch.stack([v[1] for v in values]).sum(0) / count
+             self._recon_cost = self._recon_sentence_costs.sum(-1) / count
+             self._recon_truncated = torch.stack([v[3] for v in values]).any(0)
+@@ -21594,7 +21677,7 @@
+         cs_lang_state = (
+             zero_symbol_activations,
+             zero_scalar,
+-            zero_scalar.clone(),
++            words.new_zeros(B, 2),  # active entries and detached target energy
+             zero_prediction,
+             *choices,
+             *forward_slots,
+@@ -21818,6 +21901,9 @@
+                 prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
+                     current_stm, word_idea, commit, predictor,
+                     routing=routing, routing_valid=routing_valid)
++                has_target = commit.reshape(B) & (current_stm[1] > 0)
++                loss_baseline = torch.where(has_target[:, None], word_idea.detach().square(),
++                                            torch.zeros_like(word_idea)).sum(-1)
+             else:
+                 # Teacher reconstruction replaces the independent in-STM
+                 # predictor in the canonical configuration. A zero loss
+@@ -21975,7 +22061,7 @@
+                 current_cs_lang[1] + loss_sum
+                 if capture_intra else current_cs_lang[1])
+             next_loss_weight = (
+-                current_cs_lang[2] + loss_weight
++                current_cs_lang[2] + torch.stack((loss_weight, loss_baseline), -1)
+                 if capture_intra else current_cs_lang[2])
+             # Every non-final packed sentence receives the same bounded NULL
+             # closing as the ordinary post-loop sentence boundary. The root is
+@@ -22221,7 +22307,11 @@
+         cs._stm_predicted_idea = final[12]
+         if capture_intra and not sentence_transactions:
+             cs._intra_loss_accum = [final[10]]
+-            cs._intra_loss_weight_accum = [final[11]]
++            cs._intra_loss_weight_accum = [final[11][:, 0]]
++            counts = final[11][:, 0]
++            denominator = counts.clamp_min(1)
++            cs._intra_errors.error('intra', final[10] / denominator,
++                final[11][:, 1] / denominator, mask=counts > 0, entry_weight=counts, category='expectation')
+             cs._intra_loss_count = 1
+         else:
+             cs._intra_loss_accum = None
+@@ -23211,9 +23301,7 @@
+         if (ce_loss is not None and self.training
+                 and getattr(self, "model_type", None) == "embedding"
+                 and cs_sub is not None and hasattr(cs_sub, "errors")):
+-            cs_sub.errors.add(
+-                "reading_attention", ce_loss, weight=1.0,
+-                space="ConceptualSpace", category="symbol")
++            cs_sub.errors.merge(ra._last_errors)
+ 
+     @torch.compiler.disable
+     def _addressable_spaces(self, prevCS_forSS, ps_stage0):
+@@ -23888,7 +23976,7 @@
+                 best = ((name, host), (x1, x2), fit)
+         return best
+ 
+-    def _leaf_distill_loss(self):
++    def _leaf_distill_loss(self, *, registry=None):
+         """Method-1 -> Method-2 distillation (Alec 2026-07-14, snap design
+         doc step 3): train the leaf-decoder head to regenerate the EXACT
+         per-word leaves (the ReconstructionStack's Method-1 teacher)
+@@ -23925,6 +24013,9 @@
+         width = D - n_when
+         if width < 1:
+             raise ValueError('word reconstruction requires content before its time band')
++        if registry is not None:
++            registry.squared('leaf_distill', pred[..., :width], target[..., :width],
++                             mask=mask.bool(), category='reconstruction')
+         num = (mask * (pred[..., :width] - target[..., :width]) ** 2).sum()
+         return num / (mask.sum() * float(width))
+ 
+@@ -24153,7 +24244,7 @@
+         keep = (dest_pos < n_real).unsqueeze(-1).to(out.dtype)
+         return out * keep
+ 
+-    def _d3_reconstruction_loss(self):
++    def _d3_reconstruction_loss(self, *, registry=None):
+         """Rework B (3): the D3 reconstruction loss -- the trainable
+         per-word IR objective that REPLACES the interim P-space_role
+         ``compute_masked`` masked-LM on the per-word grammar path.
+@@ -24200,7 +24291,7 @@
+         # the bounded reduce -- not the fixed input).
+         Kr = min(recon.shape[1], target.shape[1])
+         Dr = min(recon.shape[-1], target.shape[-1])
+-        loss = self._reverse_event_loss(recon, target, score_when=False)
++        loss = self._reverse_event_loss(recon, target, score_when=False, registry=registry)
+ 
+         # REPORTED-ONLY metric (NON-differentiable; never backpropped --
+         # the lexer-discrete word-level distance is not the gradient
+--- before/bin/SentenceCompose.py
++++ after/bin/SentenceCompose.py
+@@ -126,13 +126,47 @@
+     raise TypeError(f'unsupported sentence scratch state: {type(exploit).__name__}')
+ 
+ 
+-def sentence_pair(cache, compose, score, step, *, active, training=True):
++def reconstruction_answer_correction(reconstruction, answer, parameters, *, gradient_fn=None):
++    """Remove only the answer component opposing the shared reconstruction.
++
++    The shared parameter space is one concatenated vector. Parameters unused
++    by reconstruction (including the reading map) receive no correction.
++    Sparse gradients remain sparse; the optional reader includes the trial's
++    exact perception pullback. Both references are read before any step.
++    """
++    import math
++    from GradientDiagnostics import _norm, _dot_unit
++    parameters = tuple(parameters)
++    none = (None,) * len(parameters)
++    if not (torch.is_tensor(reconstruction) and reconstruction.requires_grad
++            and torch.is_tensor(answer) and answer.requires_grad):
++        return none
++    read = gradient_fn or (lambda cost, params: torch.autograd.grad(
++        cost, params, retain_graph=True, allow_unused=True))
++    rg, ag = read(reconstruction, parameters), read(answer, parameters)
++    shared = [(r, a) for r, a in zip(rg, ag) if r is not None and a is not None]
++    norms = [(_norm(r), _norm(a)) for r, a in shared]
++    rnorm = math.hypot(*(nr for nr, _ in norms))
++    anorm = math.hypot(*(na for _, na in norms))
++    if not rnorm or not anorm:
++        return none
++    cosine = sum(_dot_unit(r, a, nr, na)*(nr/rnorm)*(na/anorm)
++                 for (r, a), (nr, na) in zip(shared, norms))
++    if cosine >= 0:
++        return none
++    coefficient = -cosine * (anorm/rnorm)
++    return tuple(r.detach()*coefficient if r is not None and a is not None else None
++                 for r, a in zip(rg, ag))
++
++
++def sentence_pair(cache, compose, score, step, *, active, training=True, reconstruction=None):
+     """Score both paths, train each, then select independently in each row.
+ 
+     ``cache`` is the sentence's one perception. ``compose`` gets the exploit
+     path on its second call so it can replay its prefix and exclude one choice.
+     ``score`` returns a cost per row and the candidate's scratch commit value.
+-    Only sentence objectives belong here; teacher answers run at batch end.
++    Supplied answers belong to both sentence trials with their live graph;
++    batch-end answers retain their separate concluded-state cut.
+     The caller publishes the returned state before perceiving the next sentence.
+     """
+     exploit = compose(cache, None)
+@@ -140,6 +174,7 @@
+     if cost_a.shape != active.shape:
+         raise ValueError('sentence comparison requires one cost per row')
+     saved_a = cost_a.detach().clone()
++    rec_a = reconstruction(state_a).detach().clone() if reconstruction is not None else None
+     if not training:
+         return state_a, saved_a[:, None], torch.zeros_like(active)
+     explore = compose(cache, exploit)
+@@ -147,7 +182,10 @@
+     if cost_b.shape != active.shape:
+         raise ValueError('sentence comparison requires one cost per row')
+     saved_b = cost_b.detach().clone()
++    rec_b = reconstruction(state_b).detach().clone() if reconstruction is not None else None
+     step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+     step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+     wins = active & (saved_b < saved_a)
++    if rec_a is not None:
++        wins = wins & (rec_b <= rec_a)
+     return select_rows(state_a, state_b, wins), torch.stack((saved_a, saved_b), -1), wins
+--- before/bin/Spaces.py
++++ after/bin/Spaces.py
+@@ -487,6 +487,7 @@
+         sel_end = (alpha * end).sum(dim=-1) / Nf
+         next_where = torch.stack([sel_start, sel_end], dim=-1)  # [B, 2]
+         ce_loss = None
++        self._last_errors = Error()
+         if training and 0 <= int(read_idx) < K:
+             tgt_real = real[:, int(read_idx)]                # [B]
+             if bool(tgt_real.any()):
+@@ -494,6 +495,10 @@
+                 nll = -logp[:, int(read_idx)]                # [B]
+                 w = tgt_real.to(nll.dtype)
+                 ce_loss = (nll * w).sum() / w.sum().clamp_min(1.0)
++                outcomes = ((~consumed) & real).sum(-1).to(nll)
++                baseline = torch.where(outcomes > 0, outcomes, torch.ones_like(outcomes)).log()
++                self._last_errors.error('reading_attention', nll, baseline, mask=tgt_real,
++                                        category='expectation')
+         return next_where, ce_loss, alpha
+ 
+ 
+@@ -5877,13 +5882,13 @@
+             return self.pretrain.sbow_step(words)
+         return self.pretrain.train_step(words)
+ 
+-    def sbow_loss(self, words):
++    def sbow_loss(self, words, *, errors=None):
+         """Return SBOW loss tensor for joint optimization (no backward/step).
+ 
+         The caller adds this to the model loss before a single backward pass.
+         Returns a scalar loss tensor, or None if insufficient words.
+         """
+-        return self.pretrain.sbow_loss(words)
++        return self.pretrain.sbow_loss(words, errors=errors)
+ 
+     def save_embeddings(self, path, truth_data=None, bpe_section=None):
+         """Save current embedding vectors and vocabulary to a ``.pt``/``.kv``
+@@ -14400,11 +14405,11 @@
+             return emb.train_step(words, method=method)
+         return None
+ 
+-    def sbow_loss(self, words):
++    def sbow_loss(self, words, *, errors=None):
+         """Return SBOW loss tensor for joint optimization (no backward/step)."""
+         emb = self.subspace.vocabulary
+         if isinstance(emb, Embedding) and words:
+-            return emb.sbow_loss(words)
++            return emb.sbow_loss(words, errors=errors)
+         return None
+ 
+     def _snapshot_embeddings(self):
+@@ -15069,6 +15074,7 @@
+         self._stm_predicted_idea = None
+         self._stm_predicted_slab = None
+         self._intra_loss_accum = None
++        self._intra_errors = Error()
+         self._intra_loss_weight_accum = None
+         self._intra_loss_count = 0
+         # Optional, evaluation-only capture.  ``None`` is the zero-overhead
+@@ -15807,6 +15813,8 @@
+         if float(self.intra_loss_weight) <= 0.0:
+             return
+         squared = (prediction - target).square()
++        self._intra_errors.squared('intra', prediction, target, mask=row_gate,
++                                   category='expectation')
+         if row_gate is None:
+             step_loss = squared.sum()
+             step_weight = squared.new_tensor(float(squared.numel()))
+@@ -15864,6 +15872,8 @@
+         ``BasicModel.runBatch`` consumes it once, post-body / pre-
+         backward, mirroring the ARMA term.
+         """
++        self._consumed_intra_errors = self._intra_errors
++        self._intra_errors = Error()
+         if self._intra_loss_accum is None:
+             self._intra_loss_weight_accum = None
+             self._intra_loss_count = 0
+@@ -16393,6 +16403,7 @@
+         self._stm_predicted_idea = None
+         self._stm_predicted_slab = None
+         self._intra_loss_accum = None
++        self._intra_errors = Error()
+         self._intra_loss_weight_accum = None
+         self._intra_loss_count = 0
+         if not hard:
+--- before/bin/embed.py
++++ after/bin/embed.py
+@@ -1524,7 +1524,7 @@
+ 
+     # -- single-sentence update ------------------------------------------------
+ 
+-    def _neg_sampling_loss(self, queries, target_idx):
++    def _neg_sampling_loss(self, queries, target_idx, *, errors=None):
+         """Negative sampling loss: -log sigma(q*w^+) - Sigma log sigma(-q*w_k^-).
+ 
+         Args:
+@@ -1546,6 +1546,9 @@
+         neg_scores = _wrapped_mse_score(
+             queries.unsqueeze(1), neg_vecs)                          # [N, K]
+ 
++        if errors is not None:
++            errors.binary('positive', pos_scores, torch.ones_like(pos_scores), category='embedding')
++            errors.binary('negative', neg_scores, torch.zeros_like(neg_scores), category='embedding')
+         return -F.logsigmoid(pos_scores).mean() - F.logsigmoid(-neg_scores).mean()
+ 
+     def _post_step(self):
+@@ -1632,7 +1635,7 @@
+ 
+         return loss.item()
+ 
+-    def sbow_loss(self, words):
++    def sbow_loss(self, words, *, errors=None):
+         """Return SBOW loss as a differentiable tensor (no backward, no step).
+ 
+         For joint optimization: the caller accumulates this loss with the
+@@ -1655,9 +1658,9 @@
+         total = vecs.sum(dim=0)                           # [dim]
+         centroids = (total.unsqueeze(0) - vecs) / (N - 1) # [N, dim]
+ 
+-        return self._neg_sampling_loss(centroids, idx)
+-
+-    def sbow_loss_indices(self, idx_list):
++        return self._neg_sampling_loss(centroids, idx, errors=errors)
++
++    def sbow_loss_indices(self, idx_list, *, errors=None):
+         """SBOW loss (differentiable) over explicit codebook row indices.
+ 
+         Same objective as :meth:`sbow_loss` -- leave-one-out centroid with
+@@ -1684,14 +1687,14 @@
+             # collapse work SBOW exists to do (a centroid of one still has an
+             # antipode).
+             centroids = vecs
+-        return self._neg_sampling_loss(centroids, idx)
++        return self._neg_sampling_loss(centroids, idx, errors=errors)
+ 
+     # -- export ----------------------------------------------------------------
+ 
+ 
+ 
+ def conceptual_sbow_loss_codes(window, pool=None, *, sigma=None, neg_k=None,
+-                               scale=1.0, gaussian=False, beta=10.0, eps=1e-8):
++                               scale=1.0, gaussian=False, beta=10.0, eps=1e-8, errors=None):
+     """Plain-unit-ball SBOW over continuous concept codes (differentiable, joint).
+ 
+     ``window`` is a ``[N, D]`` or ``[B, N, D]`` tensor of per-position concept
+@@ -1762,6 +1765,9 @@
+     # every code is trained each round (present -> pode, absent -> pushed).
+     out_sim = (_unit(window).unsqueeze(2) * _unit(out)).sum(-1)        # [B,N,K] code . negative
+ 
++    if errors is not None:
++        errors.binary('positive', beta*in_sim, torch.ones_like(in_sim), weight=scale, category='embedding')
++        errors.binary('negative', beta*out_sim, torch.zeros_like(out_sim), weight=scale, category='embedding')
+     return scale * (-F.logsigmoid(beta * in_sim).mean()
+                     - F.logsigmoid(-beta * out_sim).mean())            # push code AWAY from negatives
+ 
+--- before/data/model.xml
++++ after/data/model.xml
+@@ -231,8 +231,8 @@
+       <!-- Supplied grammar annotations train the existing grammar MLPs.
+            Unlabelled corpora have no grammar-lesson objective. -->
+       <grammarLessonWeight>1.0</grammarLessonWeight>
+-      <!-- Weight of reconstruction loss vs prediction loss in [0,1]:
+-           total = (1-r)*output + r*recon. -->
++      <!-- Independent priority of each relative reconstruction term.
++           Answer terms retain their own event-band priorities. -->
+       <reconstructionScale>0.5</reconstructionScale>
+       <!-- Per-channel triple loss scales (what / where / when). -->
+       <whatScale>0.7</whatScale>
+--- before/data/model.xsd
++++ after/data/model.xsd
+@@ -855,9 +855,8 @@
+            batch assembly. -->
+       <xs:element name="numWorkers" type="xs:nonNegativeInteger" minOccurs="0"/>
+       <xs:element name="learningRate" type="nonNegativeFloat" minOccurs="0"/>
+-      <!-- reconstructionScale: blend weight between OutputSpace
+-           prediction loss and reconstruction loss. Higher value =
+-           more reconstruction. 0 = output-only training. -->
++      <!-- Independent priority of normalized reconstruction terms;
++           it does not subtract from the answer's priority. -->
+       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
+       <!-- Every N batches, log weighted reconstruction/output/expectation
+            norms and cosine per shared operator/codebook. Read-only; 0 disables. -->
+--- before/test/slow_weekly.py
++++ after/test/slow_weekly.py
+@@ -47,6 +47,34 @@
+             shutil.copytree(path, target)
+         else:
+             shutil.copy2(path, target)
++    # Tests spawning PROJECT/.venv/bin/python must use this same environment.
++    # Runtime dependencies are shared; measured source/fixtures remain copies.
++    runtime = root / '.venv'
++    if runtime.is_dir():
++        (destination / '.venv').symlink_to(runtime.resolve(), target_is_directory=True)
++
++
++def run_tier(root, nodes, directory, ceiling):
++    """Attempt every selected case once, continuing after a bounded stop.
++
++    A killed worker remains a failed attempt. Never retry it; only dispatch
++    the selectors that the previous bounded run had not started.
++    """
++    remaining = list(nodes)
++    results, attempted = [], set()
++    while remaining:
++        folder = directory if not results else directory.with_name(directory.name + f'-continued-{len(results):02}')
++        result = bounded.run_suite(root=root, selectors=remaining, run_dir=folder,
++            memory_bytes=AGGREGATE_GIB*bounded.GIB,
++            worker_memory_bytes=ceiling*bounded.GIB, workers=1,
++            timeout=1800, suite_timeout=86400, batch_size=1, max_files=1)
++        results.append((folder, result))
++        started = {node for worker in result['workers'] for node in worker['selected']}
++        if not started:
++            break  # collection/infrastructure failed; no spin or false completion
++        attempted.update(started)
++        remaining = [node for node in remaining if node not in attempted]
++    return results, attempted
+ 
+ 
+ def run_inline(root, directory, environment):
+@@ -78,7 +106,7 @@
+     directory.mkdir(parents=True)
+     record = dict(date=date.isoformat(), commit=subprocess.check_output(
+         ['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
+-        complete=False, selected=0, completed=0, counts={}, failures=[], runs=[],
++        complete=False, selected=0, completed=0, attempted=0, counts={}, failures=[], runs=[],
+         duration_seconds=0, source_matched=False,
+         ceilings_gib=dict(ordinary_worker=ORDINARY_WORKER_GIB,
+                           native_worker=NATIVE_WORKER_GIB, aggregate=AGGREGATE_GIB),
+@@ -129,6 +157,7 @@
+             for result in inline:
+                 record['selected'] += result['expected']
+                 record['completed'] += result['completed']
++                record['attempted'] += result['expected']
+                 counts.update(result['counts'])
+                 if result['process']['exit_code'] or result['completed'] != result['expected']:
+                     exit_code = result['process']['exit_code'] or 125
+@@ -140,27 +169,30 @@
+                     continue
+                 assert bounded.source_snapshot(root) == frozen, 'source changed between slow tiers'
+                 print(f'Slow {name}: {len(nodes)} cases, {ceiling} GiB worker / 24 GiB aggregate', flush=True)
+-                result = bounded.run_suite(root=root, selectors=nodes, run_dir=directory/name,
+-                    memory_bytes=AGGREGATE_GIB*bounded.GIB,
+-                    worker_memory_bytes=ceiling*bounded.GIB, workers=1,
+-                    timeout=1800, suite_timeout=86400, batch_size=1, max_files=1)
+-                record['runs'].append(dict(tier=name, result=str(directory/name/'result.json'),
+-                    reason=result['reason'], exit_code=result['exit_code'],
+-                    peak_memory_bytes=result.get('peak_aggregate_memory_bytes',0)))
+-                record['completed'] += len(result['completed'])
+-                for worker in result['workers']:
+-                    for report in worker['reports']:
+-                        counts[report['outcome']] += 1
+-                        if report['outcome'] in ('failed','xpassed'):
+-                            record['failures'].append(report)
+-                if result['exit_code']:
+-                    exit_code = result['exit_code']
+-                    if result['reason'] != 'test_failure':
+-                        record['failures'].append(dict(tier=name, reason=result['reason']))
++                segments, attempted = run_tier(root, nodes, directory/name, ceiling)
++                record['attempted'] += len(attempted)
++                for folder, result in segments:
++                    record['runs'].append(dict(tier=name, result=str(folder/'result.json'),
++                        reason=result['reason'], exit_code=result['exit_code'],
++                        peak_memory_bytes=result.get('peak_aggregate_memory_bytes',0)))
++                    record['completed'] += len(result['completed'])
++                    for worker in result['workers']:
++                        for report in worker['reports']:
++                            counts[report['outcome']] += 1
++                            if report['outcome'] in ('failed','xpassed'):
++                                record['failures'].append(report)
++                        for node in set(worker['selected']) - set(worker['completed']):
++                            counts['process_failed'] += 1
++                            record['failures'].append(dict(nodeid=node, phase='process',
++                                outcome='process_failed', reason=worker['reason']))
++                    if result['exit_code']:
++                        exit_code = result['exit_code']
++                        if result['reason'] != 'test_failure':
++                            record['failures'].append(dict(tier=name, reason=result['reason']))
+                 record['counts'] = dict(counts)
+                 record['duration_seconds'] = time.monotonic() - started
+                 bounded.write_json(directory/'record.json', record)
+-            record['complete'] = record['completed'] == record['selected']
++            record['complete'] = record['attempted'] == record['selected']
+             return exit_code, directory
+     finally:
+         record['duration_seconds'] = time.monotonic() - started
+--- before/test/test_bounded_test_runner.py
++++ after/test/test_bounded_test_runner.py
+@@ -171,6 +171,49 @@
+     assert runner.documentation_snapshot(tmp_path) != recorded
+     (tmp_path / "bin" / "module.py").write_text("value = 2\n")
+     assert runner.source_snapshot(tmp_path) != code
++
++
++def test_weekly_continues_only_unattempted_cases_after_a_guard_stop(tmp_path, monkeypatch):
++    import slow_weekly
++    attempts = []
++
++    def run_suite(**kwargs):
++        nodes = kwargs['selectors']
++        attempts.append(nodes[:])
++        if len(attempts) == 1:
++            return dict(workers=[dict(selected=nodes[:1], completed=[])],
++                        exit_code=137, reason='memory')
++        return dict(workers=[dict(selected=nodes, completed=nodes)],
++                    exit_code=0, reason='exit')
++
++    monkeypatch.setattr(slow_weekly.bounded, 'run_suite', run_suite)
++    segments, attempted = slow_weekly.run_tier(
++        tmp_path, ['a', 'b', 'c'], tmp_path/'ordinary', 8)
++    assert attempts == [['a', 'b', 'c'], ['b', 'c']]
++    assert attempted == {'a', 'b', 'c'}
++    assert segments[0][1]['exit_code'] == 137
++
++
++def test_weekly_collection_failure_cannot_spin_or_claim_attempts(tmp_path, monkeypatch):
++    import slow_weekly
++    monkeypatch.setattr(slow_weekly.bounded, 'run_suite',
++        lambda **kwargs: dict(workers=[], exit_code=2, reason='collection_failure'))
++    segments, attempted = slow_weekly.run_tier(tmp_path, ['a'], tmp_path/'ordinary', 8)
++    assert len(segments) == 1 and not attempted
++
++
++def test_weekly_snapshot_copies_sources_and_shares_only_the_runtime(tmp_path):
++    import slow_weekly
++    source, frozen = tmp_path/'source', tmp_path/'frozen'
++    (source/'bin').mkdir(parents=True)
++    (source/'bin/model.py').write_text('before\n')
++    (source/'.venv/bin').mkdir(parents=True)
++    (source/'.venv/bin/python').write_text('runtime\n')
++    slow_weekly.snapshot_source(source, frozen)
++    (source/'bin/model.py').write_text('after\n')
++    assert (frozen/'bin/model.py').read_text() == 'before\n'
++    assert not (frozen/'bin/model.py').is_symlink()
++    assert (frozen/'.venv').resolve() == source/'.venv'
+ 
+ 
+ def test_bounded_workers_ignore_iteration_xdist_request(runner, tmp_path, monkeypatch):
+--- before/test/test_compile_static_loop.py
++++ after/test/test_compile_static_loop.py
+@@ -51,6 +51,11 @@
+     assert isp._word_active_mask is not None
+     N = int(isp.outputShape[0])
+     m._per_word_prelude(in_sub)
++    # The eager reading boundary owns the operation journal. An isolated word
++    # call needs the same teacher and maps that a complete forward stages.
++    m._stage_reconstruction_teacher()
++    m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
++        isp._word_active_mask.shape[1], isp._word_active_mask.device)
+     out_slot = m._per_word_contributions
+     gate = isp._word_active_mask[:, 0:1]
+     w = isp.word_at(0)
+--- before/test/test_compiled_word_chunk.py
++++ after/test/test_compiled_word_chunk.py
+@@ -21,7 +21,7 @@
+ if str(_BIN) not in sys.path:
+     sys.path.insert(0, str(_BIN))
+ 
+-from Layers import IntraSentenceLayer, ShortTermMemory  # noqa: E402
++from Layers import Error, IntraSentenceLayer, ShortTermMemory  # noqa: E402
+ import Language  # noqa: E402
+ import Models  # noqa: E402
+ import util  # noqa: E402
+@@ -51,6 +51,7 @@
+         working_dim=dim, naive=True)
+     cs.intra_loss_weight = 1.0
+     cs._intra_loss_accum = None
++    cs._intra_errors = Error()
+     cs._intra_loss_weight_accum = None
+     cs._intra_loss_count = 0
+     cs._stm_predicted_idea = None
+@@ -185,6 +186,19 @@
+     legacy_loss = legacy.conceptualSpace.consume_intra_loss()
+     chunk_loss = chunked.conceptualSpace.consume_intra_loss()
+     torch.testing.assert_close(chunk_loss, legacy_loss, rtol=1e-6, atol=1e-7)
++    # The trained relative cost must preserve all chunks as well as the raw
++    # fidelity metric retained by this original parity check.
++    legacy_relative = legacy.conceptualSpace._consumed_intra_errors.total()
++    chunk_relative = chunked.conceptualSpace._consumed_intra_errors.total()
++    torch.testing.assert_close(chunk_relative, legacy_relative, rtol=1e-6, atol=1e-7)
++    legacy_gradient = torch.autograd.grad(legacy_relative,
++        tuple(legacy.conceptualSpace.intraSentenceLayer.parameters()),
++        retain_graph=True, allow_unused=True)
++    chunk_gradient = torch.autograd.grad(chunk_relative,
++        tuple(chunked.conceptualSpace.intraSentenceLayer.parameters()),
++        retain_graph=True, allow_unused=True)
++    for got, expected in zip(chunk_gradient, legacy_gradient):
++        torch.testing.assert_close(got, expected, rtol=2e-5, atol=2e-6)
+     legacy_loss.backward()
+     chunk_loss.backward()
+     for legacy_param, chunk_param in zip(
+--- before/test/test_concept_readout_l1.py
++++ after/test/test_concept_readout_l1.py
+@@ -246,12 +246,14 @@
+         tmp_path, monkeypatch, detached_reverse):
+     from test_compiled_word_chunk import _tiny_canonical_model
+     import util
+-    monkeypatch.setattr(util, "TheCompileBackend", "eager")
++    monkeypatch.setattr(util, "TheCompileBackend", "none")
+     model = _tiny_canonical_model(
+         tmp_path, monkeypatch, forward_grammar_weight=.25,
+-        detached_reverse=detached_reverse)
+-    # Test both live encoder credit and the explicit legacy detached boundary. Weak
+-    # L1 must not silently reconnect that boundary or train by shrinkage alone.
++        detached_reverse=detached_reverse, input_width=32, word_buckets="8",
++        stm_capacity=4)
++    # Retained meronomy readings always use the tied inverse, including an
++    # XML that formerly selected the detached student (spec §10.2a).
++    assert model.reconstruct_in_loop and not model.detached_reverse
+     # Leaf distillation is a separate, lazily materialized auxiliary head;
+     # this test needs only the coupled reconstruction/readout objective.
+     model.leaf_distill_weight = 0.0
+@@ -260,7 +262,7 @@
+     optimizer = model.getOptimizer(lr=.001)
+     leaf = next(leaf.inner for leaf in getattr(optimizer, "optimizers", [optimizer])
+                 if any(p is layer.coefficients for group in leaf.param_groups for p in group["params"]))
+-    calls, steps = [], []
++    calls, steps, sentence_steps, batch_steps = [], [], [], []
+     original_stage, original_step = leaf.set_l1_proximal, optimizer.step
+ 
+     def stage(*args, **kwargs):
+@@ -268,6 +270,8 @@
+         return original_stage(*args, **kwargs)
+ 
+     def step(*args, **kwargs):
++        if getattr(model, '_sentence_trial', None) in ('exploit', 'explore'):
++            sentence_steps.append(model._sentence_trial)
+         expected = layer.l1_batch(model.inputSpace._ar_word_concept_rows,
+                                   model.inputSpace._ar_percept_reference_roles)
+         # Trie promotion can make a previously seen spelling an honest
+@@ -288,18 +292,18 @@
+         assert result is not None and not leaf._l1_proximal
+         terms = model.teacher.errors.terms()
+         matches = [term for term in terms if term[0] == "concept_readout_l1"]
+-        if train and steps[-1]:
++        if train:
++            batch_steps.append(model.errors.total().requires_grad)
++        if train and matches:
++            assert model.errors.breakdown()['concept_readout_l1']['weight'] == .01
+             assert len(matches) == 1 and not matches[0][1].requires_grad
+             assert matches[0][4] == "reg"
+-            if detached_reverse:
+-                assert layer.coefficients.grad is None
+-                assert layer.coefficients not in leaf.state
+-                torch.testing.assert_close(layer.coefficients, before, atol=0, rtol=0)
+-            else:
+-                assert layer.coefficients in leaf.state
+-                assert leaf.state[layer.coefficients]["step"] > 0
+-                assert not torch.equal(layer.coefficients, before)
++            assert layer.coefficients in leaf.state
++            assert leaf.state[layer.coefficients]["step"] > 0
++            assert not torch.equal(layer.coefficients, before)
+         if not train:
+             assert not matches
+             torch.testing.assert_close(layer.coefficients, before, atol=0, rtol=0)
+-    assert len(steps) == 2 and len(calls) == sum(steps) >= 1
++    assert len(steps) == 4 + sum(batch_steps)
++    assert len(calls) == sum(steps) >= 1
++    assert sentence_steps == ['exploit', 'explore'] * 2
+--- before/test/test_intra_sentence_layer.py
++++ after/test/test_intra_sentence_layer.py
+@@ -237,6 +237,12 @@
+         cs.Reset()
+         # The layer's own Reset is a structural no-op but must be callable.
+         cs.intraSentenceLayer.Reset()
++
++    def test_reset_clears_registered_prediction_targets(self):
++        cs = self.model.conceptualSpaces[0]
++        cs._intra_errors.squared('intra', torch.ones(2), torch.ones(2))
++        cs.Reset()
++        self.assertIsNone(cs._intra_errors.total())
+ 
+     def test_dims_match_space(self):
+         cs = self.model.conceptualSpaces[0]
+--- before/test/test_reconstruction_bank_contract.py
++++ after/test/test_reconstruction_bank_contract.py
+@@ -120,19 +120,26 @@
+ 
+     monkeypatch.setattr(model, "_stage_snapshot_bytes", broken_stage)
+     try:
+-        with pytest.raises(RuntimeError, match="reconstruction.*(bank|candidate|ownership|surface)"):
++        if fault == 'second_sentence_empty':
+             _stage(model)
++            assert int(model.inputSpace._reconstruction_missing_sentence_count) == 1
++            assert not bool(model.inputSpace._reconstruction_sentence_available[0, 1])
++            assert bool(model.inputSpace._reconstruction_sentence_available[:, 0].all())
++        else:
++            with pytest.raises(RuntimeError, match="reconstruction.*(bank|candidate|ownership|surface)"):
++                _stage(model)
+     finally:
+         model.End()
+         model.symbolSpace.soft_reset()
+ 
+ 
+-def test_failed_first_sight_admission_cannot_become_null_reconstruction(tmp_path, monkeypatch):
++def test_failed_first_sight_admission_counts_each_unavailable_reconstruction(tmp_path, monkeypatch):
+     model = build_model(tmp_path)
+     monkeypatch.setattr(model._concept_owner(), "interpret_word", lambda *a, **k: None)
+     try:
+-        with pytest.raises(RuntimeError, match="reconstruction.*(admission|candidate)"):
+-            _stage(model)
++        _stage(model)
++        assert int(model.inputSpace._reconstruction_missing_sentence_count) == 3
++        assert not bool(model.inputSpace._reconstruction_sentence_available.any())
+     finally:
+         model.End()
+         model.symbolSpace.soft_reset()
+--- before/test/test_reconstruction_precedence.py
++++ after/test/test_reconstruction_precedence.py
+@@ -0,0 +1,117 @@
++"""Only the answer's opposing component is removed, before either trial steps."""
++import torch
++import pytest
++
++
++def test_lower_total_explore_cannot_win_with_worse_reconstruction():
++    from SentenceCompose import sentence_pair
++    active = torch.tensor([True, True, True])
++    r = [torch.tensor([1., 2., 3.]), torch.tensor([2., 1., 3.])]
++    def compose(cache, prior):
++        return torch.zeros(3) if prior is None else torch.ones(3)
++    def score(path, alternative):
++        return torch.full((3,), 1. if alternative else 2.), path
++    chosen, _, wins = sentence_pair(None, compose, score, lambda loss: None,
++        active=active, reconstruction=lambda state: r[int(state[0])])
++    assert wins.tolist() == [False, True, True]
++    assert chosen.tolist() == [0., 1., 1.]
++
++
++def test_projection_preserves_reconstruction_other_objectives_and_reading_map():
++    from SentenceCompose import reconstruction_answer_correction
++    shared = torch.tensor([1., 2.], requires_grad=True)
++    reading = torch.tensor([3.], requires_grad=True)
++    r = shared[0] + 2*shared[1]
++    a = -3*shared[0] + shared[1] + 5*reading.sum()
++    other = 7*shared[0]
++    correction = reconstruction_answer_correction(r, a, (shared, reading))
++    (r+a+other).backward()
++    for p, c in zip((shared, reading), correction):
++        if c is not None:
++            p.grad.add_(c)
++    # gR=[1,2], gA=[-3,1], dot=-1, so only .2*gR is added.
++    torch.testing.assert_close(shared.grad, torch.tensor([5.2, 3.4]))
++    torch.testing.assert_close(reading.grad, torch.tensor([5.]))
++
++
++def test_projection_includes_the_trial_perception_pullback():
++    from SentenceCompose import fork_perception, reconstruction_answer_correction
++    perception = torch.tensor([2., 3.], requires_grad=True)
++    (leaf,), pullback = fork_perception((perception*2,))
++    r, a = leaf.sum(), -leaf.sum()
++    correction = reconstruction_answer_correction(r, a, (perception,), gradient_fn=pullback.gradients)
++    (r+a).backward()
++    pullback()
++    perception.grad.add_(correction[0])
++    torch.testing.assert_close(perception.grad, torch.tensor([2., 2.]))
++
++
++def test_nonopposing_answer_and_absent_reconstruction_need_no_correction():
++    from SentenceCompose import reconstruction_answer_correction
++    p = torch.tensor([1.], requires_grad=True)
++    assert reconstruction_answer_correction(p.sum(), 2*p.sum(), (p,)) == (None,)
++    assert reconstruction_answer_correction(None, p.sum(), (p,)) == (None,)
++
++
++def test_sparse_answer_projection_preserves_the_sparse_code_gradient():
++    from SentenceCompose import reconstruction_answer_correction
++    codes = torch.nn.Embedding(4, 2, sparse=True)
++    values = codes(torch.tensor([0, 2]))
++    r, a = values.sum(), -2 * values.sum()
++    correction, = reconstruction_answer_correction(r, a, (codes.weight,))
++    assert correction.is_sparse
++    torch.testing.assert_close(correction.to_dense(), torch.tensor([[2., 2.], [0., 0.], [2., 2.], [0., 0.]]))
++
++
++@pytest.mark.parametrize('backend', ['none', 'eager'])
++def test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection(tmp_path, monkeypatch, backend):
++    from pathlib import Path
++    import Models
++    import SentenceCompose
++    import util
++    from test_mm_xor import _fresh_model
++    root = Path(Models.__file__).resolve().parents[1]
++    config = tmp_path / 'supplied_reconstruction.xml'
++    config.write_text((root/'data/XOR_grammar.xml').read_text().replace(
++        '<training>', '<training><reconstructInLoop>true</reconstructInLoop>', 1))
++    monkeypatch.setattr(util, 'TheCompileBackend', backend)
++    model, _, data = _fresh_model(str(config))
++    optimizer = model.getOptimizer(lr=.01)
++    project = SentenceCompose.reconstruction_answer_correction
++    measured = []
++    def observe(reconstruction, answer, parameters, **kwargs):
++        assert reconstruction.requires_grad and answer.requires_grad
++        registry = model._sentence_cost_registry
++        terms = registry.breakdown()
++        assert terms['reconstruction.bytes']['baseline'] == pytest.approx(__import__('math').log(256))
++        assert any(name.startswith('answer.') for name in terms)
++        assert all(item['value'] is not None for item in terms.values())
++        corrected = project(reconstruction, answer, parameters, **kwargs)
++        # No objective outside the shared R/A parameter space is corrected.
++        rg = kwargs['gradient_fn'](reconstruction, parameters)
++        ag = kwargs['gradient_fn'](answer, parameters)
++        dot = 0.
++        for r, a, c in zip(rg, ag, corrected):
++            if r is None or a is None:
++                assert c is None
++                continue
++            r, a = r.to_dense(), a.to_dense()
++            if c is not None:
++                a = a + c.to_dense()
++            dot += float((r*a).sum())
++        assert dot >= -1e-6
++        measured.append(tuple(p._version for p in parameters))
++        return corrected
++    monkeypatch.setattr(SentenceCompose, 'reconstruction_answer_correction', observe)
++    try:
++        raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
++        batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
++        model.runBatch(train=True, optimizer=optimizer, batchSize=4, split='train', batch_override=batch)
++        assert len(measured) == 2 and measured[0] == measured[1]
++        assert model._word_symbol_concept_ids() is None
++        assert torch.isfinite(model.errors.total())
++        assert any(name.startswith('answer.') for name in model.errors.breakdown())
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++        torch._dynamo.reset()
+--- before/test/test_reconstruction_scope.py
++++ after/test/test_reconstruction_scope.py
+@@ -0,0 +1,75 @@
++"""The retained reading modes reconstruct; absent candidates are counted."""
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++from Models import BasicModel
++
++
++@pytest.mark.parametrize('synthesis,analysis,grammar,expected', [
++    ('meronomy', 'meronomy', True, 'understanding'),
++    ('meronomy', 'meronomy', False, 'perception: no grammar'),
++    ('radix', 'meronomy', True, 'exempt: old reading mode'),
++    ('meronomy', 'byte', True, 'exempt: old reading mode'),
++])
++def test_reconstruction_scope_follows_live_reading_and_grammar(synthesis, analysis, grammar, expected):
++    model = SimpleNamespace(serial=True,
++        perceptualSpace=SimpleNamespace(_meronomy=synthesis == 'meronomy'),
++        wholeSpace=SimpleNamespace(analysis_mode=analysis),
++        symbolSpace=SimpleNamespace(languageLayer=SimpleNamespace(
++            operation_layer=object() if grammar else None)))
++    assert BasicModel._understanding_reconstruction_scope(model) == expected
++
++
++def test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones():
++    from test_reconstruction_bank_contract import _bank_fixture
++    validate, isp = _bank_fixture('cpu')
++    isp._ar_bank_valid[:, 1] = False
++    validate()
++    assert isp._reconstruction_sentence_available.tolist() == [[True, False, False]]
++    assert int(isp._reconstruction_missing_sentence_count) == 1
++
++
++def test_missing_candidate_cost_is_zero_with_zero_gradient():
++    from test_word_store import _surface_snapshot_model
++    model = _surface_snapshot_model()
++    try:
++        isp = model.inputSpace
++        reference = isp._ar_word_object_atoms
++        ready, bank, values, valid = model._snapshot_tables(reference)
++        target_ready, target, mask = model._byte_tables(*reference.shape[:2])
++        idea = reference[:, 0].detach().clone().requires_grad_(True)
++        cost = model._byte_word_cost(idea, torch.tensor(0), bank, values,
++                                    torch.zeros_like(valid), target, mask, ready and target_ready)
++        assert torch.equal(cost, torch.zeros_like(cost))
++        gradient, = torch.autograd.grad(cost.sum(), idea)
++        assert torch.equal(gradient, torch.zeros_like(gradient))
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++
++
++def test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction(tmp_path, monkeypatch):
++    import util
++    from test_packed_reconstruction_parity import build_model
++    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
++    model = build_model(tmp_path, word_capacity=8)
++    stage = model._stage_snapshot_bytes
++    def without_second_sentence():
++        stage()
++        isp = model.inputSpace
++        isp._ar_bank_valid[isp._ar_concept_lookup_sentence_ids == 1] = False
++    monkeypatch.setattr(model, '_stage_snapshot_bytes', without_second_sentence)
++    try:
++        model._install_unit_span_fn()
++        raw = model.inputSpace.prepPackedInput([['quorp flarn', 'wug blim']])
++        with torch.no_grad():
++            model.runBatch(train=False, batchSize=1, split='validation',
++                batch_override=(raw, torch.empty(1, 0)))
++        assert int(model.inputSpace._reconstruction_missing_sentence_count) == 1
++        assert float(model._recon_sentence_costs[0, 1]) == 0.
++        torch.testing.assert_close(model._recon_cost, model._recon_sentence_costs[:, 0])
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
+--- before/test/test_relative_error.py
++++ after/test/test_relative_error.py
+@@ -0,0 +1,102 @@
++"""Uninformed baselines preserve solved errors and keep penalties separate."""
++import math
++import pytest
++import torch
++from Layers import Error
++
++
++def test_squared_error_is_ratio_of_means_and_baseline_is_detached():
++    pred = torch.tensor([2., 2.], requires_grad=True)
++    target = torch.tensor([1., 10.], requires_grad=True)
++    costs = Error()
++    costs.squared('answer', pred, target)
++    result = costs.total()
++    torch.testing.assert_close(result, torch.tensor(65. / 101.))
++    gp, gt = torch.autograd.grad(result, (pred, target))
++    torch.testing.assert_close(gp, 2 * (pred-target) / 101)
++    torch.testing.assert_close(gt, -gp)
++    assert costs.breakdown()['answer']['baseline'] == 50.5
++
++
++@pytest.mark.parametrize('outcomes', [2, 7, 256])
++def test_uniform_categorical_prediction_is_one_even_for_constant_targets(outcomes):
++    costs = Error()
++    logits = torch.zeros(3, outcomes, requires_grad=True)
++    costs.categorical('category', logits, torch.zeros(3, dtype=torch.long))
++    torch.testing.assert_close(costs.total(), torch.tensor(1.))
++    assert costs.breakdown()['category']['baseline'] == pytest.approx(math.log(outcomes))
++
++
++def test_binary_zero_logits_have_one_error_for_constant_targets():
++    costs = Error()
++    costs.binary('kind', torch.zeros(5), torch.zeros(5))
++    torch.testing.assert_close(costs.total(), torch.tensor(1.))
++
++
++def test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive():
++    costs = Error()
++    costs.squared('zero_target', torch.tensor([2., 4.]), torch.zeros(2), weight=.25)
++    costs.squared('absent', torch.tensor([99.]), torch.tensor([99.]), mask=torch.tensor([False]))
++    torch.testing.assert_close(costs.total(), torch.tensor(2.5))
++    torch.testing.assert_close(costs.total(kind='penalty'), torch.tensor(2.5))
++    torch.testing.assert_close(costs.total(kind='relative'), torch.tensor(0.))
++    assert costs.breakdown()['zero_target']['kind'] == 'penalty'
++    assert costs.breakdown()['absent']['active_entries'] == 0
++
++
++def test_repeated_contributions_share_one_target_baseline():
++    costs = Error()
++    costs.squared('code', torch.tensor([2.]), torch.tensor([1.]))
++    costs.squared('code', torch.tensor([2.]), torch.tensor([10.]))
++    torch.testing.assert_close(costs.total(), torch.tensor(65./101.))
++
++
++def test_row_costs_train_one_ratio_without_amplifying_small_target_rows():
++    active = torch.tensor([True, True, False])
++    costs = Error(row_mask=active)
++    costs.squared('answer', torch.tensor([[2.], [2.], [99.]]),
++                  torch.tensor([[1.], [10.], [99.]]))
++    rows = costs.total()
++    torch.testing.assert_close(rows, torch.tensor([2./101., 128./101., 0.]))
++    torch.testing.assert_close(rows[active].mean(), torch.tensor(65./101.))
++
++
++def test_single_row_registry_preserves_selection_axis():
++    costs = Error(row_mask=[True])
++    costs.binary('kind', torch.tensor(0.), torch.tensor(1.), row=0)
++    torch.testing.assert_close(costs.total(), torch.ones(1))
++
++
++def test_nearly_solved_error_stays_small_and_regularizer_keeps_strength():
++    costs = Error()
++    costs.squared('solved', torch.tensor([1.001]), torch.tensor([1.]))
++    costs.add('sparsity', torch.tensor(2.), weight=.03, kind='penalty')
++    assert float(costs.total(kind='relative')) < .000002
++    torch.testing.assert_close(costs.total(kind='penalty'), torch.tensor(.06))
++
++
++def test_reporting_only_penalty_does_not_enter_trained_total():
++    costs = Error()
++    costs.squared('fit', torch.tensor([0.]), torch.tensor([1.]))
++    costs.add('proximal_l1', torch.tensor(5.), kind='penalty', trained=False)
++    torch.testing.assert_close(costs.total(), torch.tensor(1.))
++    assert costs.breakdown()['proximal_l1']['weighted'] == 5
++
++
++def test_row_receipt_reports_the_trained_mean_and_contextual_weight():
++    costs = Error(row_mask=torch.tensor([True, True, False]))
++    costs.squared('fit', torch.tensor([2., 2., 99.]), torch.tensor([1., 10., 99.]), weight=2.)
++    costs.scale(torch.tensor(3.))
++    receipt = costs.breakdown()['fit']
++    assert receipt['value'] == pytest.approx(65./101.)
++    assert receipt['weighted'] == pytest.approx(6.*65./101.)
++    assert receipt['row_values'] == pytest.approx([2./101., 128./101., 0.])
++
++
++def test_scalar_receipt_and_history_include_contextual_weight():
++    costs = Error()
++    costs.squared('fit', torch.tensor([0.]), torch.tensor([1.]), weight=2.)
++    costs.scale(torch.tensor(3.))
++    assert costs.breakdown()['fit']['weighted'] == 6.
++    costs.snapshot()
++    assert costs._history[-1]['fit'] == 6.
+--- before/test/test_sentence_journal.py
++++ after/test/test_sentence_journal.py
+@@ -113,3 +113,16 @@
+         model.End()
+         model.symbolSpace.soft_reset()
+         torch._dynamo.reset()
++def test_functional_prediction_cost_does_not_mutate_an_inactive_row():
++    import torch
++    from Layers import IntraSentenceLayer
++    from Models import FunctionalPeerSTM
++    layer = IntraSentenceLayer(concept_dim=2, working_dim=2, stm_capacity=3, routing_dim=2)
++    state = (torch.ones(2, 3, 2), torch.ones(2, dtype=torch.long),
++             torch.zeros(2, 3, dtype=torch.long), torch.zeros(2, 3, dtype=torch.long),
++             torch.zeros(2, 3, dtype=torch.long), torch.ones(2, 3))
++    _, error, count = FunctionalPeerSTM.predict(
++        state, torch.ones(2, 2), torch.tensor([[True], [False]]), layer)
++    assert error.shape == count.shape == (2,)
++    assert error[1] == count[1] == 0
++    assert count[0] == 2
+--- before/test/test_supplied_answer_training.py
++++ after/test/test_supplied_answer_training.py
+@@ -7,6 +7,7 @@
+ 
+ def _sentence(supplied):
+     from Models import BasicModel
++    from Layers import ModelLoss
+     codes = torch.nn.Parameter(torch.tensor([[1., 2.], [2., 3.]]))
+     chooser = torch.nn.Parameter(torch.tensor(2.))
+     root = chooser * codes
+@@ -23,6 +24,7 @@
+     lang = [None] * 15
+     lang[9], lang[13], lang[14] = root[:, None], slots.flatten(1)[:, None], torch.ones(2, 1, dtype=torch.long)
+     model = SimpleNamespace(serial=True, outputSpace=head,
++        loss=ModelLoss(reconstruction_scale=1., what_scale=1., where_scale=1., when_scale=1.),
+         normalizer=SimpleNamespace(denormalize=lambda value, **kw: value),
+         inputSpace=SimpleNamespace(data=SimpleNamespace(has_supervised_outputs=supplied)),
+         _sentence_supplied_answers=torch.zeros(2, 1) if supplied else None,
+@@ -42,6 +44,18 @@
+     torch.testing.assert_close(cost, torch.tensor([36., 100.]))
+     gradients = torch.autograd.grad(cost.sum(), parameters, allow_unused=True)
+     assert all(g is not None and bool(g.abs().sum() > 0) for g in gradients)
++
++
++def test_answer_projection_cost_does_not_include_a_generate_lesson():
++    from Models import BasicModel
++    from Layers import Error
++    model, state, _ = _sentence(True)
++    active = torch.ones(2, dtype=torch.bool)
++    registry = Error(row_mask=active)
++    registry.add('grammar.generate', torch.tensor([7., 9.]), objective='output')
++    answer = BasicModel._sentence_answer_error(model, state, 0, active, {}, registry=registry)
++    torch.testing.assert_close(answer, torch.tensor([36., 100.]))
++    torch.testing.assert_close(registry.total(), torch.tensor([43., 109.]))
+ 
+ 
+ def test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient():
+--- before/test/test_word_store.py
++++ after/test/test_word_store.py
+@@ -1074,11 +1074,12 @@
+         cost = m._byte_word_cost(reference[:, 0], torch.tensor(0),
+                                  bank, values, valid,
+                                  target_bytes, target_valid, ready)
+-        # The scoring primitive has an uncertainty floor, but production
+-        # reconstruction must reject a sentence with no usable candidates.
+-        torch.testing.assert_close(cost, torch.full_like(cost, math.log(256)))
+-        with pytest.raises(RuntimeError, match="reconstruction has no surface candidates"):
+-            m._validate_reconstruction_bank()
++        # No admitted candidate is an absent reconstruction term, counted
++        # separately. A structurally absent bank remains a staging error.
++        torch.testing.assert_close(cost, torch.zeros_like(cost))
++        m._validate_reconstruction_bank()
++        assert int(isp._reconstruction_missing_sentence_count) == B
++        assert not bool(isp._reconstruction_sentence_available.any())
+         isp._ar_bank_bytes = None
+         isp._ar_bank_valid = None
+         isp._ar_concept_lookup_atoms = None

@@ -1,0 +1,68 @@
+{
+  "selected": 5000,
+  "completed": 5000,
+  "selected_case_counts": {
+    "passed": 4706,
+    "skipped": 285,
+    "failed": 8,
+    "xfailed": 1
+  },
+  "raw_report_counts": {
+    "passed": 4709,
+    "skipped": 285,
+    "failed": 8,
+    "xfailed": 1,
+    "process_failed": 0
+  },
+  "multiple_reports": {
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected": [
+      {
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0.22313125000800937,
+        "message": "",
+        "stdout": "uuu"
+      }
+    ]
+  },
+  "multiple_report_explanation": "TestOrthogonalFlags.test_flags_match_expected runs three unittest subTest configurations. Pytest reports those three passes and the enclosing case pass under the same node ID. They are not reruns.",
+  "duration_seconds": 1167.1139897080138,
+  "peak_aggregate_gib": 9.422334469854832,
+  "compile_cache_retries": [],
+  "limits": {
+    "worker_gib": 8,
+    "initial_workers": 10,
+    "workers": 10,
+    "aggregate_gib": 28.0,
+    "weekly_concurrent": false,
+    "worker_seconds": 1800
+  },
+  "source_matched": true,
+  "no_unattempted_cases": true,
+  "slow_warning": "Latest weekly slow-test run has failures; see tmp/slow-tests/latest.json."
+}

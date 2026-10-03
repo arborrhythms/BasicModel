@@ -1,0 +1,26 @@
+FF......                                                                 [100%]
+=================================== FAILURES ===================================
+___ TestOutputSpaceTextReconstruction.test_reconstruct_consecutive_no_nwhere ___
+test/test_basicmodel.py:1394: in test_reconstruct_consecutive_no_nwhere
+    codebook = psp.vocabulary.getW().detach()
+               ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'getW'
+_________ TestOutputSpaceTextReconstruction.test_reconstruct_to_buffer _________
+test/test_basicmodel.py:1429: in test_reconstruct_to_buffer
+    codebook = psp.vocabulary.getW().detach()
+               ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'getW'
+=============================== warnings summary ===============================
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1739: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_consecutive_no_nwhere
+FAILED test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_to_buffer
+2 failed, 6 passed, 1 warning in 2.83s

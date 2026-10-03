@@ -980,6 +980,14 @@ only effects on the accessible mind, so the gradient factorizes:
    reconstruction error never enters the output path. Thought's effects and
    LTM writes are detached; thought faces are parameter-free; the chooser
    learns from explicit policy credit alone.
+   *Amended for a sentence with a supplied answer (Alec, 2026-10-01):* the
+   answer's error trains the whole path, namely the map that reads the idea,
+   the chooser, and the object codes the grammar composed, inside each of
+   the sentence's trials
+   ([item 6.9 plan §4 step 5a](2026-09-29-item-6-9-xor-grammar.md#4-the-plan)).
+   With the cut, XOR_grammar met its bar in no run; with the whole path, in
+   9 of 10. A sentence without an answer keeps the cut, and for it the rule
+   below, that the objectives never place codes, still holds.
 2. **Shared operators are the intended coupling.** Grammar operators are
    shared by compose, its tied inverse and generate, and every objective
    updates them. That is how the central representation becomes suitable for

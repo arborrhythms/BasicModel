@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-003.recycle.json"
+}

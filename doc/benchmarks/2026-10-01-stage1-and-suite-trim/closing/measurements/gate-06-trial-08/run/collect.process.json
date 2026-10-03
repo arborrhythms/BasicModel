@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-08/run/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-08/run/collect.json"
+  ],
+  "pid": 18002,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 182076208,
+  "elapsed_seconds": 1.9513290419999976,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-08/run/collect.log"
+}

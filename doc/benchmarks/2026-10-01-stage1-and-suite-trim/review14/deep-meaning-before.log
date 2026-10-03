@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_meaning_probe.py", line 24, in <module>
+    check()
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_meaning_probe.py", line 21, in check
+    assert SymbolSubSpace.program_meaning(owner, entry, registry) is None
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'SymbolSubSpace' has no attribute 'program_meaning'

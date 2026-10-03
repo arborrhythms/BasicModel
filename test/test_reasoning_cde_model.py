@@ -55,11 +55,14 @@ class TestReasoningCDEModel(unittest.TestCase):
         assert all(abs(row['trust'] - .9) < 1e-6 for row in rows)
 
 
+    @pytest.mark.slow
+    @pytest.mark.usefixtures("eager_reading")
     def test_training_step_uses_the_normal_policy_configuration(self):
         opt = self.m.getOptimizer(lr=0.01)
         self.m.runEpoch(optimizer=opt, batchSize=6, split='train',
                         max_batches=1)
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_answer_query_degrades_gracefully(self):
         # Non-interrogative -> None. A query surface on a byte-grain config (no
         # word vocab to resolve operands) also returns None (generative

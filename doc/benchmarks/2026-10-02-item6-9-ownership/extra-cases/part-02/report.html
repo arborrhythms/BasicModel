@@ -1,0 +1,187 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: memory</h1><p>Exit 137; 42/144 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>6.689431416991283</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 1.025s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.629s, 100.00%)
+runEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.485s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_ws_matches_ps_view_shape</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.1525495829992</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.2443386249942705</pre></td><td><pre>test/test_dual_towers.py:66: in test_subsymbolic_passes_keep_the_same_native_geometry
+    assert got == want, (cfg, got)
+E   AssertionError: (&#x27;data/MM_ladder.xml&#x27;, [4096, 4096, 4096, 4096])
+E   assert [4096, 4096, 4096, 4096] == [8, 8, 8]
+E     
+E     At index 0 diff: 4096 != 8
+E     Left contains one more item: 4096
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.001430332995369099</pre></td><td><pre>test/test_dual_towers.py:75: in test_default_expectation_adds_only_its_owned_checkpoint_keys
+    assert discourse is not None
+E   assert None is not None</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0014189999928930774</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.1136246669921093</pre></td><td><pre>test/test_dual_towers.py:145: in test_ws_routes_universe_on_parallel_path
+    assert stamps == [&quot;universe&quot;] * len(stamps), stamps
+E   AssertionError: [&#x27;universe&#x27;, &#x27;property-neutral&#x27;, &#x27;property-neutral&#x27;]
+E   assert [&#x27;universe&#x27;, ...erty-neutral&#x27;] == [&#x27;universe&#x27;, ...&#x27;, &#x27;universe&#x27;]
+E     
+E     At index 1 diff: &#x27;property-neutral&#x27; != &#x27;universe&#x27;
+E     Use -v to get more diff</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 1.112s; word units 100.0% of 12 words (letters-only 100.0% of 4).
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_ws_routing_after_serial_migration</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.6157704590004869</pre></td><td><pre>test/test_dual_towers.py:163: in test_ws_routing_after_serial_migration
+    assert stamps[-1] == &quot;universe&quot;, stamps     # LIVE unity, per-word
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: [None, None, None, None]
+E   assert None == &#x27;universe&#x27;</pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 1.614s; word units 83.3% of 12 words (letters-only 100.0% of 4).
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.1948240000056103</pre></td><td><pre>test/test_dual_towers.py:192: in test_written_order0_words_are_present_after_one_smoke_epoch
+    assert a0 is not None and torch.is_tensor(a0)
+E   assert (None is not None)</pre></td><td><pre>batch = 0 (Δ=2.320s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 0.646s; word units 100.0% of 12 words (letters-only 100.0% of 4).
+batch = 0 (Δ=0.655s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 0.547s; word units 100.0% of 12 words (letters-only 100.0% of 4).
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_pyramid_replaces_wave</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.6201360409904737</pre></td><td><pre>test/test_dual_towers.py:223: in test_pyramid_replaces_wave
+    assert lv is not None and len(lv) &gt;= 1, &quot;per-rung stats must populate&quot;
+E   AssertionError: per-rung stats must populate
+E   assert (None is not None)</pre></td><td><pre>batch = 0 (Δ=0.537s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 0.619s; word units 100.0% of 12 words (letters-only 100.0% of 4).
+</pre></td></tr><tr><td><pre>test/test_dynamic_part_padding.py::test_single_real_part_is_identity_padded_to_three</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.04272599999967497</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dynamic_part_padding.py::test_runbatch_staging_declares_p3_and_flattened_3w_minima</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.4402138330042362</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_pyramid_taper_topk_selection</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>6.120156624994706</pre></td><td><pre>test/test_dual_towers.py:248: in test_pyramid_taper_topk_selection
+    assert acts is not None, &quot;symbolic phase must be active&quot;
+E   AssertionError: symbolic phase must be active
+E   assert None is not None</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 1.030s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_pyramid_grads_reach_every_rung</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.5981696250091773</pre></td><td><pre>test/test_dual_towers.py:272: in test_pyramid_grads_reach_every_rung
+    assert vals, &quot;the concept store must expose trainable edge values&quot;
+E   AssertionError: the concept store must expose trainable edge values
+E   assert []</pre></td><td><pre>batch = 0 (Δ=0.662s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.596s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>21.151673041007598</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_frozen_concepts.py::test_set_reading_primes_the_concept</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.07204666700272355</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.5506088330002967</pre></td><td><pre>test/test_frozen_concepts.py:136: in test_reading_wiring_desires_staged_wholes
+    assert b_read is not None, &quot;staged rows must be primed&quot;
+E   AssertionError: staged rows must be primed
+E   assert None is not None</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.549s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.190523209006642</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=1.595s)
+batch = 0 (Δ=1.393s)
+</pre></td></tr><tr><td><pre>test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>7.2052866669982905</pre></td><td><pre></pre></td><td><pre>: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.sigma.layer.d&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.sigma.layer.raw_U&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.sigma.layer.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 6120, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.routing_proj.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.routing_proj.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 258944, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2.predictor.0.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 272, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2.predictor.0.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 36992, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2.predictor.2.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2.predictor.2.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 822, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.kind_weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 1, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.kind_bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 2702736, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.network.0.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 822, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.network.0.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 337842, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.network.2.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 411, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.network.2.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 1, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace._readout_bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 17408, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.layers.0.W&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 16, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.layers.0.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 17408, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.layers.1.W&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 1088, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.layers.1.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 408000, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;answer_record_reader.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 3944, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;question_conditioners.136.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.synthesis_layer.raw_L&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.synthesis_layer.d&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.synthesis_layer.raw_U&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.synthesis_layer.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;perceptualSpace.synthesis_layer.raw_L&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;perceptualSpace.synthesis_layer.d&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;perceptualSpace.synthesis_layer.raw_U&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;perceptualSpace.synthesis_layer.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 6528, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.percept_adapter.raw_L&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 16, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.percept_adapter.d&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 256, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.percept_adapter.raw_U&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 16, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.percept_adapter.biasWeight&quot;, &quot;writers&quot;: []}]}
+</pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_config_is_masked_parallel_semantic</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.7775056249956833</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.511s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.105s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.093s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.096s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.094s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_masked_ir_training_engages</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00021820800611749291</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_concept_attention_live_not_dark</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00022200000239536166</pre></td><td><pre>test/test_masked_semantic.py:157: in test_concept_attention_live_not_dark
+    assert lv is not None and float(lv[0]) &gt; 0.0, lv
+E   AssertionError: [0.0, 0.0, 0.0, 0.0]
+E   assert ([0.0, 0.0, 0.0, 0.0] is not None and 0.0 &gt; 0.0)
+E    +  where 0.0 = float(0.0)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_masked_prediction_uses_concept_attention</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.3811060829902999</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.112s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.103s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.102s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.101s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_reconstruction_uses_category_evidence</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.33981604099972174</pre></td><td><pre>test/test_masked_semantic.py:179: in test_reconstruction_uses_category_evidence
+    assert _events_differ(base[&quot;rev&quot;], mint[&quot;rev&quot;])
+E   assert False
+E    +  where False = _events_differ(tensor([[[ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1...41, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291]]]), tensor([[[ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1...41, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291]]]))</pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.098s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.089s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.087s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.088s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.087s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_seeded_rerun_is_deterministic</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.3527957909973338</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.106s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.094s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.091s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_global_consume.py::test_consume_flag_off_by_default_on_global_config</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.1194044159929035</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>7.276132875005715</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_zero_gate_matches_consume_off</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>9.447972624999238</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_global_on_builds_module</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.117907666994142</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_global_off_has_no_module</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.0931631669955095</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>6.629327833012212</pre></td><td><pre>test/test_global_attention.py:194: in test_forward_parks_typed_obs_over_spaces
+    assert torch.equal(out1, out2), &quot;dark global attention stays deterministic&quot;
+E   AssertionError: dark global attention stays deterministic
+E   assert False
+E    +  where False = &lt;built-in method equal of type object at 0x10a1913a0&gt;(tensor([[[0.5001]],\n\n        [[0.5001]],\n\n        [[0.5001]],\n\n        [[0.5001]]]), tensor([[[0.5001]],\n\n        [[0.5001]],\n\n        [[0.5001]],\n\n        [[0.5001]]]))
+E    +    where &lt;built-in method equal of type object at 0x10a1913a0&gt; = torch.equal</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>6.200393666003947</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>6.1719924159988295</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_global_params_reach_optimizer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.098810583003797</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>9.31579037499614</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>6.7363955000037095</pre></td><td><pre>test/test_global_consume.py:177: in test_nonzero_gate_does_not_corrupt_the_reverse
+    assert torch.equal(carrier_off, carrier_on), (
+E   AssertionError: the reverse carrier must be restored (reconstruction unaffected)
+E   assert False
+E    +  where False = &lt;built-in method equal of type object at 0x10c6f93a0&gt;(tensor([[[0.0000e+00, 1.9449e-02, 0.0000e+00,  ..., 3.8080e-01,\n          0.0000e+00, 3.8080e-01],\n         [7.0496e-0...e+00, 3.8080e-01],\n         [7.8182e-03, 5.3902e-03, 4.8521e-03,  ..., 3.8080e-01,\n          0.0000e+00, 3.8080e-01]]]), tensor([[[0.0000e+00, 1.9449e-02, 0.0000e+00,  ..., 3.8080e-01,\n          0.0000e+00, 3.8080e-01],\n         [7.0496e-0...e+00, 3.8080e-01],\n         [0.0000e+00, 0.0000e+00, 2.4780e-03,  ..., 3.8080e-01,\n          0.0000e+00, 3.8080e-01]]]))
+E    +    where &lt;built-in method equal of type object at 0x10c6f93a0&gt; = torch.equal</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_parallel_topology</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.1403233330056537</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.496s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.073s, 100.00%)
+Training throughput: 1 batches in 0.059s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.060s, 100.00%)
+Training throughput: 1 batches in 0.059s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.060s, 100.00%)
+Training throughput: 1 batches in 0.059s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.060s, 100.00%)
+Training throughput: 1 batches in 0.059s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.062s, 100.00%)
+Training throughput: 1 batches in 0.061s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_serial_answer_path_varies_with_the_input</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.013651832996401936</pre></td><td><pre>test/test_output_path_supervised.py:114: in test_serial_answer_path_varies_with_the_input
+    m = _build(serial_synth_config, &quot;phrases&quot;)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:41: in _build
+    init_config(path=str(config_path), defaults_path=str(_DATA / &quot;model.xml&quot;))
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-855/cfg1/MM_phrase_synth.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-855/cfg1/MM_phrase_synth.xml:98: element answerSynthesis: Schemas validity error : Element &#x27;answerSynthesis&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-855/cfg1/MM_phrase_synth.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.01201295800274238</pre></td><td><pre>test/test_output_path_supervised.py:131: in test_output_path_memorizes_supervised_labels_on_the_serial_topology
+    m = _build(serial_synth_config, &quot;phrases&quot;)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:41: in _build
+    init_config(path=str(config_path), defaults_path=str(_DATA / &quot;model.xml&quot;))
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-855/cfg1/MM_phrase_synth.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-855/cfg1/MM_phrase_synth.xml:98: element answerSynthesis: Schemas validity error : Element &#x27;answerSynthesis&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-855/cfg1/MM_phrase_synth.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.1832945000060135</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.2040319999941858</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-development]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.982154959012405</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.363003624996054</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+</pre></td></tr></table></body></html>

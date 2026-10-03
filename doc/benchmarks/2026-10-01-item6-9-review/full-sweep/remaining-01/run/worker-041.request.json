@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-041.recycle.json"
+}

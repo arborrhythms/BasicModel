@@ -1,0 +1,30 @@
+......Fs                                                                 [100%]
+=================================== FAILURES ===================================
+_____________ test_checkpoint_restores_optimizer_counters_and_rng ______________
+test/test_fineweb_preflight.py:166: in test_checkpoint_restores_optimizer_counters_and_rng
+    assert restored._training_step_count == before + total_ticks - 1
+E   assert 2 == ((1 + 4) - 1)
+E    +  where 2 = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...t(\n    (0-2): 3 x _BodyStage()\n  )\n  (where_encoding): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n)._training_step_count
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 0.423s; word units 100.0% of 4 words (letters-only 100.0% of 4).
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-690/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-690/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] optimizer checkpoint remapped by parameter name: restored 12 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.035s; word units 100.0% of 4 words (letters-only 100.0% of 4).
+=============================== warnings summary ===============================
+test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7565: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+1 failed, 6 passed, 1 skipped, 2 warnings in 2.71s

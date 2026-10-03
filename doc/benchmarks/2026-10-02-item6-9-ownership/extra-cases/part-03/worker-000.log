@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_ltm_truthset_read_is_fed_to_the_answer __________________
+test/test_global_consume.py:219: in test_ltm_truthset_read_is_fed_to_the_answer
+    prev = m.conceptualSpaces[0]._subspaceForWS
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_subspaceForWS'. Did you mean: '_subspaceForPS'?
+=========================== short test summary info ============================
+FAILED test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer
+1 failed in 9.86s

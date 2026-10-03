@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact"
+  ],
+  "completed": [
+    "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact"
+  ],
+  "slow_selected": [
+    "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08403749999706633,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

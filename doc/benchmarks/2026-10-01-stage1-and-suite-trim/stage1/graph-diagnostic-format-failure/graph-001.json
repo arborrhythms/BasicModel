@@ -1,0 +1,1242 @@
+{
+  "language": false,
+  "nodes": [
+    {
+      "name": "l_part_ids_",
+      "op": "placeholder",
+      "target": "L_part_ids_",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12067, in synthesize_word_parts\n    if part_ids is None or part_mask is None:\n       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "l_part_mask_",
+      "op": "placeholder",
+      "target": "L_part_mask_",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12067, in synthesize_word_parts\n    if part_ids is None or part_mask is None:\n                           ^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "l_self_modules_subspace_what_parameters_w_",
+      "op": "placeholder",
+      "target": "L_self_modules_subspace_what_parameters_W_",
+      "values": [
+        {
+          "shape": [
+            32768,
+            128
+          ],
+          "dtype": "torch.float32",
+          "bytes": 16777216
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12012, in _radix_part_events\n    master = getattr(basis, \"W\", None)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "l_part_offsets_",
+      "op": "placeholder",
+      "target": "L_part_offsets_",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12038, in _radix_part_events\n    if (part_offsets is not None and self._meronomy_words\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "l_self_modules_subspace_when_encoding_t",
+      "op": "placeholder",
+      "target": "L_self_modules_subspace_whenEncoding_t",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.int64",
+          "bytes": 8
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1413, in encode\n    if not isinstance(start, torch.Tensor):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "ids",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12016, in _radix_part_events\n    ids = part_ids.to(device=master.device, dtype=torch.long)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "rows",
+      "op": "call_function",
+      "target": "<built-in function getitem>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            128
+          ],
+          "dtype": "torch.float32",
+          "bytes": 14680064
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12021, in _radix_part_events\n    event = basis.lookup_rows(ids)\n            ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 2950, in lookup_rows\n    rows = self.W[idx]\n           ^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "clamped",
+      "op": "call_method",
+      "target": "clamp",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            128
+          ],
+          "dtype": "torch.float32",
+          "bytes": 14680064
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12021, in _radix_part_events\n    event = basis.lookup_rows(ids)\n            ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 2953, in lookup_rows\n    return _unorm_ste(rows)\n           ^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/embed.py\", line 122, in _unorm_ste\n    clamped = x.clamp(0.0, hi)\n              ^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "sub",
+      "op": "call_method",
+      "target": "sub",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            128
+          ],
+          "dtype": "torch.float32",
+          "bytes": 14680064
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12021, in _radix_part_events\n    event = basis.lookup_rows(ids)\n            ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 2953, in lookup_rows\n    return _unorm_ste(rows)\n           ^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/embed.py\", line 123, in _unorm_ste\n    return x + (clamped - x).detach()\n                ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "detach",
+      "op": "call_method",
+      "target": "detach",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            128
+          ],
+          "dtype": "torch.float32",
+          "bytes": 14680064
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12021, in _radix_part_events\n    event = basis.lookup_rows(ids)\n            ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 2953, in lookup_rows\n    return _unorm_ste(rows)\n           ^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/embed.py\", line 123, in _unorm_ste\n    return x + (clamped - x).detach()\n               ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "event",
+      "op": "call_method",
+      "target": "add",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            128
+          ],
+          "dtype": "torch.float32",
+          "bytes": 14680064
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12021, in _radix_part_events\n    event = basis.lookup_rows(ids)\n            ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 2953, in lookup_rows\n    return _unorm_ste(rows)\n           ^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/embed.py\", line 123, in _unorm_ste\n    return x + (clamped - x).detach()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "event_1",
+      "op": "call_function",
+      "target": "<built-in function pad>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            136
+          ],
+          "dtype": "torch.float32",
+          "bytes": 15597568
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12031, in _radix_part_events\n    event = F.pad(event, (0, pad_width))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/functional.py\", line 5849, in pad\n    return torch._C._nn.pad(input, pad, mode, value)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "offsets",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12042, in _radix_part_events\n    offsets = part_offsets.to(\n              ^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "valid",
+      "op": "call_method",
+      "target": "ge",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 41, in intervals\n    valid = indices >= 0\n            ^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "invert",
+      "op": "call_function",
+      "target": "<built-in function invert>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 42, in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "lt",
+      "op": "call_method",
+      "target": "lt",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 42, in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "or_1",
+      "op": "call_method",
+      "target": "__or__",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 42, in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "all_1",
+      "op": "call_method",
+      "target": "all",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.bool",
+          "bytes": 1
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 42, in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "_assert_async",
+      "op": "call_function",
+      "target": "<built-in method _assert_async of type object at 0x10b6e53a0>",
+      "values": [],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 42, in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n"
+    },
+    {
+      "name": "to_2",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 44, in intervals\n    positions = indices.to(torch.int64) + start\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "positions",
+      "op": "call_method",
+      "target": "add",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 44, in intervals\n    positions = indices.to(torch.int64) + start\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "add_2",
+      "op": "call_method",
+      "target": "add",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 45, in intervals\n    result = torch.stack((positions, positions + 1), -1)\n                                     ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "result",
+      "op": "call_function",
+      "target": "<built-in method stack of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            2
+          ],
+          "dtype": "torch.int64",
+          "bytes": 458752
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 45, in intervals\n    result = torch.stack((positions, positions + 1), -1)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "getitem_1",
+      "op": "call_function",
+      "target": "<built-in function getitem>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            1
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 46, in intervals\n    return torch.where(valid[..., None], result, -1)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "intervals",
+      "op": "call_function",
+      "target": "<built-in method where of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            2
+          ],
+          "dtype": "torch.int64",
+          "bytes": 458752
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 46, in intervals\n    return torch.where(valid[..., None], result, -1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "getitem_2",
+      "op": "call_function",
+      "target": "<built-in function getitem>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n                                 ^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "start",
+      "op": "call_method",
+      "target": "add",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1115, in encode\n    start = start + self.where_origin\n            ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "remainder",
+      "op": "call_function",
+      "target": "<built-in method remainder of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1116, in encode\n    a_lf = _ladder_phase(start, self.maxVal, self.div_lf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "to_3",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 114688
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1116, in encode\n    a_lf = _ladder_phase(start, self.maxVal, self.div_lf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "a_lf",
+      "op": "call_method",
+      "target": "mul",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 114688
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1116, in encode\n    a_lf = _ladder_phase(start, self.maxVal, self.div_lf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "sin",
+      "op": "call_function",
+      "target": "<built-in method sin of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 114688
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1117, in encode\n    parts = [torch.sin(a_lf), torch.cos(a_lf)]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "cos",
+      "op": "call_function",
+      "target": "<built-in method cos of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 114688
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1117, in encode\n    parts = [torch.sin(a_lf), torch.cos(a_lf)]\n                              ^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "remainder_1",
+      "op": "call_function",
+      "target": "<built-in method remainder of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1119, in encode\n    a_hf = _ladder_phase(start, self.period_hf, self.div_hf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "to_4",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 114688
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1119, in encode\n    a_hf = _ladder_phase(start, self.period_hf, self.div_hf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "a_hf",
+      "op": "call_method",
+      "target": "mul",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 114688
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1119, in encode\n    a_hf = _ladder_phase(start, self.period_hf, self.div_hf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "sin_1",
+      "op": "call_function",
+      "target": "<built-in method sin of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 114688
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1120, in encode\n    parts += [torch.sin(a_hf), torch.cos(a_hf)]\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "cos_1",
+      "op": "call_function",
+      "target": "<built-in method cos of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 114688
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1120, in encode\n    parts += [torch.sin(a_hf), torch.cos(a_hf)]\n                               ^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "bands",
+      "op": "call_function",
+      "target": "<built-in method stack of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 458752
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 28, in encode\n    bands = self.encoding.encode(intervals[..., 0])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1121, in encode\n    return torch.stack(parts, dim=-1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "ge_1",
+      "op": "call_method",
+      "target": "ge",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 29, in encode\n    return torch.where((indices >= 0)[..., None], bands, 0.)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "getitem_3",
+      "op": "call_function",
+      "target": "<built-in function getitem>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            1
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 29, in encode\n    return torch.where((indices >= 0)[..., None], bands, 0.)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "stamp",
+      "op": "call_function",
+      "target": "<built-in method where of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 458752
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12048, in _radix_part_events\n    stamp = (registry.encode('input', offsets) if registry is not None else\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 29, in encode\n    return torch.where((indices >= 0)[..., None], bands, 0.)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "ge_2",
+      "op": "call_method",
+      "target": "ge",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12050, in _radix_part_events\n    stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "unsqueeze",
+      "op": "call_method",
+      "target": "unsqueeze",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            1
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12050, in _radix_part_events\n    stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "to_5",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            1
+          ],
+          "dtype": "torch.float32",
+          "bytes": 114688
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12050, in _radix_part_events\n    stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "stamp_1",
+      "op": "call_method",
+      "target": "mul",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 458752
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12050, in _radix_part_events\n    stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "setitem",
+      "op": "call_function",
+      "target": "<built-in function setitem>",
+      "values": [],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12051, in _radix_part_events\n    event[..., w_idx] = stamp\n"
+    },
+    {
+      "name": "remainder_2",
+      "op": "call_function",
+      "target": "<built-in method remainder of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.int64",
+          "bytes": 8
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1415, in encode\n    a_lf = _ladder_phase(start, self.maxVal, self.div_lf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "to_6",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.float32",
+          "bytes": 4
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1415, in encode\n    a_lf = _ladder_phase(start, self.maxVal, self.div_lf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "a_lf_1",
+      "op": "call_method",
+      "target": "mul",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.float32",
+          "bytes": 4
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1415, in encode\n    a_lf = _ladder_phase(start, self.maxVal, self.div_lf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "remainder_3",
+      "op": "call_function",
+      "target": "<built-in method remainder of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.int64",
+          "bytes": 8
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1416, in encode\n    a_hf = _ladder_phase(start, self.period_hf, self.div_hf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "to_7",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.float32",
+          "bytes": 4
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1416, in encode\n    a_hf = _ladder_phase(start, self.period_hf, self.div_hf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "a_hf_1",
+      "op": "call_method",
+      "target": "mul",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.float32",
+          "bytes": 4
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1416, in encode\n    a_hf = _ladder_phase(start, self.period_hf, self.div_hf)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1010, in _ladder_phase\n    return torch.remainder(start, modulus).to(torch.float32) * omega\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "sin_2",
+      "op": "call_function",
+      "target": "<built-in method sin of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.float32",
+          "bytes": 4
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1417, in encode\n    return torch.stack((torch.sin(a_lf), torch.cos(a_lf),\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "cos_2",
+      "op": "call_function",
+      "target": "<built-in method cos of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.float32",
+          "bytes": 4
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1417, in encode\n    return torch.stack((torch.sin(a_lf), torch.cos(a_lf),\n                                         ^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "sin_3",
+      "op": "call_function",
+      "target": "<built-in method sin of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.float32",
+          "bytes": 4
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1418, in encode\n    torch.sin(a_hf), torch.cos(a_hf)), dim=-1)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "cos_3",
+      "op": "call_function",
+      "target": "<built-in method cos of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [],
+          "dtype": "torch.float32",
+          "bytes": 4
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1418, in encode\n    torch.sin(a_hf), torch.cos(a_hf)), dim=-1)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "stack_2",
+      "op": "call_function",
+      "target": "<built-in method stack of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 16
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 1417, in encode\n    return torch.stack((torch.sin(a_lf), torch.cos(a_lf),\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "to_8",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [
+            4
+          ],
+          "dtype": "torch.float32",
+          "bytes": 16
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12054, in _radix_part_events\n    self.subspace.whenEncoding.t).to(event)\n                                  ^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "setitem_1",
+      "op": "call_function",
+      "target": "<built-in function setitem>",
+      "values": [],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12069, in synthesize_word_parts\n    events = self._radix_part_events(part_ids, part_offsets)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12053, in _radix_part_events\n    event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(\n"
+    },
+    {
+      "name": "mask",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12070, in synthesize_word_parts\n    mask = part_mask.to(device=events.device, dtype=torch.bool)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "getitem_4",
+      "op": "call_function",
+      "target": "<built-in function getitem>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            1
+          ],
+          "dtype": "torch.bool",
+          "bytes": 28672
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12080, in synthesize_word_parts\n    values = torch.where(mask[..., None], events[..., :width], 0.)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "getitem_5",
+      "op": "call_function",
+      "target": "<built-in function getitem>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            128
+          ],
+          "dtype": "torch.float32",
+          "bytes": 14680064
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12080, in synthesize_word_parts\n    values = torch.where(mask[..., None], events[..., :width], 0.)\n                                          ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "values",
+      "op": "call_function",
+      "target": "<built-in method where of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            128
+          ],
+          "dtype": "torch.float32",
+          "bytes": 14680064
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12080, in synthesize_word_parts\n    values = torch.where(mask[..., None], events[..., :width], 0.)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "word_what",
+      "op": "call_method",
+      "target": "amax",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            128
+          ],
+          "dtype": "torch.float32",
+          "bytes": 3670016
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12081, in synthesize_word_parts\n    word_what = (values.amax(dim=-2) if values.shape[-2]\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "band_events",
+      "op": "call_function",
+      "target": "<built-in function getitem>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4,
+            8
+          ],
+          "dtype": "torch.float32",
+          "bytes": 917504
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12084, in synthesize_word_parts\n    band_events = events[..., width:]\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "to_10",
+      "op": "call_method",
+      "target": "to",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            4
+          ],
+          "dtype": "torch.int64",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12085, in synthesize_word_parts\n    first = mask.to(dtype=torch.long).argmax(dim=-1)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "first",
+      "op": "call_method",
+      "target": "argmax",
+      "values": [
+        {
+          "shape": [
+            28,
+            256
+          ],
+          "dtype": "torch.int64",
+          "bytes": 57344
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12085, in synthesize_word_parts\n    first = mask.to(dtype=torch.long).argmax(dim=-1)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "unsqueeze_1",
+      "op": "call_method",
+      "target": "unsqueeze",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            1
+          ],
+          "dtype": "torch.int64",
+          "bytes": 57344
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12087, in synthesize_word_parts\n    gather_index = first.unsqueeze(-1).unsqueeze(-1).expand(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "unsqueeze_2",
+      "op": "call_method",
+      "target": "unsqueeze",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            1,
+            1
+          ],
+          "dtype": "torch.int64",
+          "bytes": 57344
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12087, in synthesize_word_parts\n    gather_index = first.unsqueeze(-1).unsqueeze(-1).expand(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "gather_index",
+      "op": "call_method",
+      "target": "expand",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            1,
+            8
+          ],
+          "dtype": "torch.int64",
+          "bytes": 458752
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12087, in synthesize_word_parts\n    gather_index = first.unsqueeze(-1).unsqueeze(-1).expand(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "gather",
+      "op": "call_method",
+      "target": "gather",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            1,
+            8
+          ],
+          "dtype": "torch.float32",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12089, in synthesize_word_parts\n    word_band = band_events.gather(\n                ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "word_band",
+      "op": "call_method",
+      "target": "squeeze",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            8
+          ],
+          "dtype": "torch.float32",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12090, in synthesize_word_parts\n    -2, gather_index).squeeze(-2)\n                      ^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "any_valid",
+      "op": "call_method",
+      "target": "any",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            1
+          ],
+          "dtype": "torch.bool",
+          "bytes": 7168
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12091, in synthesize_word_parts\n    any_valid = mask.any(dim=-1, keepdim=True)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "zeros_like",
+      "op": "call_function",
+      "target": "<built-in method zeros_like of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            8
+          ],
+          "dtype": "torch.float32",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12093, in synthesize_word_parts\n    any_valid, word_band, torch.zeros_like(word_band))\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "word_band_1",
+      "op": "call_function",
+      "target": "<built-in method where of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            8
+          ],
+          "dtype": "torch.float32",
+          "bytes": 229376
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12092, in synthesize_word_parts\n    word_band = torch.where(\n                ^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "word",
+      "op": "call_function",
+      "target": "<built-in method cat of type object at 0x10b6e53a0>",
+      "values": [
+        {
+          "shape": [
+            28,
+            256,
+            136
+          ],
+          "dtype": "torch.float32",
+          "bytes": 3899392
+        }
+      ],
+      "stack": "  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12094, in synthesize_word_parts\n    word = torch.cat((word_what, word_band), dim=-1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n"
+    },
+    {
+      "name": "output",
+      "op": "output",
+      "target": "output",
+      "values": [],
+      "stack": ""
+    }
+  ]
+}

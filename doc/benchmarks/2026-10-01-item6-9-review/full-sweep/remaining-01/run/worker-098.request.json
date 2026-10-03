@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-098.recycle.json"
+}

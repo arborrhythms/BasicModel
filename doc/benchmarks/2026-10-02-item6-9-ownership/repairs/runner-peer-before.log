@@ -1,0 +1,40 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_aborted_peer_preserves_completed_and_active_cases ____________
+
+runner = <module 'bounded_tests' from '/Users/arogers/github/WikiOracle/basicmodel/test/bounded_tests.py'>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-817/test_aborted_peer_preserves_co0')
+
+    def test_aborted_peer_preserves_completed_and_active_cases(runner, tmp_path):
+        """A pool stop must not make the recovery receipt repeat a peer's work."""
+        (tmp_path / "pytest.ini").write_text("[pytest]\n")
+        (tmp_path / "test_stop.py").write_text(
+            "import os,time\nfrom pathlib import Path\n"
+            "def test_stop():\n"
+            " deadline=time.monotonic()+10\n"
+            " while not Path('peer-active').exists() and time.monotonic()<deadline: time.sleep(.02)\n"
+            " os._exit(42)\n")
+        (tmp_path / "test_peer.py").write_text(
+            "import time\nfrom pathlib import Path\n"
+            "def test_finished(): pass\n"
+            "def test_active():\n Path('peer-active').touch()\n time.sleep(30)\n")
+        result = runner.run_suite(
+            root=tmp_path, selectors=["test_stop.py", "test_peer.py"], run_dir=tmp_path / "result",
+            memory_bytes=512 * 1024**2, timeout=20, suite_timeout=60,
+            batch_size=8, max_files=1, workers=2, worker_memory_bytes=256 * 1024**2,
+            lock_path=tmp_path / "lock")
+        assert result["exit_code"] == 42
+>       assert "test_peer.py::test_finished" in result["completed"]
+E       AssertionError: assert 'test_peer.py::test_finished' in []
+
+test/test_bounded_test_runner.py:353: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[collect] 2 selectors; limit 20s, 0.2 GiB
+[collect] exit 0; 1.2s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 20s, 0.2 GiB
+[worker-001] 2 selectors; limit 20s, 0.2 GiB
+[worker-000] exit 42; 1.3s; peak 0.04 GiB
+[worker-001] aborted 125; 2.3s; peak 0.04 GiB
+=========================== short test summary info ============================
+FAILED test/test_bounded_test_runner.py::test_aborted_peer_preserves_completed_and_active_cases
+1 failed in 5.59s

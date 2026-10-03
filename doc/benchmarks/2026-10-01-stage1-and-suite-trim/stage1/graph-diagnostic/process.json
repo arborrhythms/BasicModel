@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/graph_probe.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/graph-diagnostic"
+  ],
+  "pid": 74121,
+  "exit_code": 73,
+  "reason": "exit",
+  "peak_memory_bytes": 10550912000,
+  "elapsed_seconds": 66.42565416699654,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/graph-diagnostic/run.log"
+}

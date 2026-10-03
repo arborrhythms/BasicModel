@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-075.recycle.json"
+}

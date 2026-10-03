@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path"
+  ],
+  "completed": [
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path"
+  ],
+  "slow_selected": [
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6537539160053711,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.576s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

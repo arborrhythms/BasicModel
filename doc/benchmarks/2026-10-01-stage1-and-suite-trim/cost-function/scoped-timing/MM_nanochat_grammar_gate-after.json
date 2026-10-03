@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_nanochat_grammar_gate.xml",
+  "arm": "after",
+  "seed": null,
+  "configuration_changed": false,
+  "measurement": "one first training batch at configured batch; numerical execution without graph capture",
+  "backend": "none",
+  "build_seconds": 0.6949638750011218,
+  "batch": 4,
+  "reconstruct_in_loop": true,
+  "scope": "understanding",
+  "training_seconds": 9.823149416995875,
+  "output_loss": 0.0,
+  "reconstruction_loss": 3.2491354942321777,
+  "completed": true,
+  "total_seconds": 10.519209041995055
+}

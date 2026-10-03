@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/NestedRetention.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/final-doc-links/run/worker-052.recycle.json"
+}

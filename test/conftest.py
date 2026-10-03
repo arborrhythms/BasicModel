@@ -45,6 +45,18 @@ if _ETC not in sys.path:
 import pytest
 
 
+@pytest.fixture
+def eager_reading(monkeypatch):
+    """Run behavioral fixtures without capturing higher-order loop graphs.
+
+    MODEL_COMPILE=eager still captures torch.while_loop. These cases exercise
+    reading, gradients or ownership; compilation has separate explicit tests.
+    The same condition/body functions execute, with ordinary autograd intact.
+    """
+    from reading_fixtures import use_eager_reading
+    use_eager_reading(monkeypatch)
+
+
 @pytest.fixture(autouse=True, scope="module")
 def _release_test_compilation_cache():
     """Release completed modules' graphs before constructing another model.

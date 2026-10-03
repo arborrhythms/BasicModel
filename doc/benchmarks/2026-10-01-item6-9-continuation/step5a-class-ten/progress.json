@@ -1,0 +1,238 @@
+{
+  "completed": [
+    {
+      "gate": 5,
+      "trial": 0,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-00",
+          "--gate",
+          "5"
+        ],
+        "pid": 34796,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 649332728,
+        "elapsed_seconds": 80.86775124999986,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-00/supervisor.log"
+      }
+    },
+    {
+      "gate": 5,
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-02",
+          "--gate",
+          "5"
+        ],
+        "pid": 34798,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 649627664,
+        "elapsed_seconds": 82.41755595799987,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-02/supervisor.log"
+      }
+    },
+    {
+      "gate": 5,
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-01",
+          "--gate",
+          "5"
+        ],
+        "pid": 34797,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 645040072,
+        "elapsed_seconds": 83.71502666699962,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-01/supervisor.log"
+      }
+    },
+    {
+      "gate": 5,
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-03",
+          "--gate",
+          "5"
+        ],
+        "pid": 35173,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 646301664,
+        "elapsed_seconds": 80.78785874999994,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-03/supervisor.log"
+      }
+    },
+    {
+      "gate": 5,
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-04",
+          "--gate",
+          "5"
+        ],
+        "pid": 35187,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 654051320,
+        "elapsed_seconds": 84.14638770800047,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-04/supervisor.log"
+      }
+    },
+    {
+      "gate": 5,
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-05",
+          "--gate",
+          "5"
+        ],
+        "pid": 35207,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 648890360,
+        "elapsed_seconds": 83.89623716699862,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-05/supervisor.log"
+      }
+    },
+    {
+      "gate": 5,
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-06",
+          "--gate",
+          "5"
+        ],
+        "pid": 35470,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 658655200,
+        "elapsed_seconds": 83.40856850000091,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-06/supervisor.log"
+      }
+    },
+    {
+      "gate": 5,
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-08",
+          "--gate",
+          "5"
+        ],
+        "pid": 35503,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 651528184,
+        "elapsed_seconds": 81.60822929200003,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-08/supervisor.log"
+      }
+    },
+    {
+      "gate": 5,
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-07",
+          "--gate",
+          "5"
+        ],
+        "pid": 35502,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 656541688,
+        "elapsed_seconds": 84.46731824999915,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-07/supervisor.log"
+      }
+    },
+    {
+      "gate": 5,
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-09",
+          "--gate",
+          "5"
+        ],
+        "pid": 35845,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 654510048,
+        "elapsed_seconds": 75.07364979200065,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-09/supervisor.log"
+      }
+    }
+  ],
+  "active": [],
+  "pending": 0,
+  "seconds": 320.2730017080012,
+  "peak_memory_bytes": 4587890648
+}

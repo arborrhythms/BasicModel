@@ -1,0 +1,11 @@
+{
+  "exit_code": 4,
+  "selected": [],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

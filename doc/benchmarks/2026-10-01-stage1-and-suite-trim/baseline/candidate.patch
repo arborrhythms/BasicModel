@@ -1,0 +1,2206 @@
+diff --git a/bin/Language.py b/bin/Language.py
+index b102417b..380271e0 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -2433,18 +2433,24 @@ TheGrammar = Grammar()
+ # =====================================================================
+ 
+ class NotLayer(GrammarLayer):
+-    """Self-inverse ``not(S)``: swap the leading ``[pos, neg]`` bivector."""
++    """Self-inverse negation of a concept code, or an explicit pole pair."""
+     rule_name  = "not"
++    inverse_rule_name = "not"
+     arity      = 1
+     invertible = True
+     space_role       = 'CS'
+ 
+-    def __init__(self):
+-        """Initialize the parameter-free operator."""
++    def __init__(self, *, representation='code'):
++        """Concept slots carry full codes; evidence poles are explicit."""
+         super().__init__(0, 0)
++        if representation not in ('code', 'poles'):
++            raise ValueError('not requires code or poles representation')
++        self.representation = representation
+ 
+     def forward(self, x):
+-        """Swap the leading bivector channels."""
++        """Reflect the full code, or exchange the explicit evidence poles."""
++        if self.representation == 'code':
++            return -x
+         self._check_bivector_shape(x)
+         bivector = x[..., :2].flip(dims=(-1,))
+         rest     = x[..., 2:]
+@@ -2453,12 +2459,13 @@ class NotLayer(GrammarLayer):
+         return torch.cat([bivector, rest], dim=-1)
+ 
+     def reverse(self, y):
+-        """Apply the self-inverse swap."""
++        """Both representations are their own inverse."""
+         return self.forward(y)
+ 
+ class NonLayer(GrammarLayer):
+     """Self-inverse ``non(S)``: complement each leading bivector pole."""
+     rule_name  = "non"
++    inverse_rule_name = "non"
+     arity      = 1
+     invertible = True
+     space_role       = 'CS'
+@@ -7388,6 +7395,11 @@ class OperationSelectionLayer(nn.Module):
+         self.ops = nn.ModuleList(ops)
+         self.unary_ops = nn.ModuleList(unary_ops)
+         self.r_reduce, self.r_apply = len(self.ops), len(self.unary_ops)
++        declared = tuple(getattr(op, 'gl', op) for op in self.unary_ops)
++        self._unary_inverse_pairs = tuple(tuple(
++            getattr(candidate, 'inverse_rule_name', None) is not None
++            and getattr(candidate, 'inverse_rule_name', None) == getattr(previous, 'rule_name', None)
++            for candidate in declared) for previous in declared)
+         require_opaque_mlp((*self.ops, *self.unary_ops), chooser)
+         self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
+         self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
+@@ -7420,7 +7432,8 @@ class OperationSelectionLayer(nn.Module):
+     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
+                 masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+                 grammar_context=None, replay_action=None, allowance=None,
+-                rounds_left=None, load_depth=None, reference_data=None):
++                rounds_left=None, load_depth=None, reference_data=None,
++                previous_unary=None):
+         B, N, D = x.shape
+         if N < 1:
+             raise ValueError("compose needs a nonempty static slab")
+@@ -7472,6 +7485,11 @@ class OperationSelectionLayer(nn.Module):
+             unary_scores = unary_scores.masked_fill(~reference_data['unary_valid'], -torch.inf)
+         binary_scores = binary_scores.masked_fill(~live[:, 1:, None], -torch.inf)
+         unary_scores = unary_scores.masked_fill(~live[..., None] | deadline[:, None, None], -torch.inf)
++        if previous_unary is not None and self.r_apply:
++            inverse = torch.tensor(self._unary_inverse_pairs, device=x.device, dtype=torch.bool)
++            excluded = inverse[previous_unary.clamp(0, self.r_apply - 1)]
++            excluded = excluded & (previous_unary >= 0)[..., None]
++            unary_scores = unary_scores.masked_fill(excluded, -torch.inf)
+         stop = (stop_scores.squeeze(-1) * live).sum(-1) / depth.clamp_min(1)
+         limit = torch.as_tensor(slots, device=x.device)
+         # In a small STM a relative row can fit while the next-word slot is
+@@ -7488,6 +7506,10 @@ class OperationSelectionLayer(nn.Module):
+             ids = torch.arange(logits.shape[-1], device=x.device)[None, :]
+             selection_logits = selection_logits.masked_fill(
+                 ids == masked_action[:, None], -torch.inf)
++            # A different earlier sampled choice can leave this round only
++            # one legal operation. Do not manufacture an illegal alternative.
++            selection_logits = torch.where(torch.isfinite(selection_logits).any(-1, keepdim=True),
++                                            selection_logits, logits)
+         flags = (self.structural_ops * (N - 1)
+                  + self.unary_structural_ops * N + (True,))
+         action = structural_argmax(selection_logits, flags)
+@@ -7536,6 +7558,12 @@ class OperationSelectionLayer(nn.Module):
+                        stopped=active & (kind == 0), valid=active,
+                        binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, self.r_reduce),
+                        unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, self.r_apply))
++        history = (torch.full((B, N), -1, device=x.device, dtype=torch.long)
++                   if previous_unary is None else previous_unary)
++        history = history.gather(1, source.clamp_max(N - 1))
++        history = torch.where(selected, torch.where(is_unary, local_op, -1)[:, None], history)
++        routing['previous_unary'] = torch.where(positions < next_depth[:, None], history, -1)
++        routing['alternatives'] = active & (torch.isfinite(logits).sum(-1) > 1)
+         if reference_data is not None:
+             b_operands = torch.stack((reference_data['left'], reference_data['right']), -2)
+             u_operands = torch.stack(
+@@ -7553,15 +7581,24 @@ class OperationSelectionLayer(nn.Module):
+         return hard, path, routing
+ 
+     def derive(self, x, *, slots=1, rounds, depth=None, exploit=None, greedy=False,
+-               cat_ctx=None, what_ctx=None, grammar_context=None):
++               cat_ctx=None, what_ctx=None, grammar_context=None, allow_identical=False):
+         B, N, _ = x.shape
+         depth = (torch.full((B,), N, dtype=torch.long, device=x.device)
+                  if depth is None else depth)
+         active = depth > 0
+         used = torch.zeros_like(depth)
+         actions, traces = [], []
+-        forced = (torch.floor(torch.rand(B, device=x.device) * exploit['used']).long()
+-                  if exploit is not None else torch.full_like(depth, -1))
++        history = torch.full((B, N), -1, device=x.device, dtype=torch.long)
++        if exploit is not None:
++            eligible = exploit['alternatives']
++            if not allow_identical:
++                torch._assert_async(eligible.any(-1).all(),
++                    'compose has no legal alternative to this derivation')
++            rank = (torch.rand(B, device=x.device) * eligible.sum(-1)).long()
++            selected = eligible & (eligible.long().cumsum(-1) == rank[:, None] + 1)
++            forced = torch.where(eligible.any(-1), selected.long().argmax(-1), -1)
++        else:
++            forced = torch.full_like(depth, -1)
+         for i in range(int(rounds)):
+             mask = (torch.where(forced == i, exploit['actions'][:, i], -1)
+                     if exploit is not None else None)
+@@ -7571,22 +7608,25 @@ class OperationSelectionLayer(nn.Module):
+                 x, depth=depth, slots=slots, active=active,
+                 sample=not greedy, masked_action=mask, replay_action=replay,
+                 cat_ctx=cat_ctx if i == 0 else None, what_ctx=what_ctx,
+-                grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i)
++                grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i,
++                previous_unary=history)
+             actions.append(torch.where(active & route['valid'], route['action'], -1))
+             used = used + (active & route['valid']).long()
+             depth = route['depth']
++            history = route['previous_unary']
+             active = active & route['valid'] & ~route['stopped']
+             traces.append(route)
+         return dict(value=x, depth=depth, actions=torch.stack(actions, 1), used=used,
+                     complete=depth <= torch.as_tensor(slots, device=x.device),
+-                    forced_round=forced, traces=traces)
++                    forced_round=forced, traces=traces,
++                    alternatives=torch.stack([route['alternatives'] for route in traces], 1))
+ 
+     def derive_pair(self, x, *, slots=1, rounds, depth=None, **kwargs):
+         exploit = self.derive(x, slots=slots, rounds=rounds, depth=depth, **kwargs)
+         if not self.training:
+             return exploit, None
+         explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+-                              exploit=exploit, **kwargs)
++                              exploit=exploit, allow_identical=True, **kwargs)
+         explore['different'] = (explore['actions'] != exploit['actions']).any(-1)
+         return exploit, explore
+ 
+@@ -8388,6 +8428,7 @@ class ReconstructionStack:
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
++        self._choice_explorable = None
+         self._unary_rule_map = None
+         self._binary_rule_map = None
+         self._forward_losses = None
+@@ -8412,6 +8453,7 @@ class ReconstructionStack:
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
++        self._choice_explorable = None
+         self._forward_losses = None
+         self._forward_loss_mask = None
+ 
+@@ -8435,6 +8477,7 @@ class ReconstructionStack:
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
++        self._choice_explorable = None
+         self._unary_rule_map = None
+         self._binary_rule_map = None
+         self._forward_losses = None
+@@ -8513,6 +8556,8 @@ class ReconstructionStack:
+             self._choice_rule_ids[s:e] = -1
+             self._choice_arities[s:e] = 0
+             self._choice_attempted[s:e] = False
++            if torch.is_tensor(self._choice_explorable):
++                self._choice_explorable[s:e] = False
+             for name in ("_choice_left_rows", "_choice_right_rows", "_choice_positions", "_choice_actions"):
+                 slab = getattr(self, name, None)
+                 if torch.is_tensor(slab) and int(slab.shape[0]) >= e:
+@@ -8639,6 +8684,7 @@ class ReconstructionStack:
+         self._choice_positions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+         self._choice_actions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+         self._choice_attempted = torch.zeros((batch, max_steps), dtype=torch.bool, device=device)
++        self._choice_explorable = torch.zeros_like(self._choice_attempted)
+         self._choice_arities = torch.zeros(
+             batch, max_steps, dtype=torch.int8, device=device)
+         self._choice_mask = torch.zeros(
+@@ -8699,6 +8745,7 @@ class ReconstructionStack:
+         self._choice_positions[:, slot].copy_(torch.where(active,
+             torch.as_tensor(position, device=active.device), -1))
+         self._choice_attempted[:, slot].copy_(active)
++        self._choice_explorable[:, slot].copy_(active)
+         for name, value in (("_choice_left_rows", left_row),
+                             ("_choice_right_rows", right_row)):
+             slab = getattr(self, name, None)
+@@ -13485,7 +13532,8 @@ class LanguageSpace(nn.Module):
+ 
+     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
+                          sample=True, masked_action=None, replay_action=None,
+-                         allowance=None, rounds_left=None, reference_scope=None):
++                         allowance=None, rounds_left=None, reference_scope=None,
++                         previous_unary=None):
+         """The shared compose layer with the two newest occupied STM slots."""
+         buffer, depth = state[:2]
+         B, K, D = buffer.shape
+@@ -13514,13 +13562,14 @@ class LanguageSpace(nn.Module):
+             active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
+             replay_action=replay_action, allowance=slots if allowance is None else allowance,
+             rounds_left=rounds_left, load_depth=depth,
++            previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
+             op_prior=op_prior, grammar_context=self._structural_context(
+                 phase='compose', input_stream=buffer), reference_data=references)
+         position = (window_depth - 1 - route['position']).clamp_min(0)
+         choice = LanguageOperationChoice(
+             route['candidate'], route['kind'], position, route['op'],
+             route['valid'] & (route['kind'] != 0), route['probability'],
+-            route['action'], route['valid'])
++            route['action'], route['valid'], route['alternatives'])
+         if reference_scope is None:
+             return choice
+         selected = buffer.gather(1, position[:, None, None].expand(B, 1, D))[:, 0]
+@@ -13528,6 +13577,24 @@ class LanguageSpace(nn.Module):
+                                  torch.where((choice.kind == 1)[:, None], buffer[:, 0], torch.zeros_like(selected))), 1)
+         return choice, route['refs'], route['relations'], route['operands'], (route['operands'] - originals).detach()
+ 
++    @staticmethod
++    def push_unary_history(history, active):
++        """Move each slot's last unary with the newest-first STM push."""
++        pushed = torch.cat((torch.full_like(history[:, :1], -1), history[:, :-1]), 1)
++        return torch.where(active.reshape(-1, 1), pushed, history)
++
++    @staticmethod
++    def update_unary_history(history, choice):
++        """A binary result has no last unary; an untouched slot keeps its own."""
++        binary = choice.applied & (choice.kind == 1)
++        folded = torch.cat((torch.full_like(history[:, :1], -1), history[:, 2:],
++                            torch.full_like(history[:, :1], -1)), 1)[:, :history.shape[1]]
++        history = torch.where(binary[:, None], folded, history)
++        unary = choice.applied & (choice.kind == 2)
++        position = torch.arange(history.shape[1], device=history.device)[None]
++        return torch.where(unary[:, None] & (position == choice.position[:, None]),
++                           choice.local_op[:, None], history)
++
+ 
+     @torch.compiler.disable
+     def resolve_lexical_references(self, owner, word_rows, concept_ids, actions, *, admit=True):
+@@ -14219,7 +14286,7 @@ class LanguageSpace(nn.Module):
+     @staticmethod
+     def _bounded_binary_reconstruction(op, parent, reference, on_right, known,
+                                        basis, basis_valid, candidate_limit):
+-        """Soft candidate reconstruction using the selected compose kernel.
++        """Least-residual hard pair with the soft candidate gradient.
+ 
+         At most K prototypes per side and K squared pairs, K=candidate_limit.
+         Retrieval indices, dictionary values and operand witnesses are detached.
+@@ -14256,9 +14323,18 @@ class LanguageSpace(nn.Module):
+         logits = (-residual / .01).masked_fill(~allowed, -1e9)
+         weights = logits.reshape(B, K * K).softmax(-1).reshape(B, K, K) * allowed
+         weights = weights / weights.sum((1, 2), keepdim=True).clamp_min(1e-8)
+-        left = (older * weights[..., None]).sum((1, 2))
+-        right = (newer * weights[..., None]).sum((1, 2))
+-        return left, right, active.any(-1)
++        soft_left = (older * weights[..., None]).sum((1, 2))
++        soft_right = (newer * weights[..., None]).sum((1, 2))
++        selected = residual.masked_fill(~allowed, torch.inf).flatten(1).argmin(-1)
++        gather = selected[:, None, None].expand(B, 1, D)
++        hard_left = older.reshape(B, K * K, D).gather(1, gather).squeeze(1)
++        hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)
++        available = active.any(-1)
++        hard_left = torch.where(available[:, None], hard_left, 0.)
++        hard_right = torch.where(available[:, None], hard_right, 0.)
++        left = hard_left.detach() + (soft_left - soft_left.detach())
++        right = hard_right.detach() + (soft_right - soft_right.detach())
++        return left, right, available
+ 
+     def reverse_unary_step(self, x, op_local, valid, ops=None, return_status=False):
+         """Undo the selected unary, reporting unsupported operations explicitly.
+diff --git a/bin/Layers.py b/bin/Layers.py
+index 6812d5a2..b5b7f1df 100644
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -12077,9 +12077,12 @@ class InterSentenceLayer(Layer):
+                             pred, logits = prediction.roles, prediction.presence_logits
+                             kind_logit = prediction.kind_logit
+                             if (isinstance(pending, _PendingMeaningExpectation)
+-                                    and pending.inputs is not None
+-                                    and (not pred.requires_grad or pending.versions != tuple(
+-                                        p._version for p in self._inter_predictor.parameters()))):
++                                    and pending.inputs is not None):
++                                # Equal-parameter trials still need separate
++                                # prediction graphs: the first backward frees
++                                # its graph before the second trial trains.
++                                # Replay only the stored prior inputs, keeping
++                                # the pending record and its estimate intact.
+                                 replay, presence, kinds = self._inter_predictor(
+                                     *(v.detach() for v in pending.inputs))
+                                 pred, logits = replay[0], presence[0]
+diff --git a/bin/Models.py b/bin/Models.py
+index 6bad6bc3..867c0a6c 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -10055,7 +10055,7 @@ class BasicModel(BaseModel):
+         return list({id(p): p for p in params}.values())
+ 
+     @_sentence_query_mask
+-    def reverseOutput(self, understanding, derivation):
++    def reverseOutput(self, understanding, derivation, *, detach_understanding=True):
+         """Realize a prepared AnswerDerivation without running resolution.
+ 
+         Condition its owned concepts once, then use the independent generate
+@@ -10079,7 +10079,7 @@ class BasicModel(BaseModel):
+         # contextual operands are given values; shared inverse/operator
+         # parameters below this boundary remain live and learn from output.
+         answer_event = (derivation.answer_symbol.detach()
+-                        if torch.is_tensor(derivation.answer_symbol)
++                        if detach_understanding and torch.is_tensor(derivation.answer_symbol)
+                         else derivation.answer_symbol)
+         conceptual_context = understanding.conceptual_state
+         if torch.is_tensor(conceptual_context):
+@@ -10097,7 +10097,7 @@ class BasicModel(BaseModel):
+             # compiled loop) and the words are realised through the
+             # reverse chain.  The symbol vector is never padded to fit.
+             idea, idea_resolved, idea_sources, _ = self._materialize_answer_idea(
+-                understanding, derivation, questions)
++                understanding, derivation, questions, detach_understanding=detach_understanding)
+             object.__setattr__(self, "_output_idea_sources", idea_sources)
+             object.__setattr__(self, "_output_idea_resolved", idea_resolved)
+             if getattr(self, "output_in_loop", False) and torch.is_tensor(idea):
+@@ -10116,7 +10116,11 @@ class BasicModel(BaseModel):
+                     output_truncated = torch.logical_or(output_truncated, n_emitted > kept)
+                     words = words[:, :kept]
+                 object.__setattr__(self, "_output_truncated", output_truncated)
+-                object.__setattr__(self, "_output_policy_cost", policy_cost)
++                # A trial's supplied answer trains its realization path.
++                # Policy credit has one owner: the batch-end answer call.
++                if not (getattr(self, "_sentence_training", False)
++                        and getattr(self, "_sentence_trial", None) in ("exploit", "explore")):
++                    object.__setattr__(self, "_output_policy_cost", policy_cost)
+                 walked = words
+                 if not self.training or not torch.is_grad_enabled():
+                     texts = self._generated_word_text(words, n_emitted)
+@@ -11482,8 +11486,12 @@ class BasicModel(BaseModel):
+         """
+         self._reading_word_percepts = None
+         self._reading_word_extents = None
++        self.inputSpace._ar_grammar_leaf_mask = None
++        for name in ('rows', 'orders', 'atoms'):
++            setattr(self.inputSpace, '_ar_grammar_object_' + name, None)
+         if self._aligned_serial_word_mode():
+             return  # the canonical word boundary already calls interpret
++        self._stage_mixing_grammar_leaf_mask()
+         ps, ws, owner = self.perceptualSpace, self.wholeSpaces[0], self._concept_owner()
+         fi = getattr(ps, '_forward_input', None) or {}
+         raw = self._staged_concepts_in
+@@ -11504,7 +11512,7 @@ class BasicModel(BaseModel):
+         from Meronomy import word_spans
+         raw_rows = raw.detach().to('cpu').reshape(raw.shape[0], -1).long().tolist()
+         id_rows, span_rows = ids.detach().to('cpu').tolist(), spans.detach().to('cpu').tolist()
+-        extents = []
++        extents, grammar_words = [], []
+         for b, values in enumerate(raw_rows):
+             data = bytes(values).split(b'\0', 1)[0]
+             words = []
+@@ -11529,7 +11537,9 @@ class BasicModel(BaseModel):
+                 word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+                     ws.property_rows_for_bytes(form), form=form, word_reading=True)
+                 if word is not None:
+-                    owner.interpret.forward(word)
++                    object_id = owner.interpret.forward(word)
++                    if object_id is not None:
++                        grammar_words.append((b, lo, hi, form, selected[-1], word, object_id))
+                 words.append((lo, hi))
+             extents.append(words)
+         width = max(map(len, extents), default=0)
+@@ -11540,6 +11550,100 @@ class BasicModel(BaseModel):
+         self._reading_word_percepts = (ids, spans,
+             getattr(ws.subspace.what, 'primitive_properties', None), raw, positions)
+         self._reading_word_extents = brackets
++        self._stage_reading_grammar_references(grammar_words, fi)
++
++    def _stage_mixing_grammar_leaf_mask(self):
++        """Keep whitespace in perception, but off the mixing grammar's stack.
++
++        Classify the staged unit's observed surface, independently of whether
++        its word or object identity has been admitted. Unknown surfaces and
++        punctuation keep their existing grammar admission.
++        """
++        isp = self.inputSpace
++        active = getattr(isp, '_word_active_mask', None)
++        if not torch.is_tensor(active):
++            return
++        percepts = getattr(self.perceptualSpace, '_forward_input', None) or {}
++        texts = percepts.get('word_texts')
++        spans = percepts.get('part_spans')
++        raw = getattr(self, '_staged_concepts_in', None)
++        if torch.is_tensor(spans) and torch.is_tensor(raw):
++            spans = spans.detach().cpu().tolist()
++            raw = raw.detach().cpu().reshape(raw.shape[0], -1).long().tolist()
++        else:
++            spans = raw = None
++        tokens = percepts.get('tokens', ())
++        leaves = active.detach().cpu().clone()
++        for b, row in enumerate(leaves.tolist()):
++            for w, present in enumerate(row):
++                if not present:
++                    continue
++                surface = None
++                if texts is not None and b < len(texts) and w < len(texts[b]):
++                    surface = texts[b][w]
++                elif spans is not None and b < len(spans) and w < len(spans[b]):
++                    lo, hi = spans[b][w]
++                    if 0 <= lo < hi <= len(raw[b]):
++                        surface = bytes(raw[b][lo:hi]).decode('utf-8', errors='replace')
++                elif b < len(tokens) and w < len(tokens[b]):
++                    surface = tokens[b][w]
++                if isinstance(surface, bytes):
++                    surface = surface.decode('utf-8', errors='replace')
++                if isinstance(surface, str) and surface.isspace():
++                    leaves[b, w] = False
++        isp._ar_grammar_leaf_mask = leaves.to(active.device)
++
++    def _stage_reading_grammar_references(self, words, percepts):
++        """Stage only the mixing grammar's admitted OBJECT leaves.
++
++        Reading already admitted these identities. Resolve their physical
++        rows once, at the eager boundary; grammar receives full codes without
++        consulting the lexicon or allocating another concept in its loop.
++        """
++        isp = self.inputSpace
++        active = getattr(isp, '_word_active_mask', None)
++        if not getattr(self, 'serial', False) or not torch.is_tensor(active):
++            return
++        B, W = active.shape
++        owner = self._concept_owner()
++        rows = torch.full_like(active, -1, dtype=torch.long)
++        object_orders = rows.clone()
++        offsets = getattr(isp, '_ar_word_part_offsets', None)
++        texts = percepts.get('word_texts')
++        word_major = torch.is_tensor(offsets) and offsets.ndim == 3 and texts is not None
++        starts = offsets[:, :, 0].detach().cpu().tolist() if word_major else None
++        loop_spans = percepts.get('part_spans')
++        loop_spans = (loop_spans.detach().cpu().tolist()
++                      if torch.is_tensor(loop_spans) else None)
++        active_host = active.detach().cpu().tolist()
++        for b, lo, hi, form, native_last, word_id, object_id in words:
++            if word_major:
++                columns = [p for p in range(W) if active_host[b][p]
++                           and starts[b][p] == lo and p < len(texts[b])
++                           and texts[b][p] == form]
++            elif loop_spans is not None:
++                columns = [p for p, (a, z) in enumerate(loop_spans[b][:W])
++                           if active_host[b][p] and lo <= a < z == hi]
++            else:
++                columns = [native_last] if native_last < W else []
++            if len(columns) != 1:
++                continue  # an unresolved/clipped percept cannot claim a word
++            p = columns[0]
++            if not active_host[b][p]:
++                continue
++            row = owner._csw_row_of(object_id)
++            if row is None:
++                continue
++            rows[b, p] = int(row)
++            object_orders[b, p] = int(owner._concept_source_order(object_id))
++        atoms = owner.similarity_codebook.lookup_rows(rows.clamp_min(0))
++        atoms = atoms * rows.ge(0)[..., None].to(atoms.dtype)
++        # These references select the grammar's numerical leaves. They do
++        # not publish native word identities, lexical roles or evidence in
++        # a binding whose symbolic reading has not supplied those products.
++        isp._ar_grammar_object_rows = rows
++        isp._ar_grammar_object_orders = object_orders
++        isp._ar_grammar_object_atoms = atoms
+ 
+     def _publish_reading_symbols(self, concept_sub):
+         """Publish the native word evidence through its concept identities."""
+@@ -12151,6 +12255,11 @@ class BasicModel(BaseModel):
+         object_atoms = getattr(isp, "_ar_word_object_atoms", None)
+         object_rows = getattr(isp, "_ar_word_object_rows", None)
+         rows = self._word_symbol_rows()
++        grammar_rows = getattr(isp, '_ar_grammar_object_rows', None)
++        grammar_atoms = getattr(isp, '_ar_grammar_object_atoms', None)
++        if torch.is_tensor(grammar_rows) and torch.is_tensor(grammar_atoms):
++            concept_atoms, rows = grammar_atoms, grammar_rows
++            object_atoms = object_rows = None
+         reference = like.new_zeros(B, W, D)
+         if not (torch.is_tensor(concept_atoms) and concept_atoms.dim() == 3
+                 and torch.is_tensor(rows)):
+@@ -12311,7 +12420,8 @@ class BasicModel(BaseModel):
+         return fn
+ 
+     def _reconstruct_sentences(self, S, reference, roots_live, roots_depth=None,
+-                               end_slots=None, end_depth=None, sentence_slot=None):
++                               end_slots=None, end_depth=None, sentence_slot=None,
++                               *, candidate_basis=None, keep_ideas=None):
+         """Reconstruct completed sentences with bounded compiled traversals.
+ 
+         An integer-only prepass replays operand occurrence positions. The two
+@@ -12337,7 +12447,7 @@ class BasicModel(BaseModel):
+         Returns ``(recovered [B, W, D], idea_cost [B], byte_cost [B],
+         truncated [B], byte_cost_per_sentence [B, slots])``.
+         """
+-        if not torch.compiler.is_compiling():
++        if candidate_basis is None and not torch.compiler.is_compiling():
+             self._validate_reconstruction_bank()
+         # Targets and inverse witnesses are constants. Detach before the
+         # higher-order loops capture their inputs: detaching only inside a
+@@ -12372,6 +12482,7 @@ class BasicModel(BaseModel):
+         unary_map = trace.rule_map(1)
+         active = isp._word_active_mask.to(dtype=torch.bool)
+         dev = S.device
++        leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
+         packed = bool(getattr(isp, "_sentence_pack_enabled", False))
+         ids = getattr(isp, "_packed_sentence_ids", None)
+         if packed and torch.is_tensor(ids):
+@@ -12388,19 +12499,33 @@ class BasicModel(BaseModel):
+         last_index = torch.where(active, positions, torch.full_like(positions, -1)).amax(dim=1)
+         if sentence_slot is not None:
+             active = active & (ids == sentence_slot)
+-        keep_ideas = bool(self.reconstruct_in_loop or getattr(self, "_recon_keep_ideas", False))
++        leaves = active & leaf_mask if torch.is_tensor(leaf_mask) else active
++        keep_ideas = (bool(self.reconstruct_in_loop or getattr(self, "_recon_keep_ideas", False))
++                      if keep_ideas is None else bool(keep_ideas))
+         required = ((rule_ids.unsqueeze(-1) == binary_map.reshape(1, 1, -1))
+                     & (mask & (arities == 2)).unsqueeze(-1)).any(dim=(0, 1))
+         inverses = language.reverse_inverses(required=required)  # once per selected op
+-        byte_ready, bytes_bwp, valid_bwp = self._byte_tables(B, W)   # the words' bytes
+-        snap_ready, bank_n, bank_bytes, bank_valid = self._snapshot_tables(reference)
+-        basis, basis_valid = self._reconstruction_basis_snapshot(reference)
+-        bank_sentence_ids = getattr(isp, "_ar_concept_lookup_sentence_ids", None)
+-        if not (torch.is_tensor(bank_sentence_ids) and bank_sentence_ids.shape == basis_valid.shape):
+-            raise RuntimeError("reconstruction candidates lost their sentence ownership")
+-        bank_sentence_ids = bank_sentence_ids.detach().to(dev).clone()
++        if candidate_basis is None:
++            byte_ready, bytes_bwp, valid_bwp = self._byte_tables(B, W)
++            snap_ready, bank_n, bank_bytes, bank_valid = self._snapshot_tables(reference)
++            basis, basis_valid = self._reconstruction_basis_snapshot(reference)
++            bank_sentence_ids = getattr(isp, "_ar_concept_lookup_sentence_ids", None)
++            if not (torch.is_tensor(bank_sentence_ids) and bank_sentence_ids.shape == basis_valid.shape):
++                raise RuntimeError("reconstruction candidates lost their sentence ownership")
++            bank_sentence_ids = bank_sentence_ids.detach().to(dev).clone()
++            byte_ready = bool(byte_ready and snap_ready)
++        else:
++            # Evaluation may search a known numerical vocabulary without
++            # manufacturing native WORD symbols or a byte-training bank.
++            basis, basis_valid = (value.detach().clone() for value in candidate_basis)
++            bank_sentence_ids = torch.full_like(basis_valid, -1, dtype=torch.long)
++            bank_n = basis
++            bank_bytes = torch.zeros(*basis.shape[:2], 1, device=dev, dtype=torch.long)
++            bank_valid = torch.zeros_like(bank_bytes, dtype=torch.bool)
++            bytes_bwp = torch.zeros(B, W, 1, device=dev, dtype=torch.long)
++            valid_bwp = torch.zeros_like(bytes_bwp, dtype=torch.bool)
++            byte_ready = False
+         basis_limit = int(self.reconstruction_basis_limit)
+-        byte_ready = bool(byte_ready and snap_ready)
+         binary_ops = list(language._tree_layer(2).ops)
+         prefer_left = torch.tensor([
+             getattr(getattr(op, "gl", op), "rule_name", "")
+@@ -12459,7 +12584,7 @@ class BasicModel(BaseModel):
+             return w < bound
+ 
+         def metadata_body(w, stack, depth, lefts, rights, bad):
+-            wa = _col(active, w)
++            wa = _col(leaves, w)
+             slot = (3 * w).reshape(1).expand(B)
+             push = wa & (depth < cap)
+             bad = bad | (wa & ~push)
+@@ -12470,7 +12595,7 @@ class BasicModel(BaseModel):
+                 for arity in (2, 1):
+                     stack, depth, lefts, rights, bad = metadata_fold(
+                         stack, depth, lefts, rights, bad, slot + r, wa, arity)
+-            ending = _col(is_end, w) & wa
++            ending = _col(is_end, w) & _col(active, w)
+             final = w == last_index
+             base = torch.where(final, 3 * W, 3 * W + (w + 1) * closing_width)
+             for k in range(closing_width):
+@@ -12526,9 +12651,14 @@ class BasicModel(BaseModel):
+             valid = torch.logical_and(
+                 torch.logical_and(rec_mask, known_b), depth >= 1)
+             valid = valid & (depth < cap) & (_col_rows(arities, slot_b) == 2)
++            if candidate_basis is not None:
++                # The read-back measurement gets no original leaf witness.
++                ref = torch.zeros_like(ref)
++                side = (torch.zeros_like(valid), torch.zeros_like(valid))
+             left, right, unavailable = language.reverse_binary_step(
+                 top, local_b, valid, ref, inverses=inverses, reference_side=side,
+-                basis=basis, basis_valid=basis_valid & (bank_sentence_ids == sentence[:, None]),
++                basis=basis, basis_valid=basis_valid & (
++                    (bank_sentence_ids == sentence[:, None]) | (bank_sentence_ids < 0)),
+                 candidate_limit=basis_limit,
+                 return_status=True)
+             offsets = _reference_offsets(slot_b)
+@@ -12620,8 +12750,10 @@ class BasicModel(BaseModel):
+ 
+         def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+             w = (T - 1) - t
+-            wa = _col(active, w)
+-            end_b = torch.logical_and(_col(is_end, w), wa)
++            wa = _col(leaves, w)
++            # A trailing separator still locates the physical sentence end;
++            # it loads the closing state but consumes no grammar operand.
++            end_b = torch.logical_and(_col(is_end, w), _col(active, w))
+             sid = _col(ids, w).clamp(0, slots - 1)
+             loaded = pre_stack.gather(
+                 1, sid.reshape(B, 1, 1, 1).expand(B, 1, cap, D)).reshape(B, cap, D)
+@@ -12679,6 +12811,53 @@ class BasicModel(BaseModel):
+         truncated = (trunc > 0).any(dim=1) | pre_bad.any(dim=1) | malformed
+         return recovered, idea_cost, byte_cost, truncated, byte_all
+ 
++    @_sentence_query_mask
++    def reconstruct_grammar_sentence(self, state, sid, active):
++        """Read an open sentence's concluded state through its grammar inverse.
++
++        This eager boundary must precede disposal of the reading's operation
++        record. Only decoded words and availability leave this call. Candidate
++        values are the known object vocabulary; neither source text nor an
++        original leaf witness enters the decoder. The ordinary native
++        reconstruction byte objective is unchanged.
++        """
++        self._publish_sentence_scratch(state)
++        reference = self._tensor_pushed_ideas
++        B, W, D = reference.shape
++        owner = self._concept_owner()
++        rows = sorted({row for identity in owner.definitions.object_ids
++                       if (row := owner._csw_row_of(identity)) is not None
++                       and owner.word_surface_for_row(row) is not None})
++        if not rows:
++            return (None,) * B, active.clone()
++        ids = torch.tensor(rows, device=reference.device, dtype=torch.long)
++        atoms = owner.similarity_codebook.lookup_rows(ids).detach().to(reference)
++        if atoms.shape[-1] != D:
++            raise ValueError('grammar reconstruction requires full object codes')
++        basis = atoms[None].expand(B, -1, -1)
++        valid = torch.ones(basis.shape[:2], dtype=torch.bool, device=reference.device)
++        lang = state[1]
++        # Higher-order loops lift both the bank and the current sentence;
++        # independent storage avoids input aliases at that graph boundary.
++        end = lang[13][:, sid].reshape(B, 3, D).clone()
++        result = self._reconstruct_sentences(
++            lang[9][:, sid].clone(), reference, lang[13], lang[14], end, lang[14][:, sid].clone(),
++            torch.tensor(sid, device=reference.device),
++            candidate_basis=(basis, valid), keep_ideas=True)
++        scope = self._sentence_scope(sid) & active[:, None]
++        leaf_mask = getattr(self.inputSpace, '_ar_grammar_leaf_mask', None)
++        if torch.is_tensor(leaf_mask):
++            scope = scope & leaf_mask
++        lengths = scope.sum(-1)
++        # Compact the recovered words, not their retained references. The
++        # lexical inverse competes over every owned vocabulary spelling.
++        positions = torch.arange(W, device=reference.device).expand(B, W)
++        order = torch.argsort(positions + (~scope).long() * W, dim=1)
++        words = result[0].gather(1, order[..., None].expand(B, W, D))
++        texts = self._generated_word_text(words, lengths)
++        unavailable = result[3] & active
++        return texts, unavailable
++
+     def _reconstruct_sentence_traversal(self, S, reference, **_unused):
+         """One row-level traversal (``_reconstruct_sentences`` with one
+         sentence per row): ``(recovered, idea_cost, byte_cost, truncated)``."""
+@@ -12860,7 +13039,7 @@ class BasicModel(BaseModel):
+             return n_what
+         return max(0, int(event_width) - 8)
+ 
+-    def _materialize_answer_idea(self, understanding, derivation, question):
++    def _materialize_answer_idea(self, understanding, derivation, question, *, detach_understanding=True):
+         """Condition a resolved end state once, then let the grammar generate."""
+         fields = derivation.sentence_states
+         idea = derivation.conceptual_answer
+@@ -12876,7 +13055,7 @@ class BasicModel(BaseModel):
+                           'cold-memory' if 'cold-memory' in source or source == 'recall' else 'unresolved')
+             sources.append('idea:' + source)
+         context = derivation.conditioning_context
+-        idea = self._condition_answer_on_question(idea.detach(),
++        idea = self._condition_answer_on_question(idea.detach() if detach_understanding else idea,
+             context.detach() if torch.is_tensor(context) else context)
+         return torch.where(resolved[:, None, None], idea, torch.zeros_like(idea)), resolved, tuple(sources), None
+ 
+@@ -13043,6 +13222,8 @@ class BasicModel(BaseModel):
+         kind_l = kind.to("cpu").tolist()
+         op_l = op.to("cpu").tolist()
+         rows = active.to("cpu").tolist()
++        leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
++        leaves = leaf_mask.to('cpu').tolist() if torch.is_tensor(leaf_mask) else rows
+         T = int(budget) if budget is not None else self._walk_budget()
+         positions_l, actions_l, targets_l, columns_l = [], [], [], []
+         for b in range(B):
+@@ -13055,6 +13236,7 @@ class BasicModel(BaseModel):
+             if words:
+                 hi = words[-1]
+                 base = 3 * W if hi == words_all[-1] else 3 * W + (hi + 1) * closing_width
++                words = [w for w in words if leaves[b][w]]
+ 
+                 def _at(slot):
+                     if 0 <= slot < S and kind_l[b][slot] >= 0:
+@@ -13333,6 +13515,14 @@ class BasicModel(BaseModel):
+         R1 = int(unary_map.numel()) if torch.is_tensor(unary_map) else 0
+         stop_index = R2 + R1
+         policy_on = language.generate_policy is not None
++        trial_answer = (getattr(self, "_sentence_training", False)
++                        and getattr(self, "_sentence_trial", None) in ("exploit", "explore"))
++        # Detach before the loop captures its inputs. Discarding its credit
++        # output alone leaves zero gradients on lifted policy parameters,
++        # which can still move Adam's momentum during a sentence update.
++        frozen_policy = ((language.generate_policy.weight.detach(),
++                          language.generate_policy.bias.detach())
++                         if trial_answer and policy_on else None)
+         # Draw outside the loop body so the compiled loop consumes one
+         # fixed-shape random slab, with one independent draw per row/trip.
+         draws = torch.rand(B, T, device=event.device) if sample_actions else None
+@@ -13355,8 +13545,10 @@ class BasicModel(BaseModel):
+             is_rule = has_top & (kind == 2) & (known_b | known_u)
+             if sample_actions:
+                 is_rule = torch.zeros_like(is_rule)
+-            logits = language.generate_policy_logits(
+-                top_vec.detach() if sample_actions else top_vec)
++            logits = (F.linear(top_vec.detach()[:, :language._generate_policy_width],
++                               *frozen_policy) if frozen_policy is not None else
++                      language.generate_policy_logits(
++                          top_vec.detach() if sample_actions else top_vec))
+             unstamped = has_top & ~is_rule
+             choice = language.choose_generate(logits)
+             if sample_actions:
+@@ -13364,8 +13556,9 @@ class BasicModel(BaseModel):
+                     1, t.clamp(0, T - 1).reshape(1, 1).expand(B, 1))
+                 cdf = logits.detach().softmax(dim=-1).cumsum(dim=-1)
+                 choice = (draw >= cdf).to(torch.long).sum(dim=-1).clamp_max(stop_index)
+-                credit = credit + language.generate_policy_credit(
+-                    logits, choice, unstamped)
++                if not trial_answer:
++                    credit = credit + language.generate_policy_credit(
++                        logits, choice, unstamped)
+             if not policy_on:
+                 unstamped = torch.zeros_like(unstamped)
+             pol_b = torch.logical_and(unstamped, choice < R2)
+@@ -14127,13 +14320,16 @@ class BasicModel(BaseModel):
+ 
+ 
+     def _exploration_constraints(self):
+-        """One uniformly selected used round per row-owned sentence."""
++        """One uniformly selected branchable round per row-owned sentence."""
+         trace = self._reconstruction_stack()
+         actions = getattr(trace, '_choice_actions', None)
+         attempted = getattr(trace, '_choice_attempted', None)
+         if not torch.is_tensor(actions) or not torch.is_tensor(attempted):
+             return None, None, None
+         actions, attempted = actions.detach().clone(), attempted.detach().clone()
++        explorable = getattr(trace, "_choice_explorable", None)
++        if torch.is_tensor(explorable):
++            attempted &= explorable
+         B, T = actions.shape
+         owners, ids, _ = self._compose_round_owners(actions)
+         forced = torch.zeros_like(attempted)
+@@ -14157,6 +14353,9 @@ class BasicModel(BaseModel):
+         # including configurations that retain the older event-loss report.
+         # A reporting switch must not turn both compose objectives into zero.
+         self._sentence_training = bool(training)
++        self._sentence_supplied_answers = None
++        self._sentence_answer_questions = ()
++        self._sentence_answer_cost = None
+         self._sentence_run_active = True
+         self._open_sentence_slot = None
+         self._sentence_reconstruction = self._sentence_ends and (
+@@ -14206,6 +14405,9 @@ class BasicModel(BaseModel):
+             self._compose_prefix_slots = None
+ 
+             self._sentence_training = False
++            self._sentence_supplied_answers = None
++            self._sentence_answer_questions = ()
++            self._sentence_answer_cost = None
+             self._sentence_run_active = False
+             self._open_sentence_slot = None
+             self.languageSpace._reference_bank = None
+@@ -14323,6 +14525,8 @@ class BasicModel(BaseModel):
+             )
+         batch = batch_override
+         inputTensor, outputTensor = batch
++        if train and trial_mode != 'predict':
++            self._sentence_supplied_answers = outputTensor
+         self._stage_expectation_documents(
+             split, source_rows, int(inputTensor.shape[0])
+             if isinstance(inputTensor, torch.Tensor) else len(inputTensor))
+@@ -14339,6 +14543,7 @@ class BasicModel(BaseModel):
+             questions=questions,
+             trial_mode=trial_mode,
+         )
++        self._sentence_answer_questions = what_questions
+ 
+         # Advance the serialized model clock once per PROCESSED batch (this
+         # point is past the no-batch early raise, so it ticks exactly once on
+@@ -17644,10 +17849,42 @@ class BasicModel(BaseModel):
+ 
+ 
+ 
+-    def _forward_head(self, sub):
+-        """Head: outputSpace forward."""
++    def _forward_head(self, sub, *, sentence_state=None, detach_understanding=True):
++        """Read the concluded state; supplied-answer trials retain its graph."""
+         if self.outputSpace.concept_ids:
+             sub = self._combine_last_cs_sub
++        elif getattr(self, 'serial', False):
++            # A fullgraph body returns these tensors explicitly. Its eager
++            # diagnostic attributes are published only after the head runs.
++            root = (sentence_state[0] if sentence_state is not None
++                    else getattr(self, '_stm_single_S', None))
++            if not torch.is_tensor(root):
++                raise RuntimeError('a serial numeric answer requires a concluded understanding')
++            slots = (sentence_state[-2] if sentence_state is not None
++                     else getattr(self, '_tensor_final_end_slots', None))
++            depth = (sentence_state[-1] if sentence_state is not None
++                     else getattr(self, '_tensor_final_end_depth', None))
++            if not (torch.is_tensor(slots) and torch.is_tensor(depth)):
++                slots, depth = self._final_end_state(
++                    root, getattr(self, '_stm_post_depth', None))
++            B, D = root.shape
++            occupied = depth.reshape(B).abs().clamp_max(3)
++            single = torch.cat((root[:, None], root.new_zeros(B, 2, D)), dim=1)
++            slots = torch.where((occupied == 1)[:, None, None], single, slots)
++            slots = torch.where(
++                (torch.arange(3, device=root.device)[None] < occupied[:, None])[..., None],
++                slots, torch.zeros_like(slots))
++            # Preserve the existing map's parameter geometry. Unoccupied
++            # inputs are zeros; no per-word carrier can bypass the state cut.
++            shape = tuple(self.outputSpace.inputShape)
++            width = int(shape[0]) * int(shape[1])
++            torch._assert_async((occupied * D <= width).all(),
++                'the answer map cannot hold the concluded understanding')
++            value = (slots.detach() if detach_understanding else slots).reshape(B, 3 * D)
++            value = F.pad(value, (0, max(0, width - 3 * D)))[:, :width]
++            sub = SubSpace.from_tensor(value.reshape(B, *shape),
++                inputShape=shape, outputShape=shape,
++                nInputDim=shape[1], nOutputDim=shape[1])
+         return self.outputSpace(sub)
+ 
+     @staticmethod
+@@ -18535,12 +18772,25 @@ class BasicModel(BaseModel):
+         B = state[0].shape[0]
+         gate = (state[1] > 0 if row_gate is None else row_gate.reshape(B).bool())
+         slots = 1 if protect_depth is None else protect_depth
++        history = getattr(stm, "_last_unary", None)
++        if history is None or history.shape != state[0].shape[:2]:
++            history = torch.full_like(state[2], -1)
++        else:
++            previous_depth = stm._unary_history_depth
++            pushed = (state[1] - previous_depth).clamp_min(0)
++            positions = torch.arange(history.shape[1], device=history.device)[None]
++            source = positions - pushed[:, None]
++            history = torch.where((source >= 0) & (state[1] >= previous_depth)[:, None],
++                history.gather(1, source.clamp_min(0)), -1)
+         choice = self.languageSpace.choose_operation(
+             state, gate, slots=slots, allowance=allowance, rounds_left=rounds_left,
++            previous_unary=history,
+             masked_action=self._compose_masked_action(trace_slot, state[1]),
+             replay_action=self._compose_replayed_action(trace_slot, state[1]),
+             op_prior=self._chunk_structural_prior(stm.ensure_whole_state(), B, state[0]))
+         next_state = self.conceptualSpace.apply_language_choice(state, choice)
++        stm._last_unary = self.languageSpace.update_unary_history(history, choice)
++        stm._unary_history_depth = next_state[1]
+         scope = self.languageSpace.clause_scope
+         stm._clause_state, closing_kind = scope.apply(stm.ensure_clause_state(), choice,
+             torch.as_tensor(0 if trace_slot is None else trace_slot, device=state[0].device))
+@@ -18613,9 +18863,9 @@ class BasicModel(BaseModel):
+     def _exploration_prefix_slots(self, actions, forced, owners):
+         """Chronological prefix per sentence, including interleaved closing slots.
+ 
+-        Exploit already updated the parameters. Replaying its hard choices
+-        preserves the zero-temperature counterfactual's prefix under those
+-        updated weights, while recomputing candidates and their live credit.
++        Neither trial has updated the parameters yet. Replaying the hard
++        choices preserves the zero-temperature counterfactual's prefix,
++        while recomputing candidates and their live credit for its own graph.
+         """
+         words = self.inputSpace._word_active_mask.shape[1]
+         closing = max(1, 2 * int(self.conceptualSpace.stm.capacity))
+@@ -18652,6 +18902,7 @@ class BasicModel(BaseModel):
+         trace._choice_positions[:, slot] = choice.position
+         trace._choice_actions[:, slot] = choice.action
+         trace._choice_attempted[:, slot] = choice.valid
++        trace._choice_explorable[:, slot] = (choice.valid if choice.alternatives is None else choice.alternatives)
+         trace._choice_left_rows, trace._choice_right_rows = self._tensor_record_operands(
+             trace._choice_left_rows, trace._choice_right_rows,
+             torch.as_tensor(slot, device=state[0].device), state,
+@@ -18916,6 +19167,9 @@ class BasicModel(BaseModel):
+                       if in_event is not None and torch.is_tensor(in_event)
+                       else None)
+             stm.begin_forward(B_in, device=dev_in)
++            stm._last_unary = torch.full(stm._buffer.shape[:2], -1,
++                                         dtype=torch.long, device=stm._buffer.device)
++            stm._unary_history_depth = stm._depth.clone()
+ 
+         # MPHF pre-warm (Dynamo-unfriendly build path).
+         ps = self.perceptualSpace
+@@ -20402,6 +20656,8 @@ class BasicModel(BaseModel):
+         (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+          stm._concept_rows, stm._concept_activations) = current_stm
+         stm._clause_state = lang[20]
++        stm._last_unary = lang[26]
++        stm._unary_history_depth = current_stm[1]
+         stm._wholes = lang[10]
+         trace = self._reconstruction_stack()
+         for name, value in zip(('_choice_rule_ids', '_choice_arities', '_choice_mask',
+@@ -20415,6 +20671,7 @@ class BasicModel(BaseModel):
+         trace._choice_refs = lang[23]
+         trace._choice_reference_offsets = lang[24]
+         trace._choice_ref_relations = lang[25]
++        trace._choice_explorable = lang[27]
+         self._packed_sentence_roots = lang[9]
+         self._tensor_sentence_roots_live = lang[13]
+         self._tensor_sentence_roots_depth = lang[14]
+@@ -20507,12 +20764,88 @@ class BasicModel(BaseModel):
+                 expectation_cost = (contrast_cost if expectation_cost is None else
+                                     expectation_cost + contrast_cost)
+                 cost = cost + contrast_cost
++        answer_error = BasicModel._sentence_answer_error(self, state, sid, active, observation)
++        if answer_error is not None:
++            cost = cost + answer_error
++            output_cost = answer_error if output_cost is None else output_cost + answer_error
+         if getattr(self, '_sentence_operator_gradients', None) is not None:
+             self._sentence_gradient_objectives = dict(
+                 reconstruction=reconstruction_cost, expectation=expectation_cost,
+                 output=output_cost)
+         return cost, reconstruction, observation, pending
+ 
++    def _sentence_answer_error(self, state, sid, active, observation):
++        """A supplied answer trains this trial's readout, grammar and codes.
++
++        The target is loss-side metadata: it never enters composition. Both
++        trials read it after composing, before either optimizer update. The
++        caller retains each trial's own perception pullback for its backward.
++        """
++        self._sentence_answer_cost = None
++        target = getattr(self, '_sentence_supplied_answers', None)
++        if (not getattr(self, '_sentence_training', False)
++                or not torch.is_tensor(target) or not target.numel()
++                or not self.inputSpace.data.has_supervised_outputs):
++            return None
++        _stm, lang, _feedback = state
++        root = lang[9][:, sid]
++        slots = lang[13][:, sid].reshape(root.shape[0], 3, root.shape[-1])
++        depth = lang[14][:, sid]
++        if getattr(self, 'answer_synthesis', False):
++            data = self.inputSpace.data
++            questions = self._sentence_answer_questions
++            desired = tuple(data.what(question) for question in questions)
++            values = [answer.what if answer.available and question.relation is WhatRelation.SUPERVISED
++                      else None for question, answer in zip(questions, desired)]
++            if not any(value is not None for value in values):
++                return None
++            # Realize this trial's completed field without a query or a write.
++            # Generation is the reading map in these configurations. Its
++            # normal batch-end call still takes the default state cut.
++            # Match _commit_sentence's completed point: an open clause may
++            # still describe two pre-fusion roles, which are not an end state.
++            meanings = [
++                replace(ConceptualMeaning.from_description(clause.point),
++                        mode=meaning.mode, polarity=meaning.polarity, sentence_kind='idea')
++                if clause is not None and clause.relation is None else meaning
++                for meaning, clause in zip(observation['meanings'], observation['clauses'])]
++            fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
++            idea = torch.stack([root[b].new_zeros(3, root.shape[-1])
++                                if value is None else value.roles
++                                for b, value in enumerate(meanings)])
++            context, _ = self._what_grammar_context(questions, device=root.device, dtype=root.dtype)
++            held = AnswerDerivation(answer_symbol=None, sentence_states=fields,
++                conceptual_answer=idea, questions=questions, conditioning_context=context,
++                answer_meanings=tuple(() if value is None else (value,) for value in meanings))
++            understanding = Understanding(conceptual_state=idea, sentence_states=fields)
++            construction = self.reverseOutput(understanding, held, detach_understanding=False)
++            pred = construction.actual
++            # Supplied answers retain Data.what's authority, including empty
++            # rows and text targets. Desired values only score the fixed output.
++            if any(isinstance(value, str) for value in values):
++                filler = next(value for value in values if isinstance(value, str))
++                mask = active & torch.tensor([isinstance(value, str) for value in values], device=root.device)
++                target_surface = self._embed_answer_texts(
++                    [value if isinstance(value, str) else filler for value in values]).detach()
++                surface = self._answer_surface_from_percepts(construction.percepts)
++                error = torch.stack([self._reverse_event_loss(surface[b:b+1], target_surface[b:b+1])
++                                     for b in range(root.shape[0])])
++                self._sentence_answer_cost = torch.where(mask, error, torch.zeros_like(error))
++                return self._sentence_answer_cost
++            template = next(value for value in values if value is not None)
++            target = self.outputSpace.prepOutput([template if value is None else value for value in values])
++            active = active & torch.tensor([value is not None for value in values], device=root.device)
++        else:
++            answer = self._forward_head(None, sentence_state=(root, slots, depth),
++                                        detach_understanding=False)
++            pred = self.normalizer.denormalize(answer.materialize(), which='output')
++        pred = self._align_output_pred(pred, target)
++        if pred is None:
++            raise RuntimeError('sentence answer and supplied target do not align')
++        error = (pred - target.to(pred)).square().reshape(root.shape[0], -1).mean(-1)
++        self._sentence_answer_cost = torch.where(active, error, torch.zeros_like(error))
++        return self._sentence_answer_cost
++
+     @staticmethod
+     def _clause_end_state(state, sid, clauses, row_ids):
+         """Publish the chosen clause field; a relation never occupies a point."""
+@@ -20554,9 +20887,9 @@ class BasicModel(BaseModel):
+         """After both trials train, discard their operations at the closing."""
+         stm, lang, feedback = state
+         lang = list(lang)
+-        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25):
++        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27):
+             value = lang[index]
+-            blank = torch.full_like(value, -1) if index in (4, 5, 15, 16, 17, 18, 23) else torch.zeros_like(value)
++            blank = torch.full_like(value, -1) if index in (4, 5, 15, 16, 17, 18, 23, 26) else torch.zeros_like(value)
+             mask = active.reshape(active.shape[0], *((1,) * (value.ndim - 1)))
+             lang[index] = torch.where(mask, blank, value)
+         return stm, tuple(lang), feedback
+@@ -20779,8 +21112,10 @@ class BasicModel(BaseModel):
+             self._open_sentence_slot = sid
+             before = self._snapshot_sentence_state((stm, lang, feedback))
+             observations, predictions = [], []
++            pending_steps = []
+             def compose(cached, exploit):
+                 self._sentence_trial = 'exploit' if exploit is None else 'explore'
++                self._sentence_pullback = None
+                 if self._sentence_training and torch.is_grad_enabled():
+                     cached, self._sentence_pullback = fork_perception(cached)
+                 if exploit is not None:
+@@ -20808,13 +21143,17 @@ class BasicModel(BaseModel):
+                     current_lang, current_stm, current_feedback = compose_word(
+                         payload, index, None, current_lang, current_stm)
+                     latches = [latches[1], current_feedback]
+-                return current_stm, current_lang, current_feedback
++                path = (current_stm, current_lang, current_feedback)
++                if self._sentence_training and torch.is_grad_enabled():
++                    pending_steps.append((self._sentence_trial, self._sentence_pullback, path))
++                return path
+             def score(path, alternative):
+                 if alternative:
+                     owners, _, _ = self._compose_round_owners(path[1][18])
+                     rounds = (owners == sid) & (self._compose_exploit_actions >= 0)
+                     different = ((self._compose_exploit_actions != path[1][18]) & rounds).any(-1)
+-                    if not bool((different | ~present).all()):
++                    branchable = self._compose_forced_slots.any(-1)
++                    if not bool((different | ~present | ~branchable).all()):
+                         raise RuntimeError('exploration repeated an exploit sentence derivation')
+                 cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                 if self._sentence_training and self.legacy_prediction_enabled:
+@@ -20831,11 +21170,20 @@ class BasicModel(BaseModel):
+                 observations.append(observation)
+                 predictions.append(pending)
+                 return cost, (path, reconstruction)
++            def train_trial(loss):
++                # Both graphs now exist. Restore this trial's perception
++                # pullback and scratch bindings before its own backward.
++                trial, pullback, path = pending_steps.pop(0)
++                self._sentence_trial, self._sentence_pullback = trial, pullback
++                self._restore_sentence_state(path)
++                self._sentence_train_step(loss)
+             try:
+                 (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+-                    self._sentence_train_step, active=present,
++                    train_trial, active=present,
+                     training=self._sentence_training and torch.is_grad_enabled())
+             finally:
++                pending_steps.clear()
++                self._sentence_pullback = None
+                 self._compose_exploit_actions = self._compose_forced_slots = None
+                 self._compose_prefix_slots = None
+             self._sentence_trial = None
+@@ -20918,6 +21266,7 @@ class BasicModel(BaseModel):
+         words = isp._ar_embedded_N
+         active = isp._word_active_mask.to(dtype=torch.bool)
+         B = int(words.shape[0])
++        grammar_leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
+         capacity = int(stm.capacity)
+         concept_dim = int(stm.concept_dim)
+         symbolic_passes = tuple(range(max(0, int(self.symbolicOrder))))
+@@ -20931,6 +21280,9 @@ class BasicModel(BaseModel):
+         object_rows = getattr(isp, '_ar_word_object_rows', None)
+         object_orders = getattr(isp, '_ar_word_object_orders', None)
+         object_atoms = getattr(isp, '_ar_word_object_atoms', None)
++        grammar_rows = getattr(isp, '_ar_grammar_object_rows', None)
++        grammar_orders = getattr(isp, '_ar_grammar_object_orders', None)
++        grammar_atoms = getattr(isp, '_ar_grammar_object_atoms', None)
+         lookup_rows = getattr(isp, '_ar_concept_lookup_rows', None)
+         lookup_atoms = getattr(isp, '_ar_concept_lookup_atoms', None)
+         word_property_weights = getattr(ws, '_staged_word_primitive_counts', None)
+@@ -21130,6 +21482,8 @@ class BasicModel(BaseModel):
+             torch.full((B, choices[0].shape[1], 2), -1, dtype=torch.long, device=words.device),
+             words.new_zeros(B, choices[0].shape[1], 2 * concept_dim),
+             torch.zeros(B, choices[0].shape[1], 2, dtype=torch.bool, device=words.device),
++            torch.full((B, capacity), -1, dtype=torch.long, device=words.device),
++            torch.zeros_like(choices[2]),
+         )
+         empty_cs_sub = (
+             zero_concept.clone(),
+@@ -21320,6 +21674,8 @@ class BasicModel(BaseModel):
+              object_row, object_order, object_atom, row_gate, commit,
+              routing, routing_valid) = cs_sym_payload
+             word_idea = symbolic_event[:, 0, :]
++            if torch.is_tensor(grammar_leaf_mask):
++                commit = commit & _gather_word(grammar_leaf_mask, index).reshape_as(commit)
+ 
+             if capture_intra:
+                 prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
+@@ -21357,9 +21713,9 @@ class BasicModel(BaseModel):
+ 
+             # Treating the deposited word concept as a reference resolves its
+             # paired object concept before Language observes the stack.  The
+-            # reference keeps the word's signed evidence and positional band.
++            # reference keeps the word's signed activation; concepts are full codes.
+             object_idea = cs.interpret.forward(
+-                word_idea, object_atoms=object_atom[:, :int(cs.nWhat)],
++                word_idea, object_atoms=object_atom,
+                 activation=activation.reshape(B))
+             object_gate = torch.logical_and(
+                 commit.reshape(B), object_row >= 0)
+@@ -21379,6 +21735,8 @@ class BasicModel(BaseModel):
+             operation_refs = current_cs_lang[23]
+             reference_offsets = current_cs_lang[24]
+             reference_relations = current_cs_lang[25]
++            unary_history = language.push_unary_history(current_cs_lang[26], commit)
++            explorable_slab = current_cs_lang[27]
+             round_active = commit.reshape(B)
+             post_op = unary_op = torch.full_like(current_stm[1], -1)
+             post_valid = unary_valid = torch.zeros_like(round_active)
+@@ -21393,8 +21751,13 @@ class BasicModel(BaseModel):
+                     masked_action=self._compose_masked_action(slot, before[1]),
+                     replay_action=self._compose_replayed_action(slot, before[1]),
+                     op_prior=self._chunk_structural_prior(wholes, B, before[0]),
+-                    reference_scope=clause_state if sentence_transactions else None)
++                    reference_scope=clause_state if sentence_transactions else None,
++                    previous_unary=unary_history)
+                 choice = proposal[0] if sentence_transactions else proposal
++                unary_history = language.update_unary_history(unary_history, choice)
++                eligible = choice.valid if choice.alternatives is None else choice.alternatives
++                explorable_slab = self._tensor_record_selected_values(
++                    explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                 if sentence_transactions:
+                     _, refs, relative, operands, offsets = proposal
+                     clause_state = scope.resolve(clause_state, choice, refs, relative)
+@@ -21473,8 +21836,13 @@ class BasicModel(BaseModel):
+                     masked_action=self._compose_masked_action(slot, pre_closing[1]),
+                     replay_action=self._compose_replayed_action(slot, pre_closing[1]),
+                     op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
+-                    reference_scope=clause_state if sentence_transactions else None)
++                    reference_scope=clause_state if sentence_transactions else None,
++                    previous_unary=unary_history)
+                 choice = proposal[0] if sentence_transactions else proposal
++                unary_history = language.update_unary_history(unary_history, choice)
++                eligible = choice.valid if choice.alternatives is None else choice.alternatives
++                explorable_slab = self._tensor_record_selected_values(
++                    explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                 if sentence_transactions:
+                     _, refs, relative, operands, offsets = proposal
+                     clause_state = scope.resolve(clause_state, choice, refs, relative)
+@@ -21549,7 +21917,8 @@ class BasicModel(BaseModel):
+                 wholes, chunk_slab, chunk_count, next_live_roots,
+                 next_live_depth, left_rows, right_rows, position_slab, action_slab, attempted_slab,
+                 clause_state, closing_events, operation_values, operation_refs,
+-                reference_offsets, reference_relations)
++                reference_offsets, reference_relations,
++                torch.where(reset[:, None], -1, unary_history), explorable_slab)
+             language_feedback = language.feedback_from_local_choices(
+                 (pre_op, post_op), (pre_valid, post_valid),
+                 unary_op, unary_valid, like=word_idea)
+@@ -21589,12 +21958,16 @@ class BasicModel(BaseModel):
+                     row = torch.full((B,), -1, device=event.device, dtype=torch.long)
+                 if not torch.is_tensor(activation):
+                     activation = event.new_ones(B)
+-                obj = torch.full_like(row, -1)
++                obj = (grammar_rows[:, p] if torch.is_tensor(grammar_rows) else object_rows[:, p])
++                obj_order = (grammar_orders[:, p] if torch.is_tensor(grammar_orders) else object_orders[:, p])
++                atoms = grammar_atoms if torch.is_tensor(grammar_atoms) else object_atoms
++                atom = (atoms[:, p] if torch.is_tensor(atoms)
++                        else event.new_zeros(B, concept_dim))
+                 prior = self._per_word_contributions[p]
+                 prior = torch.zeros_like(event[:, 0]) if prior is None else prior
+                 self._per_word_contributions[p] = torch.where(gate, event[:, 0], prior)
+-                payload = (event, orders, row, activation, obj, obj.clone(),
+-                           event.new_zeros(B, concept_dim), gate, gate, *empty_feedback)
++                payload = (event, orders, row, activation, obj, obj_order,
++                           atom, gate, gate, *empty_feedback)
+                 percept = ps.subspace.materialize()[:, 0]
+                 slab = self._tensor_write_word_column(current_sub[1], index, percept)
+                 return payload, (event, slab, *current_sub[2:])
+@@ -21718,7 +22091,10 @@ class BasicModel(BaseModel):
+             trace._choice_refs = final_cs_lang[23].clone()
+             trace._choice_reference_offsets = final_cs_lang[24].clone()
+             trace._choice_ref_relations = final_cs_lang[25].clone()
++            trace._choice_explorable = final_cs_lang[27].clone()
+         stm._clause_state = final_cs_lang[20].clone()
++        stm._last_unary = final_cs_lang[26].clone()
++        stm._unary_history_depth = stm._depth.clone()
+         sentence_roots = final_cs_lang[9].clone()
+         final_wholes = final_cs_lang[10].clone()
+         final_prop_slab = final_cs_lang[11].clone()
+@@ -22227,15 +22603,9 @@ class BasicModel(BaseModel):
+         # NULL closing (``next_word`` -> None ended the loop) now fires
+         # the final bounded reduce sweep to the root.
+         #
+-        # SCOPE FENCE (2b-2-i): the IR loss is UNCHANGED this
+-        # increment. ``last_cs`` (the position-aligned ``[B,N,D_c]``
+-        # representation, exactly as 2b-1) is what the existing
+-        # ``_forward_head`` + ``runBatch`` P-space_role masked-LM IR tail
+-        # consumes -- the training signal is byte-identical to 2b-1.
+-        # The single S is PRODUCED and verified here (depth -> 1,
+-        # category tracks ``Grammar.start_symbol``) but NOT yet
+-        # consumed by the loss; 2b-2-ii rewires the loss to
+-        # ``reverse(S)``-vs-unmasked using exactly this S.
++        # The numeric answer reads the concluded one- or three-slot state
++        # through _forward_head, with the producer's gradient cut. The
++        # position-aligned carrier remains available to the perceptual inverse.
+         sentence_idea = None
+         sentence_post_depth = None
+         if (stm is not None and word_count > 0
+@@ -23923,7 +24293,8 @@ class BasicModel(BaseModel):
+         # so the pre-consume carrier is ALWAYS put back for the reverse /
+         # reconstruction, even if the head raises.
+         try:
+-            head_sub = self._forward_head(body_sub)
++            head_sub = (self._forward_head(body_sub, sentence_state=sentence_state)
++                        if sentence_state is not None else self._forward_head(body_sub))
+         finally:
+             if _restore_ev is not None:
+                 body_sub.set_event(_restore_ev)
+diff --git a/bin/SentenceCompose.py b/bin/SentenceCompose.py
+index 473bdf57..7ac12b28 100644
+--- a/bin/SentenceCompose.py
++++ b/bin/SentenceCompose.py
+@@ -23,8 +23,8 @@ class _SavedValue:
+ def saved_sentence_values(parameters=(), buffers=()):
+     """Keep one immutable saved value per tensor view and parameter version.
+ 
+-    Both paths backpropagate through the same perception after an optimizer
+-    update. Autograd must read its original parameters and buffers. A shared weight may be
++    Both derivations are scored before either optimizer update. Their
++    backwards and shared perception must read the original parameters and buffers. A shared weight may be
+     saved hundreds of times by the word/operator rounds; copying every save
+     would multiply dictionary memory by the number of uses.
+     """
+@@ -127,7 +127,7 @@ def select_rows(exploit, explore, wins):
+ 
+ 
+ def sentence_pair(cache, compose, score, step, *, active, training=True):
+-    """Derive, train, then select one path independently in each row.
++    """Score both paths, train each, then select independently in each row.
+ 
+     ``cache`` is the sentence's one perception. ``compose`` gets the exploit
+     path on its second call so it can replay its prefix and exclude one choice.
+@@ -142,12 +142,12 @@ def sentence_pair(cache, compose, score, step, *, active, training=True):
+     saved_a = cost_a.detach().clone()
+     if not training:
+         return state_a, saved_a[:, None], torch.zeros_like(active)
+-    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+     explore = compose(cache, exploit)
+     cost_b, state_b = score(explore, True)
+     if cost_b.shape != active.shape:
+         raise ValueError('sentence comparison requires one cost per row')
+     saved_b = cost_b.detach().clone()
++    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+     step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+     wins = active & (saved_b < saved_a)
+     return select_rows(state_a, state_b, wins), torch.stack((saved_a, saved_b), -1), wins
+diff --git a/bin/Spaces.py b/bin/Spaces.py
+index 93a90f88..8188382a 100644
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -71,7 +71,8 @@ from space_carrier import SpaceCarrierMixin
+ 
+ 
+ LanguageOperationChoice = namedtuple(
+-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid")
++    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives",
++    defaults=(None,))
+ """One immutable operation/location choice; only ConceptualSpace applies it."""
+ 
+ 
+diff --git a/doc/FutureWork.md b/doc/FutureWork.md
+index 4ac34781..055a0922 100644
+--- a/doc/FutureWork.md
++++ b/doc/FutureWork.md
+@@ -573,6 +573,15 @@ after item 6."
+ 
+ ## Credit to the chooser from a supplied answer (noted 2026-09-29)
+ 
++*Taken up and decided (Alec, 2026-10-01), so no longer future work:* for a
++sentence with a supplied answer, the answer's error trains the whole path,
++including the chooser and the object codes
++([6.9 plan §4 step 5a](plans/2026-09-29-item-6-9-xor-grammar.md#4-the-plan)).
++Credit by choice alone was measured and does not suffice: 0 of 10 runs met
++XOR_grammar's bar, also with four explore trials; the whole path met it in
++9 of 10 ([§3.13](plans/2026-09-29-item-6-9-xor-grammar.md#313-after-step-5-what-holds-xor-back-measured-2026-09-30-and-10-01)).
++The note as written on 2026-09-29 follows.
++
+ In item 6.9's configuration the answer's error trains only the map that
+ reads the concluded idea. The state is cut at the concluded idea (decided
+ 2026-09-20), and the chooser is trained by what the sentence's two trials
+diff --git a/doc/GradientFlow.md b/doc/GradientFlow.md
+index 30dcb0f7..8c43aa4e 100644
+--- a/doc/GradientFlow.md
++++ b/doc/GradientFlow.md
+@@ -1,16 +1,76 @@
+ # Gradient flow across the architecture
+ 
+-Current contract, September 21: each objective differentiates its own
+-computation. Prepared-answer output receives a **given concluded idea**, so its error stops at
+-that state boundary. Reconstruction, expectation and generation still share
+-operator parameters. The former global reconstruction-priority projection is
++Current contract, October 1 (item 6.9). Each objective differentiates its
++own computation, with one exception decided by Alec on 2026-10-01: a
++sentence that comes with a supplied answer trains the whole path. Its
++answer's error, read from each trial's understanding without the cut,
++reaches the reading map, the compose chooser and operators, the leaves and
++perception ([6.9 plan §4 step 5a](plans/2026-09-29-item-6-9-xor-grammar.md#4-the-plan)).
++A sentence without an answer keeps the September 21 contract below. Shared
++operators remain the intended coupling. Where the objectives can now be at
++odds, and how that might be avoided, is analysed in
++[the objective-conflicts spec](specs/2026-10-01-objective-conflicts.md).
++
++## The training step (October 1)
++
++A batch reads its sentences in order. Each sentence that closes is derived
++twice: by the greedy derivation, and by an explore derivation that departs
++from it at one round chosen at random. Both trials are composed and costed
++under the same parameters; saved values keep the original parameters for
++the second backward. Then each trial's cost is backpropagated through that
++trial's own graph and its own perception pullback, and the optimizer steps
++once per trial. In each row the strictly cheaper trial is kept (a tie keeps
++the greedy one) and committed, detached: no gradient crosses into the next
++sentence through the STM. After the last sentence the batch takes one more
++optimizer step on the batch-end objectives
++([SentenceCompose](../bin/SentenceCompose.py), [Models](../bin/Models.py)).
++
++A trial's cost is the sum of:
++
++| Term | Present when | Weight | Its gradient reaches |
++|---|---|---|---|
++| Tied reconstruction | the configuration reconstructs in the loop | `reconstructionScale` | the trial's composition through the recorded derivation's tied inverse: the chooser (through its straight-through surrogate), the operators, the leaves, perception |
++| Grammar lesson | reading lessons are enabled | `grammarLessonWeight` | the compose and generate policies and operators it supervises |
++| Expectation | the discourse predictor exists | `interLossWeight`, `interContrastiveWeight` | the predictor and its live sources; through the trial's cost it also trains the chooser ([6.9 plan §3.4](plans/2026-09-29-item-6-9-xor-grammar.md#34-what-the-answers-error-trains)) |
++| Supplied answer | the sentence has a supplied answer | added as it is, in the output's units ([conflicts spec §2](specs/2026-10-01-objective-conflicts.md#2-the-objectives-and-what-they-share-after-step-5a)) | the reading map (the numeric head, or generate in `answerSynthesis` configurations), and, without the cut, the trial's composition: the chooser, the operators, the leaves, perception |
++
++The batch-end cost is the primary
++`reconstructionScale * inputLoss + (1 - reconstructionScale) * answerLoss`
++with the enabled expectation and auxiliary terms (see *Trained total*
++below). At the batch end the answer is read through the cut and trains the
++reading map only.
++
++**The codes depend on the configuration.** Where
++`conceptualContextLearningRate` is set (the eleven canonical
++configurations, among them `BasicModel.xml`), the concept dictionary is
++outside autograd: the sentence-local rotation moves it after each optimizer
++step, and no objective reaches it (see *Codes by distribution* below).
++Elsewhere, as in XOR_grammar and MM_grammar, the dictionary is a parameter.
++Since item 6.9's step 3 a read word's leaf is its object's code times its
++activation, so there every objective that reaches a leaf, the supplied
++answer among them, moves the object codes.
++
++Which parameter groups each objective's gradient actually reaches is to be
++measured per configuration (stage 1 of the conflicts spec); the measured
++matrix will replace the last column of the table above.
++
++## The September 21 contract, for sentences without a supplied answer
++
++Each objective differentiates its own computation. Prepared-answer output
++receives a **given concluded idea**, so its error stops at that state
++boundary. Reconstruction, expectation and generation still share operator
++parameters. The former global reconstruction-priority projection is
+ removed, including its configuration and optimizer helpers. This implements
+ [the superseding §8.4 decision](plans/2026-09-15-next-sentence-as-the-production-objective.md#84-gradient-boundaries-and-learning-evidence).
+ 
+ ## State paths and shared parameters
+ 
+ The output state cut below applies to the prepared-answer path
+-(`answerSynthesis=true`, including production). The direct supervised head
++(`answerSynthesis=true`, including production). Since item 6.9's step 2 the
++direct numeric head also reads the concluded one- or three-slot
++understanding through the cut at the batch end; inside a sentence's trials
++a supplied answer is read without it (see *The training step*). The text
++that follows predates step 2: the direct supervised head
+ still differentiates its entire input state. Configurations combining
+ reconstruction with supplied outputs and `answerSynthesis=false` warn at
+ configuration and on first use if the data is supplied later. This warning
+@@ -148,11 +208,17 @@ Three measured negative observations name persistent opposition on that
+ operator. A missing or zero gradient leaves the streak unchanged; a measured
+ nonnegative cosine resets it. The integrated checkpoint retains the streak.
+ Diagnostic failures warn without aborting training.
+-This is evidence to examine, never automatic clipping or projection. No
++This is evidence to examine, never automatic clipping or projection.
++Since item 6.9's step 5a a trial's supplied-answer term is part of that
++trial's `output` branch. The diagnostic compares named operators only: the
++chooser, the codes and the reading map, which the answer now reaches, are
++not compared ([conflicts spec §4](specs/2026-10-01-objective-conflicts.md#4-what-is-measured-today-and-what-is-not)). No
+ operator-specific guard is installed by this change. A few diagnostic batches
+ do not demonstrate persistent incompatibility or useful learning.
+ 
+-**Codes by distribution, maps by the objectives** (plan §8.4 point 2).
++**Codes by distribution, maps by the objectives** (plan §8.4 point 2;
++in the configurations that set `conceptualContextLearningRate`; elsewhere
++the dictionary is a parameter, see *The training step*).
+ The 11 canonical configurations changed by `7c2fa5a` again set
+ `conceptualContextLearningRate=0.01`. Their shared concept dictionary is a
+ persistent non-grad buffer, updated only by the existing sentence-local
+diff --git a/doc/Testing.md b/doc/Testing.md
+index ed470eeb..43f75ad8 100644
+--- a/doc/Testing.md
++++ b/doc/Testing.md
+@@ -2601,3 +2601,119 @@ none of its runtime changes is included in this landing.
+ Implementation `9810fc7` contains all 712 validated source files and
+ four supporting fixtures; every committed blob matches the landing manifest.
+ The final documentation check passes all 169 links, including todo.md.
++
++## Item 6.9 stop after step 5 (September 30)
++
++The [uncommitted work receipt](benchmarks/2026-09-30-item6-9/README.md)
++starts from published `d679df2b`. It implements plan §4 steps 1–5 in order:
++the class gate reads the four saved answers at the settled bar; numeric
++serial answers read the detached concluded state; grammar word leaves use
++the full object code in every binding; code negation reflects the full
++code while explicit poles exchange; both sentence trials are scored before
++either trains. Each backward owns its perception pullback and prediction
++graph. Saved failing probes and complete old/new port bodies accompany each
++repair. All 35 final affected checks pass.
++
++The mandatory assessment meets the class bar in **0/10 unseeded runs** at
++the unchanged 400 epochs, MSE **.2044415629–.5855241919**. The current
++reconstruction gate fails 10/10. The
++[twenty-run table](benchmarks/2026-09-30-item6-9/grammar-ten/table.md)
++contains all four answers and four reconstructions for every run. Per the
++plan and Alec's instruction, implementation stops before steps 6–8;
++grammar reconstruction, immediate-inverse exclusion and the sum-only
++negative control are not implemented or claimed.
++
++All six checkpoints (before changes and after each implemented step)
++retain full HEAD/candidate XOR tables, 49 named attempts per tree including
++slow proofs and fifteen independent exact round trips. The final table has
++**44 passed / 5 failed** on HEAD and **43 passed / 6 failed** on the
++candidate: both grammar gates are red, and exact round trips are **12/15
++and 11/15**. The historical accepted candidate's 12/15 remains intact.
++All ten 900-update MM_grammar runs complete per tree; final median ending
++MSE is **.1139670797 / .0686401706** (HEAD/candidate). Starting identical
++trees measured **.0647774097 / .0008435599**, showing substantial unseeded
++variation. No no-regression claim is made.
++
++The [native timing table](benchmarks/2026-09-30-item6-9/native-comparison.md)
++records final reconstruction MSE before/during/after training
++**.1149501931 / .1138415950 / .1189210640**, warmed throughput
++**.491403460 sentences/s**, and **5.349 GiB** peak worker memory.
++Against the immediately preceding pair, warm batch time is **1.4410×**
++and whole-run peak memory **1.0111×**, with all late graph captures kept.
++These are different unseeded initializations and concurrent workloads,
++not paired causal measurements. The historical parity fixture fails to
++load on both HEAD and candidate because its `propertyBasis` element was
++retired; no configuration is changed to bypass it. The depth-three check
++skips without the mature FineWeb checkpoint, leaving the historical red
++campaign and its assertion intact.
++
++The [final source-matched full sweep](benchmarks/2026-09-30-item6-9/full-sweep/summary.json)
++completes all **5,161 cases exactly once: 4,832 passed, six failed,
++322 skipped, one expected failure**, in 5,985.72 seconds. There are no
++missing cases, resource stops or compile cache retries. Peak worker and
++aggregate memory are **5.002 / 17.909 GiB**, under the unchanged 8/24 GiB
++guards. All 12 added regression cases and 27 added documentation cases
++pass; no previous selector was removed.
++
++The six unresolved failures cover two real full-graph numeric-head paths,
++one unaligned object-reference assertion, definition identity, and two
++truth-ingestion evidence assertions. The full-graph head reads concluded
++state through an attribute unavailable during tracing instead of receiving
++the explicit sentence products. These failures and their unchanged
++assertions are retained for review after the mandatory stop. The earlier
++receipt's six fixture failures were already ported in accepted item 7;
++their passes are not attributed to this candidate.
++
++The frozen 717-file source and supporting inputs still match. No seed,
++optimizer, epoch budget or other configuration was changed. Historical
++XOR/MM and red depth-three records are unchanged. The candidate stops for
++Claude's review without a commit.
++
++## Item 6.9 repairs and isolated measurements (October 1)
++
++Alec and Claude's October 1 instructions replace repeated HEAD/candidate
++measurements with one candidate attempt per named case, including one
++MM_20M_xor exact round trip. The accepted item-7 record remains the baseline:
++XOR **44/49**, exact **12/15**, MM_grammar median ending MSE **.1066**.
++The [follow-up receipt](benchmarks/2026-10-01-item6-9/README.md) retains the
++six saved failures, complete old/new repair bodies and Claude's original
++derivation probe. No test body or assertion changes in this follow-up.
++
++The compiled answer head now receives the concluded state explicitly.
++The mixing binding stages object leaves for grammar without publishing
++word-symbol rows, IDs or evidence; this also repairs the definition identity
++alias and both stored-truth evidence failures. All **12 affected checks
++pass**, including all six previously failing cases and the object-leaf and
++answer-gradient boundary checks. The candidate XOR table is **33/35**;
++both grammar gates remain red and the single exact round trip passes.
++All named slow proofs are included. This sample does not replace the
++historical exact-round-trip rate.
++
++The three requested probe patches are installed only in measurement
++processes; the candidate remains at step 5 with its answer gradient cut.
++At 400 epochs with all four classes correct and MSE below .05, ten fresh
++unseeded runs meet the bar in **0/10** for detached answer comparison,
++**0/10** with four explore trials, and **9/10** with the answer gradient
++reaching codes and chooser. Median MSE is **.2382143314**, **.2939883538**
++and **.0010992477** respectively. Every trial is costed before training any
++trial, under identical parameters. The four-explore probe trains all five
++trials, so its additional optimizer steps accompany its wider search.
++All thirty completed results, including the gradient variant's failed run,
++are retained in the [per-run report](benchmarks/2026-10-01-item6-9/variant-results.md).
++
++The [final MM_grammar table](benchmarks/2026-10-01-item6-9/final-mm-table.md)
++contains ten unseeded 900-update runs. Median ending MSE is
++**6.575284761e-11**, with range **2.220446049e-16–.25**; all outcomes are
++retained. The helper matches accepted item 7 byte for byte and uses the
++same `eager` compilation setting. The environment was not rebuilt:
++before/after `pip freeze` matches exactly. The source audit matches all
++717 files across the repaired tests, XOR table and measurements, and
++preserves the historical XOR/MM and red depth-three records.
++
++Two harness issues are disclosed in the receipt: a two-slot derivation
++observer needed the full STM, and the initial MM dispatch inherited the
++variant compilation setting. Their six incomplete attempts are preserved
++with failing probes and repairs. No completed statistical failure was
++retried. The measurement patches and candidate source are unchanged by
++these harness repairs. Part 4 has not started; no new full sweep or commit
++is made before review.
+diff --git a/doc/Training.md b/doc/Training.md
+index 9588a9b2..98e9872f 100644
+--- a/doc/Training.md
++++ b/doc/Training.md
+@@ -613,7 +613,10 @@ independently normalized primary costs recorded before `backward()`:
+ 
+ The desired answer is resolved only after the model response is fixed and
+ enters loss preparation only. Output state is cut at the concluded idea;
+-shared weights receive ordinary summed gradients in one optimizer step. `what_report()` gives per-family means of both costs,
++shared weights receive ordinary summed gradients in one optimizer step.
++One exception was decided on 2026-10-01: a sentence's supplied numeric
++answer trains the whole path, chooser and object codes included, inside the
++sentence's trials ([6.9 plan §4 step 5a](plans/2026-09-29-item-6-9-xor-grammar.md#4-the-plan)). `what_report()` gives per-family means of both costs,
+ thinking statistics (episodes, mean iterations, forced-closure rate), the
+ hard-choice policy credit (`forwardGrammarWeight`) separately from the
+ continuous answer credit, and sentences/s. Full contract: the
+diff --git a/doc/plans/2026-09-15-next-sentence-as-the-production-objective.md b/doc/plans/2026-09-15-next-sentence-as-the-production-objective.md
+index fbe1047b..517aa85f 100644
+--- a/doc/plans/2026-09-15-next-sentence-as-the-production-objective.md
++++ b/doc/plans/2026-09-15-next-sentence-as-the-production-objective.md
+@@ -980,6 +980,14 @@ only effects on the accessible mind, so the gradient factorizes:
+    reconstruction error never enters the output path. Thought's effects and
+    LTM writes are detached; thought faces are parameter-free; the chooser
+    learns from explicit policy credit alone.
++   *Amended for a sentence with a supplied answer (Alec, 2026-10-01):* the
++   answer's error trains the whole path, namely the map that reads the idea,
++   the chooser, and the object codes the grammar composed, inside each of
++   the sentence's trials
++   ([item 6.9 plan §4 step 5a](2026-09-29-item-6-9-xor-grammar.md#4-the-plan)).
++   With the cut, XOR_grammar met its bar in no run; with the whole path, in
++   9 of 10. A sentence without an answer keeps the cut, and for it the rule
++   below, that the objectives never place codes, still holds.
+ 2. **Shared operators are the intended coupling.** Grammar operators are
+    shared by compose, its tied inverse and generate, and every objective
+    updates them. That is how the central representation becomes suitable for
+diff --git a/doc/plans/2026-09-29-item-6-9-xor-grammar.md b/doc/plans/2026-09-29-item-6-9-xor-grammar.md
+index 26ff6d72..a11fd864 100644
+--- a/doc/plans/2026-09-29-item-6-9-xor-grammar.md
++++ b/doc/plans/2026-09-29-item-6-9-xor-grammar.md
+@@ -6,6 +6,10 @@
+ > edited for the probes. Alec answered the six questions of §6 on
+ > 2026-09-29 and 2026-09-30. **Ready for Codex** after item 7 is accepted
+ > (the hand-off is §8).
++> **Updated 2026-10-01:** stopped after step 5 with 0/10 at the bar; measured
++> (§3.13); decided by Alec: the answer's error trains the whole path for a
++> sentence with a supplied answer (§4 step 5a, §6 question 7). Codex continues
++> with steps 5a to 9 (hand-off §9).
+ > The item is taken after item 7 is accepted and before 6.8. The
+ > rest of the [operator catalogue](../specs/2026-09-29-operator-catalogue.md)
+ > follows it, so that the operators change under the protection of this
+@@ -295,6 +299,45 @@ bias of the comparison is item 7.5's, and it is in every serial
+ configuration, not only this one. Claude accepted item 7.5 in review
+ without seeing it.
+ 
++### 3.13 After step 5: what holds XOR back (measured 2026-09-30 and 10-01)
++
++Steps 1 to 5 landed and the bar was met in 0 of 10 runs
++([receipt](../benchmarks/2026-09-30-item6-9/README.md)). Step 5 works: the
++explore trial is now kept in about 4% of rows, and the understanding
++settles by the end of training.
++
++* **The understanding can be read, but only barely.** Claude's probe
++  (`deriv69.py`, kept in the
++  [October 1 receipt](../benchmarks/2026-10-01-item6-9/README.md)) rebuilt
++  each derivation and tried all 128 full derivations of first word, space
++  and second word with min, max and `not` over the trained leaves. The best
++  derivation needs answer weights of 2.7 to 4.2 at the first epoch and 4.7
++  to 13.4 at the end; the chooser's final derivations need 21 to 1,789; the
++  trained answer map reaches about 5. Random signed codes would give 1.8:
++  the codes drift away from what XOR needs.
++* **Exploration is not what is missing.** The explore trials try 149 to 275
++  different derivations per run and often produce a readable result, but
++  the comparison of the two trials does not see the answer, so nothing
++  keeps them.
++* **What the answer's error must reach.** Variants measured on the repaired
++  candidate, ten runs each
++  ([October 1 receipt](../benchmarks/2026-10-01-item6-9/README.md)): the
++  answer's error, detached, only choosing between the trials (a): 0 of 10;
++  the same with four explore trials (b): 0 of 10; the answer's error in
++  each trial's cost with its gradient, reaching the codes and the chooser
++  (c): 9 of 10.
++* **Not the configuration.** Trained as the gate trains, five runs each:
++  MM_grammar as it is, 0 of 5; XOR_grammar with `nDim` 14, with
++  `subsymbolicOrder` 3, and with all of MM_grammar's space settings, 0 of 5
++  each. MM_grammar's ten-run table succeeds because its harness runs the
++  raw forward with its own optimizer: the sentence trials never run, so the
++  codes and the chooser keep their random start, where XOR reads easily.
++  That table therefore cannot see a regression in grammatical learning.
++  The fixture is stale in one respect: at `nDim` 10 an event carries two
++  numbers of content, not the four its comment states. `nDim` 14 makes
++  the understanding easier to read (weights 1.75 to 17) but does not pass
++  alone.
++
+ ## 4. The plan
+ 
+ In order. Steps 1 to 5 are what the measurements require; 6 to 9 make the
+@@ -312,7 +355,10 @@ gates a guard.
+    [plan §8.4](2026-09-15-next-sentence-as-the-production-objective.md#84-gradient-boundaries-and-learning-evidence)).
+    The cut stands: the answer's error trains the map that reads the idea,
+    and not the grammar through the idea. Measured, the cut does not stop
+-   XOR being learned (§3.6, last row).
++   XOR being learned (§3.6, last row). *Amended 2026-10-01 (step 5a):* for
++   a sentence with a supplied answer the answer's error also trains the
++   grammar and the codes, since with the cut the fixture met the bar in no
++   run (§3.13).
+ 3. **A word reaches the grammar as its object's code, in every binding.**
+    "The grammar operations are conducted over the object concepts, not the
+    word concepts" (Alec, 2026-09-29). The leaf the loop pushes for a read
+@@ -346,7 +392,19 @@ gates a guard.
+    separable (§3.7), and §3.12 says why the map has not settled. The
+    fixture's 400 epochs and the bar are not changed to pass. If ten runs
+    of ten do not meet the bar after steps 1 to 5, Codex stops and reports,
+-   and Alec decides.
++   and Alec decides. *(It stopped: 0/10, 2026-09-30; §3.13.)*
++5a. **The answer's error trains the whole path** *(decided, Alec,
++   2026-10-01: §6 question 7)*. For a sentence that comes with a supplied
++   answer, each trial's cost includes the answer's error with its graph
++   intact, so it reaches the map that reads the idea, the chooser, and the
++   object codes the grammar composed, through that trial's own perception
++   pullback. Both trials are still costed under the same parameters before
++   either step (step 5), and the batch-end answer update stays. A sentence
++   without an answer keeps the cut. This amends, for sentences with a
++   supplied answer, the cut of 2026-09-20 and "codes by distribution, maps
++   by the objectives" of 2026-09-21
++   ([plan §8.4](2026-09-15-next-sentence-as-the-production-objective.md#84-gradient-boundaries-and-learning-evidence)).
++   Measured as variant (c) on 2026-10-01: 9 of 10 runs met the bar.
+ 6. **The reconstruction gate reads back through the grammar, and admits
+    transpositions** *(decided, Alec, 2026-09-29; §6 question 4)*. Each
+    sentence is read back from its understanding through the grammar's
+@@ -431,6 +489,13 @@ gates a guard.
+    are costed under the same parameters (§4 step 5); the snapshot is in
+    FutureWork.
+ 
++7. *What the answer's error may train (§3.13).* **Decided (2026-10-01):**
++   "Let's just implement the answer training the whole path, as you said,
++   and have codex continue with all of 6.9." For a sentence with a
++   supplied answer, the answer's error trains the reading map, the chooser
++   and the object codes (§4 step 5a); the narrower variants (codes only,
++   chooser only) are not measured first.
++
+ ## 7. The probes
+ 
+ In the session's scratchpad (`xor69/`), not in the repository:
+@@ -441,7 +506,10 @@ In the session's scratchpad (`xor69/`), not in the repository:
+ `probe_head_reads_idea.py` and `probe_leaf_code.py` (the patches of §3.7);
+ `unit_grammar.py` and `unit_reverse.py` (§3.6 and §3.9); `possible.py`
+ (§3.11); `probe_track.py`, `probe_exploit_only.py` and
+-`probe_freeze_chooser.py` (§3.12).
++`probe_freeze_chooser.py` (§3.12). That scratchpad was cleared on
++2026-10-01; the probe of §3.13, `deriv69.py`, is kept in the
++[October 1 receipt](../benchmarks/2026-10-01-item6-9/deriv69.py), with
++Codex's correction of its stack window.
+ 
+ ## 8. Hand-off to Codex (after item 7 is accepted)
+ 
+@@ -462,3 +530,126 @@ transpositions only, all four sentences (6); no operation undoes the one
+ before it at the same place (7); the `sum`-only negative control (8); the
+ receipt (9). Stop for review.
+ 
++## 9. Hand-off to Codex, continued (2026-10-01)
++
++Steps 1 to 5 and the six repairs of the October 1 receipt stand. The
++receipt rule of October 1 replaces §8's XOR runs: each repeated
++measurement once, on the candidate only, with no HEAD run; XOR_grammar's
++ten unseeded runs stay. Then:
++
++* **Step 5a.** Land variant (c) as the candidate's behaviour: for a
++  sentence with a supplied answer, the answer's error, with its graph, in
++  each trial's cost; both trials costed under the same parameters before
++  either step; the batch-end answer update kept; sentences without an
++  answer keep the cut. Each test that asserts the cut for supervised
++  sentences is ported, old and new bodies kept, and a test is added that a
++  sentence without an answer still gives the codes and the chooser no
++  answer gradient. Ten unseeded runs of the class gate at the bar; Codex
++  continues whatever the count and reports it.
++* **Steps 6 to 9** as §4 has them. The `sum`-only control must still stay
++  at one half with step 5a in place: a sum is one contribution per word,
++  whatever the codes learn.
++* **Receipt and review.** The XOR table, MM_grammar's ten runs, one
++  source-matched full sweep; then stop for review. Part 4 of the October 1
++  hand-off (trimming the suite) follows 6.9.
++
++## 10. Review of the continuation (Claude, 2026-10-01)
++
++Of the [continuation receipt](../benchmarks/2026-10-01-item6-9-continuation/README.md).
++Steps 5a, 6 and 7 are implemented as decided: a supplied answer's error is
++read from each trial's own end state with the cut lifted (the numeric head,
++or generation in `answerSynthesis` configurations); the read-back takes one
++least-residual pair over the known object vocabulary with the soft
++gradient kept; each slot carries its last unary and an immediate inverse
++there is masked. The class gate met the bar in 8 of 10 runs after step 5a
++and in 10 of 10 at the end.
++
++**The `sum`-only control failed because of the separator leaf.** The space
++between the two words is pushed as a grammar leaf that keeps its perceived
++event, since it has no object. Probed on a copy of the candidate, with the
++`sum`-only grammar: the word leaves are identical across sentences, every
++derivation is `sum(sum(L0, L1), L2)`, and the non-additive part of the
++understanding equals the separator leaf's exactly. Its two content numbers
++change with the pair of words around it, and since step 5a the answer's
++gradient reaches them through perception. The runs' answer contrasts track
++it (a separator contrast of .25 gave an answer contrast of −.82). With the
++separator's leaf emptied before it is pushed:
++
++| | runs | stay at one half | all four right | meet the bar |
++|---|---|---|---|---|
++| `sum`-only control | 10 | 10 | 0 | 0 |
++| XOR_grammar | 10 | 0 | 10 | 9 |
++
++So the grammar composes XOR from the word codes; the separator was the one
++leak. It also explains the reconstruction gate's 0 of 10: every read-back
++has three words, the separator's leaf decoded as a word.
++
++**Decision applied (from Alec, 2026-09-29, §6 question 3):** "The grammar
++operations are conducted over the object concepts, not the word concepts."
++A separator has no object concept, so it is not a grammar leaf: in the
++mixing binding a white-space unit is not pushed onto the grammar's stack
++(identified as white space, not by a missing object row, so that a word not
++yet admitted is unaffected). It stays in perception and in the byte
++reconstruction. Only white space occurs in XOR_grammar; punctuation is left
++as it is, for 6.8 and 5.5. This takes from 6.8 only the part of §5's "word whole" note that 6.9
++cannot pass without.
++
++**The full sweep's 21 failures.** Sixteen construct the private sentence
++state without step 7's two new fields (a fixture port). One expects the
++retired blended inverse (a port to the hard least-residual pair, which §4
++step 6 decided). Four stop at the walk's policy cost recorded during a
++sentence backward: the trial's generation call now records that cost. The
++policy keeps its one owner, its credit at the batch end, so a trial's answer
++neither records nor trains it, and those four tests pass unchanged.
++
++**Stage 1 of the objective-conflicts spec.** Codex asked how one run per
++configuration can compare training with and without the answer term: it
++cannot; each configuration gets two runs, one with step 5a and one with the
++cut, and the other stage-1 measurements come from the step-5a run.
++
++**Hand-off.** In order, each repair with its failing probe saved first:
++(1) separators off the grammar's stack, then ten runs each of the `sum`-only
++control (all at one half), the class gate and the reconstruction gate;
++(2) the policy cost stays out of the trials; (3) the seventeen ports, with
++old and new bodies; (4) stage 1, two runs per configuration; (5) the XOR
++table, MM_grammar's ten runs and one source-matched full sweep. Stop for
++review. Then part 4 of the October 1 hand-off, then item 6.85.
++
++
++## 11. Review of the repairs (Claude, 2026-10-01, evening)
++
++Of the [review-repairs receipt](../benchmarks/2026-10-01-item6-9-review/README.md).
++The separator repair, the policy ownership, the packed-sentence scope fix
++and the seventeen ports are right, and the full sweep has no assertion
++failure (one test timed out at the 30-minute worker limit:
++`test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]`,
++the slowest test of the suite, which part 4 takes up).
++
++| | runs | result |
++|---|---|---|
++| `sum`-only control | 10 | all at one half (largest distance .0057, contrast at most 6e−8) |
++| class gate, answers of both campaigns | 20 | all four right in 20; the bar met in 16 |
++| reconstruction gate | 10 | 1 passes; every read-back now has two words |
++
++**Not accepted yet: the two gates do not pass reliably.** The class gate
++meets the bar in 16 of 20 runs, so it would fail about one sweep in five.
++The reconstruction gate fails because nothing trains the grammar to read
++back: XOR_grammar does not reconstruct in the loop, so its trials carry no
++reconstruction term, and min and max keep only whichever word dominates a
++coordinate. The read-backs show it: "hello hello", "world world", one word
++lost. The answer shapes the codes for XOR, not for read-back.
++
++So the reconstruction gate needs the grammar's tied reconstruction trained
++in XOR_grammar's trials, which puts reconstruction and the answer in one
++trial cost: the case item 6.85 exists for. Stage 1 of the
++[objective-conflicts spec](../specs/2026-10-01-objective-conflicts.md#9-stage-1-results-and-a-question-on-equal-magnitudes-2026-10-01)
++measured XOR_grammar and found a question for Alec there. The questions
++this raises are put to Alec; 6.9 stays open until both gates pass under the
++cost function 6.85 settles.
++
++**Alec's answers (2026-10-01, evening;
++[objective-conflicts spec §10](../specs/2026-10-01-objective-conflicts.md#10-alecs-answers-to-9-and-to-the-69-review-2026-10-01-evening)):**
++every configuration reconstructs its input through the understanding, so
++XOR_grammar gains the read-back training its reconstruction gate needs;
++terms become relative errors of a similar norm in the `Error` registry; no
++separate worktrees. 6.9 closes after item 6.85, under its cost function.
+diff --git a/test/reading_fixtures.py b/test/reading_fixtures.py
+index a8bd6e8d..693b3fd1 100644
+--- a/test/reading_fixtures.py
++++ b/test/reading_fixtures.py
+@@ -201,6 +201,8 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
+     lang[13] = entry.end_state.reshape(1, 1, 3 * width).expand(1, sid + 1, -1).clone()
+     lang[14] = torch.ones(1, sid + 1, dtype=torch.long)
+     lang[20] = torch.zeros(1, 3, 2, dtype=torch.long)
++    lang.append(torch.full((1, 3), -1, dtype=torch.long))
++    lang.append(torch.zeros_like(lang[4], dtype=torch.bool))
+     state = stm, tuple(lang), None
+     active = torch.tensor([active], dtype=torch.bool)
+     view = owner._sentence_observation(state, sid, active)
+diff --git a/test/test_explicit_dimensions.py b/test/test_explicit_dimensions.py
+index d8262f28..8b50a130 100644
+--- a/test/test_explicit_dimensions.py
++++ b/test/test_explicit_dimensions.py
+@@ -42,6 +42,7 @@ import sys
+ import unittest
+ 
+ import pytest
++import torch
+ 
+ _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+ 
+@@ -234,8 +235,20 @@ class TestXorExactCliReconstruction(unittest.TestCase):
+ def _run_xor_grammar_in_process():
+     """Run the grammar capability gate without selecting an initialization."""
+     os.environ["MODEL_COMPILE"] = "none"
+-    from Models import ModelFactory
+-    results = ModelFactory.run("data/XOR_grammar.xml")
++    from unittest.mock import patch
++    from Models import BasicModel, ModelFactory
++    commit = BasicModel._commit_sentence
++    def capture(model, state, sid, active, *args):
++        if not model._sentence_training:
++            # Observe the existing evaluation before its temporary trace is
++            # discarded. This neither advances the clock nor keeps the trace.
++            with torch.no_grad():
++                texts, unavailable = model.reconstruct_grammar_sentence(state, sid, active)
++            model._grammar_gate_reconstructions = texts
++            model._grammar_gate_unavailable = unavailable.detach().cpu().tolist()
++        return commit(model, state, sid, active, *args)
++    with patch.object(BasicModel, '_commit_sentence', capture):
++        results = ModelFactory.run("data/XOR_grammar.xml")
+     return results[0][2]  # (name, rCorrect, model)
+ 
+ 
+@@ -245,54 +258,47 @@ class TestXorGrammarLearnsXor(unittest.TestCase):
+     @unittest.skipIf(not _RUN_SLOW, "slow (~60s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
+     def test_xor_class_accuracy(self):
+         model = _run_xor_grammar_in_process()
+-        self.assertGreaterEqual(
+-            model.rCorrect[0], 0.5,
+-            f"Expected >=0.5 accuracy on class 0 from an unselected initialization, "
+-            f"got {model.rCorrect[0]}",
++        # Read the answers saved by the final evaluation. Another forward
++        # would advance the clock; rCorrect is an embedding-report placeholder.
++        data = model.inputSpace.data
++        answers = torch.stack(data.reconstructed_output).reshape(-1)
++        targets = torch.stack(data.test_output).reshape(-1).to(answers)
++        self.assertEqual(answers.numel(), 4)
++        self.assertEqual(targets.numel(), 4)
++        self.assertTrue(bool(torch.isfinite(answers).all()))
++        correct = (answers > 0.5) == (targets > 0.5)
++        mse = torch.mean((answers - targets).square()).item()
++        self.assertTrue(
++            bool(correct.all()),
++            f"XOR_grammar requires all four answers correct: {answers.tolist()}",
+         )
+-        self.assertGreaterEqual(
+-            model.rCorrect[1], 0.5,
+-            f"Expected >=0.5 accuracy on class 1 from an unselected initialization, "
+-            f"got {model.rCorrect[1]}",
++        self.assertLess(
++            mse, 0.05,
++            f"XOR_grammar requires MSE <0.05, got {mse}: {answers.tolist()}",
+         )
+ 
+ 
+ class TestXorGrammarReconstruction(unittest.TestCase):
+-    """End-to-end reconstruction through XOR_grammar is unrecoverable.
+-
+-    The chart compose runs ``conjunction.forward(S, S)`` and
+-    ``disjunction.forward(S, S)`` -- both 2:1 (AND/OR collapse two
+-    operand vectors into one). The forward path discards which two
+-    operands produced each result; the current reverse path operates
+-    on the root vector, not on the chart's recorded children, so
+-    pairs that share parse-tree shape but differ in leaves alias to
+-    the same reconstruction (e.g. ``'loving world'`` and
+-    ``'loving there'`` both reconstruct as ``'loving xxxxxx'``).
+-    This remains an active acceptance assertion: neither initialization
+-    selection nor an expected-failure marker may hide a failure.
+-    """
++    """All four understandings return their own words, allowing transpositions."""
+ 
+     @unittest.skipIf(not _RUN_SLOW, "slow (~65s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
+     def test_piecewise_overall_at_least_50_pct(self):
++        # Keep the historical selector; the decided contract is now all four.
++        from collections import Counter
+         model = _run_xor_grammar_in_process()
+-        psp = model.perceptualSpace
+-        recon_texts = psp.reconstruct_data(text=True)
++        recon_texts = model._grammar_gate_reconstructions
+         test_input, _ = model.inputSpace.getTestData()
+-        perfect = 0
+-        for i in range(len(test_input)):
+-            original = model._bytes_to_text(test_input[i])
+-            recon = recon_texts[i]
+-            if (original.replace("\x00", " ").split()
+-                    == recon.replace("\x00", " ").split()):
+-                perfect += 1
+-        total = len(test_input)
+-        self.assertGreaterEqual(
+-            perfect / total, 0.5,
+-            "XOR_grammar reconstruction: "
+-            f"{perfect}/{total} inputs recovered (expected >=50%). "
+-            f"Sample reconstructions: "
+-            f"{[(model._bytes_to_text(test_input[i]).rstrip(chr(0)), recon_texts[i]) for i in range(min(2, total))]}",
+-        )
++        self.assertEqual(len(test_input), 4)
++        self.assertEqual(len(recon_texts), 4)
++        self.assertFalse(any(model._grammar_gate_unavailable),
++                         'every sentence must have an available grammar inverse')
++        pairs = [(model._bytes_to_text(original).replace("\x00", " "), recovered)
++                 for original, recovered in zip(test_input, recon_texts)]
++        perfect = sum(recovered is not None and Counter(original.split()) ==
++                      Counter(recovered.replace("\x00", " ").split())
++                      for original, recovered in pairs)
++        self.assertEqual(perfect, 4,
++            f"XOR_grammar reconstruction: {perfect}/4 word multisets recovered; {pairs}")
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/test/test_grammar_binary_ops.py b/test/test_grammar_binary_ops.py
+index 20e8c0f0..02e81b39 100644
+--- a/test/test_grammar_binary_ops.py
++++ b/test/test_grammar_binary_ops.py
+@@ -36,11 +36,9 @@ class TestUnaryGrammarLayers(unittest.TestCase):
+     """arity-1 grammar layers route compose -> forward, decompose -> reverse."""
+ 
+     def test_not_compose_decompose_roundtrip(self):
+-        layer = NotLayer()
+-        # NotLayer operates on the materialized muxed event tensor
+-        # [B, V, nWhat + nWhere + nWhen]; the .what bivector [pos, neg]
+-        # is at [..., :2] and nWhere / nWhen channels follow. Negation
+-        # swaps the bivector pair and passes through the rest.
++        layer = NotLayer(representation='poles')
++        # Explicit evidence has a leading [pos, neg] pair followed by
++        # occurrence channels. Its pole exchange preserves those channels.
+         x = torch.randn(4, 3, 6)
+         y = layer.compose(x)
+         self.assertEqual(y.shape, x.shape)
+diff --git a/test/test_item7_end_state_storage.py b/test/test_item7_end_state_storage.py
+index da24b316..54ab9e6d 100644
+--- a/test/test_item7_end_state_storage.py
++++ b/test/test_item7_end_state_storage.py
+@@ -118,11 +118,12 @@ def test_answer_and_recall_own_completed_fields_without_programs():
+ def test_closing_discards_operations_without_changing_other_live_rows():
+     from Models import BasicModel
+ 
+-    lang = tuple(torch.ones(2, 4) for _ in range(26))
++    lang = tuple(torch.ones(2, 4) for _ in range(26)) + (
++        torch.ones(2, 4, dtype=torch.long), torch.ones(2, 4, dtype=torch.bool))
+     _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),
+                                                                   torch.tensor([True, False]))
+-    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25):
+-        expected = -1 if index in (4, 5, 15, 16, 17, 18, 23) else 0
++    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27):
++        expected = -1 if index in (4, 5, 15, 16, 17, 18, 23, 26) else 0
+         assert (cleared[index][0] == expected).all()
+         torch.testing.assert_close(cleared[index][1], lang[index][1], rtol=0, atol=0)
+     for index in (0, 9, 13, 14, 20):
+diff --git a/test/test_prepared_answer_boundary.py b/test/test_prepared_answer_boundary.py
+index ec7227a7..95cd08a4 100644
+--- a/test/test_prepared_answer_boundary.py
++++ b/test/test_prepared_answer_boundary.py
+@@ -107,7 +107,8 @@ def test_public_boundary_prepares_target_free_metadata_before_realization(tmp_pa
+ 
+ 
+ @pytest.mark.parametrize("output_loop", [False, True])
+-def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypatch, output_loop):
++@pytest.mark.parametrize("supplied", [False, True])
++def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypatch, output_loop, supplied):
+     from dataclasses import replace
+     import Models
+ 
+@@ -123,11 +124,15 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
+                 understanding, (What.supervised(0), What.supervised(1)))
+         source = resolved.conceptual_answer.detach().clone().requires_grad_()
+         held = replace(resolved, conceptual_answer=source)
+-        construction = model.reverseOutput(understanding, held)
++        construction = model.reverseOutput(understanding, held, detach_understanding=not supplied)
+         loss = construction.percepts.square().mean()
+         gradient = torch.autograd.grad(loss, source, allow_unused=True, retain_graph=True)[0]
+-        assert gradient is None or not bool(gradient.abs().any()), (
+-            "output matching must treat the concluded idea as given")
++        if supplied:
++            assert gradient is not None and bool(gradient.abs().any()), (
++                "a supplied-answer trial must train the concluded idea")
++        else:
++            assert gradient is None or not bool(gradient.abs().any()), (
++                "without an answer, output matching treats the concluded idea as given")
+         parameters = tuple(p for p in model.parameters() if p.requires_grad)
+         gradients = torch.autograd.grad(loss, parameters, allow_unused=True)
+         assert any(g is not None and bool(g.abs().any()) for g in gradients), (
+@@ -138,7 +143,8 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
+         torch._dynamo.reset()
+ 
+ 
+-def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_path, monkeypatch):
++@pytest.mark.parametrize("supplied", [False, True])
++def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_path, monkeypatch, supplied):
+     from dataclasses import replace
+ 
+     model = _native_answer_model(tmp_path, True)
+@@ -170,14 +176,18 @@ def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_
+             return scores
+ 
+         monkeypatch.setattr(language, "generate_policy_logits", one_split)
+-        construction = model.reverseOutput(understanding, replace(held, conceptual_answer=state))
++        construction = model.reverseOutput(understanding, replace(held, conceptual_answer=state),
++                                          detach_understanding=not supplied)
+         assert (construction.concepts.abs().amax(-1) > 0).sum(-1).tolist() == [2, 2]
+         loss = construction.percepts.sum()
+         parameters = tuple(operator.parameters())
+         owned = {id(p) for p in model._shared_representation_parameters(model.getOptimizer(lr=.001))}
+         assert parameters and all(id(p) in owned for p in parameters)
+         gradients = torch.autograd.grad(loss, (state, *parameters), allow_unused=True)
+-        assert gradients[0] is None
++        if supplied:
++            assert gradients[0] is not None and bool(gradients[0].abs().any())
++        else:
++            assert gradients[0] is None
+         assert any(g is not None and bool(g.abs().any()) for g in gradients[1:])
+     finally:
+         model.End()
+diff --git a/test/test_reverse_traversal.py b/test/test_reverse_traversal.py
+index 4efa9461..bacddc0c 100644
+--- a/test/test_reverse_traversal.py
++++ b/test/test_reverse_traversal.py
+@@ -253,7 +253,8 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
+                 candidate, torch.full_like(state[1], 2),
+                 torch.ones_like(state[1]), torch.zeros_like(state[1]),
+                 retain, candidate.new_ones(state[1].shape),
+-                torch.full_like(state[1], operation.r_reduce), retain)
++                torch.full_like(state[1], operation.r_reduce), retain,
++                torch.zeros_like(retain))
+             return LanguageOperationChoice(*(torch.where(
+                 retain[:, None] if a.ndim == 2 else retain, a, b)
+                 for a, b in zip(unary, choice)))
+diff --git a/test/test_sentence_compose.py b/test/test_sentence_compose.py
+index f9b6b81a..636e8f56 100644
+--- a/test/test_sentence_compose.py
++++ b/test/test_sentence_compose.py
+@@ -52,7 +52,8 @@ def test_sentence_winners_are_row_local_and_precede_the_next_perception():
+     assert perceptions[0].tolist() == [0, 0, 0]
+     assert perceptions[1].tolist() == [10, 1, 1]
+     assert observations[-1].tolist() == [20, 2, 2]
+-    assert updates[1] > updates[0] and updates[3] > updates[2]
++    assert updates[1] == updates[0] and updates[3] == updates[2]
++    assert updates[2] > updates[1]
+ 
+ 
+ def test_evaluation_has_one_trial_and_no_step():
+diff --git a/test/test_subspace_what_stm_contract.py b/test/test_subspace_what_stm_contract.py
+index a86bef3e..645c326c 100644
+--- a/test/test_subspace_what_stm_contract.py
++++ b/test/test_subspace_what_stm_contract.py
+@@ -295,13 +295,11 @@ def test_execute_arity1_dispatches_to_layer_forward():
+         assert rule0.method_name == 'not'
+ 
+         layer = _make_syntactic_layer_with({'not': NotLayer()})
+-        # NotLayer flips the leading 2 dims of the last axis (bivector).
++        # A grammar slot holds an opaque concept code.
+         x = torch.tensor([[[0.7, 0.2, 0.0, 0.0]]])  # [B=1, V=1, D=4]
+         y = layer.execute(rule_id=0, left=x)
+         assert y.shape == x.shape
+-        # bivector flipped: pos<->neg
+-        assert torch.allclose(y[..., 0], x[..., 1])
+-        assert torch.allclose(y[..., 1], x[..., 0])
++        assert torch.allclose(y, -x)
+     finally:
+         TheGrammar.rules = saved_rules
+         TheGrammar._configured = saved_configured
+diff --git a/test/test_tied_operator_reconstruction.py b/test/test_tied_operator_reconstruction.py
+index 760c2f6a..cb70a2ec 100644
+--- a/test/test_tied_operator_reconstruction.py
++++ b/test/test_tied_operator_reconstruction.py
+@@ -272,9 +272,14 @@ def test_missing_absorbed_operand_uses_bounded_compose_candidates(tmp_path):
+             basis=basis, basis_valid=torch.tensor([[True, True, False]]),
+             candidate_limit=2, return_status=True)
+         assert not unavailable.any()
+-        # The parent contains no marker identity. This is the declared
+-        # ambiguous candidate mean, and never the parent's duplicate.
+-        torch.testing.assert_close(left, basis[:, :2].mean(1))
++        # The parent contains no marker identity. The missing operand is
++        # one hard least-residual candidate from the bounded valid rows.
++        candidates = basis[:, :2]
++        assert (left[:, None, :] == candidates).all(-1).any(-1).all()
++        op = PartLayer()
++        residuals = (op.compose(candidates, parent[:, None, :]) - parent[:, None, :]).square().mean(-1)
++        residual = (op.compose(left, right) - parent).square().mean(-1)
++        torch.testing.assert_close(residual, residuals.min(-1).values)
+         torch.testing.assert_close(right, parent)
+     finally:
+         model.End()
+diff --git a/todo.md b/todo.md
+index 100fc4ac..e670453c 100644
+--- a/todo.md
++++ b/todo.md
+@@ -126,7 +126,40 @@ generation is expected at this stage and is recorded, not tuned away.
+    "let's make item 6.9 an effort to fix xor-grammar ... so that we can
+    prevent any grammatical regression"). Item 7 is accepted; this is next, before
+    the operators update, which is then made under this baseline, and 6.8.
+-   **Ready for a new Codex session** (plan §8). Found: a
++   **Stopped after step 5 for review, updated 2026-10-01**
++   ([repair and measurement receipt](doc/benchmarks/2026-10-01-item6-9/README.md)):
++   all six full-sweep failures are repaired without changing their assertions;
++   the twelve affected checks pass. The candidate-only XOR table is 33/35,
++   with both grammar gates still red and the one exact round trip passing.
++   Ten unseeded runs of each isolated probe meet the settled bar in **0/10**
++   for detached answer comparison, **0/10** with four explore trials, and
++   **9/10** with the answer gradient reaching the codes and chooser. These
++   are measurements only; the candidate retains the answer's gradient cut.
++   Steps 6–8 and part 4 have not started. Nothing is committed.
++   **Reviewed and decided (Claude and Alec, 2026-10-01):** the six repairs
++   are right. The configuration is not the cause: trained as the gate
++   trains, MM_grammar meets the bar in 0/5 runs, as do XOR_grammar variants
++   with MM_grammar's dimensions and order; MM_grammar's ten-run table
++   succeeds only because its harness never runs the sentence trials
++   ([plan §3.13](doc/plans/2026-09-29-item-6-9-xor-grammar.md#313-after-step-5-what-holds-xor-back-measured-2026-09-30-and-10-01)).
++   Alec: "Let's just implement the answer training the whole path, as you
++   said, and have codex continue with all of 6.9." For a sentence with a
++   supplied answer, the answer's error trains the reading map, the chooser
++   and the object codes (plan §4 step 5a; it amends the 2026-09-20 cut and
++   the 2026-09-21 codes rule for such sentences). **Hand-off:**
++   [plan §9](doc/plans/2026-09-29-item-6-9-xor-grammar.md#9-hand-off-to-codex-continued-2026-10-01):
++   step 5a, then steps 6 to 9, then part 4 of the October 1 hand-off.
++   The [September 30 receipt](doc/benchmarks/2026-09-30-item6-9/README.md)
++   remains historical evidence:
++   0/10 fresh 400-epoch class runs meet the settled bar; the current
++   reconstruction gate fails 10/10. Steps 6–8 have not been taken. The
++   source-matched full sweep completes all 5,161 cases: 4,832 passed,
++   six failed, 322 skipped, one expected failure, with no resource stops.
++   The six failures are closed by the October 1 targeted checks; no new full
++   sweep is claimed. The September 30 step-5 exact
++   table is 11/15 on the candidate and 12/15 on fresh HEAD; the accepted
++   historical 12/15 record remains intact. The item is not complete.
++   Found: a
+    sentence's two trials are compared across an optimizer step, so the
+    explore trial is kept in most rows whatever its derivation (a control
+    that repeats the greedy derivation "wins" 88–93%), and the answer is
+@@ -159,6 +192,33 @@ generation is expected at this stage and is recorded, not tuned away.
+    not reliable, whose cause is to be found (two truths §19 AA). Exit: both gates pass
+    without a seed at the settled bar, a `sum`-only negative control fails,
+    and no other XOR proof, nor MM_grammar's ten-run table, is worse.
++- **6.85. Objectives at odds** ([spec](doc/specs/2026-10-01-objective-conflicts.md);
++   Alec, 2026-10-01: the answer training the whole path "reintroduces a
++   conflict in the gradient objectives; reconstruction and output"). The
++   current gradient is described in [GradientFlow](doc/GradientFlow.md#the-training-step-october-1).
++   **Decided (Alec, 2026-10-01, spec §7):** "A mind has to see what is
++   there before it can make good decisions about it"; "Terms in a single
++   cost function should have approximately equal magnitudes before any
++   differential weighting"; "keep the trial if it's better overall
++   (subject to 1)"; projection is no rule either way; Claude decides the
++   order. **Design (spec §8):** reconstruction takes precedence (the
++   answer's gradient on parameters shared with reconstruction loses any
++   component that opposes reconstruction's; the explore trial is kept when
++   its total is lower and its reconstruction is not worse).
++   **Revised by Alec's second answers (2026-10-01, spec §10):** every
++   configuration reconstructs its input through the understanding, the
++   answer is added when supplied, expectation always learns ("We should be
++   reconstructing input in all cases"; the `reconstructInLoop` switch is
++   retired); each term enters as a relative error against a trivial
++   predictor of its own targets, so the terms have "a similar norm" before
++   weighting, and is defined, normalized, weighted and summed in the
++   `Error` registry of `Layers.py`, with every term described in the docs;
++   the production measurement is a production-sized `RUN_SLOW` test with a
++   slow-run memory ceiling that fits it. **Order (spec §10.4), one working
++   tree:** stage 1 continued (that native test; XOR_grammar with reconstruction through the
++   understanding, with and without the trial answer); the suite trim
++   (items 1 to 10; venv and reading modes wait for 6.9); this item; then
++   item 6.9 closes under it; then the operators update.
+ - **The grammatical operators update** (not yet numbered. **Decided, Alec,
+    2026-09-29:** after item 7 is accepted, after the conference freeze and
+    before 6.8: "let's iron out the operators after getting 7 accepted";

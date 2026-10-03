@@ -1,0 +1,85 @@
+{
+  "exit_code": 2,
+  "reason": "exit",
+  "selected": [
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]"
+  ],
+  "completed": [],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/penalty-strength-enabled-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/penalty-strength-enabled-before/worker-000.json"
+      ],
+      "pid": 11328,
+      "exit_code": 2,
+      "reason": "exit",
+      "peak_memory_bytes": 3838071128,
+      "elapsed_seconds": 679.5387984589979,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/penalty-strength-enabled-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+        "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]"
+      ],
+      "completed": [],
+      "reports": [],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/penalty-strength-enabled-before",
+  "elapsed_seconds": 683.6473374579946,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 3838071128,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/penalty-strength-enabled-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/penalty-strength-enabled-before/collect.json"
+    ],
+    "pid": 11318,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432211240,
+    "elapsed_seconds": 3.7456669170060195,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/penalty-strength-enabled-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+        "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+        "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]"
+      ],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+    "--child",
+    "--config",
+    "data/MM_sequence_predict.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sequence_predict.json"
+  ],
+  "pid": 63515,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 7198038304,
+  "elapsed_seconds": 398.1141453750024,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sequence_predict.log"
+}

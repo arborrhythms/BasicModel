@@ -3,8 +3,8 @@
 
 Usage:
     python train.py                           # FineWeb production config
-    python train.py --model data/MM_20M_fineweb.xml --compile-target gpu --batches 10
-    python train.py --model data/MM_20M_fineweb.xml --compile-target mlx
+    python train.py --model data/BasicModel.xml --compile-target gpu --batches 10
+    python train.py --model data/BasicModel.xml --compile-target mlx
     python train.py --host example.org        # remote execution via SSH
 """
 
@@ -34,9 +34,9 @@ def parse_args(argv=None):
     execution argument group. Returns the parsed Namespace.
     """
     p = argparse.ArgumentParser(description="Train BasicModel end-to-end")
-    p.add_argument("--model", "-m", default="data/MM_20M_fineweb.xml",
+    p.add_argument("--model", "-m", default="data/BasicModel.xml",
                    help="XML config file (default: "
-                        "data/MM_20M_fineweb.xml)")
+                        "data/BasicModel.xml)")
     p.add_argument("--data", default=None,
                    help="Dataset name (e.g. text, mnist, xor). "
                         "Overrides <dataset> in XML config.")

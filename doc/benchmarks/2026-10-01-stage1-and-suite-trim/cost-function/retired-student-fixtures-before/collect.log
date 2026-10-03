@@ -1,0 +1,6 @@
+test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root
+test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite
+test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name
+test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective
+
+4 tests collected in 2.05s

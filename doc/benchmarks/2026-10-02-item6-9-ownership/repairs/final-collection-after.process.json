@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "--collect-only",
+    "-q"
+  ],
+  "pid": 24591,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 489194840,
+  "elapsed_seconds": 6.967196416997467,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/final-collection-after.log"
+}

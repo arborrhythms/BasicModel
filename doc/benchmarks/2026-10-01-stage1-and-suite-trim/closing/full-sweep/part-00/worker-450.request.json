@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+    "test/test_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+    "test/test_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+    "test/test_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/part-00/worker-450.recycle.json"
+}

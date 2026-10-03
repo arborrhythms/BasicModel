@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_partition_resolve.py::test_symbol_codebook_quantizes_activation_not_what"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-484.recycle.json"
+}

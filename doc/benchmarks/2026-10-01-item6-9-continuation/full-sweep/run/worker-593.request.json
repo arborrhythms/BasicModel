@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_meronomy.py::test_analyzer_is_de_morgan_dual_of_synthesizer"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-593.recycle.json"
+}

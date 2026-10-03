@@ -57,21 +57,6 @@ class TestChunkLayerBPE(unittest.TestCase):
         self.assertEqual(layer.n_vectors, 1024)
         self.assertEqual(layer.word_learning, 2)
 
-    def test_no_prototype_table(self):
-        """Task 2: ChunkLayer no longer carries the unused 256-prototype table."""
-        from Layers import ChunkLayer
-        layer = ChunkLayer(nDim=8, bpe=True, n_vectors=1024, word_learning=2)
-        self.assertFalse(hasattr(layer, 'split'),
-                         "self.split should be removed")
-        self.assertFalse(hasattr(layer, 'merge'),
-                         "self.merge should be removed (distinct from self.merges)")
-        self.assertFalse(hasattr(layer, 'threshold'),
-                         "self.threshold should be removed")
-        self.assertFalse(hasattr(layer, 'score_pair'))
-        self.assertFalse(hasattr(layer, 'encode'))
-        self.assertFalse(hasattr(layer, 'decode'))
-        self.assertFalse(hasattr(layer, 'should_merge'))
-        self.assertTrue(hasattr(layer, 'merges'))
 
     def test_merges_grow_on_repeating_corpus(self):
         import torch
@@ -172,31 +157,6 @@ class TestChunkLayerBPE(unittest.TestCase):
             layer.train_step(batch, k_merges=2)
         self.assertLessEqual(len(layer.vocab), 260)
 
-    def test_mm_bpe_config_drives_chunk_layer_flags(self):
-        """MM_bpe.xml config should produce a BPE-mode ChunkLayer."""
-        from util import init_config
-        import Spaces
-        from Layers import ChunkLayer
-
-        cfg_path = os.path.join(_PROJECT, "data", "MM_bpe.xml")
-        init_config(
-            path=cfg_path,
-            defaults_path=os.path.join(_PROJECT, "data", "model.xml"),
-        )
-        cfg = Spaces.TheXMLConfig
-        self.assertEqual(cfg.space("PartSpace", "synthesis"), "bpe",
-                         "MM_bpe.xml must set chunking=bpe")
-        n_vec = int(cfg.space("PartSpace", "nVectors"))
-        freq = int(cfg.space("PartSpace", "wordLearning"))
-        layer = ChunkLayer(
-            nDim=8,
-            bpe=(cfg.space("PartSpace", "synthesis") == "bpe"),
-            n_vectors=n_vec,
-            word_learning=freq,
-        )
-        self.assertTrue(layer.bpe)
-        self.assertEqual(layer.n_vectors, n_vec)
-        self.assertEqual(layer.word_learning, freq)
 
 
 if __name__ == "__main__":

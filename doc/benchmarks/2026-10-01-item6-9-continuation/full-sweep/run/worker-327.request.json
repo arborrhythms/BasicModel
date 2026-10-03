@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_dataset.py::test_split_by_structure_is_disjoint_and_holds_out_deep_problems"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-327.recycle.json"
+}

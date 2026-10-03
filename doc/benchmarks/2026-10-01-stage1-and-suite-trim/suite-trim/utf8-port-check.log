@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.0s; peak 0.39 GiB
+[worker-000] 8 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 4.4s; peak 0.56 GiB
+Result: test_failure, exit 1; 8/8 cases completed.
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/utf8-port-check/result.json

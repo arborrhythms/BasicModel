@@ -1,0 +1,57 @@
+{
+  "loss": {
+    "reconstruction_scale": 0.1,
+    "embedding_scale": 0.05,
+    "what_scale": 0.7,
+    "where_scale": 0.2,
+    "when_scale": 0.1,
+    "conceptual_similarity_scale": 0.0,
+    "definition_sparsity_scale": 0.0
+  },
+  "model": {
+    "inter_loss_weight": 0.1,
+    "inter_contrastive_weight": 0.0,
+    "inter_contrastive_temp": 0.1,
+    "grammar_lesson_weight": 1.0,
+    "arma_scale": 0.0,
+    "output_policy_weight": 0.0,
+    "expectation_policy_weight": 0.0,
+    "selected_thought_policy_weight": 0.0,
+    "leaf_distill_weight": 0.0,
+    "gate_l1_lambda": 0.0,
+    "luminosity_weight": 0.1,
+    "universality_weight": 0.1,
+    "truth_loss_weight": 0.0,
+    "reconstruct_in_loop": true,
+    "detached_reverse": false,
+    "answer_synthesis": false,
+    "legacy_prediction_enabled": true,
+    "contextual_concept_learning_rate": 0.0,
+    "contextual_situation_weight": 0.0,
+    "contextual_expectation_weight": 0.0
+  },
+  "intra_loss_weight": 0.1,
+  "concept_readout_l1": [
+    0.0,
+    0.0
+  ],
+  "byte_assignment_temperature": 0.1,
+  "trial_formulas": {
+    "reconstruction": "reconstruction_scale * byte reconstruction, only when sentence reconstruction is enabled",
+    "expectation": "inter_loss_weight * next-sentence MSE + inter_contrastive_weight * InfoNCE; legacy intra is added only when enabled",
+    "structured_expectation": "Next-sentence cost = content MSE + presence BCE + kind BCE, each with internal weight 1; the external inter_loss_weight applies to their sum",
+    "supplied_answer": "1 * raw numeric MSE, or band-weighted event error for a supplied text answer; omitted in the cut arm",
+    "grammar_lesson": "grammar_lesson_weight * sum of enabled lesson objectives",
+    "row_reduction": "Each trial is averaged over active sentence rows before its optimizer step."
+  },
+  "batch_formulas": {
+    "primary": "(1-reconstruction_scale)*lossOut + reconstruction_scale*lossIn + embedding_scale*sbow",
+    "answer_numeric": "lossOut uses what_scale for the bandless numeric output",
+    "reconstruction": "Owned tied byte loss from the understanding",
+    "truth": "Detached luminosity/universality multiplier on the assembled cost, plus independent truth/balance terms",
+    "regularizers": "Gate L1 follows truth modulation; readout L1 is a detached report of optimizer-owned proximal regularization"
+  },
+  "configuration": "XOR_grammar",
+  "training_batches": 7,
+  "evaluation_batches": 0
+}

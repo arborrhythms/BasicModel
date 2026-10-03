@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-control-before/run/worker-000.recycle.json"
+}

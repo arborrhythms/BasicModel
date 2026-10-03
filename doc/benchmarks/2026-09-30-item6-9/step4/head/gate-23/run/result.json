@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+  ],
+  "completed": [
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4/head/gate-23/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4/head/gate-23/run/worker-000.json"
+      ],
+      "pid": 54425,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4813312608,
+      "elapsed_seconds": 105.69280237494968,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4/head/gate-23/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 101.02234416711144,
+          "message": "",
+          "stdout": " in 0.616s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.616s, 100.00%)\r\nTraining throughput: 1 batches in 0.621s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.618s, 100.00%)\r\nTraining throughput: 1 batches in 0.596s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.571s, 100.00%)\r\nTraining throughput: 1 batches in 0.568s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.570s, 100.00%)\r\nTraining throughput: 1 batches in 0.570s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.572s, 100.00%)\r\nTraining throughput: 1 batches in 0.572s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.570s, 100.00%)\r\nTraining throughput: 1 batches in 0.567s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.601s, 100.00%)\r\nTraining throughput: 1 batches in 0.605s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.609s, 100.00%)\r\nTraining throughput: 1 batches in 0.614s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.615s, 100.00%)\r\nTraining throughput: 1 batches in 0.610s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.602s, 100.00%)\r\nTraining throughput: 1 batches in 0.596s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.569s, 100.00%)\r\nTraining throughput: 1 batches in 0.569s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.571s, 100.00%)\r\nTraining throughput: 1 batches in 0.571s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.572s, 100.00%)\r\nTraining throughput: 1 batches in 0.577s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.593s, 100.00%)\r\nTraining throughput: 1 batches in 0.603s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.626s, 100.00%)\r\nTraining throughput: 1 batches in 0.626s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.625s, 100.00%)\r\nTraining throughput: 1 batches in 0.609s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.573s, 100.00%)\r\nTraining throughput: 1 batches in 0.570s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.578s, 100.00%)\r\nTraining throughput: 1 batches in 0.583s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.623s, 100.00%)\r\nTraining throughput: 1 batches in 0.623s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.632s, 100.00%)\r\nTraining throughput: 1 batches in 0.636s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.635s, 100.00%)\r\nTraining throughput: 1 batches in 0.640s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.644s, 100.00%)\r\nTraining throughput: 1 batches in 0.656s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.618s, 100.00%)\r\nTraining throughput: 1 batches in 0.616s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.645s, 100.00%)\r\nTraining throughput: 1 batches in 0.649s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.663s, 100.00%)\r\nTraining throughput: 1 batches in 0.636s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.575s, 100.00%)\r\nTraining throughput: 1 batches in 0.569s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.571s, 100.00%)\r\nTraining throughput: 1 batches in 0.568s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.571s, 100.00%)\r\nTraining throughput: 1 batches in 0.571s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.580s, 100.00%)\r\nTraining throughput: 1 batches in 0.584s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.632s, 100.00%)\r\nTraining throughput: 1 batches in 0.538s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel/output/item69-head",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4/head/gate-23/run",
+  "elapsed_seconds": 107.83450362505391,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 4813312608,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4/head/gate-23/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4/head/gate-23/run/collect.json"
+    ],
+    "pid": 54414,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180765512,
+    "elapsed_seconds": 2.0098569998517632,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4/head/gate-23/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,318 @@
+{
+  "rows": [
+    {
+      "trial": 1,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 1.021405182655144e-14,
+      "ending_training_predictions": [
+        1.4901161193847656e-07,
+        0.9999998807907104,
+        0.9999999403953552,
+        2.9802322387695312e-08
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 146.207175208001,
+      "after_900_updates_mse": 9.325873406851315e-15,
+      "after_900_updates_predictions": [
+        8.940696716308594e-08,
+        0.9999998807907104,
+        0.9999998807907104,
+        2.9802322387695312e-08
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 2,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 4.440892098500626e-16,
+      "ending_training_predictions": [
+        2.9802322387695312e-08,
+        1.0,
+        1.0,
+        2.9802322387695312e-08
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 148.1218387910012,
+      "after_900_updates_mse": 8.881784197001252e-16,
+      "after_900_updates_predictions": [
+        0.0,
+        1.0,
+        0.9999999403953552,
+        0.0
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 3,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 0.125,
+      "ending_training_predictions": [
+        0.0,
+        0.9999999403953552,
+        0.4999999403953552,
+        0.4999999403953552
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 139.82505379199938,
+      "after_900_updates_mse": 0.125,
+      "after_900_updates_predictions": [
+        0.0,
+        1.0,
+        0.5,
+        0.5
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 4,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 0.032838575541973114,
+      "ending_training_predictions": [
+        0.18179702758789062,
+        0.8183234930038452,
+        0.8192926645278931,
+        0.1806727647781372
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 150.92133341599765,
+      "after_900_updates_mse": 0.032744597643613815,
+      "after_900_updates_predictions": [
+        0.18153679370880127,
+        0.818583607673645,
+        0.8195524215698242,
+        0.18041491508483887
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 5,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 2.575717417130363e-13,
+      "ending_training_predictions": [
+        -5.364418029785156e-07,
+        0.9999995231628418,
+        0.9999995231628418,
+        -5.364418029785156e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 143.73515304100147,
+      "after_900_updates_mse": 2.007283228522283e-13,
+      "after_900_updates_predictions": [
+        4.172325134277344e-07,
+        1.0000004768371582,
+        1.0000004768371582,
+        4.172325134277344e-07
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 6,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 2.842170943040401e-14,
+      "ending_training_predictions": [
+        0.0,
+        0.9999997615814209,
+        1.0,
+        2.384185791015625e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 141.3922974590023,
+      "after_900_updates_mse": 2.842170943040401e-14,
+      "after_900_updates_predictions": [
+        0.0,
+        0.9999997615814209,
+        1.0,
+        2.384185791015625e-07
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 7,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 0.125,
+      "ending_training_predictions": [
+        2.980232238769531e-07,
+        0.999999463558197,
+        0.5,
+        0.5
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 136.76495829099804,
+      "after_900_updates_mse": 0.125,
+      "after_900_updates_predictions": [
+        4.76837158203125e-07,
+        0.9999996423721313,
+        0.5000000596046448,
+        0.5000000596046448
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 8,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 1.6253665080512292e-13,
+      "ending_training_predictions": [
+        6.556510925292969e-07,
+        0.9999997019767761,
+        0.9999996423721313,
+        5.960464477539063e-08
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 145.4178762909978,
+      "after_900_updates_mse": 1.8740564655672642e-13,
+      "after_900_updates_predictions": [
+        6.556510925292969e-07,
+        0.9999997019767761,
+        0.9999995231628418,
+        5.960464477539063e-08
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 9,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 0.001637348672375083,
+      "ending_training_predictions": [
+        0.044029951095581055,
+        0.9620368480682373,
+        0.9573132991790771,
+        0.03670698404312134
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 143.19794204200298,
+      "after_900_updates_mse": 0.0016239229589700699,
+      "after_900_updates_predictions": [
+        0.043850064277648926,
+        0.9621939659118652,
+        0.9574897289276123,
+        0.036557406187057495
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 10,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 0.125,
+      "ending_training_predictions": [
+        0.0,
+        1.0,
+        0.5,
+        0.5
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 127.19463025000005,
+      "after_900_updates_mse": 0.125,
+      "after_900_updates_predictions": [
+        0.0,
+        1.0,
+        0.5,
+        0.5
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    }
+  ],
+  "median_ending_training_mse": 0.0008186743363163274,
+  "median_after_900_updates_mse": 0.0008119614795853991,
+  "accepted_item7_baseline_median": 0.1066,
+  "meaning": "Same raw-forward 900-update measurement as the accepted receipt; descriptive, not a sentence-trial grammar-learning proof."
+}

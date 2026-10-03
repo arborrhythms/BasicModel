@@ -1,0 +1,14 @@
+{
+  "config": "data/BasicModel_expectation_benchmark.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 3.5830399159967783,
+  "batch": 28,
+  "serial": true,
+  "tied": false,
+  "error": "ValueError('complete sentence exceeds the packed word capacity: source index 23968 has 72 words, capacity is 64; refusing to clip it')",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py\", line 17, in worker\n    out,rec,_,_=model.runEpoch(optimizer=optimizer,batchSize=batch,split='train',max_batches=1)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16474, in runEpoch\n    queued_tick = prefetcher.next()\n                  ^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16150, in next\n    raise self._exc\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16111, in _produce\n    tick = self._next_fn()\n           ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 447, in next_packed_tick\n    raise ValueError(\nValueError: complete sentence exceeds the packed word capacity: source index 23968 has 72 words, capacity is 64; refusing to clip it\n",
+  "completed": false,
+  "total_seconds": 3.5936818330010283
+}

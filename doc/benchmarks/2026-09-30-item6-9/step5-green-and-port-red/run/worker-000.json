@@ -1,0 +1,53 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+  ],
+  "completed": [
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7588167500216514,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.29093299992382526,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.127s)\r\n"
+    },
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012595904991030693,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0010123748797923326,
+      "message": "test/test_sentence_compose.py:55: in test_sentence_winners_are_row_local_and_precede_the_next_perception\n    assert updates[1] > updates[0] and updates[3] > updates[2]\nE   assert (0.0 > 0.0)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 6/6 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.43536995886825025</pre></td><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py:23: in test_identical_second_trial_never_wins_and_both_use_original_parameters
+    assert observations == [2., 2.], observations
+E   AssertionError: [2.0, 1.600000023841858]
+E   assert [2.0, 1.600000023841858] == [2.0, 2.0]
+E     
+E     At index 1 diff: 1.600000023841858 != 2.0
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.6391925839707255</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 4-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.33944449992850423</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.152s)
+</pre></td></tr><tr><td><pre>test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00012375018559396267</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>2.356103917118162</pre></td><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py:93: in test_replaying_real_greedy_derivation_ties_in_every_row
+    torch.testing.assert_close(costs[:, 0], costs[:, 1], rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 4 / 4 (100.0%)
+E   Greatest absolute difference: 0.07769376039505005 at index (0,)
+E   Greatest relative difference: 0.23364409804344177 at index (0,)</pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>234.8153176670894</pre></td><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py:58: in test_sentence_trials_keep_their_own_perception_pullbacks
+    assert versions[0] == versions[1], &#x27;an optimizer update separated the sentence trials&#x27;
+E   AssertionError: an optimizer update separated the sentence trials
+E   assert (0, 0, 0, 0, 0, 0, ...) == (0, 0, 0, 0, 0, 1, ...)
+E     
+E     At index 5 diff: 0 != 1
+E     Use -v to get more diff</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr></table></body></html>

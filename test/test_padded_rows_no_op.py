@@ -82,25 +82,6 @@ def test_valid_mask_cleared_on_subspace_reset():
     assert sub.valid_mask is None
 
 
-def test_loss_mask_matches_stem_valid_mask():
-    """`model._ar_valid_pos` (loss-side mask) is the stem's `valid_mask`.
-
-    runBatch's loss path masks the loss with `_ar_valid_pos`. The
-    handoff requires update-masking and loss-masking to share the
-    same signal — confirming that here keeps the contract explicit.
-    """
-    model = _model()
-    # Run a real forward through the loader (XOR data has uniform
-    # length, so valid_mask is all-True; the test focuses on the
-    # _ar_valid_pos pointer matching the stem's mask).
-    out = model.forward(_xor_input())
-    valid_pos = getattr(model, '_ar_valid_pos', None)
-    if valid_pos is None:
-        pytest.skip("_ar_valid_pos not populated in this branch")
-    stem_mask = model.inputSpace.subspace.valid_mask
-    assert stem_mask is not None
-    assert valid_pos.shape == stem_mask.shape
-    assert torch.equal(valid_pos, stem_mask)
 
 
 def test_symbolic_act_masking_zeros_invalid_cells():

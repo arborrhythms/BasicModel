@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+    "--child",
+    "--config",
+    "data/MM_qa.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-first-batches/MM_qa.json"
+  ],
+  "pid": 56439,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 3360738496,
+  "elapsed_seconds": 9.079298582990305,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-first-batches/MM_qa.log"
+}

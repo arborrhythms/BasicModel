@@ -1,0 +1,170 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+    "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+    "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+    "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+    "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+    "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+  ],
+  "completed": [
+    "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+    "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+    "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+    "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+    "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+    "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal-after/worker-000.json"
+      ],
+      "pid": 45440,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1662192376,
+      "elapsed_seconds": 85.03852362500038,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+        "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+        "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+        "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+        "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+        "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+      ],
+      "completed": [
+        "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+        "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+        "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+        "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+        "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+        "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006038340070517734,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003676249907584861,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011808832990936935,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002431250031804666,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.7684639169892762,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005752080032834783,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 77.63695862500754,
+          "message": "test/test_query_phase_fullgraph.py:40: in test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths\n    assert int(torch._dynamo.utils.counters[\"stats\"][\"unique_graphs\"]) == 1\nE   assert 2 == 1\nE    +  where 2 = int(2)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 16,
+    "max_files": 2
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal-after",
+  "elapsed_seconds": 89.39491716699558,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 1662192376,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal-after/collect.json"
+    ],
+    "pid": 45428,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 503760120,
+    "elapsed_seconds": 3.9797156669956166,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+        "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+        "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+        "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+        "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+        "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

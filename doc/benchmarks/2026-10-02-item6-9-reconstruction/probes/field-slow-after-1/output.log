@@ -1,0 +1,77 @@
+..............FF..F...............F.....                                 [100%]
+=================================== FAILURES ===================================
+____________________ test_ws_routing_after_serial_migration ____________________
+test/test_dual_towers.py:168: in test_ws_routing_after_serial_migration
+    assert stamps[-1] == "universe", stamps     # LIVE unity, per-word
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: [None, None, None, None]
+E   assert None == 'universe'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.699s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+_________ test_written_order0_words_are_present_after_one_smoke_epoch __________
+test/test_dual_towers.py:206: in test_written_order0_words_are_present_after_one_smoke_epoch
+    cid = cs0.definitions.deref(cs0.definitions.word(form=word))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:95: in deref
+    choices = self.objects(word)
+              ^^^^^^^^^^^^^^^^^^
+bin/Definitions.py:83: in objects
+    return self._objects.get(int(word), ())
+                             ^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.130s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.119s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.117s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+_____________________ test_pyramid_grads_reach_every_rung ______________________
+test/test_dual_towers.py:277: in test_pyramid_grads_reach_every_rung
+    assert vals, "the concept store must expose trainable edge values"
+E   AssertionError: the concept store must expose trainable edge values
+E   assert []
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.130s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.124s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.122s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+__________________ test_unconditional_integration_end_to_end ___________________
+test/test_relevance_bases.py:94: in test_unconditional_integration_end_to_end
+    assert torch.is_tensor(prio), "the surface must feed the pyramid"
+E   AssertionError: the surface must feed the pyramid
+E   assert False
+E    +  where False = <function is_tensor at 0x10aab2c00>(None)
+E    +    where <function is_tensor at 0x10aab2c00> = torch.is_tensor
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.122s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.116s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.115s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_masked_semantic.py::test_config_is_masked_parallel_semantic
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_masked_semantic.py::test_reconstruction_uses_word_definition_evidence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7148: RuntimeWarning: reconstruction_zeroed [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/parallel-concepts-su4b1vp8/MM_20M_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 64)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_dual_towers.py::test_ws_routing_after_serial_migration - Ass...
+FAILED test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+FAILED test/test_dual_towers.py::test_pyramid_grads_reach_every_rung - Assert...
+FAILED test/test_relevance_bases.py::test_unconditional_integration_end_to_end
+4 failed, 36 passed, 3 warnings in 13.69s

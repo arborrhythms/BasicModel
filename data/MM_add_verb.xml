@@ -5,8 +5,8 @@
        in, the one-hot 7 out, the input reconstructed; plus is a transitive
        VERB the grammar learns (complete.grammar verb / adverb VP ops), the
        numerals are nouns the lexicon learns, and no mathematical machinery
-       runs in the model. MM_phrase_decode's topology (serial single-S idea,
-       complete.grammar, WholeSpace word analysis, tall WS, ideaDecode) with
+       runs in the model. The retained serial topology (serial single-S idea,
+       complete.grammar, WholeSpace meronomy analysis, tall WS) with
        the answer path on and R = 16 output vectors of width 1. Large: this
        is the "lots of training of a large network" run
        (doc/benchmarks/2026-09-09-math-thinking-pilot.md, "Stage 0 as
@@ -19,7 +19,6 @@
     <mereologyRaise>true</mereologyRaise>
     <serialObjectMeta>true</serialObjectMeta>
     <symbolTower>true</symbolTower>
-    <ideaDecode>true</ideaDecode>
     <answerSynthesis>true</answerSynthesis>
     <!-- The parser must COMPOSE these short sentences: the untrained
          reducer's operator marginals are uniform (~1/15) and never pass
@@ -52,31 +51,31 @@
   </SymbolSpace>
 
   <InputSpace>
-    <nOutput>8192</nOutput>
+    <nOutput>512</nOutput>
     <nVectors>256</nVectors>
-    <nDim>1024</nDim>
+    <nDim>64</nDim>
   </InputSpace>
 
   <PartSpace>
-    <nInput>8192</nInput>
-    <nInputDim>1024</nInputDim>
-    <nVectors>65536</nVectors>
-    <nDim>1024</nDim>
+    <nInput>512</nInput>
+    <nInputDim>64</nInputDim>
+    <nVectors>4096</nVectors>
+    <nDim>64</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1024</nOutputDim>
+    <nOutputDim>64</nOutputDim>
 
     <invertible>true</invertible>
-    <synthesis>radix</synthesis>
+    <synthesis>meronomy</synthesis>
   </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>64</nInputDim>
     <nVectors>8</nVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>1024</nDim>
+    <nDim>64</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1024</nOutputDim>
+    <nOutputDim>64</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -88,13 +87,13 @@
          the PS radix spell-out (Alec 2026-06-22: radix in PS is only good if
          words are codetermined PS<->WS by a word analyzer). Without it the
          serial loop is byte-grained (8 per-percept ideas, not 2 word-objects). -->
-    <analysis>word</analysis>
+    <analysis>meronomy</analysis>
     <nInput>8</nInput>
-    <nInputDim>1024</nInputDim>
-    <nVectors>65536</nVectors>
-    <nDim>1024</nDim>
-    <nOutput>1024</nOutput>
-    <nOutputDim>1024</nOutputDim>
+    <nInputDim>64</nInputDim>
+    <nVectors>4096</nVectors>
+    <nDim>64</nDim>
+    <nOutput>64</nOutput>
+    <nOutputDim>64</nOutputDim>
 
     <invertible>true</invertible>
     <codebook>quantize</codebook>
@@ -102,7 +101,7 @@
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>64</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>16</nOutput>

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/attribution_probe.py",
+    "R",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/attribution/R-05"
+  ],
+  "pid": 18714,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1430948312,
+  "elapsed_seconds": 281.13735295800143,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/attribution/R-05/run.log"
+}

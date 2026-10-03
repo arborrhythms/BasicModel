@@ -1,0 +1,18 @@
+{
+  "command": [
+    "env",
+    "RUN_SLOW=1",
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_masked_semantic.py::test_config_is_masked_parallel_semantic"
+  ],
+  "pid": 22534,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 5174203168,
+  "elapsed_seconds": 13.215719750005519,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/moved-feature-flags-before.log"
+}

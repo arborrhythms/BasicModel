@@ -1,0 +1,8 @@
+{
+  "pid": 76905,
+  "observed_at": 1790888464.767605,
+  "events": 12,
+  "last_event": "evaluation batch complete at 1254.384557833 s",
+  "reason": "Endpoint is complete; subsequent Python attribute traversal has made no durable reporting progress for more than five minutes. SIGINT captures the failing stack before the 1800 s guard.",
+  "training_completed": true
+}

@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[cut]"
+  ],
+  "completed": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[cut]"
+  ],
+  "slow_selected": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[cut]"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[cut]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1273.096066541002,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

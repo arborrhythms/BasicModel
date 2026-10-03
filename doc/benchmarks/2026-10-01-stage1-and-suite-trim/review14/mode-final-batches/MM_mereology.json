@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_mereology.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 6.35671325000294,
+  "batch": 12,
+  "scope": "perception: no grammar",
+  "reconstruct_in_loop": false,
+  "training_seconds": 1.7485363750020042,
+  "output_loss": 0.17499865591526031,
+  "reconstruction_loss": 0.00014544319128617644,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": null,
+  "total_seconds": 8.106065959000262
+}

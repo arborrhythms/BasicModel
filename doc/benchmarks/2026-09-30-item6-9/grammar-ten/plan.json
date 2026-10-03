@@ -1,0 +1,13 @@
+{
+  "trials_per_gate": 10,
+  "seed": null,
+  "class_bar": {
+    "correct": 4,
+    "mse_less_than": 0.05
+  },
+  "epochs": 400,
+  "worker_bytes": 8589934592,
+  "aggregate_bytes": 25769803776,
+  "max_workers": 3,
+  "companion": "doc/benchmarks/2026-09-30-item6-9/combined-companions.json"
+}

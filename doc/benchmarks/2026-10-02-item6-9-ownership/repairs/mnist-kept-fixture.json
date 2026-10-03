@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_mnist.py"
+  ],
+  "pid": 24424,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 725845480,
+  "elapsed_seconds": 6.470280957990326,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/mnist-kept-fixture.log"
+}

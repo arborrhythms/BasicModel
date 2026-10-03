@@ -1,0 +1,65 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>109.38461241615005</pre></td><td><pre>test/test_reconstruction_roundtrip.py:579: in test_mm20m_xor_exact_roundtrip
+    assert rec.exact_match_rate == 1.0
+E   AssertionError: assert 0.5 == 1.0
+E    +  where 0.5 = RunRecord(config=&#x27;data/MM_20M_xor.xml&#x27;, seed=4145413904, epochs=160, wall_s_per_epoch=0.6412233589612439, output_loss=... 0.6938758329488337, 0.66430858313106, 0.6319802498910576, 0.6572947909589857, 0.6944979580584913, 0.638976750196889]}).exact_match_rate</pre></td><td><pre> in 0.637s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.613s, 100.00%)
+Training throughput: 1 batches in 0.614s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.648s, 100.00%)
+Training throughput: 1 batches in 0.653s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.655s, 100.00%)
+Training throughput: 1 batches in 0.650s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.644s, 100.00%)
+Training throughput: 1 batches in 0.647s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.636s, 100.00%)
+Training throughput: 1 batches in 0.629s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.622s, 100.00%)
+Training throughput: 1 batches in 0.623s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.626s, 100.00%)
+Training throughput: 1 batches in 0.632s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.644s, 100.00%)
+Training throughput: 1 batches in 0.642s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.648s, 100.00%)
+Training throughput: 1 batches in 0.646s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.637s, 100.00%)
+Training throughput: 1 batches in 0.635s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.641s, 100.00%)
+Training throughput: 1 batches in 0.652s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.668s, 100.00%)
+Training throughput: 1 batches in 0.685s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.683s, 100.00%)
+Training throughput: 1 batches in 0.661s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.663s, 100.00%)
+Training throughput: 1 batches in 0.671s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.668s, 100.00%)
+Training throughput: 1 batches in 0.663s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.645s, 100.00%)
+Training throughput: 1 batches in 0.632s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.652s, 100.00%)
+Training throughput: 1 batches in 0.662s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.674s, 100.00%)
+Training throughput: 1 batches in 0.668s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.661s, 100.00%)
+Training throughput: 1 batches in 0.669s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.661s, 100.00%)
+Training throughput: 1 batches in 0.653s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.669s, 100.00%)
+Training throughput: 1 batches in 0.669s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.647s, 100.00%)
+Training throughput: 1 batches in 0.654s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.661s, 100.00%)
+Training throughput: 1 batches in 0.661s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.666s, 100.00%)
+Training throughput: 1 batches in 0.693s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.701s, 100.00%)
+Training throughput: 1 batches in 0.664s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.636s, 100.00%)
+Training throughput: 1 batches in 0.631s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.639s, 100.00%)
+Training throughput: 1 batches in 0.657s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.707s, 100.00%)
+Training throughput: 1 batches in 0.694s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.646s, 100.00%)
+Training throughput: 1 batches in 0.638s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.748s, 100.00%)
+Training throughput: 1 batches in 0.652s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr></table></body></html>

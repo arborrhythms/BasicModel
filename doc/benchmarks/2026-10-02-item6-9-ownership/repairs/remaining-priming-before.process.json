@@ -1,0 +1,23 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_activation_priming_multiply.py",
+    "test/test_frozen_concepts.py",
+    "test/test_intent_priming.py",
+    "test/test_primed_reverse_combined.py",
+    "test/test_primed_reverse_hard_mask.py",
+    "test/test_primed_reverse_integration.py",
+    "test/test_primitive_properties.py",
+    "test/test_relevance_bases.py",
+    "test/test_structural_checkpoint.py"
+  ],
+  "pid": 21641,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 453477792,
+  "elapsed_seconds": 5.920880332996603,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/remaining-priming-before.log"
+}

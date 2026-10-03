@@ -550,7 +550,12 @@ co-location stays in perception (fused parts, pervading runs). See
 positions, PartSpace rows, all WholeSpace rows and symbol poles. Each symbol
 pole has one address. Input percept and symbol occurrences carry the word's
 input byte start; repeated occurrences use their different input locations,
-without extra symbol slots. Thought-produced symbols use their symbol-row
+without extra symbol slots. Mixing serial readers declare word slots, so their
+fixed input-address extent is the existing word-slot capacity times the existing
+per-word residual-part capacity (at least the raw InputSpace extent). This
+converts unit counts into byte addresses using the fixed residual layout.
+The address guard still rejects overflow. Aligned readers retain their raw-byte
+extent. The mode is resolved before this fixed registry is constructed. Thought-produced symbols use their symbol-row
 address. The registry encodes locations through one model-owned `.where` ladder. Its long period
 covers the registry and its short period resolves adjacent locations. The
 band carries the address; an integer location is decoded from it. Codebook

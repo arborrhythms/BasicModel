@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_cs_to_ss_forward.py::test_symbol_leg_survives_repeated_sync_backward"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-023.recycle.json"
+}

@@ -1,0 +1,17 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+    "--child",
+    "--config",
+    "data/MM_add_verb.xml",
+    "--output",
+    "doc/benchmarks/2026-10-02-item6-9-ownership/repairs/add-verb-first-batch-values.json"
+  ],
+  "pid": 23993,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 938329744,
+  "elapsed_seconds": 4.897279625001829,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/add-verb-first-batch.log"
+}

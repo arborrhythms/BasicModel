@@ -1,0 +1,41 @@
+..................F.                                                     [100%]
+=================================== FAILURES ===================================
+_______________ test_kind_preview_and_committed_comparison_agree _______________
+
+    def test_kind_preview_and_committed_comparison_agree():
+        model = layer()
+        source = torch.eye(4)[:3]
+        observe(model, source, 'idea')
+        cost, _, pending = model.sentence_prediction_cost([3], [source], [True],
+            documents=['document'], layout='infix', sentence_kinds=['relation'])
+        model._inter_last_meaning, model._inter_last_pred_root = pending
+        model.observe_stm_end_state([3], [source], layout='infix',
+            documents=['document'], sentence_kinds=['relation'])
+>       torch.testing.assert_close(model.consume_inter_loss(), cost[0])
+                                                               ^^^^^^^
+
+test/test_expectation_kind.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x11f69d310>
+func = <slot wrapper '__getitem__' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor(3.0740, grad_fn=<SumBackward0>), 0), kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: invalid index of a 0-dim tensor. Use `tensor.item()` in Python or `tensor.item<T>()` in C++ to convert a 0-dim tensor to a number
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: IndexError
+=============================== warnings summary ===============================
+test/test_concept_readout_l1.py::test_adaptive_prox_matches_diagonal_metric_oracle_and_preserves_bias[moment_dtype0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_kind.py::test_kind_preview_and_committed_comparison_agree
+1 failed, 19 passed, 1 warning in 7.47s

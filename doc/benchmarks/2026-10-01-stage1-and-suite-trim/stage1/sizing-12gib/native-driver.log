@@ -1,0 +1,10 @@
+[collect] 1 selectors; limit 1800s, 12.0 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 12.0 GiB
+[worker-000] memory 137; 66.5s; peak 12.05 GiB
+{"arm": "step5a", "reason": "memory", "exit_code": 137}
+[collect] 1 selectors; limit 1800s, 12.0 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 12.0 GiB
+[worker-000] memory 137; 66.7s; peak 12.32 GiB
+{"arm": "cut", "reason": "memory", "exit_code": 137}

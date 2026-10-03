@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/observe.py",
+    "--config",
+    "BasicModel_answers_tied_benchmark",
+    "--arm",
+    "step5a",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/BasicModel_answers_tied_benchmark-step5a"
+  ],
+  "pid": 59995,
+  "exit_code": 137,
+  "reason": "memory",
+  "peak_memory_bytes": 9591185808,
+  "elapsed_seconds": 7.4998387080013345,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/BasicModel_answers_tied_benchmark-step5a/run.log"
+}

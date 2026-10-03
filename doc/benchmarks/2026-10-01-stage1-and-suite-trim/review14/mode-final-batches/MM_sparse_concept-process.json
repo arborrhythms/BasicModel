@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+    "--child",
+    "--config",
+    "data/MM_sparse_concept.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sparse_concept.json"
+  ],
+  "pid": 63544,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 5846979624,
+  "elapsed_seconds": 10.769761333998758,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sparse_concept.log"
+}

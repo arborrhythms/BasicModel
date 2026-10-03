@@ -1,0 +1,125 @@
+{
+  "results": [
+    {
+      "config": "data/BasicModel_answers_benchmark.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/BasicModel_answers_benchmark.xml",
+      "arm": "after",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/BasicModel_expectation_benchmark.xml",
+      "arm": "before",
+      "exit_code": 1,
+      "reason": "exit"
+    },
+    {
+      "config": "data/BasicModel_expectation_benchmark.xml",
+      "arm": "after",
+      "exit_code": 1,
+      "reason": "exit"
+    },
+    {
+      "config": "data/MM_20M_fineweb.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/MM_20M_fineweb.xml",
+      "arm": "after",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/MM_20M_grammar.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/MM_20M_grammar.xml",
+      "arm": "after",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/MM_ladder.xml",
+      "arm": "before",
+      "exit_code": 0,
+      "reason": "exit"
+    },
+    {
+      "config": "data/MM_ladder.xml",
+      "arm": "after",
+      "exit_code": 0,
+      "reason": "exit"
+    },
+    {
+      "config": "data/MM_ladder_idiom.xml",
+      "arm": "before",
+      "exit_code": 0,
+      "reason": "exit"
+    },
+    {
+      "config": "data/MM_ladder_idiom.xml",
+      "arm": "after",
+      "exit_code": 0,
+      "reason": "exit"
+    },
+    {
+      "config": "data/MM_ladder_text.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/MM_ladder_text.xml",
+      "arm": "after",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/MM_ladder_textpacked.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/MM_ladder_textpacked.xml",
+      "arm": "after",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/MM_nanochat_grammar_gate.xml",
+      "arm": "before",
+      "exit_code": 0,
+      "reason": "exit"
+    },
+    {
+      "config": "data/MM_nanochat_grammar_gate.xml",
+      "arm": "after",
+      "exit_code": 0,
+      "reason": "exit"
+    },
+    {
+      "config": "data/MM_nanochat_grammar_pilot.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/MM_nanochat_grammar_pilot.xml",
+      "arm": "after",
+      "exit_code": 137,
+      "reason": "memory"
+    }
+  ],
+  "source_matched": true
+}

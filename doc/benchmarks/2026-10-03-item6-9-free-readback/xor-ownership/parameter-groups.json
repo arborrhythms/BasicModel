@@ -1,0 +1,735 @@
+{
+  "perception": [
+    {
+      "name": "perceptualSpace._owned_bases.what.W",
+      "shape": [
+        256,
+        2
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "perceptualSpace._percept_store.byte_fallback.byte_codebook",
+      "shape": [
+        256,
+        2
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.4.coefficients",
+      "shape": [
+        6,
+        9
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.5.sigma.layer.W",
+      "shape": [
+        9,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+      "shape": [
+        1,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.4.coefficients",
+      "shape": [
+        6,
+        9
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.5.sigma.layer.W",
+      "shape": [
+        9,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+      "shape": [
+        1,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    }
+  ],
+  "codes": [
+    {
+      "name": "conceptualSpaces.0.layers.3.W",
+      "shape": [
+        6,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.3.W",
+      "shape": [
+        6,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    }
+  ],
+  "chooser": [
+    {
+      "name": "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+      "shape": [
+        1,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+      "shape": [
+        2,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+      "shape": [
+        1,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    }
+  ],
+  "operators_and_tied_inverses": [
+    {
+      "name": "conceptualSpaces.1.concept_parts_layer.features.values",
+      "shape": [
+        8
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "perceptualSpace._owned_bases.what.W",
+      "shape": [
+        256,
+        2
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "perceptualSpace._percept_store.byte_fallback.byte_codebook",
+      "shape": [
+        256,
+        2
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.5.sigma.layer.W",
+      "shape": [
+        9,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+      "shape": [
+        1,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.6.callosum",
+      "shape": [
+        12,
+        6
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.6.layer.butterfly_L",
+      "shape": [
+        7,
+        64
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.6.layer.butterfly_d",
+      "shape": [
+        7,
+        64,
+        2
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.6.layer.butterfly_U",
+      "shape": [
+        7,
+        64
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.5.sigma.layer.W",
+      "shape": [
+        9,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+      "shape": [
+        1,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.6.callosum",
+      "shape": [
+        12,
+        6
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.6.layer.butterfly_L",
+      "shape": [
+        7,
+        64
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.6.layer.butterfly_d",
+      "shape": [
+        7,
+        64,
+        2
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.6.layer.butterfly_U",
+      "shape": [
+        7,
+        64
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.0.begins_weight",
+      "shape": [
+        262
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.0.ends_weight",
+      "shape": [
+        262
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.0.atom_level",
+      "shape": [
+        262
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.0._owned_bases.what.W",
+      "shape": [
+        6,
+        2
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+      "shape": [
+        6,
+        256
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.1.begins_weight",
+      "shape": [
+        262
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.1.ends_weight",
+      "shape": [
+        262
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.1.atom_level",
+      "shape": [
+        262
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.1._owned_bases.what.W",
+      "shape": [
+        6,
+        2
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+      "shape": [
+        6,
+        256
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.category_embedding.weight",
+      "shape": [
+        64,
+        4
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.rule_predictor.0.weight",
+      "shape": [
+        24,
+        24
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.rule_predictor.0.bias",
+      "shape": [
+        24
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.rule_predictor.2.weight",
+      "shape": [
+        3,
+        24
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.rule_predictor.2.bias",
+      "shape": [
+        3
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.4.coefficients",
+      "shape": [
+        6,
+        9
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.4.coefficients",
+      "shape": [
+        6,
+        9
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    }
+  ],
+  "generate": [],
+  "reading_map": [
+    {
+      "name": "inputSpace.outputSpace._readout_bias",
+      "shape": [
+        1,
+        1,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "inputSpace.outputSpace.layers.0.W",
+      "shape": [
+        60,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "inputSpace.outputSpace.layers.0.biasWeight",
+      "shape": [
+        1,
+        1
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "inputSpace.outputSpace.layers.1.W",
+      "shape": [
+        1,
+        60
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "inputSpace.outputSpace.layers.1.biasWeight",
+      "shape": [
+        1,
+        60
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "answer_record_reader.weight",
+      "shape": [
+        1,
+        26
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    }
+  ],
+  "expectation_predictor": [
+    {
+      "name": "symbolSpace.subspace.layers.2.predictor.0.weight",
+      "shape": [
+        20,
+        70
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.2.predictor.0.bias",
+      "shape": [
+        20
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.2.predictor.2.weight",
+      "shape": [
+        10,
+        20
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.2.predictor.2.bias",
+      "shape": [
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+      "shape": [
+        66
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+      "shape": [],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+      "shape": [
+        66,
+        264
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+      "shape": [
+        66
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+      "shape": [
+        33,
+        66
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+      "shape": [
+        33
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+      "shape": [
+        10,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.pi.layer.d",
+      "shape": [
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+      "shape": [
+        10,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+      "shape": [
+        1,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+      "shape": [
+        10,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.sigma.layer.d",
+      "shape": [
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+      "shape": [
+        10,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+      "shape": [
+        1,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.routing_proj.weight",
+      "shape": [
+        10,
+        3
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.0.layers.0.routing_proj.bias",
+      "shape": [
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+      "shape": [
+        10,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.pi.layer.d",
+      "shape": [
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+      "shape": [
+        10,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+      "shape": [
+        1,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+      "shape": [
+        10,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.sigma.layer.d",
+      "shape": [
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+      "shape": [
+        10,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+      "shape": [
+        1,
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.routing_proj.weight",
+      "shape": [
+        10,
+        3
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    },
+    {
+      "name": "conceptualSpaces.1.layers.0.routing_proj.bias",
+      "shape": [
+        10
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    }
+  ],
+  "other": [
+    {
+      "name": "conceptualSpaces.1._category_vq._codebook",
+      "shape": [
+        8,
+        8
+      ],
+      "requires_grad": true,
+      "optimizer_owned": false
+    }
+  ]
+}

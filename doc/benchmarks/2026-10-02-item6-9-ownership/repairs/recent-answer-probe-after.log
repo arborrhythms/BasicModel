@@ -1,0 +1,147 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+__ test_available_input_targets_do_not_train_answer_modules_after_adam[False] __
+
+output_loop = False, eager_reading = None
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("output_loop", [False, True])
+    def test_available_input_targets_do_not_train_answer_modules_after_adam(output_loop, eager_reading):
+        from copy import deepcopy
+        from test_output_walk import _model
+        m = _model()
+        m._tensor_peer_while_eager = True
+        m._chart_compose_per_word = lambda: None
+        m.output_policy_weight = 1.0
+        data = m.inputSpace.data
+        saved_addresses = deepcopy(data.source_addresses["train"])
+        had_outputs = data.has_supervised_outputs
+        for address in data.source_addresses["train"]:
+            address["document"] = 0
+            address["sentence"] = address["row"]
+        opt = m.getOptimizer(lr=1e-3)
+        try:
+            supplied = (What.supervised(0), What.supervised(1))
+            # Warm the live generate chooser's Adam moments before testing both
+            # output modes. Shared maps may still learn from reconstruction;
+            # only dedicated answer parameters must stop receiving credit.
+            got = _answer_training_probe(m, opt, supplied)
+            assert got["changed"][got["active_index"]]
+            assert "output_policy" in got["recorded"]
+            assert all(opt.state.get(p) for p in m.languageSpace.generate_policy.parameters())
+            m.output_in_loop = output_loop
+            for family, questions in (
+                    ("present", (What.present(0), What.present(1))),
+                    ("past", (What.past(1), What.past(2))),
+                    ("future", (What.future(0), What.future(1))),
+                    ("missing-label", supplied)):
+                if family == "missing-label":
+                    data.has_supervised_outputs = False
+                else:
+                    assert all(data.what(q).available for q in questions)
+                baselines = (m.__dict__.get("_output_policy_baseline"),
+                             m.__dict__.get("_selected_thought_policy_baseline"))
+>               got = _answer_training_probe(m, opt, questions)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_output_path_supervised.py:338: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+m = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...=29, out_features=136, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)
+)
+opt = <Optimizer.MultiOptimizer object at 0x11f979a60>
+questions = (WhatQuestion(where=0, relation=<WhatRelation.PRESENT: 'present'>, offset=0, split='train', prompt=None), WhatQuestion(where=1, relation=<WhatRelation.PRESENT: 'present'>, offset=0, split='train', prompt=None))
+
+    def _answer_training_probe(m, opt, questions):
+        """Observe real answer loss, the trained total, and the resulting step."""
+        initial_params = _dedicated_answer_parameters(m)
+        initial_values = [p.detach().clone() for p in initial_params]
+        observed, recorded = {}, {}
+        backward, record = m._backward_training_loss, m.record_loss
+    
+        def record_probe(name, value, **kwargs):
+            recorded[name] = value
+            return record(name, value, **kwargs)
+    
+        def backward_probe(total, amp_scaler=None, **kwargs):
+            if getattr(m, '_sentence_backward', False):
+                assert 'output' not in recorded
+                return backward(total, amp_scaler, **kwargs)
+            params = _dedicated_answer_parameters(m)
+            observed["params"] = params
+            observed["before"] = [p.detach().clone() for p in params]
+            observed["total_grads"] = torch.autograd.grad(
+                total, params, retain_graph=True, allow_unused=True)
+            c = m._last_answer_construction
+            answer_loss = recorded["output"]
+            observed["answer_loss"] = float(answer_loss.detach())
+            observed["answer_requires_grad"] = answer_loss.requires_grad
+            active = m.question_conditioners[str(m.conceptualSpace.stm.concept_dim)].weight
+            observed["active_index"] = next(i for i, p in enumerate(params) if p is active)
+            if answer_loss.requires_grad:
+                observed["realization_grad"] = torch.autograd.grad(
+                    c.percepts.sum(), active, retain_graph=True, allow_unused=True)[0]
+                observed["actual_grad"] = torch.autograd.grad(
+                    answer_loss, c.actual, retain_graph=True, allow_unused=True)[0]
+                if torch.is_tensor(c.surface) and c.surface.requires_grad:
+                    observed["surface_grad"] = torch.autograd.grad(
+                        answer_loss, c.surface, retain_graph=True, allow_unused=True)[0]
+            return backward(total, amp_scaler, **kwargs)
+    
+        m.record_loss, m._backward_training_loss = record_probe, backward_probe
+        try:
+            batch = (m.inputSpace.prepInput(["1 plus 2", "3 plus 4"]),
+                     torch.zeros(2, 1, 1))
+            m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+                       batch_override=batch, questions=questions)
+        finally:
+            m.record_loss, m._backward_training_loss = record, backward
+        if "params" not in observed:
+            # No batch-end differentiable term: the trial steps have already
+            # finished. Still observe the original answer weights and all the
+            # no-answer assertions, rather than requiring an unused backward.
+            params = _dedicated_answer_parameters(m)
+>           assert [id(p) for p in params] == [id(p) for p in initial_params]
+E           assert [5443556592, ...40603072, ...] == [5443556592, ...43615504, ...]
+E             
+E             At index 3 diff: 5440617872 != 5443615344
+E             Left contains 8 more items, first extra item: 5440609952
+E             Use -v to get more diff
+
+test/test_output_path_supervised.py:257: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.669s)
+=============================== warnings summary ===============================
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7519: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp7awwge62/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7519: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpr_9djdup/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7519: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-827/test_real_runbatch_stages_l1_o0/tiny_chunk_model.xml]: Data.what target (2, 16) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7519: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-827/test_real_runbatch_stages_l1_o0/tiny_chunk_model.xml]: head pred (2, 1, 1) vs labels (2, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]
+1 failed, 2 passed, 5 warnings in 10.87s

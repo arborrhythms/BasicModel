@@ -1,0 +1,61 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_trial_comparison_is_reconstruction_only_and_reader_rows_are_selected ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1092a5df0>
+
+    def test_trial_comparison_is_reconstruction_only_and_reader_rows_are_selected(monkeypatch):
+        import Models, util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, data = _fresh_model(str(ROOT/'data/XOR_grammar.xml'))
+        costs, masks = [], []
+        score = model._sentence_path_cost
+        train = model._sentence_train_step
+        def observed_score(*args, **kwargs):
+            result = score(*args, **kwargs)
+            costs.append(model._sentence_cost_registry.total(objective='reconstruction').detach().clone())
+            return result
+        def observed_train(loss):
+            mask = getattr(model, '_sentence_reader_rows', None)
+            masks.append(None if mask is None else mask.detach().clone())
+            return train(loss)
+        monkeypatch.setattr(model, '_sentence_path_cost', observed_score)
+        monkeypatch.setattr(model, '_sentence_train_step', observed_train)
+        try:
+            optimizer=model.getOptimizer(lr=.01)
+            raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
+            model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
+                batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+>           torch.testing.assert_close(model._sentence_trial_costs[0], torch.stack(costs,-1),rtol=0,atol=0)
+E           AssertionError: Tensor-likes are not equal!
+E           
+E           Mismatched elements: 8 / 8 (100.0%)
+E           Greatest absolute difference: 0.3567512631416321 at index (2, 0)
+E           Greatest relative difference: 108202.21875 at index (1, 1)
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/trial_probe.py:32: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-item6-9-free-readback/trial_probe.py::test_trial_comparison_is_reconstruction_only_and_reader_rows_are_selected
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/trial_probe.py::test_trial_comparison_is_reconstruction_only_and_reader_rows_are_selected
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/trial_probe.py::test_trial_comparison_is_reconstruction_only_and_reader_rows_are_selected
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/trial_probe.py::test_trial_comparison_is_reconstruction_only_and_reader_rows_are_selected
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-03-item6-9-free-readback/trial_probe.py::test_trial_comparison_is_reconstruction_only_and_reader_rows_are_selected
+1 failed, 4 warnings in 2.59s

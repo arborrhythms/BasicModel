@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_category_em_smoke.py",
+    "test/test_category_codebook.py"
+  ],
+  "pid": 20061,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2636779024,
+  "elapsed_seconds": 313.2291658339964,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/category-object-rows-after-01.log"
+}

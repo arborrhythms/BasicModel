@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_concept_binding_operators.py",
+    "test/test_tied_operator_reconstruction.py",
+    "test/test_inverse_unary_exclusion.py",
+    "test/test_live_references.py"
+  ],
+  "pid": 43203,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1382975816,
+  "elapsed_seconds": 27.17995754099684,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/free-search-contracts/run.log"
+}

@@ -1,0 +1,32 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_clause_probe.py", line 38, in <module>
+    check('--unary' in sys.argv)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_clause_probe.py", line 29, in check
+    result=finish_clause(language,program)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 355, in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 210, in recover
+    left, left_ref = operand(operands[0], sentence=relation == 'implies')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 190, in operand
+    reference = concept(item) if not is_clause(item) else None
+                                     ^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 167, in is_clause
+    return is_clause(node['children'][0])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 167, in is_clause
+    return is_clause(node['children'][0])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 167, in is_clause
+    return is_clause(node['children'][0])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [Previous line repeated 990 more times]
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 165, in is_clause
+    node = head(node)
+           ^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 134, in head
+    if not role and name(node) in ('lower', 'bind', 'surface', 'preposition'):
+                    ^^^^^^^^^^
+RecursionError: maximum recursion depth exceeded

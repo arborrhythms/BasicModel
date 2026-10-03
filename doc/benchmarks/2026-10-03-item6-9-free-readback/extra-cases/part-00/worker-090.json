@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped"
+  ],
+  "completed": [
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped"
+  ],
+  "slow_selected": [
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07693350000772625,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

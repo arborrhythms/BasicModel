@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_grammar_object_leaves.py",
+    "test/test_item7_word_interpretation.py",
+    "test/test_item9b_interpret.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -79,12 +79,12 @@ absolute or three-slot relative row. See [Language](doc/Language.md#one-operatio
 make install
 
 # Run a single model
-make simple          # data/simple.xml
+make mnist          # data/simple.xml
 make ergodic         # data/ergodic.xml
 
 # Compare two models side-by-side
 make compare         # defaults: data/simple.xml vs data/ergodic-only.xml
-make compare XML1=data/simple.xml XML2=data/ergodic.xml
+make compare XML1=data/mnist.xml XML2=data/XOR_exact.xml
 
 # Run tests
 make test

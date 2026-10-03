@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_training_device.py::test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-062.recycle.json"
+}

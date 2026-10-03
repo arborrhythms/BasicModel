@@ -1,0 +1,11 @@
+{
+  "label": "head",
+  "kind": "mm",
+  "reserved_bytes": 1610612736.0,
+  "gate": null,
+  "trial": 6,
+  "exit_code": 0,
+  "peak_memory_bytes": 588170752,
+  "reason": "exit",
+  "elapsed_seconds": 192.81306000007316
+}

@@ -1,0 +1,107 @@
+...FFFFFFFF
+=================================== FAILURES ===================================
+_______ test_trial_consumers_share_one_record_and_answer_cannot_write_it _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1267a7d40>
+
+    def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch):
+        from pathlib import Path
+>       import Models
+E         File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21139
+E           self._compose_forced_slots = forced
+E       IndentationError: unexpected indent
+
+test/test_objective_ownership.py:44: IndentationError
+__________ test_answer_reads_understanding_with_gradient_cut[False-1] __________
+
+depth = 1, supplied = False
+
+    @pytest.mark.parametrize('depth', [1, 3])
+    @pytest.mark.parametrize('supplied', [False, True])
+    def test_answer_reads_understanding_with_gradient_cut(depth, supplied):
+>       from Models import BasicModel
+E         File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21139
+E           self._compose_forced_slots = forced
+E       IndentationError: unexpected indent
+
+test/test_understanding_readout.py:11: IndentationError
+__________ test_answer_reads_understanding_with_gradient_cut[False-3] __________
+
+depth = 3, supplied = False
+
+    @pytest.mark.parametrize('depth', [1, 3])
+    @pytest.mark.parametrize('supplied', [False, True])
+    def test_answer_reads_understanding_with_gradient_cut(depth, supplied):
+>       from Models import BasicModel
+E         File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21139
+E           self._compose_forced_slots = forced
+E       IndentationError: unexpected indent
+
+test/test_understanding_readout.py:11: IndentationError
+__________ test_answer_reads_understanding_with_gradient_cut[True-1] ___________
+
+depth = 1, supplied = True
+
+    @pytest.mark.parametrize('depth', [1, 3])
+    @pytest.mark.parametrize('supplied', [False, True])
+    def test_answer_reads_understanding_with_gradient_cut(depth, supplied):
+>       from Models import BasicModel
+E         File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21139
+E           self._compose_forced_slots = forced
+E       IndentationError: unexpected indent
+
+test/test_understanding_readout.py:11: IndentationError
+__________ test_answer_reads_understanding_with_gradient_cut[True-3] ___________
+
+depth = 3, supplied = True
+
+    @pytest.mark.parametrize('depth', [1, 3])
+    @pytest.mark.parametrize('supplied', [False, True])
+    def test_answer_reads_understanding_with_gradient_cut(depth, supplied):
+>       from Models import BasicModel
+E         File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21139
+E           self._compose_forced_slots = forced
+E       IndentationError: unexpected indent
+
+test/test_understanding_readout.py:11: IndentationError
+______________ test_named_concept_head_keeps_its_identity_carrier ______________
+
+    def test_named_concept_head_keeps_its_identity_carrier():
+>       from Models import BasicModel
+E         File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21139
+E           self._compose_forced_slots = forced
+E       IndentationError: unexpected indent
+
+test/test_understanding_readout.py:49: IndentationError
+_____________ test_answer_cost_does_not_include_a_generate_lesson ______________
+
+    def test_answer_cost_does_not_include_a_generate_lesson():
+>       from Models import BasicModel
+E         File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21139
+E           self._compose_forced_slots = forced
+E       IndentationError: unexpected indent
+
+test/test_supplied_answer_training.py:43: IndentationError
+_____ test_real_supplied_trials_cost_before_updates_and_reach_only_reader ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1085aebd0>
+
+    def test_real_supplied_trials_cost_before_updates_and_reach_only_reader(monkeypatch):
+        from pathlib import Path
+>       import Models
+E         File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21139
+E           self._compose_forced_slots = forced
+E       IndentationError: unexpected indent
+
+test/test_supplied_answer_training.py:58: IndentationError
+=========================== short test summary info ============================
+FAILED test/test_objective_ownership.py::test_trial_consumers_share_one_record_and_answer_cannot_write_it
+FAILED test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-1]
+FAILED test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-3]
+FAILED test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-1]
+FAILED test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-3]
+FAILED test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier
+FAILED test/test_supplied_answer_training.py::test_answer_cost_does_not_include_a_generate_lesson
+FAILED test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_only_reader
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 8 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+8 failed, 3 passed in 3.21s

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_two_truth_stores.py::test_structural_constraint_residuals"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-785.recycle.json"
+}

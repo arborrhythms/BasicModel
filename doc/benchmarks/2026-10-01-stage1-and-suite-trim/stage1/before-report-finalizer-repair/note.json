@@ -1,0 +1,6 @@
+{
+  "reason": "Saved production report finalization stall after completed step5a training and endpoint, plus cut stopped before its first trial to avoid repeating the same rendering stall.",
+  "step5a_numerical_measurements_retained": true,
+  "cut_training_completed": false,
+  "guard_changed": false
+}

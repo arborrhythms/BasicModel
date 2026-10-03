@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_bounded_test_runner.py::test_shared_training_group_survives_batch_and_recycle_boundaries",
+    "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once"
+  ],
+  "pid": 68878,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 426788136,
+  "elapsed_seconds": 6.439437708992045,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/probes/grouping-after/run.log"
+}

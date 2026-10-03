@@ -1,0 +1,105 @@
+.FFFFFFFF...                                                             [100%]
+=================================== FAILURES ===================================
+_______ test_live_ws_has_one_property_basis_with_canonical_teaching_rows _______
+test/test_type_run_spans.py:208: in test_live_ws_has_one_property_basis_with_canonical_teaching_rows
+    ws = _live_ws("word")
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+____________ test_property_teaching_rows_are_idempotent_on_rebuild _____________
+test/test_type_run_spans.py:224: in test_property_teaching_rows_are_idempotent_on_rebuild
+    a = _live_ws("word")
+        ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+___________ test_byte_mode_owns_properties_without_a_type_dictionary ___________
+test/test_type_run_spans.py:237: in test_byte_mode_owns_properties_without_a_type_dictionary
+    ws = _live_ws("byte")
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+__________________ test_type_subspace_adds_no_state_dict_keys __________________
+test/test_type_run_spans.py:246: in test_type_subspace_adds_no_state_dict_keys
+    word = _live_ws("word")
+           ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+____________ test_live_derived_lut_is_byte_identical_to_module_lut _____________
+test/test_type_run_spans.py:265: in test_live_derived_lut_is_byte_identical_to_module_lut
+    ws = _live_ws("word")
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+__________ test_derived_cut_byte_identical_across_a_spread_of_inputs ___________
+test/test_type_run_spans.py:270: in test_derived_cut_byte_identical_across_a_spread_of_inputs
+    ws = _live_ws("word")
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+_______ test_checkpoint_roundtrip_preserves_property_definitions_and_cut _______
+test/test_type_run_spans.py:292: in test_checkpoint_roundtrip_preserves_property_definitions_and_cut
+    a = _live_ws("word")
+        ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+___________ test_property_memberships_are_owned_parameters_and_train ___________
+test/test_type_run_spans.py:309: in test_property_memberships_are_owned_parameters_and_train
+    ws = _live_ws("word")
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+=============================== warnings summary ===============================
+test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows
+test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild
+test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary
+test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys
+test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut
+test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut
+test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1739: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows
+FAILED test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild
+FAILED test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary
+FAILED test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys
+FAILED test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut
+FAILED test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+FAILED test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut
+FAILED test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train
+8 failed, 4 passed, 8 warnings in 3.33s

@@ -1,0 +1,13 @@
+--- a/test/test_supplied_answer_training.py
++++ b/test/test_supplied_answer_training.py
+@@ -77,7 +77,9 @@
+         live = [names[id(p)] for p, g in zip(params, grads) if g is not None and bool(g.abs().any())]
+         assert any(name.startswith('conceptualSpaces.') and name.endswith('.W') for name in live), live
+         assert any('operation_layer.' in name for name in live), live
+-        assert any(name.startswith('outputSpace.') for name in live), live
++        readout = {id(p) for p in model.outputSpace.parameters()}
++        assert any(id(p) in readout and g is not None and bool(g.abs().any())
++                   for p, g in zip(params, grads)), live
+         measured.append(live)
+         versions.append(tuple(p._version for p in params))
+         return value

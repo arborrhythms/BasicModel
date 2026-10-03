@@ -1,0 +1,3153 @@
+{
+  "scope": "Arithmetic on the saved final evaluation only. No model, forward, optimizer, or new random draw. Byte probabilities are reconstructed from saved candidate surfaces, codes, priming and recovered vectors; no derivative is recomputed.",
+  "sentences": 64,
+  "exact": 0,
+  "truncated": 0,
+  "active_word_occurrences": 346,
+  "correct_word_occurrences": 42,
+  "target_surfaces": {
+    "1": 104,
+    " ": 128,
+    "plus": 64,
+    "4": 9,
+    "3": 11,
+    "0": 6,
+    "9": 8,
+    "7": 3,
+    "2": 5,
+    "6": 1,
+    "8": 4,
+    "5": 3
+  },
+  "predicted_surfaces": {
+    "1": 279,
+    "plus": 18,
+    " ": 40,
+    "6": 4,
+    "3": 2,
+    "2": 3
+  },
+  "whitespace_occurrences": 128,
+  "correct_whitespace_occurrences": 0,
+  "byte_positions": 884,
+  "byte_probabilities_below_existing_clamp": 548,
+  "missing_own_candidate": [],
+  "details": [
+    {
+      "input": "1 plus 1",
+      "decoded": "1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.289318156601803,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "4 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "4",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.975790691375733,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "1 plus 1",
+      "decoded": "1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.289318156601803,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "13 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767067812529,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "13 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767067812529,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "11 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 6.907765130501502,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "0 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "0",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.942345237731933,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        9,
+        6,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "14 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "4",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767038007781,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "9 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "9",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.890277957916259,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "13 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767067812529,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "7 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "7",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.975118255615234,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        10,
+        2,
+        2,
+        11
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "11 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 6.907765130501502,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "9 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "9",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.890277957916259,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "13 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767067812529,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "1 plus 1",
+      "decoded": "1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.289318156601803,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "11 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 6.907765130501502,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "9 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "9",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.890277957916259,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "1 plus 1",
+      "decoded": "1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.289318156601803,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "1 plus 1",
+      "decoded": "1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.289318156601803,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "11 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 6.907765130501502,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "11 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 6.907765130501502,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        2,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "12 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "2",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.059059883641263,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        7,
+        6,
+        2,
+        10,
+        2,
+        11
+      ],
+      "arities": [
+        1,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "12 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "2",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.059059883641263,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        7,
+        6,
+        2,
+        10,
+        2,
+        11
+      ],
+      "arities": [
+        1,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "6 plus 1",
+      "decoded": "6 6 6 6 1",
+      "target_surfaces": [
+        "6",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "6",
+        "6",
+        "6",
+        "6",
+        "1"
+      ],
+      "raw_byte_cost_from_saved_values": 5.526204317808151,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        2,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "13 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767067812529,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "14 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "4",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767038007781,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "7 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "7",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.975118255615234,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        10,
+        2,
+        2,
+        11
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "13 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767067812529,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "3 plus 1",
+      "decoded": "1 1 1 1 3",
+      "target_surfaces": [
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "3"
+      ],
+      "raw_byte_cost_from_saved_values": 7.9744312286376955,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        2,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "8 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "8",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.884496593475342,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "11 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 6.907765130501502,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        4,
+        4,
+        2,
+        4,
+        4,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "8 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "8",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.884496593475342,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "14 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "4",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767038007781,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        10,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "5 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "5",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.974424171447754,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "5 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "5",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.974424171447754,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "0 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "0",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.942345237731933,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        9,
+        6,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "3 plus 1",
+      "decoded": "1 1 1 1 3",
+      "target_surfaces": [
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "3"
+      ],
+      "raw_byte_cost_from_saved_values": 7.9744312286376955,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        2,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "7 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "7",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.975118255615234,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        10,
+        2,
+        2,
+        11
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "9 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "9",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.890277957916259,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "14 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "4",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767038007781,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        15,
+        4,
+        4,
+        10,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "2 plus 1",
+      "decoded": "1 1 1 1 2",
+      "target_surfaces": [
+        "2",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "2"
+      ],
+      "raw_byte_cost_from_saved_values": 7.9616379737854,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        4,
+        2,
+        4,
+        4,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "5 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "5",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.974424171447754,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "9 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "9",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.890277957916259,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "13 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767067812529,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        15,
+        4,
+        4,
+        10,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "11 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 6.907765130501502,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        15,
+        4,
+        4,
+        2,
+        4,
+        4,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "14 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "4",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767038007781,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        15,
+        4,
+        4,
+        10,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "9 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "9",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.890277957916259,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "8 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "8",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.884496593475342,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "1 plus 1",
+      "decoded": "1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.289318156601803,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        2,
+        4,
+        4,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "8 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "8",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.884496593475342,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "9 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "9",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.890277957916259,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "4 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "4",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.975790691375733,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "0 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "0",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.942345237731933,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        9,
+        6,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        2,
+        1,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "13 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767067812529,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        15,
+        4,
+        4,
+        10,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "2 plus 1",
+      "decoded": "1 1 1 1 2",
+      "target_surfaces": [
+        "2",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "2"
+      ],
+      "raw_byte_cost_from_saved_values": 7.9616379737854,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        4,
+        2,
+        4,
+        4,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "1 plus 1",
+      "decoded": "1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.289318156601803,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        2,
+        4,
+        4,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "9 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "9",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.890277957916259,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        2,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "4 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "4",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.975790691375733,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        10,
+        2,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "13 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "3",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767067812529,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        15,
+        4,
+        4,
+        10,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "2 plus 1",
+      "decoded": "1 1 1 1 2",
+      "target_surfaces": [
+        "2",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "2"
+      ],
+      "raw_byte_cost_from_saved_values": 7.9616379737854,
+      "truncated": false,
+      "rule_ids": [
+        5,
+        6,
+        4,
+        2,
+        4,
+        4,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "10 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "0",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.059060370461035,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        2,
+        4,
+        4,
+        2,
+        4,
+        4,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "0 plus 1",
+      "decoded": "1 1 1 1",
+      "target_surfaces": [
+        "0",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 7.942345237731933,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        9,
+        6,
+        2,
+        2,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        2,
+        1,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "input": "10 plus 1",
+      "decoded": "1 1 1 1 1 plus",
+      "target_surfaces": [
+        "1",
+        "0",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "plus"
+      ],
+      "raw_byte_cost_from_saved_values": 8.059060370461035,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        2,
+        4,
+        4,
+        2,
+        4,
+        4,
+        7,
+        2,
+        15
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "input": "14 plus 1",
+      "decoded": "1 1 1 1 1",
+      "target_surfaces": [
+        "1",
+        "4",
+        " ",
+        "plus",
+        " ",
+        "1"
+      ],
+      "recovered_surfaces": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        " "
+      ],
+      "raw_byte_cost_from_saved_values": 6.907767038007781,
+      "truncated": false,
+      "rule_ids": [
+        6,
+        4,
+        4,
+        15,
+        4,
+        4,
+        10,
+        4,
+        4,
+        2,
+        4,
+        4,
+        2,
+        4,
+        4,
+        15,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "arities": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  ]
+}

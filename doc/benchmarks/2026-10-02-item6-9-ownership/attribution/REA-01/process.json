@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+    "REA",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-01"
+  ],
+  "pid": 46131,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1086245120,
+  "elapsed_seconds": 183.9720137090044,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-01/run.log"
+}

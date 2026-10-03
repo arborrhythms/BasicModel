@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.012204708000354003,
+      "message": "test/test_compiled_word_chunk.py:966: in test_tiny_canonical_detached_reverse_train_step_is_finite\n    model = _tiny_canonical_model(tmp_path, monkeypatch, detached_reverse=True)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_compiled_word_chunk.py:393: in _tiny_canonical_model\n    init_config(\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:70: element detachedReverse: Schemas validity error : Element 'detachedReverse': The actual value 'true' does not match the fixed value constraint 'false'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:71: element reconstructInLoop: Schemas validity error : Element 'reconstructInLoop': The actual value 'false' does not match the fixed value constraint 'true'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,277 @@
+FFF...                                                                   [100%]
+=================================== FAILURES ===================================
+___________________ test_saved_roots_follow_operand_unaries ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b742120>
+
+    def test_saved_roots_follow_operand_unaries(monkeypatch):
+        import Models
+        from Language import LanguageSpace, ConjunctionLayer, NotLayer
+        folder = Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-03-item6-9-free-readback/xor-ownership'
+        saved = torch.load(folder/'geometry-start-stage-1.pt', weights_only=True)
+        codes = {int(row): code for row, code in zip(saved['rows'], saved['codes'])}
+        pairs = [(0, 1), (0, 2), (4, 1), (4, 2)]
+        basis = torch.stack([torch.stack([codes[a], codes[b]]) for a,b in pairs])
+        roots = torch.tensor(json.loads((folder/'geometry-start.json').read_text())['roots']['values'])
+        conjunction, negation = ConjunctionLayer(), NotLayer()
+        language = SimpleNamespace()
+        for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
+                     'reverse_unary_step'):
+            setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
+        language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
+        language.local_op_from_rule_ids = LanguageSpace.local_op_from_rule_ids
+        language._tree_layer = lambda arity: (SimpleNamespace(ops=[conjunction]) if arity == 2
+                                             else SimpleNamespace(unary_ops=[negation]))
+        B, W, D, cap = 4, 2, 10, 3
+        steps = W*3+(W+1)*2*cap
+        rule_ids = torch.zeros(B, steps, dtype=torch.long)
+        arities = torch.zeros_like(rule_ids)
+        arities[:, 3] = 2
+        arities[2:, 0] = 1
+        arities[[1,3], 4] = 1
+        rule_ids[arities == 1] = 1
+        trace = SimpleNamespace(choices=lambda: (rule_ids, arities, arities > 0),
+            _choice_positions=torch.zeros_like(rule_ids),
+            rule_map=lambda arity: torch.tensor([0 if arity == 2 else 1]))
+        owner = SimpleNamespace(inputSpace=SimpleNamespace(_word_active_mask=torch.ones(B,W,dtype=torch.bool)),
+            languageSpace=language, conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=cap)),
+            _reconstruction_stack=lambda: trace, reconstruction_basis_limit=2)
+        def eager_loop(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(Models, '_reconstruction_while_loop', eager_loop)
+>       recovered, _, _, unavailable, _ = Models.BasicModel._reconstruct_sentences(
+            owner, roots, basis, roots[:, None],
+            end_slots=torch.cat((roots[:,None],torch.zeros(B,2,D)),1),
+            end_depth=torch.ones(B,dtype=torch.long), candidate_basis=(basis,torch.ones(B,2,dtype=torch.bool)),
+            keep_ideas=True)
+
+test/test_readback_operand_unaries.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:12427: in _reconstruct_sentences
+    recovered) = _reconstruction_while_loop(
+test/test_readback_operand_unaries.py:43: in eager_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t = tensor(0)
+stack = tensor([[[-0.0226, -0.2588, -0.7998, -0.0490,  0.2573, -0.0572, -0.1708,
+          -0.3921, -0.0144,  0.1944],
+       ... 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000,  0.0000,  0.0000]]], grad_fn=<WhereBackward0>)
+depth = tensor([2, 2, 2, 2])
+idea_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]], grad_fn=<AddBackward0>)
+byte_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]], grad_fn=<AddBackward0>)
+count = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]], grad_fn=<AddBackward0>)
+trunc = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]], grad_fn=<AddBackward0>)
+recovered = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]],
+
+        [[0., ...[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<AddBackward0>)
+
+    def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+        w = (T - 1) - t
+        wa = _col(leaves, w)
+        # A trailing separator still locates the physical sentence end;
+        # it loads the closing state but consumes no grammar operand.
+        end_b = torch.logical_and(_col(is_end, w), _col(active, w))
+        sid = _col(ids, w).clamp(0, slots - 1)
+        loaded = pre_stack.gather(
+            1, sid.reshape(B, 1, 1, 1).expand(B, 1, cap, D)).reshape(B, cap, D)
+        loaded_depth = pre_depth.gather(1, sid.reshape(B, 1)).reshape(B)
+        stack = torch.where(end_b.reshape(B, 1, 1), loaded, stack)
+        depth = torch.where(end_b, loaded_depth, depth)
+        ref_w = _word_col(reference, w).detach()
+        ref_w = torch.where(wa[:, None], ref_w, torch.zeros_like(ref_w))
+        unavailable = torch.zeros(B, dtype=torch.bool, device=dev)
+        for r in reversed(range(3)):
+            slot = (3 * w + r).reshape(1).expand(B)
+            stack, depth, bad_round = undo_operation(stack, depth, slot, wa, sid)
+            unavailable = unavailable | bad_round
+        # pop: the top is the recovered word, scored on the spot
+        top = stack[:, 0, :]
+        underflow = torch.logical_and(wa, depth < 1)
+        pop_w = wa.to(S.dtype)
+        idea_d = (top - ref_w).square().mean(-1)
+>       byte_d = self._byte_word_cost(
+                 ^^^^^^^^^^^^^^^^^^^^
+            top, w, bank_n, bank_bytes,
+            bank_valid & (bank_sentence_ids == sid[:, None])[:, :, None],
+            bytes_bwp, valid_bwp, byte_ready, priming=bank_weights)
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_byte_word_cost'
+
+bin/Models.py:12404: AttributeError
+_____________ TestTruthLoss.test_agreeing_proposition_low_penalty ______________
+
+self = <test_reasoning.TestTruthLoss testMethod=test_agreeing_proposition_low_penalty>
+
+    def test_agreeing_proposition_low_penalty(self):
+        tl = Layers.TruthLayer(nDim=8)
+        basis = self._make_basis()
+        # Store a positive truth
+        truth = torch.ones(8) * 0.5
+        tl.record(truth, degree=1.0)
+        # Proposition in same direction should not reduce union norm
+        prop = torch.ones(1, 1, 8) * 0.3
+>       penalty = tl.falsity_penalty(prop, basis)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_reasoning.py:207: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TruthLayer(nDim=8, truths=1/1024)
+symbol_states = tensor([[[0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000]]])
+basis = Basis()
+
+    def falsity_penalty(self, symbol_states, basis):
+        """Compute additive truth loss via union norm reduction.
+    
+        For each proposition in ``symbol_states``, measure how much the
+        TruthSet union norm drops when the proposition is included.
+        Contradiction cancels dimensions (via the catalogue union's
+        bitonic same-sign logic), reducing the norm -> positive penalty.
+    
+        Agreeing propositions preserve or extend the union -> no penalty.
+        Unknown propositions (zero dims) pass through -> no penalty.
+        DoT weighting is implicit: high-DoT truths contribute more energy
+        to the union, so contradicting them causes a larger norm drop.
+    
+        Both sides of the union live in symbol space by
+        construction: stored truths are recorded from
+        ``WholeSpace.forwardEnd``, and ``symbol_states`` should be
+        the post-pi activations cached during the Sigma-Pi loop (the
+        model's ``self.symbol_states[-1]``).  Using symbols rather
+        than pre-pi concepts keeps both operands in the basis's
+        native space.
+    
+        Args:
+            symbol_states: (B, N, D) symbolic activations from the
+                forward pass (post-pi, post-l1_proximal -- the
+                committed beliefs).
+            basis: The proposition's symbol basis.
+    
+        Returns:
+            Scalar penalty >= 0 (differentiable).
+        """
+        n = self.count.item()
+        if n == 0:
+            return symbol_states.new_tensor(0.0)
+    
+        stored = self.truths[:n]  # (n, D)
+    
+        # Set union uses signed max, independently of grammatical mean OR.
+        truth_union = stored[0]
+        for i in range(1, n):
+            truth_union = Ops._union_kernel(truth_union, stored[i])
+        union_norm = truth_union.norm()
+    
+        # For each proposition, compute norm reduction
+        B, N, D = symbol_states.shape
+        propositions = symbol_states.reshape(-1, D)  # (B*N, D)
+    
+        penalties = []
+        for p in range(propositions.shape[0]):
+>           extended = Ops._union_kernel(truth_union, propositions[p])
+                       ^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'Ops' has no attribute '_union_kernel'. Did you mean: '_non_kernel'?
+
+bin/Layers.py:8002: AttributeError
+_____________ TestTruthLoss.test_unknown_proposition_zero_penalty ______________
+
+self = <test_reasoning.TestTruthLoss testMethod=test_unknown_proposition_zero_penalty>
+
+    def test_unknown_proposition_zero_penalty(self):
+        tl = Layers.TruthLayer(nDim=8)
+        basis = self._make_basis()
+        truth = torch.ones(8) * 0.5
+        tl.record(truth, degree=1.0)
+        # Zero proposition -> unknown -> no effect on union
+        prop = torch.zeros(1, 1, 8)
+>       penalty = tl.falsity_penalty(prop, basis)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_reasoning.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TruthLayer(nDim=8, truths=1/1024)
+symbol_states = tensor([[[0., 0., 0., 0., 0., 0., 0., 0.]]]), basis = Basis()
+
+    def falsity_penalty(self, symbol_states, basis):
+        """Compute additive truth loss via union norm reduction.
+    
+        For each proposition in ``symbol_states``, measure how much the
+        TruthSet union norm drops when the proposition is included.
+        Contradiction cancels dimensions (via the catalogue union's
+        bitonic same-sign logic), reducing the norm -> positive penalty.
+    
+        Agreeing propositions preserve or extend the union -> no penalty.
+        Unknown propositions (zero dims) pass through -> no penalty.
+        DoT weighting is implicit: high-DoT truths contribute more energy
+        to the union, so contradicting them causes a larger norm drop.
+    
+        Both sides of the union live in symbol space by
+        construction: stored truths are recorded from
+        ``WholeSpace.forwardEnd``, and ``symbol_states`` should be
+        the post-pi activations cached during the Sigma-Pi loop (the
+        model's ``self.symbol_states[-1]``).  Using symbols rather
+        than pre-pi concepts keeps both operands in the basis's
+        native space.
+    
+        Args:
+            symbol_states: (B, N, D) symbolic activations from the
+                forward pass (post-pi, post-l1_proximal -- the
+                committed beliefs).
+            basis: The proposition's symbol basis.
+    
+        Returns:
+            Scalar penalty >= 0 (differentiable).
+        """
+        n = self.count.item()
+        if n == 0:
+            return symbol_states.new_tensor(0.0)
+    
+        stored = self.truths[:n]  # (n, D)
+    
+        # Set union uses signed max, independently of grammatical mean OR.
+        truth_union = stored[0]
+        for i in range(1, n):
+            truth_union = Ops._union_kernel(truth_union, stored[i])
+        union_norm = truth_union.norm()
+    
+        # For each proposition, compute norm reduction
+        B, N, D = symbol_states.shape
+        propositions = symbol_states.reshape(-1, D)  # (B*N, D)
+    
+        penalties = []
+        for p in range(propositions.shape[0]):
+>           extended = Ops._union_kernel(truth_union, propositions[p])
+                       ^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'Ops' has no attribute '_union_kernel'. Did you mean: '_non_kernel'?
+
+bin/Layers.py:8002: AttributeError
+=============================== warnings summary ===============================
+test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries
+FAILED test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty
+FAILED test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty
+3 failed, 3 passed, 1 warning in 4.45s

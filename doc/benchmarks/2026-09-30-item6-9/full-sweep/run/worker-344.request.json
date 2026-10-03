@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_dataset.py::test_data_stage_zero_presents_expression_and_onehot_value"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-344.recycle.json"
+}

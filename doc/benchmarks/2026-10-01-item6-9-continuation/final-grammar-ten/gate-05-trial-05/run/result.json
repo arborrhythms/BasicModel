@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "completed": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-ten/gate-05-trial-05/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-ten/gate-05-trial-05/run/worker-000.json"
+      ],
+      "pid": 39016,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 757859912,
+      "elapsed_seconds": 86.0662016669994,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-ten/gate-05-trial-05/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 81.58974845800003,
+          "message": "",
+          "stdout": "\nbatch = 0 (\u0394=0.181s, 100.00%)\r\nTrain Loss: output=0.0033, reconstruction=0.2726\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0021, reconstruction=0.2621\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.181s, 100.00%)\r\nTrain Loss: output=0.0019, reconstruction=0.2742\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.184s, 100.00%)\r\nTrain Loss: output=0.0021, reconstruction=0.2743\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.184s, 100.00%)\r\nTrain Loss: output=0.0033, reconstruction=0.2747\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.186s, 100.00%)\r\nTrain Loss: output=0.0048, reconstruction=0.2746\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.185s, 100.00%)\r\nTrain Loss: output=0.0035, reconstruction=0.2741\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.190s, 100.00%)\r\nTrain Loss: output=0.0043, reconstruction=0.2731\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.186s, 100.00%)\r\nTrain Loss: output=0.0043, reconstruction=0.2722\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.186s, 100.00%)\r\nTrain Loss: output=0.0046, reconstruction=0.2713\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.189s, 100.00%)\r\nTrain Loss: output=0.0049, reconstruction=0.2705\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.184s, 100.00%)\r\nTrain Loss: output=0.0050, reconstruction=0.2699\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.186s, 100.00%)\r\nTrain Loss: output=0.0056, reconstruction=0.2693\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.187s, 100.00%)\r\nTrain Loss: output=0.0065, reconstruction=0.2680\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0044, reconstruction=0.2668\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.258s, 100.00%)\r\nTrain Loss: output=0.0055, reconstruction=0.2659\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0053, reconstruction=0.2654\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.180s, 100.00%)\r\nTrain Loss: output=0.0044, reconstruction=0.2654\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.180s, 100.00%)\r\nTrain Loss: output=0.0062, reconstruction=0.2653\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.184s, 100.00%)\r\nTrain Loss: output=0.0074, reconstruction=0.2651\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.186s, 100.00%)\r\nTrain Loss: output=0.0090, reconstruction=0.2652\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.181s, 100.00%)\r\nTrain Loss: output=0.0102, reconstruction=0.2656\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.185s, 100.00%)\r\nTrain Loss: output=0.0104, reconstruction=0.2662\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.181s, 100.00%)\r\nTrain Loss: output=0.0102, reconstruction=0.2668\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0092, reconstruction=0.2675\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.181s, 100.00%)\r\nTrain Loss: output=0.0050, reconstruction=0.2669\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0047, reconstruction=0.2601\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0060, reconstruction=0.2703\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0072, reconstruction=0.2713\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.182s, 100.00%)\r\nTrain Loss: output=0.0087, reconstruction=0.2723\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.184s, 100.00%)\r\nTrain Loss: output=0.0075, reconstruction=0.2622\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.185s, 100.00%)\r\nTrain Loss: output=0.0083, reconstruction=0.2745\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0075, reconstruction=0.2757\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0066, reconstruction=0.2771\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.184s, 100.00%)\r\nTrain Loss: output=0.0067, reconstruction=0.2782\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.183s, 100.00%)\r\nTrain Loss: output=0.0073, reconstruction=0.2683\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=6.248s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='loving world' label=0.0000 predicted=0.0704 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.8869 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.8736 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.0996 MISMATCH\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-ten/gate-05-trial-05/run",
+  "elapsed_seconds": 88.47901954199915,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 757859912,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-ten/gate-05-trial-05/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-ten/gate-05-trial-05/run/collect.json"
+    ],
+    "pid": 39006,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180749128,
+    "elapsed_seconds": 2.0073027920007007,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-ten/gate-05-trial-05/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

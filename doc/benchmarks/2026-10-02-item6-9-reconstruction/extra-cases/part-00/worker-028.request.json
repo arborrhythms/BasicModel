@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+    "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+    "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+    "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+    "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/extra-cases/part-00/worker-028.recycle.json"
+}

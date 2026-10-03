@@ -1,6 +1,6 @@
 """Provenance bounds a claim; its content cannot certify itself (item 7)."""
 import pytest
-from test_item7_storage import clause_store, part_clause
+from test_clause_storage import clause_store, part_clause
 
 
 def test_conflicting_claim_preserves_support_and_counterevidence():

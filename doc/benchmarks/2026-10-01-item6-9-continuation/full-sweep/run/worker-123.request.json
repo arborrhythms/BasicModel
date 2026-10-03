@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_followup.py::test_interleave_checkpoint_resumes_unread_serial_prefix"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-123.recycle.json"
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_discourse_space.py::TestArmaUnit::test_e_history_saturates_at_q"
+  ],
+  "completed": [
+    "test/test_discourse_space.py::TestArmaUnit::test_e_history_saturates_at_q"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_e_history_saturates_at_q",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07688612499987357,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_transform_chooser_parity.py::test_base_chooser_is_abstract"
+  ],
+  "completed": [
+    "test/test_transform_chooser_parity.py::test_base_chooser_is_abstract"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_transform_chooser_parity.py::test_base_chooser_is_abstract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012241700096637942,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

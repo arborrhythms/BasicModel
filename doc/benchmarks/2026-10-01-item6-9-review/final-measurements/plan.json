@@ -1,0 +1,42 @@
+{
+  "roots": {
+    "candidate": "/Users/arogers/github/WikiOracle/basicmodel"
+  },
+  "selectors": [
+    "test/test_grounded_xor.py",
+    "test/test_concept_output.py",
+    "test/test_mm_xor.py",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+    "test/test_basicmodel.py::TestSPNN::test_xor_training",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+  ],
+  "mm_trials": 10,
+  "no_seed": true,
+  "per_worker_bytes": 8589934592,
+  "aggregate_bytes": 25769803776,
+  "max_workers": 10,
+  "harness": {
+    "measure.py": "4fb7a708bb83fd624f63f712365c6405ef6dd44f74ffc10f7a60f6b46eb94933",
+    "audit.py": "e421b1d89da65dfa3f07a06befdb970ffde21b2147e70afcc713e7e24fcdc3a4",
+    "check.py": "492e3a35db59d6e95919064067e38070f2f6d0ca98aa0eff981e14169cbd6590",
+    "separator_campaign.py": "cd002828b8cfe7eee972536a996431140fbdfa42556ae83cb3518b6caa05e3bb",
+    "port_cases.py": "229fcd6e168a7ad222ca76267c8f086acbdc8a100b731e0583b5465af9785d0a",
+    "run_full.py": "60907264abd4d098d101e88430836e9f038f60a4b1d1887f485f2c28ac16d52d",
+    "finalize.py": "e4be7c476c928e5e4a97c88bc73d8b60f1f2dbf08ddae4df7cf00563c4246d09",
+    "packed_scope_probe_draft.py": "a6f3648d243828316e3276597b1329f76087555d562519f7237296be906d2f51",
+    "measure_mm_grammar.py": "1c5fcdad2665693aedb3bd57a32578fc6f64ead0179555fbcddc8368aab92d77",
+    "policy_probe_draft.py": "d82c544d4b4b6bfe24071d5860043db5ce336c04f5461b37fba427bc8f1918bc",
+    "xor_observer.py": "7d93513cf9e8450eb04d954456aea1988a5a65c10476cfe9487b4461efb22a64",
+    "summarize_xor.py": "883fec878714207c3df68b8d4a81e9987b6ec9a820ef39e4ea8668cdb710b881"
+  },
+  "started_at": 1790871088.611288
+}

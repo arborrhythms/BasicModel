@@ -1,0 +1,294 @@
+.F.ss..FF..F...F..FFFsssssss......................                       [100%]
+=================================== FAILURES ===================================
+__________ test_shared_grammar_operators_belong_to_the_diagnostic_set __________
+
+    def test_shared_grammar_operators_belong_to_the_diagnostic_set():
+        from Models import BaseModel
+    
+        op = torch.nn.Linear(2, 2, bias=False)
+        head = torch.nn.Linear(2, 2, bias=False)
+        owner = SimpleNamespace(
+            spaces=[], symbolSpace=SimpleNamespace(_host_layer_registry={('CS', 'sum'): op}))
+        optimizer = torch.optim.SGD([*op.parameters(), *head.parameters()], lr=0.1)
+>       shared = BaseModel._shared_representation_parameters(owner, optimizer)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'BaseModel' has no attribute '_shared_representation_parameters'
+
+test/test_joint_objectives.py:45: AttributeError
+____________ test_common_amp_scale_preserves_summed_gradients[1.0] _____________
+
+scale = 1.0
+
+    @pytest.mark.parametrize("scale", [1., 1024.])
+    def test_common_amp_scale_preserves_summed_gradients(scale):
+        p = torch.nn.Parameter(torch.tensor([1., 1.]))
+        r, o = 2. * p[0], -3. * p[0] + 4. * p[1]
+        from Models import BaseModel
+>       BaseModel._backward_training_loss(None, r + o,
+            SimpleNamespace(scale=lambda loss: scale * loss))
+
+test/test_joint_objectives.py:206: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = None, total_loss = tensor(3., grad_fn=<AddBackward0>)
+amp_scaler = namespace(scale=<function test_common_amp_scale_preserves_summed_gradients.<locals>.<lambda> at 0x12afd6700>)
+optimizer = None
+
+    def _backward_training_loss(self, total_loss, amp_scaler=None, *, optimizer=None):
+        """Restrict every registered objective to its own optimizer weights."""
+        from ObjectiveOwnership import registry_costs, backward_owned
+        sentence = bool(getattr(self, '_sentence_backward', False))
+        optimizer = self._sentence_optimizer if sentence else optimizer
+        if optimizer is None:
+>           raise RuntimeError('owned backward requires the live optimizer')
+E           RuntimeError: owned backward requires the live optimizer
+
+bin/Models.py:2737: RuntimeError
+___________ test_common_amp_scale_preserves_summed_gradients[1024.0] ___________
+
+scale = 1024.0
+
+    @pytest.mark.parametrize("scale", [1., 1024.])
+    def test_common_amp_scale_preserves_summed_gradients(scale):
+        p = torch.nn.Parameter(torch.tensor([1., 1.]))
+        r, o = 2. * p[0], -3. * p[0] + 4. * p[1]
+        from Models import BaseModel
+>       BaseModel._backward_training_loss(None, r + o,
+            SimpleNamespace(scale=lambda loss: scale * loss))
+
+test/test_joint_objectives.py:206: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = None, total_loss = tensor(3., grad_fn=<AddBackward0>)
+amp_scaler = namespace(scale=<function test_common_amp_scale_preserves_summed_gradients.<locals>.<lambda> at 0x12d1c79c0>)
+optimizer = None
+
+    def _backward_training_loss(self, total_loss, amp_scaler=None, *, optimizer=None):
+        """Restrict every registered objective to its own optimizer weights."""
+        from ObjectiveOwnership import registry_costs, backward_owned
+        sentence = bool(getattr(self, '_sentence_backward', False))
+        optimizer = self._sentence_optimizer if sentence else optimizer
+        if optimizer is None:
+>           raise RuntimeError('owned backward requires the live optimizer')
+E           RuntimeError: owned backward requires the live optimizer
+
+bin/Models.py:2737: RuntimeError
+_____________ test_model_parameter_ownership_and_backward_dispatch _____________
+
+    def test_model_parameter_ownership_and_backward_dispatch():
+        from Models import BaseModel
+        from Spaces import PartSpace, WholeSpace, ConceptualSpace
+    
+        p, w, c, excluded, head = [
+            torch.nn.Parameter(torch.tensor([1., 1.])) for _ in range(5)]
+        spaces = []
+        for cls, params in ((PartSpace, [p, excluded]), (WholeSpace, [w]),
+                            (ConceptualSpace, [c, p])):
+            space = object.__new__(cls)
+            torch.nn.Module.__init__(space)
+            space.params = params
+            # The real getParameters may also validate already-built stores.
+            space.getParameters = lambda params=params: params
+            spaces.append(space)
+        owner = SimpleNamespace(spaces=spaces)
+        owner._shared_representation_parameters = lambda opt: (
+            BaseModel._shared_representation_parameters(owner, opt))
+        optimizer = torch.optim.SGD([p, w, c, head], lr=0.1)
+>       selected = owner._shared_representation_parameters(optimizer)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_joint_objectives.py:255: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+opt = SGD (
+Parameter Group 0
+    dampening: 0
+    differentiable: False
+    foreach: None
+    fused: None
+    lr: 0.1
+    maximize: False
+    momentum: 0
+    nesterov: False
+    weight_decay: 0
+)
+
+    owner._shared_representation_parameters = lambda opt: (
+>       BaseModel._shared_representation_parameters(owner, opt))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BaseModel' has no attribute '_shared_representation_parameters'
+
+test/test_joint_objectives.py:253: AttributeError
+_____ test_answer_path_operators_are_independently_owned_and_keep_learning _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1560a5fa0>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-814/test_answer_path_operators_are0')
+
+    def test_answer_path_operators_are_independently_owned_and_keep_learning(monkeypatch, tmp_path):
+        """Dedicated output parameters learn from their own branch. Shared
+        operator diagnostics exclude these independent heads."""
+        import Models
+        from data import TheData
+        from util import init_config
+        from What import What
+    
+        monkeypatch.setenv("MODEL_COMPILE", "none")
+        project = os.path.dirname(os.path.dirname(__file__))
+        src = open(os.path.join(project, "data", "MM_xor.xml")).read()
+        assert src.count("<architecture>") == 1
+        config = tmp_path / "MM_xor_synthesis_ownership.xml"
+        config.write_text(src.replace(
+            "<architecture>", "<architecture>\n    <answerSynthesis>true</answerSynthesis>", 1))
+        init_config(path=str(config), defaults_path=os.path.join(project, "data", "model.xml"))
+        TheData.load("xor")
+        torch.manual_seed(0)
+        model, _ = Models.BaseModel.from_config(str(config), data=TheData)
+        loader = model.inputSpace.data.data_loader(split="train", num_streams=2)
+        inputs, outputs = next(iter(loader))
+        batch = (model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(outputs))
+        model.eval()
+        with torch.no_grad():
+            model.what((What.supervised(0), What.supervised(1)), batch[0])   # builds the answer path
+        model.train()
+        optimizer = model.getOptimizer(lr=1e-2)
+        answer_only = list(model.synthesis_parameters())
+        assert answer_only
+        before = [p.detach().clone() for p in answer_only]
+        result, _ = model.runBatch(train=True, batchSize=2, split="train",
+                                   optimizer=optimizer, batch_override=batch)
+        assert result is not None
+>       shared = {p.data_ptr() for p in model._shared_representation_parameters(optimizer)}
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_joint_objectives.py:368: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...es=29, out_features=14, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=14, bias=False)
+)
+name = '_shared_representation_parameters'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_shared_representation_parameters'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+_____________________ test_energy_transfers_not_amplifies ______________________
+
+    def test_energy_transfers_not_amplifies():
+        """One prime event moves a spread-fraction of standing energy to the
+        neighbors; the surface total (deviation from neutral) never grows."""
+        cs, rA, rB = _chain_cs()
+        b = cs.prime_seen(torch.tensor([3]), bump=1.0)
+        e0 = float((b - 1.0).sum())
+>       assert abs(float(b[3]) - 2.0) < 1e-6, "first event: bump lands on 3"
+                         ^^^^
+
+test/test_priming_energy.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x1536c57c0>
+func = <slot wrapper '__getitem__' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]), 3)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: index 3 is out of bounds for dimension 0 with size 1
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: IndexError
+___________________ test_successive_primes_propagate_further ___________________
+
+    def test_successive_primes_propagate_further():
+        """Energy reaches the 2-hop neighborhood only after repeated events."""
+        cs, rA, rB = _chain_cs()
+        b = cs.prime_seen(torch.tensor([3]), bump=1.0)
+>       assert float(b[5]) == 1.0 and float(b[rB]) == 1.0, "no 2-hop on event 1"
+                     ^^^^
+
+test/test_priming_energy.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x1536c57c0>
+func = <slot wrapper '__getitem__' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]), 5)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: index 5 is out of bounds for dimension 0 with size 1
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: IndexError
+_____________________ test_zero_spread_is_pure_decay_bump ______________________
+
+    def test_zero_spread_is_pure_decay_bump():
+        """spread=0 keeps the original decay+bump law byte-identical."""
+        cs, _rA, _rB = _chain_cs()
+        object.__setattr__(cs, "_priming_spread", 0.0)
+        b = cs.prime_seen(torch.tensor([3, 5]), bump=1.0, decay=0.5)
+>       assert float(b[3]) == 2.0 and float(b[0]) == 1.0
+                     ^^^^
+
+test/test_priming_energy.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x1536c57c0>
+func = <slot wrapper '__getitem__' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[1., 1., 1., 2., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]), 3)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: index 3 is out of bounds for dimension 0 with size 1
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: IndexError
+=============================== warnings summary ===============================
+test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_joint_objectives.py::test_shared_grammar_operators_belong_to_the_diagnostic_set
+FAILED test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1.0]
+FAILED test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1024.0]
+FAILED test/test_joint_objectives.py::test_model_parameter_ownership_and_backward_dispatch
+FAILED test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning
+FAILED test/test_priming_energy.py::test_energy_transfers_not_amplifies - Ind...
+FAILED test/test_priming_energy.py::test_successive_primes_propagate_further
+FAILED test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump - Ind...
+8 failed, 33 passed, 9 skipped, 1 warning in 55.48s

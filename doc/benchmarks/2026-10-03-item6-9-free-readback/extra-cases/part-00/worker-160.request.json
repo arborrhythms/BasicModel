@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-160.recycle.json"
+}

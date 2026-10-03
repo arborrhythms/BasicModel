@@ -1,0 +1,88 @@
+..F.                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state _
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-828/test_tensor_peer_while_runs_sy0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x129fd7170>
+
+    @pytest.mark.slow
+    def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state(
+            tmp_path, monkeypatch):
+        """The production HOP promotes words, resolves objects, and is reusable."""
+        torch.manual_seed(211)
+        tensor_loop = _tiny_canonical_model(tmp_path, monkeypatch)
+        capacity_calls = 0
+    
+        def forbidden_capacity_choice(*_args, **_kwargs):
+            nonlocal capacity_calls
+            capacity_calls += 1
+            raise AssertionError(
+                "canonical CSLang evaluated its retired pre-capacity grammar")
+    
+        monkeypatch.setattr(
+            tensor_loop.languageSpace, "choose_capacity_binary",
+            forbidden_capacity_choice, raising=False)
+        tensor_loop._chart_compose_per_word = lambda: None
+        tensor_loop._tensor_peer_while_eager = True
+    
+        samples = ["alpha beta gamma delta", "epsilon zeta"]
+        tensor_input = tensor_loop.inputSpace.prepInput(samples)
+        torch.manual_seed(991)
+        actual = tensor_loop.forward(tensor_input)
+    
+        assert tensor_loop.conceptualSpace.CSLang is (
+            tensor_loop.conceptualSpace.stm)
+        assert not any(
+            "CSLang" in key for key in tensor_loop.state_dict())
+        # Eager sentence transactions traverse the fixed word bucket; the old
+        # whole-row HOP exposed only the greatest active word position.
+        assert int(tensor_loop._tensor_peer_trip_count) == tensor_loop.inputSpace._ar_embedded_N.shape[1]
+        assert tensor_loop.inputSpace._word_active_mask.sum(1).tolist() == [4, 2]
+        assert capacity_calls == 0
+        assert tensor_loop._tensor_symbolic_iterations == tensor_loop.symbolicOrder
+        assert all(
+            value is None or not torch.is_tensor(value)
+            or bool(torch.isfinite(value).all())
+            for value in actual)
+    
+        # CSLang keeps continuous concepts only in CS's fixed eight-slot STM.
+        # Its word-aligned handoff to SymbolSpace is the quantized sparse
+        # reference: row identity plus one signed activation, never a duplicate
+        # [B,W,D_c] concept history.
+        stm_buffer = tensor_loop.conceptualSpace.stm._buffer
+        assert tuple(stm_buffer.shape[1:]) == (
+            tensor_loop.conceptualSpace.stm.capacity,
+            tensor_loop.conceptualSpace.stm.concept_dim)
+        symbol_activations = (
+            tensor_loop.symbolSpace._word_reference_activations)
+        symbol_rows = tensor_loop.symbolSpace._word_reference_rows
+        active = tensor_loop.inputSpace._word_active_mask
+        assert tuple(symbol_activations.shape) == (*active.shape, 1)
+        assert tuple(symbol_rows.shape) == tuple(active.shape)
+        assert bool((symbol_rows[~active] == -1).all())
+        assert bool((symbol_activations[~active] == 0).all())
+        assert bool(torch.isfinite(symbol_activations).all())
+    
+        # Each sentence already consumed its predictor cost into its registry.
+>       actual_intra = tensor_loop._sentence_cost_registry.total(objective='expectation').mean()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'mean'
+
+test/test_compiled_word_chunk.py:554: AttributeError
+=============================== warnings summary ===============================
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7519: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpmtv8uxwh/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7519: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmprj7_e296/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state
+1 failed, 3 passed, 3 warnings in 46.23s

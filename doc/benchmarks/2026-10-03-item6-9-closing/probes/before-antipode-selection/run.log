@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_antipode_aligns_the_same_surface_word_as_the_byte_readback ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10edea510>
+
+    def test_antipode_aligns_the_same_surface_word_as_the_byte_readback(monkeypatch):
+        import embed
+        from Models import BasicModel
+        from SentenceUnderstanding import PrimedSymbols
+        codes = torch.tensor([[[1., 0.], [1., 1.]]])
+        bank = PrimedSymbols(torch.tensor([[0, 1]]), codes, torch.tensor([[1., 10.]]),
+            torch.ones(1, 2, dtype=torch.bool), torch.tensor([[[65], [0]]]),
+            torch.tensor([[[True], [False]]]))
+        cb = SimpleNamespace(active_row_count=lambda: 2,
+            lookup_rows=lambda rows: codes[0][rows])
+        owner = SimpleNamespace(_concept_owner=lambda: SimpleNamespace(similarity_codebook=cb))
+        selected = []
+        def observe(leaf, candidates, index, valid):
+            selected.append(index.tolist())
+            assert valid.all(), 'non-surface concepts still participate as negatives'
+            return leaf.sum(-1)*0
+        monkeypatch.setattr(embed, 'conceptual_antipode_loss_codes', observe)
+        BasicModel._decoder_antipode_cost(owner, (torch.tensor([[[1., 0.]]]), torch.tensor([1])), bank)
+>       assert selected == [[0]]
+E       assert [[1]] == [[0]]
+E         
+E         At index 0 diff: [1] != [0]
+E         Use -v to get more diff
+
+test/test_echoic_decoder.py:114: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_echoic_decoder.py::test_antipode_aligns_the_same_surface_word_as_the_byte_readback
+1 failed in 2.00s

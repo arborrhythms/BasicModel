@@ -1,0 +1,57 @@
+{
+  "cases": 4976,
+  "case_counts": {
+    "passed": 4662,
+    "failed": 23,
+    "skipped": 290,
+    "xpassed": 1
+  },
+  "raw_report_counts": {
+    "passed": 4665,
+    "failed": 23,
+    "skipped": 290,
+    "xpassed": 1,
+    "process_failed": 0
+  },
+  "repeated_reports": {
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected": [
+      {
+        "scope": "full-sweep",
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "scope": "full-sweep",
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "scope": "full-sweep",
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0,
+        "message": "",
+        "stdout": ""
+      },
+      {
+        "scope": "full-sweep",
+        "nodeid": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
+        "phase": "call",
+        "outcome": "passed",
+        "duration": 0.22098808400915004,
+        "message": "",
+        "stdout": "uuu"
+      }
+    ]
+  },
+  "rule": "one outcome per collected node; failed dominates; subtest reports do not add cases; non-strict XPASS remains separate"
+}

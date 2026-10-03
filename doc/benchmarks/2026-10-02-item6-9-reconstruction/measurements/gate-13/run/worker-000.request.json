@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/measurements/gate-13/run/worker-000.recycle.json"
+}

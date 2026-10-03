@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+    "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+    "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+    "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction",
+    "test/test_reconstruction_precedence.py::test_sparse_answer_projection_preserves_the_sparse_code_gradient",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[none]",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[eager]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/part-00/worker-584.recycle.json"
+}

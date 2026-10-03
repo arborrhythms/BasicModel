@@ -1,0 +1,19 @@
+......F                                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_public_reading_fuses_the_reference_before_capture_and_write _______
+test/test_live_references.py:192: in test_public_reading_fuses_the_reference_before_capture_and_write
+    torch.testing.assert_close(model._recon_ideas[active], entry.leaves, rtol=1e-4, atol=1e-4)
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 408 / 408 (100.0%)
+E   Greatest absolute difference: 0.19456695020198822 at index (0, 75) (up to 0.0001 allowed)
+E   Greatest relative difference: 573.937255859375 at index (1, 63) (up to 0.0001 allowed)
+=============================== warnings summary ===============================
+test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write
+1 failed, 6 passed, 1 warning in 4.44s

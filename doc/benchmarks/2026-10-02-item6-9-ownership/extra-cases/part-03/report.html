@@ -1,0 +1,117 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: memory</h1><p>Exit 137; 34/99 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>7.473933917004615</pre></td><td><pre>test/test_global_consume.py:219: in test_ltm_truthset_read_is_fed_to_the_answer
+    prev = m.conceptualSpaces[0]._subspaceForWS
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;ConceptualSpace&#x27; object has no attribute &#x27;_subspaceForWS&#x27;. Did you mean: &#x27;_subspaceForPS&#x27;?</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.726573208012269</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>4.881572500002221</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+batch = 0 (Δ=1.030s)
+batch = 0 (Δ=0.898s)
+batch = 0 (Δ=0.923s)
+batch = 0 (Δ=0.852s)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>4.76873962499667</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+batch = 0 (Δ=0.994s)
+batch = 0 (Δ=0.874s)
+batch = 0 (Δ=0.877s)
+batch = 0 (Δ=0.879s)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.6125643749983283</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.8786752079904545</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.6456221249973169</pre></td><td><pre></pre></td><td><pre>[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-856/test_native_checkpoint_restore0/native.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-856/test_native_checkpoint_restore0/native.ckpt
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.6614591669931542</pre></td><td><pre></pre></td><td><pre>[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-856/test_native_checkpoint_restore1/native.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-856/test_native_checkpoint_restore1/native.ckpt
+</pre></td></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.7673419999919133</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.989s)
+batch = 0 (Δ=0.738s)
+batch = 1 (Δ=0.661s)
+</pre></td></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.223036625000532</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+batch = 0 (Δ=0.948s)
+batch = 0 (Δ=0.711s)
+batch = 1 (Δ=0.644s)
+</pre></td></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>2.8989052919932874</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+batch = 0 (Δ=0.795s)
+batch = 0 (Δ=0.612s)
+batch = 1 (Δ=0.590s)
+</pre></td></tr><tr><td><pre>test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.4383002920076251</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.28701749999891035</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>8.521700290992158</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>16.006589917000383</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>14.457885584008181</pre></td><td><pre>test/test_per_word_ss_padding_noop.py:58: in test_stm_depth_tracks_valid_len_not_N
+    assert depth_after - depth_before == L, (
+E   AssertionError: STM mirror advanced by 1, expected 8 (real-positions count)
+E   assert (1 - 0) == 8</pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.7092411659978097</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_priming_spread_knob_stamped</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.08053470800223295</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_cs_to_ps_projection_live</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.8078735829913057</pre></td><td><pre>test/test_priming_energy.py:131: in test_cs_to_ps_projection_live
+    assert bridge, &quot;the mint must record the projection bridge&quot;
+E   AssertionError: the mint must record the projection bridge
+E   assert None</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.558s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.105s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.091s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_cs_to_ws_projection_live</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.35440399999788497</pre></td><td><pre>test/test_priming_energy.py:147: in test_cs_to_ws_projection_live
+    bridge = cs0._priming_bridge
+             ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: &#x27;ConceptualSpace&#x27; object has no attribute &#x27;_priming_bridge&#x27;. Did you mean: &#x27;_priming_bridge_put&#x27;?</pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.093s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_projection_bounded_across_epochs</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.6242438339977525</pre></td><td><pre>test/test_priming_energy.py:165: in test_projection_bounded_across_epochs
+    assert float(b6.max()) &lt; 1000.0, &quot;projection must not grow unbounded&quot;
+                 ^^^^^^
+E   AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;max&#x27;</pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.101s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.091s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_one_canonical_surface_per_tower</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.17025666699919384</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.101s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.1693181669979822</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.100s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_priming_rows_carry_abstraction_order</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.16863466599897947</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>102.48640662500111</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>92.5347620829998</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.184473458008142</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 2.074s; word units 100.0% of 30 words (letters-only 100.0% of 30).
+</pre></td></tr><tr><td><pre>test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.243794124995475</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.4237124589999439</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.4754889589967206</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.44019037499674596</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_reading_attention_on_builds_producer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.1776897920062765</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_reading_attention_off_has_no_module</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.15856124999118</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_forward_is_finite_and_deterministic</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>6.239292875005049</pre></td><td><pre>test/test_reading_attention.py:308: in test_forward_is_finite_and_deterministic
+    assert torch.equal(out1, out2), &quot;the eval forward must be deterministic&quot;
+E   AssertionError: the eval forward must be deterministic
+E   assert False
+E    +  where False = &lt;built-in method equal of type object at 0x10ced53a0&gt;(tensor([[[0.5000]],\n\n        [[0.5000]],\n\n        [[0.5000]],\n\n        [[0.5000]]]), tensor([[[0.5000]],\n\n        [[0.5000]],\n\n        [[0.5000]],\n\n        [[0.4999]]]))
+E    +    where &lt;built-in method equal of type object at 0x10ced53a0&gt; = torch.equal</pre></td><td><pre></pre></td></tr></table></body></html>

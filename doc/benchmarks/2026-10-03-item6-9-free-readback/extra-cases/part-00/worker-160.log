@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_reverse_chooser_picks_fold_op_by_roundtrip ________________
+test/test_word_store.py:550: in test_reverse_chooser_picks_fold_op_by_roundtrip
+    assert got == {tuple(W[r1].tolist()), tuple(W[r2].tolist())}
+E   assert {(0.032511834...6077576, ...)} == {(0.032511834...6077576, ...)}
+E     
+E     Extra items in the right set:
+E     (0.03251183405518532, 0.0028807956259697676, 0.01345168985426426, 0.028815440833568573, 0.0, 0.051028355956077576, ...)
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip
+1 failed in 2.69s

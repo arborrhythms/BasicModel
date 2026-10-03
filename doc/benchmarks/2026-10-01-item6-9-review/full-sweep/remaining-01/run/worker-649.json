@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_decode_exemplars.py::test_mm_decode_forward_smoke"
+  ],
+  "completed": [
+    "test/test_decode_exemplars.py::test_mm_decode_forward_smoke"
+  ],
+  "slow_selected": [
+    "test/test_decode_exemplars.py::test_mm_decode_forward_smoke"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_decode_exemplars.py::test_mm_decode_forward_smoke",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001358339977741707,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_decode_exemplars.py', 53, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

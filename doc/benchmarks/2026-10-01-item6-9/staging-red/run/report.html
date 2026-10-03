@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 4/4 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.18903991603292525</pre></td><td><pre>test/test_item7_unindexed_relations.py:88: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+    assert model._word_symbol_concept_ids() is None
+E   assert tensor([[ 3, -1,  5, -1, -1, -1, -1, -1],\n        [ 3, -1,  7, -1, -1, -1, -1, -1],\n        [ 9, -1,  5, -1, -1, -1, -1, -1],\n        [ 9, -1,  7, -1, -1, -1, -1, -1]]) is None
+E    +  where tensor([[ 3, -1,  5, -1, -1, -1, -1, -1],\n        [ 3, -1,  7, -1, -1, -1, -1, -1],\n        [ 9, -1,  5, -1, -1, -1, -1, -1],\n        [ 9, -1,  7, -1, -1, -1, -1, -1]]) = _word_symbol_concept_ids()
+E    +    where _word_symbol_concept_ids = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...t(\n    (0-2): 3 x _BodyStage()\n  )\n  (where_encoding): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n)._word_symbol_concept_ids</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.47679545800201595</pre></td><td><pre>test/test_item7_definition_integrity.py:161: in test_new_definitions_do_not_alias_later_sentence_identities
+    assert symbols.isdisjoint(store.row_ids[rows].tolist())
+E   assert False
+E    +  where False = &lt;built-in method isdisjoint of set object at 0x1261ba500&gt;([3, 4611686018427387909, 4611686018427387911])
+E    +    where &lt;built-in method isdisjoint of set object at 0x1261ba500&gt; = {2, 3, 4, 5, 6, 7, ...}.isdisjoint
+E    +    and   [3, 4611686018427387909, 4611686018427387911] = &lt;built-in method tolist of Tensor object at 0x10761bf70&gt;()
+E    +      where &lt;built-in method tolist of Tensor object at 0x10761bf70&gt; = tensor([                  3, 4611686018427387909, 4611686018427387911]).tolist</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+[AMP] off (fp32, MODEL_AMP unset or =off)
+</pre></td></tr><tr><td><pre>test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.12416266603395343</pre></td><td><pre>test/test_runtime_split_ingestion.py:97: in test_store_truths_records_truths
+    torch.testing.assert_close(store.c_plus[rows], torch.zeros(2))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 2 (100.0%)
+E   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)</pre></td><td><pre>Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+</pre></td></tr><tr><td><pre>test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0506076249293983</pre></td><td><pre>test/test_runtime_split_ingestion.py:109: in test_store_truths_idempotent_clear_then_record
+    torch.testing.assert_close(store.c_plus[rows], torch.zeros(1))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 1 (100.0%)
+E   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)</pre></td><td><pre></pre></td></tr></table></body></html>

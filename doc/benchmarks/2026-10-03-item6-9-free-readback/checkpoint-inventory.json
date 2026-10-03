@@ -1,0 +1,57 @@
+[
+  {
+    "path": "data/grammar_wording.ckpt",
+    "keys": {
+      "state_dict": "dict",
+      "vocab_extras": "dict",
+      "bpe_extras": "NoneType",
+      "structural_extras": "dict",
+      "optimizer_state": "dict",
+      "training_state": "dict",
+      "checkpoint_schema": "dict",
+      "optimizer_param_names": "dict"
+    },
+    "optimizer": {
+      "optimizers": 2,
+      "state": 63,
+      "param_groups": 3
+    }
+  },
+  {
+    "path": "data/BasicModel.ckpt",
+    "keys": {
+      "state_dict": "dict",
+      "vocab_extras": "dict",
+      "bpe_extras": "NoneType",
+      "structural_extras": "dict",
+      "optimizer_state": "dict",
+      "training_state": "dict",
+      "checkpoint_schema": "dict",
+      "optimizer_param_names": "dict"
+    },
+    "optimizer": {
+      "optimizers": 2,
+      "state": 12,
+      "param_groups": 3
+    }
+  },
+  {
+    "path": "test/fixtures/item7_legacy_definition.pt",
+    "keys": {
+      "source": "str",
+      "word": "int",
+      "obj": "int",
+      "meta": "int",
+      "structural": "dict"
+    },
+    "optimizer": "NoneType"
+  },
+  {
+    "path": "test/fixtures/item7_byte_columns.pt",
+    "keys": {
+      "packed": "dict",
+      "single": "dict"
+    },
+    "optimizer": "NoneType"
+  }
+]

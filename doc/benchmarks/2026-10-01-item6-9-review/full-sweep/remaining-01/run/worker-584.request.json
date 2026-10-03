@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-584.recycle.json"
+}

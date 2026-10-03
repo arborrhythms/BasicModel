@@ -1,0 +1,21 @@
+{
+  "starting_head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "published_head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "preserved": {
+    "doc/benchmarks/2026-09-30-item7-review-round5/final-xor-comparison.md": "bf430163f604c690519a7a925e8f1919e6fe358f0ae1b043ff88e09459258a51",
+    "doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-table.md": "e8212f512be92f1fd36b4f91693a65cf01bbc0276d572ec4af365d9d9189dc19",
+    "doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md": "5bac3cd85194ddd07983010229003bd197681587c73e6b750e03d8991a34c608",
+    "doc/benchmarks/2026-09-27-item7-5-landing/README.md": "2afd12ec360a80201cfbfe154b933e7b23a2950ae4f4676712fcff359d957edb"
+  },
+  "historical_results": {
+    "xor_grammar_gates": "both red",
+    "exact_roundtrips": "12/15; failures .75, .75, .25",
+    "mm_grammar_median": 0.1066178977,
+    "depth_three": "red, [1, 1, 1, 1]"
+  },
+  "stop_condition": "After steps 1\u20135, all ten unseeded 400-epoch runs must have all four answers correct and MSE below .05. Otherwise stop implementation and report; do not advance to step 6.",
+  "seed": null,
+  "configurations": "unchanged",
+  "worker_guard_bytes": 8589934592,
+  "aggregate_guard_bytes": 25769803776
+}

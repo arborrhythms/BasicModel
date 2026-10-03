@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_meronomy.py::test_analyze_parts_are_leaves_named_by_analyzer"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-571.recycle.json"
+}

@@ -154,13 +154,3 @@ def test_no_relu_injection_law_in_bin():
         "ReLU-injection law found (retired by MeronomySpec §3; use "
         "Ops.eval_chart / the factored interface instead):\n  "
         + "\n  ".join(bad))
-
-
-def test_no_legacy_chart_helper_names():
-    # The old helper must not exist under any of its historical names,
-    # and the chart pair must be the only belief↔membership map on Ops.
-    for name in ("relu_chart", "relu_inject", "membership_inject",
-                 "inject_membership", "to_membership_relu"):
-        assert not hasattr(Ops, name), f"retired helper Ops.{name} exists"
-        assert not hasattr(Layers, name), f"retired helper Layers.{name} exists"
-    assert hasattr(Ops, "eval_chart") and hasattr(Ops, "eval_chart_inv")

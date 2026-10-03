@@ -1,0 +1,409 @@
+{
+  "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp": {
+    "classification": "New ownership regression in the named XOR table; not an accepted exception",
+    "evidence": "The saved CLI reports output cost .3500 and reconstruction .0000 in every one of its 64 epochs. All four final answers are zero, MSE .5. The companion direct-gradient concept-output proof passed in gate-01.",
+    "root_cause": "XOR_exact is parallel and requests OutputSpace conceptIds=20001. OutputSpace.read_concepts selects positive native evidence by identity and has no trainable reader. The evidence coefficients live in the ConceptualSpace store, assigned to reconstruction by objective_parameter_groups. The new runBatch answer writer excludes those coefficients. With zero reconstruction cost this run cannot learn the named output concept; the direct proof still explicitly optimizes store.values with answer MSE and therefore does not exercise the new ownership restriction.",
+    "sources": [
+      "data/XOR_exact.xml",
+      "bin/Models.py:2672",
+      "bin/Models.py:17818",
+      "bin/Spaces.py:21840",
+      "bin/Spaces.py:22063",
+      "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse"
+    ],
+    "evidence_path": "measurements/gate-03/observations.jsonl",
+    "final_rows": [
+      "row[0] input='00' -> reconstructed='00' label=0.0000 predicted=0.0000 OK",
+      "row[1] input='01' -> reconstructed='01' label=1.0000 predicted=0.0000 OK",
+      "row[2] input='10' -> reconstructed='10' label=1.0000 predicted=0.0000 OK",
+      "row[3] input='11' -> reconstructed='11' label=0.0000 predicted=0.0000 OK"
+    ],
+    "epochs": 64,
+    "distinct_reported_train_costs": [
+      [
+        "0.3500",
+        "0.0000"
+      ]
+    ],
+    "status": "No source, assertion, configuration, marker or bar changed after source freeze; report for review. This result is not waived as MM_xor."
+  },
+  "test/test_conceptual_recurrence.py::test_mm5m_combine_carrier_roundtrip": {
+    "classification": "Obsolete two-stream fixture contract; present before this ownership continuation",
+    "root_cause": "Both tests assume a two-stream bind, but their unchanged MM_20M_xor configuration has symbolTower=true. The existing constructor uses three streams. With N=8,D=1024 its butterfly carrier rounds 3*N*D up to 32768, rather than 2*N*D=16384; unbind also returns three streams, so the two-value unpack fails.",
+    "sources": [
+      "test/test_conceptual_recurrence.py",
+      "data/MM_20M_xor.xml:26",
+      "bin/Models.py:17772"
+    ],
+    "evidence": "This test body and the XML are identical to ownership-start.zip, and that starting Models.py already contains the three-stream constructor. A different function in the same test file was ported to MM_ladder; the entire test file is not identical. No pre-continuation training was repeated.",
+    "status": "Assertions retained; reported for review.",
+    "unchanged_body_sha256": "7267e3bc78680327d42fb9f2862121a67c99292d0afad6617374f2b29fb6b330"
+  },
+  "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space": {
+    "classification": "Obsolete two-stream fixture contract; present before this ownership continuation",
+    "root_cause": "Both tests assume a two-stream bind, but their unchanged MM_20M_xor configuration has symbolTower=true. The existing constructor uses three streams. With N=8,D=1024 its butterfly carrier rounds 3*N*D up to 32768, rather than 2*N*D=16384; unbind also returns three streams, so the two-value unpack fails.",
+    "sources": [
+      "test/test_conceptual_recurrence.py",
+      "data/MM_20M_xor.xml:26",
+      "bin/Models.py:17772"
+    ],
+    "evidence": "This test body and the XML are identical to ownership-start.zip, and that starting Models.py already contains the three-stream constructor. A different function in the same test file was ported to MM_ladder; the entire test file is not identical. No pre-continuation training was repeated.",
+    "status": "Assertions retained; reported for review.",
+    "unchanged_body_sha256": "27849d25abfd600ded285420150e79745aabd796f1d3ccc271d6e76b1dcdfacd"
+  },
+  "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry": {
+    "classification": "Incomplete configuration port",
+    "root_cause": "The fixture moved MM_20M_grammar to MM_ladder but kept _GRAMMAR_HEAD_NVEC=[8,8,8]. The new configuration has four 4096-row conceptual stages; the failure is that unported geometry expectation.",
+    "sources": [
+      "test/test_dual_towers.py:28",
+      "test/test_dual_towers.py:61",
+      "data/MM_ladder.xml"
+    ],
+    "status": "The old/new test bodies are saved. No assertion or source was changed during measurement."
+  },
+  "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys": {
+    "classification": "Incomplete configuration port",
+    "root_cause": "The same MM_20M_grammar to MM_ladder port keeps an expectation-on assertion, but MM_ladder explicitly sets sentenceExpectation=false. Its discourse predictor is therefore absent.",
+    "sources": [
+      "test/test_dual_towers.py:70",
+      "data/MM_ladder.xml:149"
+    ],
+    "status": "The old/new bodies are saved; no assertion was weakened."
+  },
+  "test/test_output_path_supervised.py::test_serial_answer_path_varies_with_the_input": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "serial_synth_config now copies MM_ladder, which already declares answerSynthesis=true, then inserts another answerSynthesis element. Schema validation rejects the duplicate before the behavior assertion can run.",
+    "sources": [
+      "test/test_output_path_supervised.py:98",
+      "data/MM_ladder.xml:98",
+      "data/model.xsd:259"
+    ],
+    "status": "Saved setup failure; no fixture, schema or assertion changed after freeze."
+  },
+  "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "serial_synth_config now copies MM_ladder, which already declares answerSynthesis=true, then inserts another answerSynthesis element. Schema validation rejects the duplicate before the behavior assertion can run.",
+    "sources": [
+      "test/test_output_path_supervised.py:98",
+      "data/MM_ladder.xml:98",
+      "data/model.xsd:259"
+    ],
+    "status": "Saved setup failure; no fixture, schema or assertion changed after freeze."
+  },
+  "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer": {
+    "classification": "Retired-interface fixture remains; previous ingestion failure masked it",
+    "root_cause": "The weekly fixture still reads ConceptualSpace._subspaceForWS. The retained native/serial code no longer exposes that compatibility accessor. The prior weekly attempt stopped earlier at the mixing-ingestion None error, so it did not validate this access.",
+    "sources": [
+      "test/test_global_consume.py:219"
+    ],
+    "status": "No compatibility accessor added and no assertion removed; incomplete port reported for review."
+  },
+  "test/test_word_store.py::test_reading_promotes_the_batch_words": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_one_to_one_recognition_registers_under_words": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_storeless_configs_emit_no_percept_key": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_words_summary_row_running_mean": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]": {
+    "classification": "Incomplete cost-observer fixture port; production cause not inferred from this assertion",
+    "root_cause": "controlled_cost returns artificial [2,1]/[1,2] comparison totals from _sentence_path_cost and forces the reconstructed metric to one. The new score function deliberately replaces that returned total with reconstruction-plus-answer read from the Error registry. This fixture never injects its artificial row totals into the registry, so its asserted [True,False] winner vector is no longer controlled.",
+    "sources": [
+      "test/test_sentence_compose.py:107",
+      "bin/Models.py:21103"
+    ],
+    "status": "Both compiled and ordinary cases failed on the frozen source. Their helper targets the old cost-return boundary; no source or assertion was changed during measurement."
+  },
+  "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]": {
+    "classification": "Incomplete cost-observer fixture port; production cause not inferred from this assertion",
+    "root_cause": "controlled_cost returns artificial [2,1]/[1,2] comparison totals from _sentence_path_cost and forces the reconstructed metric to one. The new score function deliberately replaces that returned total with reconstruction-plus-answer read from the Error registry. This fixture never injects its artificial row totals into the registry, so its asserted [True,False] winner vector is no longer controlled.",
+    "sources": [
+      "test/test_sentence_compose.py:107",
+      "bin/Models.py:21103"
+    ],
+    "status": "Both compiled and ordinary cases failed on the frozen source. Their helper targets the old cost-return boundary; no source or assertion was changed during measurement."
+  },
+  "test/test_word_store.py::test_leaf_distill_default_off": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_percept_concept_reverse_index_and_row": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row": {
+    "classification": "New configuration-port setup error",
+    "root_cause": "The retained word-vocabulary fixture now copies MM_ladder, which already declares chunkPromotionThreshold=2, then inserts the same element again after synthesis. XSD rejects the duplicate before the test behavior runs.",
+    "sources": [
+      "test/test_word_store.py:116",
+      "data/MM_ladder.xml:191"
+    ],
+    "status": "The failing setup is saved; no threshold, schema or assertion changed after source freeze."
+  },
+  "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors": {
+    "classification": "Incomplete configuration port: remaining reference to a deleted fixture",
+    "root_cause": "This retained test still opens data/matrix/MM_20M_grammar_wordstore.xml, deleted by the configuration cleanup. It fails before constructing the model.",
+    "sources": [
+      "test/test_word_store.py"
+    ],
+    "status": "The missing-file failure is saved; no compatibility file or assertion change was made."
+  },
+  "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask": {
+    "classification": "Unported one-dimensional synthetic priming fixture",
+    "root_cause": "The test replaces priming_weights() with torch.ones(64) and boosts element 50. The new production contract returns [batch,row], and _thought_grammar_context selects primed[row]. With this synthetic 1-D tensor it reads only scalar element 0, so the boosted row 50 is absent. The fixture does not provide the decided per-batch surface.",
+    "sources": [
+      "test/test_accessible_mind.py:352",
+      "bin/Models.py:6064"
+    ],
+    "status": "Failure saved in the source-matched sweep; no source, test or assertion changed afterward."
+  },
+  "test/test_existence_metadata.py::test_actual_model_checkpoint_preserves_scoped_fact_identity": {
+    "classification": "Incomplete stateful-fixture merge port",
+    "root_cause": "This test still imports _STATEFUL_CONFIG after test_ltm_consolidation merged that separate configuration into the kept fixture. Import fails before the checkpoint identity assertions.",
+    "sources": [
+      "test/test_existence_metadata.py:179",
+      "test/test_ltm_consolidation.py"
+    ],
+    "status": "Saved failure; no deleted configuration alias restored."
+  },
+  "test/test_field_learning.py::test_primed_reading_writes_the_shared_field_scope": {
+    "classification": "Unported one-dimensional synthetic priming fixture",
+    "root_cause": "The synthetic priming vector has one dimension. _primed_reading_step now implements the decided row-local [B,V] surface and reads b.shape[1], producing the observed IndexError.",
+    "sources": [
+      "test/test_field_learning.py:72",
+      "bin/Models.py:7111"
+    ],
+    "status": "Assertion unchanged; failure saved."
+  },
+  "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]": {
+    "classification": "Unported backward-observer signature",
+    "root_cause": "The monkeypatched check_gradients(total, amp_scaler=None) does not accept the new optimizer keyword that supplies the actual parameter ownership set. It raises TypeError before checking the gradient contract.",
+    "sources": [
+      "test/test_generation_catalog.py:225"
+    ],
+    "status": "Saved failure; no assertion changed."
+  },
+  "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]": {
+    "classification": "Unported backward-observer signature",
+    "root_cause": "The monkeypatched check_gradients(total, amp_scaler=None) does not accept the new optimizer keyword that supplies the actual parameter ownership set. It raises TypeError before checking the gradient contract.",
+    "sources": [
+      "test/test_generation_catalog.py:225"
+    ],
+    "status": "Saved failure; no assertion changed."
+  },
+  "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient": {
+    "classification": "Unported synthetic sentence owner",
+    "root_cause": "The SimpleNamespace fixture calls _sentence_path_cost without the new _trial_understanding method/record, so it fails before the generation lesson assertion. The production BasicModel has that method.",
+    "sources": [
+      "test/test_generation_lesson.py:7",
+      "bin/Models.py:20608"
+    ],
+    "status": "Saved failure; no assertion changed."
+  },
+  "test/test_inter_sentence_prediction_shape.py::test_prediction_trains_live_context_encoder_but_not_observed_target": {
+    "classification": "Retired expectation-encoder contract still present in the suite",
+    "root_cause": "These tests require the preceding context encoder to receive expectation gradients. Plan \u00a715.2 explicitly detaches that context, and \u00a715.4 retires expectation gradient into ideas, codes and context. The observed None encoder gradient matches the new contract; retaining the opposite assertion is incomplete cleanup.",
+    "sources": [
+      "test/test_inter_sentence_prediction_shape.py",
+      "doc/plans/2026-09-29-item-6-9-xor-grammar.md \u00a715.2 and \u00a715.4"
+    ],
+    "status": "The failures and unchanged bodies are retained in the source snapshot for review; no assertion was silently weakened or test removed after freeze."
+  },
+  "test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_ends_encoder_graph_lifetime": {
+    "classification": "Retired expectation-encoder contract still present in the suite",
+    "root_cause": "These tests require the preceding context encoder to receive expectation gradients. Plan \u00a715.2 explicitly detaches that context, and \u00a715.4 retires expectation gradient into ideas, codes and context. The observed None encoder gradient matches the new contract; retaining the opposite assertion is incomplete cleanup.",
+    "sources": [
+      "test/test_inter_sentence_prediction_shape.py",
+      "doc/plans/2026-09-29-item-6-9-xor-grammar.md \u00a715.2 and \u00a715.4"
+    ],
+    "status": "The failures and unchanged bodies are retained in the source snapshot for review; no assertion was silently weakened or test removed after freeze."
+  },
+  "test/test_output_synthesis.py::test_branch_gradient_diagnostics_read_without_update": {
+    "classification": "Unported retired diagnostic interface",
+    "root_cause": "The test still requests _last_branch_diagnostics from the former per-operator diagnostic. This continuation replaces the production report with the ownership audit as \u00a715.4 requires. The fixture has not moved its read-only/no-update assertions to that report.",
+    "sources": [
+      "test/test_output_synthesis.py"
+    ],
+    "status": "Failure saved; no legacy diagnostic alias or weakened assertion added."
+  },
+  "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]": {
+    "classification": "Unported backward-observer signature",
+    "root_cause": "The shared _policy_training_probe hook accepts the former backward arguments and rejects the optimizer keyword required for objective ownership. All four policy cases therefore stop at the observer before completing their policy/no-answer assertions.",
+    "sources": [
+      "test/test_output_walk.py::_policy_training_probe"
+    ],
+    "status": "Saved failure; this is not a passing policy validation and no assertion has been changed."
+  },
+  "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]": {
+    "classification": "Unported backward-observer signature",
+    "root_cause": "The shared _policy_training_probe hook accepts the former backward arguments and rejects the optimizer keyword required for objective ownership. All four policy cases therefore stop at the observer before completing their policy/no-answer assertions.",
+    "sources": [
+      "test/test_output_walk.py::_policy_training_probe"
+    ],
+    "status": "Saved failure; this is not a passing policy validation and no assertion has been changed."
+  },
+  "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers": {
+    "classification": "Unported backward-observer signature",
+    "root_cause": "The shared _policy_training_probe hook accepts the former backward arguments and rejects the optimizer keyword required for objective ownership. All four policy cases therefore stop at the observer before completing their policy/no-answer assertions.",
+    "sources": [
+      "test/test_output_walk.py::_policy_training_probe"
+    ],
+    "status": "Saved failure; this is not a passing policy validation and no assertion has been changed."
+  },
+  "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers": {
+    "classification": "Unported backward-observer signature",
+    "root_cause": "The shared _policy_training_probe hook accepts the former backward arguments and rejects the optimizer keyword required for objective ownership. All four policy cases therefore stop at the observer before completing their policy/no-answer assertions.",
+    "sources": [
+      "test/test_output_walk.py::_policy_training_probe"
+    ],
+    "status": "Saved failure; this is not a passing policy validation and no assertion has been changed."
+  },
+  "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks": {
+    "classification": "Incomplete pullback-observer port",
+    "root_cause": "The fixture records calls only in the old callable wrapper, then assigns owned.gradients = pullback.gradients without observing that method. Restricted ownership backward uses .gradients(), so two pullbacks are created while the fixture call list remains empty. This assertion does not show that the production pullback was omitted.",
+    "sources": [
+      "test/test_sentence_comparison.py:44",
+      "bin/ObjectiveOwnership.py:61"
+    ],
+    "status": "The failure is saved. The equal-parameter tests retain their own independent assertions; no test was changed after freeze."
+  },
+  "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused": {
+    "classification": "Unported synthetic sentence owner",
+    "root_cause": "The SimpleNamespace fixture calls the new _sentence_path_cost without a _trial_understanding record constructor, so it fails before the Adam momentum assertion.",
+    "sources": [
+      "test/test_sentence_compose.py",
+      "bin/Models.py:20608"
+    ],
+    "status": "Saved failure; no assertion changed."
+  },
+  "test/test_sentence_expectation.py::test_full_role_loss_trains_source_and_predictor_but_never_target": {
+    "classification": "Retired expectation-encoder contract still present in the suite",
+    "root_cause": "The test requires expectation to train a live source encoder. The decided contract detaches every expectation source and target and trains only predictors. The observed None encoder gradient reflects that new contract; the contrary test remains an incomplete retirement.",
+    "sources": [
+      "test/test_sentence_expectation.py",
+      "doc/plans/2026-09-29-item-6-9-xor-grammar.md \u00a715.2 and \u00a715.4"
+    ],
+    "status": "Unchanged failing assertion and source snapshot retained for review."
+  },
+  "test/test_taxonomy_boundary.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup": {
+    "classification": "Incomplete stateful-fixture merge port",
+    "root_cause": "This test still imports _STATEFUL_CONFIG after test_ltm_consolidation merged that separate configuration into the kept fixture. Import fails before the checkpoint identity assertions.",
+    "sources": [
+      "test/test_taxonomy_boundary.py",
+      "test/test_ltm_consolidation.py"
+    ],
+    "status": "Saved failure; no deleted configuration alias restored."
+  },
+  "test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity": {
+    "classification": "Incomplete stateful-fixture merge port",
+    "root_cause": "This test still imports _STATEFUL_CONFIG after test_ltm_consolidation merged that separate configuration into the kept fixture. Import fails before the checkpoint identity assertions.",
+    "sources": [
+      "test/test_taxonomy_entry.py",
+      "test/test_ltm_consolidation.py"
+    ],
+    "status": "Saved failure; no deleted configuration alias restored."
+  },
+  "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner": {
+    "classification": "Incomplete row-local priming fixture port",
+    "root_cause": "The fixture now supplies a [1,2] batch surface, but still compares a row-specific ThoughtGrammarContext.primed_symbols against the full batch tensor. The production boundary selects row zero and returns shape [2], as the new per-row contract requires.",
+    "sources": [
+      "test/test_thought_operation_catalog.py:1000",
+      "bin/Models.py:6064"
+    ],
+    "status": "The shape failure is saved, without changing the assertion."
+  },
+  "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons": {
+    "classification": "Assertion includes retired operator training; exact non-moving owner not recorded",
+    "evidence": "The fixture requires each of chooser, generate policy, surface.marker_map and surface.marker_prior to change during one lesson batch. The saved failure is an unlabeled any(parameter_changed) assertion, so it does not identify which of those four owners failed.",
+    "root_cause": "The unconditional demand that surface operator modules move conflicts with \u00a715.1, which forbids grammar/generation lessons from updating an operator. Reconstruction may independently update a selected operator, but that is not guaranteed by supplying a lesson. The saved result alone does not prove that either chooser failed to learn.",
+    "sources": [
+      "test/test_surface_grammar.py:229",
+      "doc/plans/2026-09-29-item-6-9-xor-grammar.md \u00a715.1"
+    ],
+    "status": "Keep the failure unresolved at the individual-owner level for review; no assertion was removed or weakened."
+  }
+}

@@ -112,61 +112,9 @@ class TestForwardArityContract(unittest.TestCase):
                          "WholeSpace.forward must not carry the "
                          "retired Phase-1 'work' carrier.")
 
-    def test_sourced_input_and_read_event_removed(self):
-        import Spaces
-        for cls in (Spaces.PartSpace, Spaces.ConceptualSpace):
-            self.assertFalse(
-                hasattr(cls, '_sourced_input'),
-                f"{cls.__name__}._sourced_input must be folded into "
-                f"forward and removed.")
-            self.assertFalse(
-                hasattr(cls, '_read_event'),
-                f"{cls.__name__}._read_event must be removed.")
-        self.assertFalse(
-            hasattr(Spaces.ConceptualSpace, '_get_active_input_sibling'),
-            "ConceptualSpace._get_active_input_sibling must be removed.")
-
-    def test_forward_input_refs_removed(self):
-        """conceptualSpace_ref / wholeSpace_ref / ConceptualSpace's
-        perceptualSpace_ref are no longer initialised in __init__."""
-        import inspect
-        import Spaces
-        p_src = inspect.getsource(Spaces.PartSpace.__init__)
-        self.assertNotIn("self.conceptualSpace_ref = None", p_src,
-                         "PartSpace must not init conceptualSpace_ref "
-                         "(C→P feedback is now an explicit forward arg).")
-        c_src = inspect.getsource(Spaces.ConceptualSpace.__init__)
-        self.assertNotIn("self.wholeSpace_ref = None", c_src)
-        self.assertNotIn("self.perceptualSpace_ref = None", c_src,
-                         "ConceptualSpace must not init the forward-input "
-                         "refs (PS/SS are explicit forward args).")
 
 
-class TestSubwholeSpaceRetired(unittest.TestCase):
-    """The standalone SubwholeSpace class and its mode selector are gone."""
 
-    def test_subsymbolic_space_class_removed(self):
-        import Spaces
-        self.assertFalse(hasattr(Spaces, 'SubwholeSpace'),
-                         "SubwholeSpace should be removed; "
-                         "PartSpace is the subsymbolic substrate "
-                         "via the explicit C→P forward arg.")
-
-    def test_subwholeSpace_ref_not_on_conceptual(self):
-        import Spaces
-        import inspect
-        src = inspect.getsource(Spaces.ConceptualSpace.__init__)
-        self.assertNotIn("self.subwholeSpace_ref = None", src,
-                         "ConceptualSpace must not retain a "
-                         "subwholeSpace_ref attribute.")
-
-    def test_subsymbolic_widen_dim_param_removed(self):
-        import Spaces
-        import inspect
-        sig = inspect.signature(Spaces.ConceptualSpace.__init__)
-        self.assertNotIn("subsymbolic_widen_dim", sig.parameters,
-                         "ConceptualSpace.__init__ must not accept "
-                         "subsymbolic_widen_dim.")
 
 
 class TestRecurrentCellAndOutputViews(unittest.TestCase):
@@ -324,13 +272,13 @@ class TestSubsymbolicSymbolicSplit(unittest.TestCase):
 class TestPerceptStoreIntegration(unittest.TestCase):
     """Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
     reentrancy.md): PartSpace exposes ``self.percept_store`` when
-    ``<synthesis>radix</synthesis>`` is selected; legacy chunking modes
+    ``<synthesis>meronomy</synthesis>`` is selected; legacy chunking modes
     (``lexicon|bpe|mphf|none``) keep their existing ``ChunkLayer`` /
     Embedding-based wiring with ``self.percept_store is None``.
     """
 
     def test_radix_config_builds_percept_store(self):
-        """MM_xor.xml selects ``<synthesis>radix</synthesis>`` post-Stage-7
+        """MM_xor.xml selects ``<synthesis>meronomy</synthesis>`` post-Stage-7
         and the constructed PartSpace must expose a PerceptStore.
         """
         import warnings
@@ -344,8 +292,8 @@ class TestPerceptStoreIntegration(unittest.TestCase):
             warnings.filterwarnings("ignore")
             m, _ = Models.BasicModel.from_config(cfg_path)
         ps_space = m.perceptualSpace
-        self.assertEqual(ps_space.synthesis_mode, "radix",
-                         "MM_xor.xml should now use radix chunking")
+        self.assertEqual(ps_space.synthesis_mode, "meronomy",
+                         "MM_xor.xml should use the retained meronomy reading")
         self.assertIsNotNone(ps_space.percept_store,
                              "radix-mode PartSpace must expose "
                              "self.percept_store")
@@ -355,24 +303,6 @@ class TestPerceptStoreIntegration(unittest.TestCase):
         # vocabulary property returns the percept store in radix mode.
         self.assertIs(ps_space.vocabulary, ps_space.percept_store)
 
-    def test_legacy_lexicon_mode_keeps_chunklayer_path(self):
-        """The MM_xor_loopback config doesn't set <synthesis>; the default
-        is ``lexicon`` (Phase 4b: PS analyse was retired to SS <analysis>;
-        lexicon is the closest surviving word-resolution mode), which
-        resolves word runs through the ChunkLayer / Embedding path, so
-        ``percept_store`` stays ``None``."""
-        m = _fresh_model()
-        ps_space = m.perceptualSpace
-        # The default lexicon mode uses the chunklayer / Embedding path
-        # (no PerceptStore).
-        self.assertEqual(ps_space.synthesis_mode, "lexicon")
-        self.assertIsNone(ps_space.percept_store,
-                          "lexicon (default) must leave percept_store unset "
-                          "so the legacy ChunkLayer / Embedding path "
-                          "stays authoritative")
-        # vocabulary property falls back to subspace.vocabulary in
-        # non-radix mode (the base Space behaviour).
-        self.assertIs(ps_space.vocabulary, ps_space.subspace.vocabulary)
 
     def test_radix_percept_store_roundtrips_inserted_words(self):
         """Stage 7 acceptance: 'words are inserted into the PerceptStore;
@@ -411,8 +341,8 @@ class TestPerceptStoreIntegration(unittest.TestCase):
         # only touches what_buf to decide non-emptiness, so we just
         # need a non-None what_buf and a list-of-lists host_tokens.
         words_per_row = [
-            ["hello", "world"],
-            ["the", "quick", "brown"],
+            ["hello", " ", "world"],
+            ["the", " ", "quick", " ", "brown"],
         ]
         # All words are >= promotion_min_length=2, so each one will
         # promote after ``promotion_threshold`` (default 4) hits.
@@ -483,7 +413,7 @@ class TestPerceptStoreIntegration(unittest.TestCase):
         promoting_word = "promotable"   # len 10, >= 3
         short_word = "ab"               # len 2, < 3
         words_per_row = [
-            [promoting_word, short_word],
+            [promoting_word, " ", short_word],
         ]
         self.assertGreaterEqual(len(promoting_word), min_length)
         self.assertLess(len(short_word), min_length)

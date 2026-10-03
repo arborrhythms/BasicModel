@@ -1,0 +1,9 @@
+{
+  "reason": "The Claude selection-layer hook sees at most two occupied slots. Its simulator treats that window as the whole stack; depth-three states can lose the older constituent.",
+  "a_stopped_epoch": 148,
+  "b_interrupted_epoch": 105,
+  "c_interrupted_epoch": 168,
+  "completed_measurements": 0,
+  "statistical_results_discarded": 0,
+  "candidate_changed": false
+}

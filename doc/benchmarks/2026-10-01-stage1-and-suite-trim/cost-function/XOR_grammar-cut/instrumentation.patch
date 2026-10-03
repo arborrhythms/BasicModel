@@ -1,0 +1,86 @@
+--- BasicModel._sentence_path_cost.original
++++ BasicModel._sentence_path_cost.observed
+@@ -64,4 +64,5 @@
+         self._sentence_gradient_objectives = dict(
+             reconstruction=reconstruction_cost, expectation=expectation_cost,
+             output=output_cost)
++    _objective_probe.trial(self, locals())
+     return cost, reconstruction, observation, pending
+--- BasicModel._sentence_path_cost.original
++++ BasicModel._sentence_path_cost.observed
+@@ -56,7 +56,7 @@
+             expectation_cost = (contrast_cost if expectation_cost is None else
+                                 expectation_cost + contrast_cost)
+             cost = cost + contrast_cost
+-    answer_error = BasicModel._sentence_answer_error(self, state, sid, active, observation)
++    answer_error = None  # Measurement arm: original cut; batch-end answer unchanged.
+     if answer_error is not None:
+         cost = cost + answer_error
+         output_cost = answer_error if output_cost is None else output_cost + answer_error
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -120,6 +120,7 @@
+         trial_mode=trial_mode,
+     )
+     self._sentence_answer_questions = what_questions
++    _objective_probe.opened(self, locals())
+ 
+     # Advance the serialized model clock once per PROCESSED batch (this
+     # point is past the no-batch early raise, so it ticks exactly once on
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -917,6 +917,7 @@
+                     self.record_loss(
+                         name, tensor, weight=weight,
+                         space=space, category=category)
++            _objective_probe.auxiliary(self, locals())
+             pipeline_errors.clear()
+ 
+         if expectation_policy_loss is not None and self.expectation_policy_weight > 0:
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -1027,6 +1027,7 @@
+                     "concept_readout_l1", readout_l1, weight=1.0,
+                     space="ConceptualSpace", category="reg")
+ 
++        _objective_probe.batch(self, locals())
+         # Snapshot the breakdown before the backward pass so later
+         # calls to TheError.covariance() can see it in the history
+         # even if the step is aborted by a non-finite detector below.
+--- ModelLoss.compute.original
++++ ModelLoss.compute.observed
+@@ -22,4 +22,6 @@
+     if nWhen > 0:
+         loss = loss + self.when_scale * F.mse_loss(
+             pred[..., nWhat + nWhere:], target[..., nWhat + nWhere:])
++    if not torch.compiler.is_compiling():
++        _objective_probe.compute(self, locals())
+     return loss
+--- InterSentenceLayer.sentence_prediction_cost.original
++++ InterSentenceLayer.sentence_prediction_cost.observed
+@@ -47,6 +47,7 @@
+                             logits, occupied.to(logits))
+                         cost = cost + self._kind_loss(kind_logit,
+                             None if sentence_kinds is None else sentence_kinds[b], cost)
++                        _objective_probe.expectation_parts(self, locals())
+                         negatives = [p.detach().to(target).flatten()
+                                      for _, p, _ in self._inter_context[b]]
+                 else:
+--- SymbolSubSpace.truth_modulated_loss.original
++++ SymbolSubSpace.truth_modulated_loss.observed
+@@ -46,6 +46,7 @@
+     penalties remain independent auxiliary objectives.
+     """
+     if self.truth_layer is None or self.truth_layer.is_empty():
++        _objective_probe.truth_return(locals())
+         return total_loss
+ 
+     # Luminosity is now a Mereology measure on the model itself.
+--- SymbolSubSpace.truth_modulated_loss.original
++++ SymbolSubSpace.truth_modulated_loss.observed
+@@ -105,4 +105,5 @@
+             allow_contradiction=int(allow_contradiction))
+         total_loss = total_loss + balance_weight * balance
+ 
++    _objective_probe.truth_return(locals())
+     return total_loss

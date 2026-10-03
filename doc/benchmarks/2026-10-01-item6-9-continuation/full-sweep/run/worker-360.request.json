@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_definition_sparsity.py::test_penalty_exempts_top_free_and_sums_marginal"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-360.recycle.json"
+}

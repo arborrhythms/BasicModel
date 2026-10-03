@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+    "child",
+    "--kind",
+    "sum",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-06"
+  ],
+  "pid": 31040,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 877611024,
+  "elapsed_seconds": 126.37715962500079,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-06/driver.log"
+}

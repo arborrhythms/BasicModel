@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.6990034580230713,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

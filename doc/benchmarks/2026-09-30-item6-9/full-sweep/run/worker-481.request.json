@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_meronomy.py::test_synthesize_to_words_produces_only_words"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-481.recycle.json"
+}

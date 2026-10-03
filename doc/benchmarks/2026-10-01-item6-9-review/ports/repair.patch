@@ -1,0 +1,49 @@
+--- a/test/reading_fixtures.py
++++ b/test/reading_fixtures.py
+@@ -201,6 +201,8 @@
+     lang[13] = entry.end_state.reshape(1, 1, 3 * width).expand(1, sid + 1, -1).clone()
+     lang[14] = torch.ones(1, sid + 1, dtype=torch.long)
+     lang[20] = torch.zeros(1, 3, 2, dtype=torch.long)
++    lang.append(torch.full((1, 3), -1, dtype=torch.long))
++    lang.append(torch.zeros_like(lang[4], dtype=torch.bool))
+     state = stm, tuple(lang), None
+     active = torch.tensor([active], dtype=torch.bool)
+     view = owner._sentence_observation(state, sid, active)
+--- a/test/test_item7_end_state_storage.py
++++ b/test/test_item7_end_state_storage.py
+@@ -118,11 +118,12 @@
+ def test_closing_discards_operations_without_changing_other_live_rows():
+     from Models import BasicModel
+ 
+-    lang = tuple(torch.ones(2, 4) for _ in range(26))
++    lang = tuple(torch.ones(2, 4) for _ in range(26)) + (
++        torch.ones(2, 4, dtype=torch.long), torch.ones(2, 4, dtype=torch.bool))
+     _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),
+                                                                   torch.tensor([True, False]))
+-    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25):
+-        expected = -1 if index in (4, 5, 15, 16, 17, 18, 23) else 0
++    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27):
++        expected = -1 if index in (4, 5, 15, 16, 17, 18, 23, 26) else 0
+         assert (cleared[index][0] == expected).all()
+         torch.testing.assert_close(cleared[index][1], lang[index][1], rtol=0, atol=0)
+     for index in (0, 9, 13, 14, 20):
+--- a/test/test_tied_operator_reconstruction.py
++++ b/test/test_tied_operator_reconstruction.py
+@@ -272,9 +272,14 @@
+             basis=basis, basis_valid=torch.tensor([[True, True, False]]),
+             candidate_limit=2, return_status=True)
+         assert not unavailable.any()
+-        # The parent contains no marker identity. This is the declared
+-        # ambiguous candidate mean, and never the parent's duplicate.
+-        torch.testing.assert_close(left, basis[:, :2].mean(1))
++        # The parent contains no marker identity. The missing operand is
++        # one hard least-residual candidate from the bounded valid rows.
++        candidates = basis[:, :2]
++        assert (left[:, None, :] == candidates).all(-1).any(-1).all()
++        op = PartLayer()
++        residuals = (op.compose(candidates, parent[:, None, :]) - parent[:, None, :]).square().mean(-1)
++        residual = (op.compose(left, right) - parent).square().mean(-1)
++        torch.testing.assert_close(residual, residuals.min(-1).values)
+         torch.testing.assert_close(right, parent)
+     finally:
+         model.End()

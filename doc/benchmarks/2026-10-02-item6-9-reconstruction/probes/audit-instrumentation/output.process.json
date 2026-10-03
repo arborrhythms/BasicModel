@@ -1,0 +1,17 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "test/objective_conflicts_probe.py",
+    "--config",
+    "XOR_grammar",
+    "--output",
+    "doc/benchmarks/2026-10-02-item6-9-reconstruction/audit-validation",
+    "--validate-only"
+  ],
+  "pid": 88597,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 520062176,
+  "elapsed_seconds": 3.8005990000092424,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/audit-instrumentation/output.log"
+}

@@ -1,0 +1,43 @@
+# Part 4 implementation and verification
+
+The implementation is frozen for the closing measurements; nothing is committed. The stage-1 measurements in this directory's README describe the bank-only source at the time of those measurements. They are not measurements of the new cost function.
+
+## Implemented
+
+The retained meronomy grammar readings reconstruct through their understanding. The XML false setting no longer turns this off; historical text modes remain exempt and numeric/non-grammar paths keep their existing perceptual reconstruction. `configuration-scope.md` lists every XML, including the three matrix fixtures. Empty admitted-candidate sentences are counted, contribute no reconstruction term, and are excluded from the average; structural bank corruption still fails loudly. The unchanged `XOR_grammar.xml` inherits `lexicon` synthesis and is therefore explicitly in the old-mode exemption. Its closing gates retain perceptual reconstruction. The two stage-1 arms and the real projection integration test use the already-authorized receipt-local `reconstructInLoop=true` copy; those results must not be described as the default fixture’s cost. Migrating that configuration remains trim item 12, held until 6.9 closes.
+
+`Layers.Error` owns the trained trial and batch totals. Named targeted errors combine their active numerator and detached baseline sums before division. Categorical/binary baselines are uninformed uniform predictions; squared baselines are the origin. Zero-target squared terms and targetless penalties remain unnormalized. Existing explicit configuration priorities remain. There is no epsilon floor, EMA loss scale, new seed, or changed gate threshold. Raw output MSE and reconstruction metrics stay raw for the existing gates. `ModelLoss.register` names and normalizes event bands separately; joint embedding, expectation and grammar-lesson composites retain their separate constituents. Policies keep their targetless score-function interpretation and detached return baselines.
+
+For supplied trials, the answer's opposing component is removed only on its parameter intersection with reconstruction, including sparse code gradients and each trial's exact perception pullback. Expectation and grammar-generation lessons are excluded from that projection. Both trial graphs, costs and correction references precede either optimizer update. Selection requires a lower total and no higher reconstruction. No-answer sentences keep the state cut. The output walk's policy term remains owned at batch end.
+
+The implementation reads reconstruction and supplied-answer gradients separately and then performs the ordinary total backward. This is two extra objective-gradient reads, rather than the one extra backward estimated in spec §8.1. Combining expectation with the answer would give the wrong projection. No extra optimizer step was introduced for the projection. This implementation cost is documented explicitly in GradientFlow and Training.
+
+## Saved probes and checks
+
+- `scope-before/` and `scope-after/`: the scope and missing-candidate contract; 24 focused cases passed after the change.
+- `registry-before/` and `registry-after/`: uninformed baselines, ratio of means, detached denominators, empty masks and penalty separation; 19 cases passed.
+- `precedence-before/` and `precedence-integration/`: reconstruction selection and shared-gradient projection; 28 cases passed.
+- `answer-ownership-before/`: a grammar-generation lesson was incorrectly included in the answer cost selected for projection. The repair uses a distinct answer registry and imports it into the trial total.
+- `receipt-values-before/`: row costs reported no scalar mean, and contextual weights were absent from reported weighted values/history. These failures are saved; both are repaired.
+- `training-integration/`: collection failed because a requested file did not exist; no case ran. `training-integration-selected/` is the corrected selection, 80/80 passed, including the real eager and compiled R+A trial, sparse projection and all four walk-policy ownership cases.
+- `retained-path-before/`: resetting the prediction owner retained the new Error registry; an absent packed sentence diluted the owned reconstruction average. Both failed probes are saved. The isolated word fixture's missing journal setup was also saved by the weekly run (`worker-011`). `retained-path-after/`: all three pass with RUN_SLOW enabled, 10.1 seconds and 3.39 GiB peak. The word fixture now stages the same teacher/maps as its full forward; its original assertion remains.
+- `l1-short-valid-before/` saves both arms failing because the first sentence optimizer step did not stage its proximal penalty. The repair stages the unchanged L1 strength on each applicable sentence update, with batch-end staging only when a batch backward exists. The registry reports the separate strength (`l1Lambda`) and unweighted magnitude; it never adds another L1 gradient. The short fixture keeps every original per-step assertion, strengthens the retained-reading update/evaluation checks, and uses numerical execution because its subject is proximal ownership. Both arms and the remaining L1 checks pass.
+- `l1-and-mask-after/` passed 19 cases and found a remaining one-row shape failure in the kind preview. `row-and-weekly-after/` passes the repaired list-mask/one-row contract and the weekly continuation/environment checks. The kind test is unchanged.
+- `chunk-registry-before/` saves the old fixture's missing registry; after its state port, `chunk-registry-initialized/` saves the repeated fullgraph capture caused by a growing registry. Each K=1/K=2 cell now resets its local registry; the eager driver merges each chunk once. The one-graph assertions pass. The existing STM/raw-loss/gradient assertions remain, with relative-value/gradient parity added. `chunk-registry-after/` also preserves an exploratory assertion failure caused by asking autograd for intentionally unused predictor parameters; the final comparison checks both values and matching absent gradients.
+- `preclosing-checks/`: 308/308 passed in 67.36 seconds (69.55 seconds process wall time), 1.327 GiB peak, including documentation links, real eager/compiled trial projection, UTF-8 bank/separator rules, all four walk-policy cases and the final K=2 parity check.
+- `part4-before.zip` and `.json` preserve complete pre-change sources. `part4-after.zip`, `part4.patch`, `part4-changes.json` and `part4-ports.json` preserve the final changed files, diff, hashes and complete old/new test/fixture bodies. Files omitted from the original archive are explicitly listed, not presented as changes.
+- `training-projection-prose-before.json` saves an unqualified historical sentence saying that no projection remains. Its complete old/new paragraph is in `training-projection-prose-port.json`; the final Training documentation distinguishes ordinary batch-end JOINT from the supplied-trial projection. This prose-only correction was made during the frozen-source sweep.
+
+## Measurements
+
+The scoped timing probe is complete: `scoped-timing.md` and `scoped-timing-summary.json`. It toggled only automatic reconstruction on an immutable candidate copy; XML, numerical parameters and environment matched. It measured one first production batch, not a full epoch or compiler capture, under the unchanged 8 GiB worker guard. Initializations were independent and unseeded. Three configurations completed both arms; eight hit the memory guard in both arms, and the expectation benchmark rejected an over-capacity sentence in both. Those nine configurations have no successful timing difference. The snapshot precedes the later L1/chunk bookkeeping fixes; it isolates the reconstruction switch at that source state. No failed arm was retried.
+
+The closing ten-run gates/control, single XOR table, ten MM_grammar runs and one final full sweep are under `../closing/`. The complete weekly slow selection proceeds independently on its review-13 source snapshot. That snapshot's red cases are kept, and its remaining cases continue without retries after a guard stop. Its results are not substituted for the new cost function's receipt.
+
+The closing sweep is complete on matching source: 5,090 cases in 110.70 minutes,
+with 4,760 passes, eleven failures, 318 skips and one expected failure. Nine
+failures involve unported fixtures or changed scope/empty-candidate subcases;
+the remaining two concern a zero compose result and a second graph capture.
+Their exact evidence and the assertions not reached are listed in
+`../closing/review-findings.md`. The candidate is stopped for review, not
+accepted or marked closed.

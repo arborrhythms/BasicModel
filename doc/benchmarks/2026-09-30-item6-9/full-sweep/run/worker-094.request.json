@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_item9b_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-094.recycle.json"
+}

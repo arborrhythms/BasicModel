@@ -1,0 +1,30 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_expectation_does_not_write_its_context_or_routing ____________
+
+    def test_expectation_does_not_write_its_context_or_routing():
+        from Layers import IntraSentenceLayer
+>       layer = IntraSentenceLayer(4, routing_dim=2)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: IntraSentenceLayer.__init__() missing 1 required positional argument: 'stm_capacity'
+
+test/test_objective_ownership.py:7: TypeError
+_______ test_objectives_write_only_their_owners_even_with_shared_graphs ________
+
+    def test_objectives_write_only_their_owners_even_with_shared_graphs():
+>       from ObjectiveOwnership import backward_owned
+E       ModuleNotFoundError: No module named 'ObjectiveOwnership'
+
+test/test_objective_ownership.py:17: ModuleNotFoundError
+________ test_reconstruction_pullback_cannot_credit_an_answer_parameter ________
+
+    def test_reconstruction_pullback_cannot_credit_an_answer_parameter():
+>       from ObjectiveOwnership import backward_owned
+E       ModuleNotFoundError: No module named 'ObjectiveOwnership'
+
+test/test_objective_ownership.py:30: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED test/test_objective_ownership.py::test_expectation_does_not_write_its_context_or_routing
+FAILED test/test_objective_ownership.py::test_objectives_write_only_their_owners_even_with_shared_graphs
+FAILED test/test_objective_ownership.py::test_reconstruction_pullback_cannot_credit_an_answer_parameter
+3 failed in 1.99s

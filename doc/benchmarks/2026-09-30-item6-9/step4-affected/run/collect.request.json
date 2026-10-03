@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_concept_not.py",
+    "test/test_grammar_binary_ops.py",
+    "test/test_subspace_what_stm_contract.py",
+    "test/test_negative_expectation.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

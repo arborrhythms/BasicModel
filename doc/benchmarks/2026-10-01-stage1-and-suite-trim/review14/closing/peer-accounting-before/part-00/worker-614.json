@@ -1,0 +1,84 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+    "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+    "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+    "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+    "test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud"
+  ],
+  "completed": [
+    "test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+    "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+    "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+    "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+    "test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02824770899314899,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5497110419964883,
+      "message": " forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24102: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18031: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22511: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22040: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21202: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:173: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21158: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20695: in _sentence_path_cost\n    reconstruction = self._compiled_reconstruct()(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)\nE   \nE   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.\nE   Caused by: while bool(condition(*values)):  # test/test_router_fires_per_word.py:142 in eager_while (_dynamo/variables/tensor.py:2849 in evaluate_expr)\nE   For more information, run with TORCH_LOGS=\"dynamic\"\nE   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL=\"u0\"\nE   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing\nE   \nE   User Stack (most recent call last):\nE     (snipped, see stack below for prefix)\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12624, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py\", line 142, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12624, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py\", line 142, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.2969104170042556,
+      "message": " forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24102: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18031: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22511: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22040: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21202: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:173: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21158: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20695: in _sentence_path_cost\n    reconstruction = self._compiled_reconstruct()(\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)\nE   \nE   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.\nE   Caused by: while bool(condition(*values)):  # test/test_router_fires_per_word.py:142 in eager_while (_dynamo/variables/tensor.py:2849 in evaluate_expr)\nE   For more information, run with TORCH_LOGS=\"dynamic\"\nE   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL=\"u0\"\nE   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing\nE   \nE   User Stack (most recent call last):\nE     (snipped, see stack below for prefix)\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12624, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py\", line 142, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12624, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py\", line 142, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 91.30196733299817,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 73.38283741699706,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 296.1697045000037,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02640145800251048,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

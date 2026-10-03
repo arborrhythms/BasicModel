@@ -1,0 +1,77 @@
+{
+  "selected": 5219,
+  "completed": 5218,
+  "stopped": {
+    "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]": {
+      "reason": "timeout",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-000.log",
+      "elapsed_seconds": 1801.0359274580005,
+      "peak_memory_bytes": 5526672808
+    }
+  },
+  "remaining": 0,
+  "interrupted_attempts": [
+    {
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-089.request.json",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-089.json"
+        ],
+        "pid": 63678,
+        "exit_code": 125,
+        "reason": "aborted",
+        "peak_memory_bytes": 1761921928,
+        "elapsed_seconds": 159.5911219160007,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-089.log"
+      },
+      "selected": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-090.request.json",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-090.json"
+        ],
+        "pid": 63719,
+        "exit_code": 125,
+        "reason": "aborted",
+        "peak_memory_bytes": 1675872488,
+        "elapsed_seconds": 89.07637562500167,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-090.log"
+      },
+      "selected": [
+        "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs"
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-073.request.json",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-073.json"
+        ],
+        "pid": 63438,
+        "exit_code": 125,
+        "reason": "aborted",
+        "peak_memory_bytes": 2811596472,
+        "elapsed_seconds": 387.2096996250002,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/worker-073.log"
+      },
+      "selected": [
+        "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers"
+      ]
+    }
+  ],
+  "elapsed_seconds": 7324.339106082916,
+  "segments": [
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/run/result.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/result.json"
+  ]
+}

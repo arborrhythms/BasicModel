@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]"
+  ],
+  "completed": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]"
+  ],
+  "slow_selected": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.2901657079928555,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 1.451s; word units 83.3% of 24 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=1.708s, 100.00%)\r\nrunEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.742s; word units 86.5% of 192 words (letters-only 100.0% of 64).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

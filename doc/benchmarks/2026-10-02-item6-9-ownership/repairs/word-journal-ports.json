@@ -1,0 +1,19 @@
+{
+  "command": [
+    "env",
+    "RUN_SLOW=1",
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_rule_gate_isolates_side_effects.py",
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately"
+  ],
+  "pid": 22267,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 777569984,
+  "elapsed_seconds": 8.527051416996983,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/word-journal-ports.log"
+}

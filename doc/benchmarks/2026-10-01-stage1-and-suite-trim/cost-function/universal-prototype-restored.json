@@ -1,0 +1,25 @@
+{
+  "reason": "Universal reconstruction is not complete: older serial paths lack surface banks or explicit sentence products; no fixture assertion has been weakened. Prototype remains reviewable in universal-reconstruction-repair.json. Restore only these agent-owned edits to the verified bank-only source while the relative-cost baseline decision is pending.",
+  "files": [
+    {
+      "file": "bin/Models.py",
+      "restored_sha256": "d7cf3f38c1e37a089d908e26f0947049f43637c88a6a0bb04981beeb4591ae2c"
+    },
+    {
+      "file": "bin/Language.py",
+      "restored_sha256": "067685d2eef51dae51976889ebbfcc975d04fa96ba0f4c37ab4be43e1e0b41e0"
+    },
+    {
+      "file": "data/BasicModel_answers_benchmark.xml",
+      "restored_sha256": "47bdf7139d3606a9857b4db79ec5c4937d65acf6ef62885eb52b023b5b62f456"
+    },
+    {
+      "file": "data/BasicModel_expectation_benchmark.xml",
+      "restored_sha256": "1e6254dd936a8c7d26323e5ae0ade7ed5443dc2d899de181458739dbcd9b1252"
+    },
+    {
+      "file": "data/model.xsd",
+      "restored_sha256": "09b44fb84fbad25a150b2e990cc45bc33f4a0c29f00780bf5b6169847c8a5718"
+    }
+  ]
+}

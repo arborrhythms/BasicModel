@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5_prediction.py::test_sentence_prediction_trials_backpropagate_independently"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-prediction-green/run/worker-000.recycle.json"
+}

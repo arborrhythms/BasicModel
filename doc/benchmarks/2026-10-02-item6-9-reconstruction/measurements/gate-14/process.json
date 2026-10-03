@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/measure.py",
+    "child",
+    "--kind",
+    "gate",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/measurements/gate-14",
+    "--gate",
+    "14"
+  ],
+  "pid": 3222,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4752315432,
+  "elapsed_seconds": 106.54089812500752,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/measurements/gate-14/driver.log"
+}

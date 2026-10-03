@@ -1,0 +1,37 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung"
+  ],
+  "completed": [
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung"
+  ],
+  "slow_selected": [
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 6.120156624994706,
+      "message": "test/test_dual_towers.py:248: in test_pyramid_taper_topk_selection\n    assert acts is not None, \"symbolic phase must be active\"\nE   AssertionError: symbolic phase must be active\nE   assert None is not None",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.030s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5981696250091773,
+      "message": "test/test_dual_towers.py:272: in test_pyramid_grads_reach_every_rung\n    assert vals, \"the concept store must expose trainable edge values\"\nE   AssertionError: the concept store must expose trainable edge values\nE   assert []",
+      "stdout": "batch = 0 (\u0394=0.662s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.596s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

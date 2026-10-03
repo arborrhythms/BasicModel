@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser"
+  ],
+  "completed": [
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1617.1916621669989,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=652.884s)\r\nbatch = 2 (\u0394=301.551s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

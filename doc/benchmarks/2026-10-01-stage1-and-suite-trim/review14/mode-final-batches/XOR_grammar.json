@@ -1,0 +1,17 @@
+{
+  "config": "data/XOR_grammar.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.5713514169910923,
+  "batch": 64,
+  "scope": "understanding",
+  "reconstruct_in_loop": true,
+  "training_seconds": 0.5240248749905732,
+  "output_loss": 0.1685156375169754,
+  "reconstruction_loss": 0.0012177039170637727,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": 0,
+  "total_seconds": 2.0958862919942476
+}

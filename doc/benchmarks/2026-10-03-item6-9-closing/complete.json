@@ -1,0 +1,17 @@
+{
+  "status": "closed-baseline",
+  "source_matched": true,
+  "trainings": 1,
+  "committed": false,
+  "focused_cases": 29,
+  "collection_cases": 5019,
+  "documentation_cases": 272,
+  "class_gate": "red",
+  "reconstruction_gate": "red",
+  "ownership_conflicts": 0,
+  "next": [
+    "conference freeze",
+    "operators update",
+    "6.8"
+  ]
+}

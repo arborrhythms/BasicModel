@@ -118,6 +118,6 @@ def _write_selected_observation(language, registry, entry, path):
     host = SimpleNamespace(languageSpace=language, grammatical_thoughts=registry)
     attach_clause_index(host, store, registry.space)
     # Every public entry reaches this common closing; real entry-point parity
-    # is exercised by test_item7_sentence_boundary.
+    # is exercised by test_sentence_boundary.
     commit_reading(language, registry, entry, store, owner=host)
     return store

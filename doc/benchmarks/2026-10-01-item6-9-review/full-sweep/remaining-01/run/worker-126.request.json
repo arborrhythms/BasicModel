@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-126.recycle.json"
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_unknown_surface_raises"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-628.recycle.json"
+}

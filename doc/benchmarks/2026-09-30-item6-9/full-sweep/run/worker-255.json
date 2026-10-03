@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_discourse_space.py::TestArmaUnit::test_predict_next_stable_shape_on_cold_start"
+  ],
+  "completed": [
+    "test/test_discourse_space.py::TestArmaUnit::test_predict_next_stable_shape_on_cold_start"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_predict_next_stable_shape_on_cold_start",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08230925002135336,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

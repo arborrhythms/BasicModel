@@ -1,0 +1,46 @@
+..............................................................F......... [ 77%]
+.....................                                                    [100%]
+=================================== FAILURES ===================================
+_________ test_new_definitions_do_not_alias_later_sentence_identities __________
+test/test_item7_definition_integrity.py:161: in test_new_definitions_do_not_alias_later_sentence_identities
+    assert symbols.isdisjoint(store.row_ids[rows].tolist())
+E   assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x145bad620>([3, 4611686018427387909, 4611686018427387911])
+E    +    where <built-in method isdisjoint of set object at 0x145bad620> = {2, 3, 4, 5, 6, 7, ...}.isdisjoint
+E    +    and   [3, 4611686018427387909, 4611686018427387911] = <built-in method tolist of Tensor object at 0x145d05590>()
+E    +      where <built-in method tolist of Tensor object at 0x145d05590> = tensor([                  3, 4611686018427387909, 4611686018427387911]).tolist
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=============================== warnings summary ===============================
+test/test_item11c_membership_folds.py::test_required_parts_keep_support_and_counterevidence_separate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item11c_review.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_item7_definition_integrity.py: 6 warnings
+test/test_item7_definitions.py: 8 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_item7_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner
+test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13593: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_item7_definitions.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities
+1 failed, 92 passed, 20 warnings in 8.60s

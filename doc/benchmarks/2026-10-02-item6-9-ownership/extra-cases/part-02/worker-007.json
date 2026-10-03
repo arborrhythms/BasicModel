@@ -1,0 +1,63 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_global_attention.py::test_global_on_builds_module",
+    "test/test_global_attention.py::test_global_off_has_no_module",
+    "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+    "test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates",
+    "test/test_global_attention.py::test_global_params_reach_optimizer"
+  ],
+  "completed": [
+    "test/test_global_attention.py::test_global_on_builds_module",
+    "test/test_global_attention.py::test_global_off_has_no_module",
+    "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook"
+  ],
+  "slow_selected": [
+    "test/test_global_attention.py::test_global_on_builds_module",
+    "test/test_global_attention.py::test_global_off_has_no_module",
+    "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+    "test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates",
+    "test/test_global_attention.py::test_global_params_reach_optimizer"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_global_attention.py::test_global_on_builds_module",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.117907666994142,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_global_off_has_no_module",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.0931631669955095,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 6.629327833012212,
+      "message": "test/test_global_attention.py:194: in test_forward_parks_typed_obs_over_spaces\n    assert torch.equal(out1, out2), \"dark global attention stays deterministic\"\nE   AssertionError: dark global attention stays deterministic\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10a1913a0>(tensor([[[0.5001]],\\n\\n        [[0.5001]],\\n\\n        [[0.5001]],\\n\\n        [[0.5001]]]), tensor([[[0.5001]],\\n\\n        [[0.5001]],\\n\\n        [[0.5001]],\\n\\n        [[0.5001]]]))\nE    +    where <built-in method equal of type object at 0x10a1913a0> = torch.equal",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.200393666003947,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": true,
+  "active": null,
+  "device": "cpu"
+}

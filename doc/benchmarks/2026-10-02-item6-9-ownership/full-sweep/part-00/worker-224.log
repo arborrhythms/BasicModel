@@ -1,0 +1,9 @@
+...F.                                                                    [100%]
+=================================== FAILURES ===================================
+_________ test_actual_model_checkpoint_preserves_scoped_fact_identity __________
+test/test_existence_metadata.py:179: in test_actual_model_checkpoint_preserves_scoped_fact_identity
+    from test_ltm_consolidation import _make_model, _STATEFUL_CONFIG
+E   ImportError: cannot import name '_STATEFUL_CONFIG' from 'test_ltm_consolidation' (/Users/arogers/github/WikiOracle/basicmodel/test/test_ltm_consolidation.py)
+=========================== short test summary info ============================
+FAILED test/test_existence_metadata.py::test_actual_model_checkpoint_preserves_scoped_fact_identity
+1 failed, 4 passed in 2.42s

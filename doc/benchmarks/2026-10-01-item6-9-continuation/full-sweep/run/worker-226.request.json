@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_discourse_space.py::TestArmaUnit::test_e_history_saturates_at_q"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-226.recycle.json"
+}

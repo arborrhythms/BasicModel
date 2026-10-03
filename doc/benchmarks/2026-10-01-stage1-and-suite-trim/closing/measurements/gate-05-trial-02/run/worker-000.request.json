@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-02/run/worker-000.recycle.json"
+}

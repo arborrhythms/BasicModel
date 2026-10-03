@@ -1,0 +1,1364 @@
+.........F.................FFFFF.............................FF.....FFFF [ 53%]
+......................................................F.......           [100%]
+=================================== FAILURES ===================================
+_______ test_free_trial_uses_no_reference_or_offsets_and_only_free_term ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c6997c0>
+
+    def test_free_trial_uses_no_reference_or_offsets_and_only_free_term(monkeypatch):
+        from pathlib import Path
+        import Models, util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+        original = model._reconstruct_sentences
+        calls=[]
+        def observe(*args, **kw):
+            record = kw['understanding']
+            assert record.primed.codes.requires_grad
+            from dataclasses import replace, fields
+            assert 'witness_offsets' not in {f.name for f in fields(record)}
+            # The original leaves are targets, never inverse operands. Changing
+            # them cannot change the recovered leaves or the byte objective.
+            result = original(*args, **kw)
+            changed = replace(record, word_values=record.word_values + 19)
+            altered = original(args[0], changed.word_values, *args[2:],
+                               **(kw | {'understanding': changed}))
+            torch.testing.assert_close(result[0], altered[0])
+            torch.testing.assert_close(result[2], altered[2])
+            calls.append('free')
+            return result
+        monkeypatch.setattr(model, '_reconstruct_sentences', observe)
+        optimizer=model.getOptimizer(lr=.01)
+        try:
+            raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
+>           model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
+                batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+
+test/test_free_reconstruction.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13835: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14008: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14376: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8792: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10275: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8489: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 1
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 1
+
+bin/ClauseRow.py:225: ValueError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_______________ test_normal_batch_logs_owned_optimizer_gradients _______________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1175/test_normal_batch_logs_owned_o0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x131252750>
+capsys = <_pytest.capture.CaptureFixture object at 0x131251490>
+eager_reading = None
+
+    def test_normal_batch_logs_owned_optimizer_gradients(tmp_path, monkeypatch, capsys, eager_reading):
+        from pathlib import Path
+        from test_compiled_word_chunk import _tiny_canonical_model
+        curriculum = json.loads((Path(__file__).resolve().parents[1] / "data/grammar_wording.json").read_text())
+        chosen = ("wheels belong to bicycles", "bicycles are equal to wheels")
+        lessons = [next(row for row in curriculum["train"] if row["text"] == text) for text in chosen]
+        torch.manual_seed(942)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8")
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.branch_diagnostics_every = 1
+        model.inputSpace.data.grammar_lessons = {"train": lessons}
+        model.inputSpace.data.has_supervised_outputs = False
+        optimizer = model.getOptimizer(lr=.003)
+        try:
+            inputs = model.inputSpace.prepInput(list(chosen))
+>           result, _ = model.runBatch(train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+                source_rows=[0, 1], batch_override=(inputs, torch.empty(2, 0)))
+
+test/test_gradient_factorization.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13835: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14008: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14376: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8792: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10275: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8489: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:287: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:287: in <genexpr>
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:287: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:287: in <genexpr>
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:287: in preflight
+    child_ids = tuple(preflight(child) for child in value.children)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:287: in <genexpr>
+    child_ids = tuple(preflight(child) for child in value.children)
+                      ^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 8
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 8
+
+bin/ClauseRow.py:225: ValueError
+_ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1319956d0>
+unadmitted = False, trailing = False
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grammar_separator.py:40: in observed_commit
+    return commit(state, sid, active, *rest)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 1
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 1
+
+bin/ClauseRow.py:225: ValueError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c6c0d70>
+unadmitted = True, trailing = False
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grammar_separator.py:40: in observed_commit
+    return commit(state, sid, active, *rest)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 1
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 1
+
+bin/ClauseRow.py:225: ValueError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x131f39100>
+unadmitted = False, trailing = True
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grammar_separator.py:40: in observed_commit
+    return commit(state, sid, active, *rest)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 1
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 1
+
+bin/ClauseRow.py:225: ValueError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x131f38ad0>
+unadmitted = True, trailing = True
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grammar_separator.py:40: in observed_commit
+    return commit(state, sid, active, *rest)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 1
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 1
+
+bin/ClauseRow.py:225: ValueError
+___________ test_sentence_trials_keep_their_own_perception_pullbacks ___________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1175/test_sentence_trials_keep_thei0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x131abb020>
+eager_reading = None
+
+    def test_sentence_trials_keep_their_own_perception_pullbacks(tmp_path, monkeypatch, eager_reading):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        import SentenceCompose
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+            training_overrides={'reconstructInLoop': False})
+        model._tensor_peer_while_eager = True
+        optimizer = model.getOptimizer(lr=1e-4)
+        created, called, versions = [], [], []
+        original = SentenceCompose.fork_perception
+        def observed(cache):
+            trial, pullback = original(cache)
+            index = len(created)
+            created.append(index)
+            versions.append(tuple(parameter._version for parameter in model.parameters()))
+            def owned():
+                called.append(index)
+                pullback()
+            def gradients(*args, **kwargs):
+                called.append(index)
+                return pullback.gradients(*args, **kwargs)
+            owned.gradients = gradients
+            return trial, owned
+        monkeypatch.setattr(SentenceCompose, 'fork_perception', observed)
+        try:
+            raw = model.inputSpace.prepInput(['a b', 'c d'])
+>           model.runBatch(train=True, optimizer=optimizer, batchSize=2, split='runtime',
+                batch_override=(raw, torch.empty(2, 0)))
+
+test/test_sentence_comparison.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13835: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14008: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14376: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8792: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10275: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8489: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 8
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 8
+
+bin/ClauseRow.py:225: ValueError
+___________ test_replaying_real_greedy_derivation_ties_in_every_row ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x131badd30>
+
+    def test_replaying_real_greedy_derivation_ties_in_every_row(monkeypatch):
+        from pathlib import Path
+        import Models
+        import SentenceCompose
+        import util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        optimizer = model.getOptimizer(lr=.01)
+        pair = SentenceCompose.sentence_pair
+        comparisons = []
+        def repeat(cache, compose, score, step, **kwargs):
+            # This diagnostic deliberately replays greedy. The production
+            # exploration-integrity assertion is about different actions; the
+            # ordinary score's reconstruction/expectation arithmetic is identical.
+            result = pair(cache, lambda value, prior: compose(value, None),
+                          lambda path, alternative: score(path, False), step, **kwargs)
+            comparisons.append((result[1], result[2]))
+            return result
+        monkeypatch.setattr(SentenceCompose, 'sentence_pair', repeat)
+        try:
+            batch = next(iter(data.data_loader(split='train', num_streams=4)))
+            raw = model.inputSpace.prepInput(batch[0])
+            target = model.outputSpace.prepOutput(batch[1])
+>           model.runBatch(train=True, optimizer=optimizer, batchSize=4,
+                           split='runtime', batch_override=(raw, target))
+
+test/test_sentence_comparison.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13835: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14008: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14376: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8792: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10275: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8489: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 1
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 1
+
+bin/ClauseRow.py:225: ValueError
+_______ test_trial_consumers_share_one_record_and_answer_cannot_write_it _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x131ad2ae0>
+
+    def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch):
+        from pathlib import Path
+        import Models
+        import util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        root = Path(Models.__file__).resolve().parents[1]
+        model, _, data = _fresh_model(str(root/'data/XOR_grammar.xml'))
+        reconstructed, answered = [], []
+        reconstruct = model._reconstruct_trial
+        answer = Models.BasicModel._sentence_answer_error
+        def read(record):
+            reconstructed.append(record)
+            return reconstruct(record)
+        def score(self, state, sid, active, observation, **kwargs):
+            record = observation['record']
+            answered.append(record)
+            cost = answer(self, state, sid, active, observation, **kwargs)
+            assert torch.autograd.grad(cost.sum(), record.root, retain_graph=True, allow_unused=True)[0] is None
+            return cost
+        monkeypatch.setattr(model, '_reconstruct_trial', read)
+        monkeypatch.setattr(Models.BasicModel, '_sentence_answer_error', score)
+        optimizer = model.getOptimizer(lr=.01)
+        try:
+            raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+            batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+>           model.runBatch(train=True, optimizer=optimizer, batchSize=4, split='train', batch_override=batch)
+
+test/test_objective_ownership.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13835: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14008: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14376: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8792: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10275: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8489: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 1
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 1
+
+bin/ClauseRow.py:225: ValueError
+___ test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml] ___
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1175/test_grammar_resolves_each_wor0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1345bdac0>
+configuration = 'XOR_grammar.xml'
+
+    @pytest.mark.parametrize('configuration', ['XOR_grammar.xml', 'MM_grammar.xml', 'aligned'])
+    def test_grammar_resolves_each_word_to_its_full_object_code(tmp_path, monkeypatch, configuration):
+        import util
+        from Models import FunctionalPeerSTM
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        if configuration == 'aligned':
+            from test_compiled_word_chunk import _tiny_canonical_model
+            model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8')
+            model.reconstruct_in_loop = False
+            model._tensor_peer_while_eager = True
+            model._chart_compose_per_word = lambda: None
+        else:
+            from test_mm_xor import _fresh_model
+            import Models
+            model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data' / configuration))
+        model.eval()
+        seen = []
+        resolve = FunctionalPeerSTM.resolve_top_reference
+        def observed(state, idea, row, order, activation, gate):
+            if bool(gate.any()):
+                owner = model._concept_owner()
+                expected = owner.similarity_codebook.lookup_rows(row[gate]) * activation[gate, None]
+                torch.testing.assert_close(idea[gate], expected, rtol=0, atol=0)
+                seen.extend(row[gate].tolist())
+            return resolve(state, idea, row, order, activation, gate)
+        monkeypatch.setattr(FunctionalPeerSTM, 'resolve_top_reference', staticmethod(observed))
+        try:
+            inputs = model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there'])
+            with torch.no_grad():
+>               model(inputs)
+
+test/test_grammar_object_leaves.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 1
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 1
+
+bin/ClauseRow.py:225: ValueError
+___ test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml] ____
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1175/test_grammar_resolves_each_wor1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13233e0f0>
+configuration = 'MM_grammar.xml'
+
+    @pytest.mark.parametrize('configuration', ['XOR_grammar.xml', 'MM_grammar.xml', 'aligned'])
+    def test_grammar_resolves_each_word_to_its_full_object_code(tmp_path, monkeypatch, configuration):
+        import util
+        from Models import FunctionalPeerSTM
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        if configuration == 'aligned':
+            from test_compiled_word_chunk import _tiny_canonical_model
+            model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8')
+            model.reconstruct_in_loop = False
+            model._tensor_peer_while_eager = True
+            model._chart_compose_per_word = lambda: None
+        else:
+            from test_mm_xor import _fresh_model
+            import Models
+            model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data' / configuration))
+        model.eval()
+        seen = []
+        resolve = FunctionalPeerSTM.resolve_top_reference
+        def observed(state, idea, row, order, activation, gate):
+            if bool(gate.any()):
+                owner = model._concept_owner()
+                expected = owner.similarity_codebook.lookup_rows(row[gate]) * activation[gate, None]
+                torch.testing.assert_close(idea[gate], expected, rtol=0, atol=0)
+                seen.extend(row[gate].tolist())
+            return resolve(state, idea, row, order, activation, gate)
+        monkeypatch.setattr(FunctionalPeerSTM, 'resolve_top_reference', staticmethod(observed))
+        try:
+            inputs = model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there'])
+            with torch.no_grad():
+>               model(inputs)
+
+test/test_grammar_object_leaves.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 2
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 2
+
+bin/ClauseRow.py:225: ValueError
+_______ test_grammar_resolves_each_word_to_its_full_object_code[aligned] _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1175/test_grammar_resolves_each_wor2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13226a060>
+configuration = 'aligned'
+
+    @pytest.mark.parametrize('configuration', ['XOR_grammar.xml', 'MM_grammar.xml', 'aligned'])
+    def test_grammar_resolves_each_word_to_its_full_object_code(tmp_path, monkeypatch, configuration):
+        import util
+        from Models import FunctionalPeerSTM
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        if configuration == 'aligned':
+            from test_compiled_word_chunk import _tiny_canonical_model
+            model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8')
+            model.reconstruct_in_loop = False
+            model._tensor_peer_while_eager = True
+            model._chart_compose_per_word = lambda: None
+        else:
+            from test_mm_xor import _fresh_model
+            import Models
+            model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data' / configuration))
+        model.eval()
+        seen = []
+        resolve = FunctionalPeerSTM.resolve_top_reference
+        def observed(state, idea, row, order, activation, gate):
+            if bool(gate.any()):
+                owner = model._concept_owner()
+                expected = owner.similarity_codebook.lookup_rows(row[gate]) * activation[gate, None]
+                torch.testing.assert_close(idea[gate], expected, rtol=0, atol=0)
+                seen.extend(row[gate].tolist())
+            return resolve(state, idea, row, order, activation, gate)
+        monkeypatch.setattr(FunctionalPeerSTM, 'resolve_top_reference', staticmethod(observed))
+        try:
+            inputs = model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there'])
+            with torch.no_grad():
+>               model(inputs)
+
+test/test_grammar_object_leaves.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8300: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23499: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17582: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21965: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21524: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20726: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    row = _append_observed_meaning(store, view['clauses'][b],
+bin/Models.py:163: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:333: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:300: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), reference = 8
+
+    def point_of_row(self, reference):
+        """Read a concept/idea point; a relation explicitly has no point."""
+        index = self.index_of_row(reference)
+        if index is not None:
+            return self.slots[index, 0] if int(self.rel_type[index]) == self.REL_NONE else None
+        occurrence = self._native_reference_indexes()[1].get(int(reference))
+        if occurrence is not None:
+            return self.slots[occurrence]
+        resolve = getattr(self, '_concept_point', None)
+        if resolve is None:
+            raise ValueError('shared concept index is not attached')
+        point = resolve(int(reference))
+        if point is None:
+>           raise ValueError(f'unavailable shared row {reference}')
+E           ValueError: unavailable shared row 8
+
+bin/ClauseRow.py:225: ValueError
+____ test_get_optimizer_routes_only_sparse_shared_cs_parameter_row_locally _____
+
+    def test_get_optimizer_routes_only_sparse_shared_cs_parameter_row_locally():
+        cb = Codebook()
+        cb.W = nn.Parameter(torch.randn(128, 6))
+        cb.sparse_lookup_grad = True
+        dense = nn.Parameter(torch.randn(6, 6))
+        fake_space = types.SimpleNamespace(
+            getParameters=lambda: [cb.W, dense])
+    
+        model = BaseModel()
+        model.spaces = [fake_space]
+        model.conceptualSpaces = [
+            types.SimpleNamespace(similarity_codebook=cb)]
+>       optimizer = model.getOptimizer(lr=1e-3)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_row_local_concept_optimizer.py:213: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:2921: in getOptimizer
+    owners = self.objective_parameter_groups(SimpleNamespace(param_groups=[{'params': params}]))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:2662: in objective_parameter_groups
+    output.update(id(p) for p in self.synthesis_parameters() if id(p) in available)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BaseModel(), name = 'synthesis_parameters'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BaseModel' object has no attribute 'synthesis_parameters'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_only_free_term
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_only_free_term
+FAILED test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]
+FAILED test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+FAILED test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row
+FAILED test/test_objective_ownership.py::test_trial_consumers_share_one_record_and_answer_cannot_write_it
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]
+FAILED test/test_row_local_concept_optimizer.py::test_get_optimizer_routes_only_sparse_shared_cs_parameter_row_locally
+13 failed, 121 passed, 1 warning in 35.23s

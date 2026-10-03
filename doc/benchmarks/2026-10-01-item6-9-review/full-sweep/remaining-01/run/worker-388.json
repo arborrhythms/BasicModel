@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_marker_replay_canonical.py::test_marker_id_resolved_to_canonical_surface"
+  ],
+  "completed": [
+    "test/test_marker_replay_canonical.py::test_marker_id_resolved_to_canonical_surface"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_marker_replay_canonical.py::test_marker_id_resolved_to_canonical_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016978749990812503,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

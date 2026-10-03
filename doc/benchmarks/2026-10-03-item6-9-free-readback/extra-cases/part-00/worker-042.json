@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "completed": [
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "slow_selected": [
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11026037501869723,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

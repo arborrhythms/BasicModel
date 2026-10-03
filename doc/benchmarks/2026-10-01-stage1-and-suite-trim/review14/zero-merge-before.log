@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero_merge_probe.py", line 5, in <module>
+    Error().merge(object(),weight=0.)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py", line 18070, in merge
+    for name, source in other._terms.items():
+                        ^^^^^^^^^^^^
+AttributeError: 'object' object has no attribute '_terms'

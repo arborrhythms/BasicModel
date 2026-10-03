@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+    "a",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-03"
+  ],
+  "pid": 82606,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 678053424,
+  "elapsed_seconds": 78.20879141706973,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-03/driver.log"
+}

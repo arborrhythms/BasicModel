@@ -1,0 +1,9 @@
+...F                                                                     [100%]
+=================================== FAILURES ===================================
+_____ test_sentence_winners_are_row_local_and_precede_the_next_perception ______
+test/test_sentence_compose.py:55: in test_sentence_winners_are_row_local_and_precede_the_next_perception
+    assert updates[1] > updates[0] and updates[3] > updates[2]
+E   assert (0.0 > 0.0)
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception
+1 failed, 3 passed in 3.40s

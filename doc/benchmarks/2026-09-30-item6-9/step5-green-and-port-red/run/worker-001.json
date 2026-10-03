@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4347291658632457,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

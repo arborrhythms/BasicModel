@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_mereology.py::TestHyperrectangleOverlapVolume::test_disjoint_along_one_axis"
+  ],
+  "completed": [
+    "test/test_mereology.py::TestHyperrectangleOverlapVolume::test_disjoint_along_one_axis"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_mereology.py::TestHyperrectangleOverlapVolume::test_disjoint_along_one_axis",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004552909995254595,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,74 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+    "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+    "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+    "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+    "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial"
+  ],
+  "completed": [
+    "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+    "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+    "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+    "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+    "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.022545833999174647,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008798330090939999,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005611250089714304,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6237470839987509,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012002910079900175,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019537500338628888,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

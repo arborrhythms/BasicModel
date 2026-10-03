@@ -1,0 +1,38 @@
+...............F..F.......................                               [100%]
+=================================== FAILURES ===================================
+_ test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient _
+test/test_supplied_answer_training.py:41: in test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient
+    cost, *_ = BasicModel._sentence_path_cost(model, state, 0, torch.ones(2, dtype=torch.bool))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20899: in _sentence_path_cost
+    BasicModel._sentence_answer_error(self, state, sid, active, observation, registry=errors)
+bin/Models.py:20992: in _sentence_answer_error
+    self.loss.register(registry, 'answer', pred, target.to(pred), mask=active, category='prediction', objective='output')
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'loss'
+_________ test_native_trial_reads_the_completed_point_with_live_credit _________
+test/test_supplied_answer_training.py:122: in test_native_trial_reads_the_completed_point_with_live_credit
+    error = BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
+bin/Models.py:20992: in _sentence_answer_error
+    self.loss.register(registry, 'answer', pred, target.to(pred), mask=active, category='prediction', objective='output')
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'loss'
+=============================== warnings summary ===============================
+test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners
+test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7667: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7667: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-375/test_sentence_trials_keep_thei0/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient
+FAILED test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit
+2 failed, 40 passed, 4 warnings in 10.87s

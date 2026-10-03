@@ -1,0 +1,134 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+    "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+    "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+    "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary",
+    "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+    "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+    "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+    "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+    "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+    "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+    "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
+  ],
+  "completed": [
+    "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+    "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+    "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+    "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary",
+    "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+    "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+    "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+    "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+    "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+    "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+    "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021033399389125407,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.005008207997889258,
+      "message": "test/test_type_run_spans.py:208: in test_live_ws_has_one_property_basis_with_canonical_teaching_rows\n    ws = _live_ws(\"word\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004338124999776483,
+      "message": "test/test_type_run_spans.py:224: in test_property_teaching_rows_are_idempotent_on_rebuild\n    a = _live_ws(\"word\")\n        ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004278708001947962,
+      "message": "test/test_type_run_spans.py:237: in test_byte_mode_owns_properties_without_a_type_dictionary\n    ws = _live_ws(\"byte\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004289415999664925,
+      "message": "test/test_type_run_spans.py:246: in test_type_subspace_adds_no_state_dict_keys\n    word = _live_ws(\"word\")\n           ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004550999990897253,
+      "message": "test/test_type_run_spans.py:265: in test_live_derived_lut_is_byte_identical_to_module_lut\n    ws = _live_ws(\"word\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004105416999664158,
+      "message": "test/test_type_run_spans.py:270: in test_derived_cut_byte_identical_across_a_spread_of_inputs\n    ws = _live_ws(\"word\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004421208999701776,
+      "message": "test/test_type_run_spans.py:292: in test_checkpoint_roundtrip_preserves_property_definitions_and_cut\n    a = _live_ws(\"word\")\n        ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004337416001362726,
+      "message": "test/test_type_run_spans.py:309: in test_property_memberships_are_owned_parameters_and_train\n    ws = _live_ws(\"word\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010694160009734333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010198375006439164,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.037274915986927226,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

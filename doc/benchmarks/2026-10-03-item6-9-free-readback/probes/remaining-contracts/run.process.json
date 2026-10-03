@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_sentence_compose.py",
+    "test/test_trial_policy_ownership.py",
+    "test/test_generation_lesson.py",
+    "test/test_supplied_answer_training.py",
+    "test/test_tied_reconstruction_objective.py",
+    "test/test_grammar_sentence_scope.py",
+    "test/test_mixing_reconstruction_bank.py",
+    "test/test_gradient_factorization.py",
+    "test/test_concept_code_ownership.py",
+    "test/test_reconstruction_precedence.py",
+    "test/test_reader_trial_ownership.py"
+  ],
+  "pid": 42922,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 875694240,
+  "elapsed_seconds": 12.663977624994004,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/remaining-contracts/run.log"
+}

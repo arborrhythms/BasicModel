@@ -1,0 +1,5 @@
+
+1 test collected in 2.00s
+ERROR: not found: /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py::test_
+(no match in any of [<Module test_reverse_traversal.py>])
+

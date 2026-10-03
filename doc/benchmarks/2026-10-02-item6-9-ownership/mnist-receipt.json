@@ -1,0 +1,36 @@
+{
+  "git_lfs": "git-lfs/3.8.0 (GitHub; darwin arm64; go 1.27.1)",
+  "production_xml_unchanged": {
+    "data/mnist.xml": true,
+    "data/ergodic.xml": true,
+    "data/ergodic-only.xml": true
+  },
+  "data": {
+    "mnist_train.csv": {
+      "bytes": 109640201,
+      "sha256": "06e64b0bf65de89c522348319ce5f63f43fb1cb40e1ce3c2ff43c1d3b8a0e14c"
+    },
+    "mnist_test.csv": {
+      "bytes": 18303650,
+      "sha256": "c5adfcc9ce29069f8a988a6af1dcdc009bba975d2c98a52233661f79d880292b"
+    }
+  },
+  "test": "test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch",
+  "rows": 32,
+  "batch": 2,
+  "arms": [
+    false,
+    true
+  ],
+  "test_only_geometry": {
+    "ConceptualSpace": {
+      "nOutput": 784,
+      "nVectors": 784
+    },
+    "WholeSpace": {
+      "nOutput": 784,
+      "nVectors": 784
+    }
+  },
+  "limitation": "Original numeric XML geometries still fail; test-local geometry trains, numeric perceptual reconstruction warns of missing mask/targets."
+}

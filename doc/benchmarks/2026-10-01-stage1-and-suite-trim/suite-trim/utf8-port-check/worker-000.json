@@ -1,0 +1,93 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+    "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+    "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+    "test/test_meronomy_utf8.py::test_admitted_word_and_utf8_bytes_replay_together",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+    "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row"
+  ],
+  "completed": [
+    "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+    "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+    "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+    "test/test_meronomy_utf8.py::test_admitted_word_and_utf8_bytes_replay_together",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+    "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.03802854199602734,
+      "message": "test/test_meronomy_utf8.py:52: in test_byte_witness_round_trips_non_ascii\n    assert raw.decode(\"utf-8\") == surface, surface\nE   AssertionError: caf\u00e9 d\u00e9j\u00e0\nE   assert 'caf? d?j?' == 'caf\u00e9 d\u00e9j\u00e0'\nE     \nE     - caf\u00e9 d\u00e9j\u00e0\nE     + caf? d?j?",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.03188729200337548,
+      "message": "test/test_meronomy_utf8.py:60: in test_byte_witness_offsets_cover_the_surface_without_overlap\n    assert spans[-1][1] == len(surface.encode(\"utf-8\"))\nE   AssertionError: assert 9 == 12\nE    +  where 12 = len(b'caf\\xc3\\xa9 d\\xc3\\xa9j\\xc3\\xa0')\nE    +    where b'caf\\xc3\\xa9 d\\xc3\\xa9j\\xc3\\xa0' = <built-in method encode of str object at 0x109bcbb90>('utf-8')\nE    +      where <built-in method encode of str object at 0x109bcbb90> = 'caf\u00e9 d\u00e9j\u00e0'.encode",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.02886854200187372,
+      "message": "test/test_meronomy_utf8.py:69: in test_split_multibyte_witness_keeps_raw_bytes\n    assert raw == \"\u00e9\".encode(\"utf-8\")\nE   AssertionError: assert b'?' == b'\\xc3\\xa9'\nE     \nE     At index 0 diff: b'?' != b'\\xc3'\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_admitted_word_and_utf8_bytes_replay_together",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.08962208300363272,
+      "message": "test/test_meronomy_utf8.py:80: in test_admitted_word_and_utf8_bytes_replay_together\n    assert raw.decode(\"utf-8\") == \"book caf\u00e9\"\nE   AssertionError: assert 'book caf?' == 'book caf\u00e9'\nE     \nE     - book caf\u00e9\nE     ?         ^\nE     + book caf?\nE     ?         ^",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.033387374998710584,
+      "message": "test/test_meronomy_utf8.py:90: in test_surface_witness_replays_words_and_spaces\n    assert raw.decode(\"utf-8\") == surface\nE   AssertionError: assert 'the book has a ' == 'the book has a cover'\nE     \nE     - the book has a cover\nE     ?                -----\nE     + the book has a",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029665124995517544,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02961170899652643,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02892962500482099,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

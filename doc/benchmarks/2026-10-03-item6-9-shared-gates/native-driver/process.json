@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements"
+  ],
+  "pid": 69147,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 23399522856,
+  "elapsed_seconds": 778.696436875005,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/native-driver/driver.log"
+}

@@ -1,0 +1,14 @@
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_checkpoint_restores_fixed_owner_and_optimizer_by_name __________
+test/test_partspace_dynamic_capacity.py:273: in test_checkpoint_restores_fixed_owner_and_optimizer_by_name
+    assert tuple(restored_optimizer.state[restored_w]["exp_avg"].shape) \
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'exp_avg'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1329/test_checkpoint_restores_fixed0/grown.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1329/test_checkpoint_restores_fixed0/grown.ckpt
+[BasicModel] optimizer checkpoint remapped by parameter name: restored 1 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)
+=========================== short test summary info ============================
+FAILED test/test_partspace_dynamic_capacity.py::test_checkpoint_restores_fixed_owner_and_optimizer_by_name
+1 failed, 2 passed in 2.71s

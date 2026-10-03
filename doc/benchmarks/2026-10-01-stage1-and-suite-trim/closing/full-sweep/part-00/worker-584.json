@@ -1,0 +1,84 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+    "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+    "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+    "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction",
+    "test/test_reconstruction_precedence.py::test_sparse_answer_projection_preserves_the_sparse_code_gradient",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[none]",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[eager]"
+  ],
+  "completed": [
+    "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+    "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+    "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+    "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction",
+    "test/test_reconstruction_precedence.py::test_sparse_answer_projection_preserves_the_sparse_code_gradient",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[none]",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[eager]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007372499967459589,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013500499990186654,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004750829975819215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022370798978954554,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_sparse_answer_projection_preserves_the_sparse_code_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007066249963827431,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[none]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7382287920045201,
+      "message": "",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[eager]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 50.82257816698984,
+      "message": "",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nbatch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

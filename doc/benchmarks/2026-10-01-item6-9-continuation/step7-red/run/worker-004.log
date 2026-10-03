@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_exploration_forces_only_a_round_with_a_legal_alternative _________
+test/test_inverse_unary_exclusion.py:63: in test_exploration_forces_only_a_round_with_a_legal_alternative
+    assert exploit['used'].tolist() == [2]
+E   assert [6] == [2]
+E     
+E     At index 0 diff: 6 != 2
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative
+1 failed in 2.38s

@@ -324,7 +324,6 @@ class TestTorusLegacyMode(unittest.TestCase):
 
         emb = Lexicon(256, 6, ball=False)
         self.assertFalse(emb.ball)
-        self.assertTrue(emb.torus)               # backward-compat alias
         self.assertTrue(torch.all(emb.weight >= -1.0))
         self.assertTrue(torch.all(emb.weight < 1.0))
 
@@ -336,14 +335,6 @@ class TestTorusLegacyMode(unittest.TestCase):
         self.assertTrue(torch.all(emb.weight >= -1.0))
         self.assertTrue(torch.all(emb.weight < 1.0))
 
-    def test_legacy_torus_kwarg_alias(self):
-        # The legacy ``torus=True`` kwarg still works and is equivalent
-        # to ``ball=False``.
-        emb = Lexicon(64, 4, torus=True)
-        self.assertFalse(emb.ball)
-        self.assertTrue(emb.torus)
-        self.assertTrue(torch.all(emb.weight >= -1.0))
-        self.assertTrue(torch.all(emb.weight < 1.0))
 
     def test_torus_distance_primitives_still_work(self):
         a = torch.tensor([0.4, -0.7])

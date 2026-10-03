@@ -1,0 +1,282 @@
+[
+  {
+    "file": "test/test_svo_end_to_end.py",
+    "test": "test_svo_extraction_on_real_sentence",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_symbolic_iteration.py",
+    "test": "test_csleg_one_symbol_apoha_emission",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_symbolic_iteration.py",
+    "test": "test_csleg_virgin_fallback_stays_continuous",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_symbolic_iteration.py",
+    "test": "test_csleg_adoption_writes_tags_and_is_idempotent",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_symbolic_iteration.py",
+    "test": "test_csleg_recon_gather_lands_on_winner_rows",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_symbolic_iteration.py",
+    "test": "test_csleg_naming_indices_thread_full_frame",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_symbolic_iteration.py",
+    "test": "test_mm20m_second_order_reverse_keys_codebook",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_symbolic_iteration.py",
+    "test": "test_forward_body_lifts_csleg_recon",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_mm_boolean.py",
+    "test": "test_explicit_test_sentences",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_mm_boolean.py",
+    "test": "test_encode_decode_by_best_fit",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_modality_configs.py",
+    "test": "test_all_live_configs_build_with_canonical_shapes",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_config_loads",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_dataset_is_inline",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_input_elements_parsed",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_output_elements_parsed",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_train_input_contains_sentences",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_train_output_labels",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_four_training_examples",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_labels_as_float_tensors",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_single_input_element_not_list",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_model_has_input_space",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_space_char_in_vocab",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_xor_words_in_vocab",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_forward_pass_runs",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_output_shape",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_consecutive_join_no_auto_spaces",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_space_token_predicted_by_reverse",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_null_char_in_embedding_vocab",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_null_embedding_is_regular_vector",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_reconstruct_buffer_stops_at_null_token",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_xor_spaces.py",
+    "test": "test_trailing_null_produces_clean_reconstruction",
+    "reason": "\u00a715.6 deletes this historical configuration and its tests."
+  },
+  {
+    "file": "test/test_nanochat_grammar_eval.py",
+    "test": "test_64_word_trace_reduces_online_in_stm8_without_part_truncation",
+    "reason": "\u00a715.6 deletes historical nanochat gate/pilot; manifest tooling remains."
+  },
+  {
+    "file": "test/test_nanochat_grammar_eval.py",
+    "test": "test_new_model_configs_enable_word_grain_boundary",
+    "reason": "\u00a715.6 deletes historical nanochat gate/pilot; manifest tooling remains."
+  },
+  {
+    "file": "test/test_explicit_dimensions.py",
+    "test": "test_at_least_50_pct_inputs_reconstruct",
+    "reason": "\u00a715.6 deletes the obsolete XOR_recon configuration."
+  },
+  {
+    "file": "test/test_testpoint.py",
+    "test": "test_xor_recon_xml",
+    "reason": "\u00a715.6 deletes these configurations."
+  },
+  {
+    "file": "test/test_testpoint.py",
+    "test": "test_xor_spaces_xml",
+    "reason": "\u00a715.6 deletes these configurations."
+  },
+  {
+    "file": "test/test_idea_decode.py",
+    "test": "test_idea_decode_defaults_off",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_idea_decode.py",
+    "test": "test_gate_skips_generate_rebuild_when_on",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_idea_decode_d3.py",
+    "test": "test_idea_decode_defaults_off",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_idea_decode_d3.py",
+    "test": "test_grammar_decode_runs_from_the_completed_field",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_idea_decode_d3.py",
+    "test": "test_consumer_drives_seed_on_shape_match",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_idea_decode_d3.py",
+    "test": "test_consumer_falls_back_on_width_mismatch",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_idea_decode_d3.py",
+    "test": "test_reverse_off_path_unchanged",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_idea_decode_owner.py",
+    "test": "test_idea_decode_uses_the_field_and_a_fresh_carrier",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_idea_decode_owner.py",
+    "test": "test_idea_decode_without_a_completed_field_has_no_operand",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_where_tiling.py",
+    "test": "test_many_parts_covering_one_whole_routes_sigma",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_where_tiling.py",
+    "test": "test_one_part_covered_by_immediate_wholes_routes_pi",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_where_tiling.py",
+    "test": "test_exact_object_settles_and_remains_part_of_larger_whole",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_where_tiling.py",
+    "test": "test_gap_raises_instead_of_inventing_boundary",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_where_tiling.py",
+    "test": "test_routes_are_per_row_not_batch_amax",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_where_tiling.py",
+    "test": "test_refinement_schedule_reaches_exact_identity",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_where_tiling.py",
+    "test": "test_curated_utf8_corpus_is_exact",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_where_tiling.py",
+    "test": "test_model_callosum_carries_tiling_to_final_cs",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_decode_exemplars.py",
+    "test": "test_mm_decode_builds_and_wires_idea_decode",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_decode_exemplars.py",
+    "test": "test_mm_phrase_decode_builds_and_wires_idea_decode",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  },
+  {
+    "file": "test/test_decode_exemplars.py",
+    "test": "test_mm_decode_forward_smoke",
+    "reason": "\u00a715.6 retires ideaDecode / overlapWhereTiling and their tests."
+  }
+]

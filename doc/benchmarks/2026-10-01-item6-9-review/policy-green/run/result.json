@@ -1,0 +1,265 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[explore]",
+    "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[explore]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-000.json"
+      ],
+      "pid": 57157,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 5206955264,
+      "elapsed_seconds": 887.3256174160015,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 858.8167147919994,
+          "message": "test/test_output_walk.py:369: in test_runbatch_does_not_train_generate_policy_without_supplied_answers\n    learned = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14231: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14412: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14782: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9275: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10758: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8974: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8786: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24246: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18008: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22428: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21170: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21168: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20615: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:285: in backward_probe\n    assert all(g is None for g in observed['total_grads'])\nE   assert False\nE    +  where False = all(<generator object _policy_training_probe.<locals>.backward_probe.<locals>.<genexpr> at 0x7026263d30>)",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-001.json"
+      ],
+      "pid": 57158,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 5232628944,
+      "elapsed_seconds": 892.3879561249996,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 863.8352333750008,
+          "message": "test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight\n    got = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14231: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14412: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14782: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9275: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10758: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8974: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8786: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24246: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18008: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22428: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21170: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21168: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20615: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:285: in backward_probe\n    assert all(g is None for g in observed['total_grads'])\nE   assert False\nE    +  where False = all(<generator object _policy_training_probe.<locals>.backward_probe.<locals>.<genexpr> at 0x70310dd560>)",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-002.json"
+      ],
+      "pid": 57159,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 5200450768,
+      "elapsed_seconds": 893.3647995419997,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 864.5955425829998,
+          "message": "test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight\n    got = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14231: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14412: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14782: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9275: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10758: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8974: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8786: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24246: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18008: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22428: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21170: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21168: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20615: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:285: in backward_probe\n    assert all(g is None for g in observed['total_grads'])\nE   assert False\nE    +  where False = all(<generator object _policy_training_probe.<locals>.backward_probe.<locals>.<genexpr> at 0x701e9da8e0>)",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-003.json"
+      ],
+      "pid": 57160,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 5221422336,
+      "elapsed_seconds": 894.340715667,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 864.5157834999991,
+          "message": "test/test_output_walk.py:407: in test_runbatch_generate_policy_masks_rows_without_supplied_answers\n    got = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14231: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14412: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14782: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9275: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10758: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8974: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8786: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24246: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18008: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22428: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21967: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21170: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21168: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20615: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:285: in backward_probe\n    assert all(g is None for g in observed['total_grads'])\nE   assert False\nE    +  where False = all(<generator object _policy_training_probe.<locals>.backward_probe.<locals>.<genexpr> at 0x702c3ebac0>)",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-004.json"
+      ],
+      "pid": 57921,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 485770608,
+      "elapsed_seconds": 4.7736067499972705,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]"
+      ],
+      "completed": [
+        "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.27952216700214194,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-005.json"
+      ],
+      "pid": 57922,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 486081880,
+      "elapsed_seconds": 5.746030250000331,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[explore]"
+      ],
+      "completed": [
+        "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[explore]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[explore]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.27951866700095707,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run",
+  "elapsed_seconds": 904.2599807080005,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 20849333152,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/collect.json"
+    ],
+    "pid": 57149,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 422921392,
+    "elapsed_seconds": 3.510796584003401,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-green/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]",
+        "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[explore]",
+        "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+        "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

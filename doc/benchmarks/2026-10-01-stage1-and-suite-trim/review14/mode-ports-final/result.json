@@ -1,0 +1,513 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_type_run_spans.py::test_lut_type_assignments",
+    "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+    "test/test_type_run_spans.py::test_example_words_split_on_space",
+    "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+    "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+    "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+    "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+    "test/test_type_run_spans.py::test_single_char",
+    "test/test_type_run_spans.py::test_punct_only_run",
+    "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+    "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+    "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+    "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+    "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
+    "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+    "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+    "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+    "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+    "test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary",
+    "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+    "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+    "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+    "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+    "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+    "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+    "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
+  ],
+  "completed": [
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_type_run_spans.py::test_lut_type_assignments",
+    "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+    "test/test_type_run_spans.py::test_example_words_split_on_space",
+    "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+    "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+    "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+    "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+    "test/test_type_run_spans.py::test_single_char",
+    "test/test_type_run_spans.py::test_punct_only_run",
+    "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+    "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+    "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+    "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+    "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
+    "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+    "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+    "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+    "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+    "test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary",
+    "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+    "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+    "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+    "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+    "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+    "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+    "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/worker-000.json"
+      ],
+      "pid": 53859,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 449185112,
+      "elapsed_seconds": 3.8582575420005014,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly"
+      ],
+      "completed": [
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.02313395899545867,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05137941699649673,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010638790990924463,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/worker-001.json"
+      ],
+      "pid": 53874,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 431834432,
+      "elapsed_seconds": 3.896210250008153,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_type_run_spans.py::test_lut_type_assignments",
+        "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+        "test/test_type_run_spans.py::test_example_words_split_on_space",
+        "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+        "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+        "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+        "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+        "test/test_type_run_spans.py::test_single_char",
+        "test/test_type_run_spans.py::test_punct_only_run",
+        "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+        "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+        "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+        "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+        "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
+        "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+        "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut"
+      ],
+      "completed": [
+        "test/test_type_run_spans.py::test_lut_type_assignments",
+        "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+        "test/test_type_run_spans.py::test_example_words_split_on_space",
+        "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+        "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+        "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+        "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+        "test/test_type_run_spans.py::test_single_char",
+        "test/test_type_run_spans.py::test_punct_only_run",
+        "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+        "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+        "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+        "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+        "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
+        "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+        "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_type_run_spans.py::test_lut_type_assignments",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00015741700190119445,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010666700836736709,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_words_split_on_space",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005280829936964437,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002102089929394424,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00021337499492801726,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00020216598932165653,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003260839876020327,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_single_char",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004015000013168901,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_punct_only_run",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00029845800600014627,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00015333299234043807,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00029254199762362987,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000225124997086823,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003110374993411824,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006522458003018983,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0032948339940048754,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00012737500946968794,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/worker-002.json"
+      ],
+      "pid": 53884,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 436471128,
+      "elapsed_seconds": 4.010190707995207,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+        "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+        "test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary",
+        "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+        "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+        "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+        "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+        "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+        "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+        "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+        "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
+      ],
+      "completed": [
+        "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+        "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+        "test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary",
+        "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+        "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+        "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+        "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+        "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+        "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+        "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+        "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007789041002979502,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008810416009509936,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0044108330039307475,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0041047920094570145,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.004088333007530309,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.008711624992429279,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009909792002872564,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.015681916993344203,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0007825840002624318,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.009726375006721355,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03645520799909718,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 600,
+    "suite_seconds": 1800,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final",
+  "elapsed_seconds": 15.930502541013993,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 449185112,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/collect.json"
+    ],
+    "pid": 53848,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 427984072,
+    "elapsed_seconds": 3.714809957993566,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-final/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+        "test/test_type_run_spans.py::test_lut_type_assignments",
+        "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+        "test/test_type_run_spans.py::test_example_words_split_on_space",
+        "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+        "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+        "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+        "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+        "test/test_type_run_spans.py::test_single_char",
+        "test/test_type_run_spans.py::test_punct_only_run",
+        "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+        "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+        "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+        "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+        "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
+        "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+        "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+        "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+        "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+        "test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary",
+        "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+        "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+        "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+        "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+        "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+        "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+        "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+        "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

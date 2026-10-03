@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mereology_raise.py::test_retired_wholespace_taxonomy_writer_is_absent"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-681.recycle.json"
+}

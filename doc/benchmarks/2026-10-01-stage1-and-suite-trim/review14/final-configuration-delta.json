@@ -1,0 +1,475 @@
+[
+  {
+    "config": "data/BasicModel.xml",
+    "delta": [
+      {
+        "path": "model/architecture[1]/training[1]/detachedReverse[1]",
+        "old": "false",
+        "new": null
+      }
+    ]
+  },
+  {
+    "config": "data/BasicModel_answers_benchmark.xml",
+    "delta": [
+      {
+        "path": "model/architecture[1]/training[1]/detachedReverse[1]",
+        "old": "true",
+        "new": null
+      }
+    ]
+  },
+  {
+    "config": "data/BasicModel_answers_tied_benchmark.xml",
+    "delta": [
+      {
+        "path": "model/architecture[1]/training[1]/detachedReverse[1]",
+        "old": "false",
+        "new": null
+      }
+    ]
+  },
+  {
+    "config": "data/BasicModel_expectation_benchmark.xml",
+    "delta": [
+      {
+        "path": "model/architecture[1]/training[1]/detachedReverse[1]",
+        "old": "true",
+        "new": null
+      }
+    ]
+  },
+  {
+    "config": "data/BasicModel_long_tied_benchmark.xml",
+    "delta": [
+      {
+        "path": "model/architecture[1]/training[1]/detachedReverse[1]",
+        "old": "false",
+        "new": null
+      }
+    ]
+  },
+  {
+    "config": "data/BasicModel_output_tied_benchmark.xml",
+    "delta": [
+      {
+        "path": "model/architecture[1]/training[1]/detachedReverse[1]",
+        "old": "false",
+        "new": null
+      }
+    ]
+  },
+  {
+    "config": "data/LM_5M.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "bpe",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "byte",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/LM_5M_IR.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "lexicon",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_20M_legacy.xml",
+    "disposition": "retired mode-only configuration"
+  },
+  {
+    "config": "data/MM_400M.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "lexicon",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "raw",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_add.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "byte",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_add_verb.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "word",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_bpe.xml",
+    "disposition": "retired mode-only configuration"
+  },
+  {
+    "config": "data/MM_decode.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "raw",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_global.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "word",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_grammar_wording.xml",
+    "delta": [
+      {
+        "path": "model/architecture[1]/training[1]/detachedReverse[1]",
+        "old": "false",
+        "new": null
+      }
+    ]
+  },
+  {
+    "config": "data/MM_init_scale.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_ltm_consolidation_fixture.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_masked_semantic.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "raw",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_math.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "byte",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_mereology.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "raw",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_mereology_serial.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "raw",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_meronomy_smoke.xml",
+    "delta": [
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "word",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_overlap_tiling.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "raw",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_phrase_decode.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "word",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_qa.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "word",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_query_reasoning.xml",
+    "delta": [
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "word",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_reading.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "word",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_sequence_predict.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "bpe",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "byte",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_sparse_concept.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "raw",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_symbol_tower.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "raw",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_symbolic_iter.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "bpe",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_xor.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "byte",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MM_xor_fixture.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "radix",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/MentalModel.xml",
+    "delta": [
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "sentence",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/RamsifiedModel.xml",
+    "delta": [
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "sentence",
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/model.xml",
+    "delta": [
+      {
+        "path": "model/PartSpace[1]/synthesis[1]",
+        "old": "lexicon",
+        "new": "meronomy"
+      },
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": null,
+        "new": "meronomy"
+      }
+    ]
+  },
+  {
+    "config": "data/stream_smoke.xml",
+    "delta": [
+      {
+        "path": "model/WholeSpace[1]/analysis[1]",
+        "old": "sentence",
+        "new": "meronomy"
+      }
+    ]
+  }
+]

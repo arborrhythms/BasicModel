@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_mereology.py::TestCopyLayer::test_swap_and_copy_dual"
+  ],
+  "completed": [
+    "test/test_mereology.py::TestCopyLayer::test_swap_and_copy_dual"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_mereology.py::TestCopyLayer::test_swap_and_copy_dual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020824999955948442,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

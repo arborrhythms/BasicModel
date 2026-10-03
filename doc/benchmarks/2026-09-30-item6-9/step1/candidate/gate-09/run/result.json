@@ -1,0 +1,92 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+  ],
+  "completed": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1/candidate/gate-09/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1/candidate/gate-09/run/worker-000.json"
+      ],
+      "pid": 40518,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4870197712,
+      "elapsed_seconds": 11.377085875021294,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1/candidate/gate-09/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+      ],
+      "completed": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.800717167090625,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.098s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.638s, 100.00%)\r\nrunEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.497s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1/candidate/gate-09/run",
+  "elapsed_seconds": 13.875397708965465,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 4870197712,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1/candidate/gate-09/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1/candidate/gate-09/run/collect.json"
+    ],
+    "pid": 40511,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181437280,
+    "elapsed_seconds": 2.1697587920352817,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1/candidate/gate-09/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

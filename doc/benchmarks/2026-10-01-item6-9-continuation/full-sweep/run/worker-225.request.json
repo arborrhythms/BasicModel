@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-225.recycle.json"
+}

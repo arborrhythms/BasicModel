@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology"
+  ],
+  "pid": 42981,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1602357432,
+  "elapsed_seconds": 13.73045279199141,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/serial-learning-after/run.log"
+}

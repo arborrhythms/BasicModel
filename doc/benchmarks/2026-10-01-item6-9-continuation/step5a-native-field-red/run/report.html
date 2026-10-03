@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 2/2 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.01313370899970323</pre></td><td><pre>test/test_supplied_answer_training.py:141: in test_automatic_answers_do_not_start_a_supplied_answer_trial
+    assert BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
+bin/Models.py:20655: in _sentence_answer_error
+    construction = self.reverseOutput(understanding, held, detach_understanding=False)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_supplied_answer_training.py:138: in forbidden
+    raise AssertionError(&#x27;an automatic answer must not start a supervised generation trial&#x27;)
+E   AssertionError: an automatic answer must not start a supervised generation trial</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.013470457999574137</pre></td><td><pre>test/test_supplied_answer_training.py:122: in test_native_trial_reads_the_completed_point_with_live_credit
+    error = BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
+bin/Models.py:20645: in _sentence_answer_error
+    fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20645: in &lt;genexpr&gt;
+    fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^
+&lt;string&gt;:12: in __init__
+    ???
+bin/Understanding.py:205: in __post_init__
+    raise ValueError(&#x27;a sentence end state occupies one or three slots&#x27;)
+E   ValueError: a sentence end state occupies one or three slots</pre></td><td><pre></pre></td></tr></table></body></html>

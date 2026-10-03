@@ -1,0 +1,40 @@
+{
+  "reason": "Native compiled free inverse failed before the first optimizer step; stop campaign to repair the cond backward layout. No gate run completed. All three started gate attempts preserved, not retried for a preferred outcome.",
+  "interrupted": [
+    "gate-05-trial-01",
+    "gate-05-trial-02",
+    "gate-05-trial-03"
+  ],
+  "completed_gate_runs": 0,
+  "interrupted_progress": {
+    "done": [],
+    "pending": 49,
+    "seconds": 118.44503866598825,
+    "active": [
+      {
+        "name": "gate-05-trial-01",
+        "pid": 44539,
+        "memory_bytes": 1164217224
+      },
+      {
+        "name": "gate-05-trial-02",
+        "pid": 44540,
+        "memory_bytes": 1111100176
+      },
+      {
+        "name": "gate-05-trial-03",
+        "pid": 44541,
+        "memory_bytes": 1112869672
+      }
+    ]
+  },
+  "partial_first_class_events": {
+    "batch_open": 163,
+    "activated_word_ranking": 324,
+    "trial": 324,
+    "gradient_snapshot": 3,
+    "optimizer_displacement": 486,
+    "selection": 162,
+    "batch": 162
+  }
+}

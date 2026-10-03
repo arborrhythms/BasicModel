@@ -1,0 +1,44 @@
+{
+  "kind": "sum",
+  "answers": [
+    0.5175716876983643,
+    0.5216690301895142,
+    0.5083737373352051,
+    0.5124710202217102
+  ],
+  "targets": [
+    0.0,
+    1.0,
+    1.0,
+    0.0
+  ],
+  "inputs": [
+    "hello world",
+    "hello there",
+    "loving world",
+    "loving there"
+  ],
+  "mse": 0.2502509653568268,
+  "correct": 2,
+  "class_bar": false,
+  "read_backs": [
+    "world hello",
+    "there hello",
+    "world loving",
+    "loving there"
+  ],
+  "unavailable": [
+    false,
+    false,
+    false,
+    false
+  ],
+  "reconstructed": 4,
+  "reconstruction_bar": true,
+  "contrast": -5.960464477539063e-08,
+  "max_deviation_from_half": 0.02166903018951416,
+  "half_at_float32_precision": false,
+  "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+  "sum_bar": true,
+  "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)"
+}

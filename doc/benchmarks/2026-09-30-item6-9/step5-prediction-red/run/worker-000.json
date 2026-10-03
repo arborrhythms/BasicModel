@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5_prediction.py::test_sentence_prediction_trials_backpropagate_independently"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5_prediction.py::test_sentence_prediction_trials_backpropagate_independently"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5_prediction.py::test_sentence_prediction_trials_backpropagate_independently",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.410502958111465,
+      "message": "doc/benchmarks/2026-09-30-item6-9/probe_step5_prediction.py:24: in test_sentence_prediction_trials_backpropagate_independently\n    gradients_b = torch.autograd.grad(second.sum(), parameters, allow_unused=True)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad\n    result_tuple = handle_torch_function(\n.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function\n    result = mode.__torch_function__(public_api, types, args, kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:594: in grad\n    result = _engine_run_backward(\n.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward\n    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass\nE   RuntimeError: Trying to backward through the graph a second time (or directly access saved tensors after they have already been freed). Saved intermediate values of the graph are freed when you call .backward() or autograd.grad(). Specify retain_graph=True if you need to backward through the graph a second time or if you need to access saved tensors after calling backward.",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

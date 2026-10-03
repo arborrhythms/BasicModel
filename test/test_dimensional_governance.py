@@ -49,7 +49,7 @@ def _build(cfg_name):
 @pytest.mark.slow
 def test_mm_5m_builds_and_forwards():
     import torch, Models
-    m = _build("MM_20M_legacy.xml"); Models.TheData.load("xor")
+    m = _build("MM_20M_xor.xml"); Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     inp_items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(inp_items)
@@ -158,12 +158,12 @@ def test_cs_ws_recurrent_input_mismatch_raises():
     # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=1024 and
     # WS.nInputDim=1024. Force WS.nInputDim to mismatch while leaving its
     # native peer output alone.
-    src = _ref_text("MM_20M_legacy.xml")
+    src = _ref_text("MM_20M_xor.xml")
     broken = src.replace(
         "<nInputDim>1024</nInputDim>\n    <nVectors>65536</nVectors>\n"
-        "    <nDim>1024</nDim>\n    <nOutput>1024</nOutput>",
+        "    <nDim>1024</nDim>\n    <nOutput>8</nOutput>",
         "<nInputDim>999</nInputDim>\n    <nVectors>65536</nVectors>\n"
-        "    <nDim>1024</nDim>\n    <nOutput>1024</nOutput>")
+        "    <nDim>1024</nDim>\n    <nOutput>8</nOutput>")
     assert broken != src, "fixture edit did not apply (SS block changed?)"
     with pytest.raises(ValueError) as ei:
         _build_from_text(broken, "cs_ws_mismatch")
@@ -176,7 +176,7 @@ def test_cs_os_direct_handoff_mismatch_raises():
     # Break the direct terminal CS->OS interface. MM_20M emits CS [8,1024]
     # and OS consumes [8,1024]. Force OS.nInput=7; exact event geometry, not a
     # coincidentally equal flattened product, is the contract.
-    src = _ref_text("MM_20M_legacy.xml")
+    src = _ref_text("MM_20M_xor.xml")
     broken = src.replace("<OutputSpace>\n    <nInput>8</nInput>",
                          "<OutputSpace>\n    <nInput>7</nInput>")
     assert broken != src, "fixture edit did not apply (OutputSpace block?)"
@@ -192,7 +192,7 @@ def test_reference_configs_still_build_no_false_positive():
     # The recurrent WS input and direct CS->OS checks must not reject either
     # reference config. MM_20M carries a deep conceptual event; XOR_exact is
     # the equal-width case.
-    for cfg in ("MM_20M_legacy.xml", "XOR_exact.xml"):
+    for cfg in ("MM_20M_xor.xml", "XOR_exact.xml"):
         m = _build(cfg)
         assert m is not None, cfg
 
@@ -219,7 +219,7 @@ def test_reference_configs_still_build_no_false_positive():
 # accuracy is asserted.
 #
 # Fixture note (Task 6, plan 2026-07-03-reconstruction-fidelity-execution.md):
-# this shape WAS data/MM_20M_grammar.xml verbatim until the 2026-07-04
+# this shape WAS data/MM_ladder.xml verbatim until the 2026-07-04
 # meronomy/meronomy switch moved that config to equal PS/CS widths (the
 # regroup no-op case). The deep-CS premise lives on here as the test's own
 # inline fixture (the pre-switch grammar space blocks, byte analysis).
@@ -265,7 +265,7 @@ _DEEP_CS_SERIAL_XML = """<?xml version="1.0" ?>
     <stmCapacity>8</stmCapacity>
   </ConceptualSpace>
   <WholeSpace>
-    <analysis>byte</analysis>
+    <analysis>meronomy</analysis>
     <butterfly>false</butterfly>
     <nInput>8</nInput>
     <nInputDim>1028</nInputDim>

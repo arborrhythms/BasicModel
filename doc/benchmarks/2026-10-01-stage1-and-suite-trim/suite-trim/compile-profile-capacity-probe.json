@@ -1,0 +1,50 @@
+{
+  "reason": "Shortening word/input extents did not shrink the fixed compiled compose graph enough; preserve profiles and reduce fixture-only STM/iteration capacities before remeasuring these two cases.",
+  "time": 1790894132.178335,
+  "active": [
+    {
+      "pid": 82943,
+      "worker": "worker-002",
+      "active": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+      "request": {
+        "selectors": [
+          "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks"
+        ],
+        "collect": false,
+        "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-002.recycle.json"
+      }
+    },
+    {
+      "pid": 83220,
+      "worker": "worker-015",
+      "active": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+      "request": {
+        "selectors": [
+          "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+        ],
+        "collect": false,
+        "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-015.recycle.json"
+      }
+    }
+  ],
+  "completed": [
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+    "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+    "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate"
+  ],
+  "samples": [
+    "compiled-chunk-sample.txt",
+    "compiled-packed-sample.txt"
+  ]
+}

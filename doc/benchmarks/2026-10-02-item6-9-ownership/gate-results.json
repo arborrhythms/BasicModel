@@ -1,0 +1,1252 @@
+[
+  {
+    "run": "gate-05-trial-01",
+    "kind": "class",
+    "answers": [
+      0.6010761260986328,
+      0.6205120086669922,
+      0.48303544521331787,
+      0.4189838171005249
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.23702585870740478,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world loving",
+      "loving there",
+      "world there",
+      "world there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.08348751068115234
+  },
+  {
+    "run": "gate-05-trial-02",
+    "kind": "class",
+    "answers": [
+      0.5064120292663574,
+      0.5115382671356201,
+      0.48050132393836975,
+      0.4842238128185272
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2498498957972104,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "there world",
+      "there world",
+      "there world",
+      "there world"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.0014037489891052246
+  },
+  {
+    "run": "gate-05-trial-03",
+    "kind": "class",
+    "answers": [
+      0.13480737805366516,
+      0.7753206491470337,
+      0.8918697834014893,
+      0.22383219003677368
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.03261170822892834,
+    "correct": 4,
+    "class_bar": true,
+    "read_backs": [
+      "hello world",
+      "there hello",
+      "loving there",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 3,
+    "reconstruction_bar": false,
+    "contrast": -1.308550864458084
+  },
+  {
+    "run": "gate-05-trial-04",
+    "kind": "class",
+    "answers": [
+      0.4554802179336548,
+      0.3258669078350067,
+      0.637043297290802,
+      0.21143093705177307
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.20958956601623724,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there loving",
+      "world there",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.29599905014038086
+  },
+  {
+    "run": "gate-05-trial-05",
+    "kind": "class",
+    "answers": [
+      0.6521313190460205,
+      0.6520177125930786,
+      0.6368553638458252,
+      0.6609878540039062
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2787864748844733,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "there hello",
+      "world loving",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": 0.02424609661102295
+  },
+  {
+    "run": "gate-05-trial-06",
+    "kind": "class",
+    "answers": [
+      0.21043729782104492,
+      0.2418055236339569,
+      0.2638954222202301,
+      0.23398298025131226
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.3039351761954552,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "there world",
+      "world hello",
+      "world hello"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.061280667781829834
+  },
+  {
+    "run": "gate-05-trial-07",
+    "kind": "class",
+    "answers": [
+      0.6137539148330688,
+      0.648709774017334,
+      0.45115259289741516,
+      0.1900273859500885
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.20936064363453122,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "hello hello",
+      "world loving",
+      "loving loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.2960810661315918
+  },
+  {
+    "run": "gate-05-trial-08",
+    "kind": "class",
+    "answers": [
+      0.11906003952026367,
+      0.5405744314193726,
+      0.333412766456604,
+      0.18272554874420166
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.17574357804077678,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there loving",
+      "world there",
+      "world there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.5722016096115112
+  },
+  {
+    "run": "gate-05-trial-09",
+    "kind": "class",
+    "answers": [
+      0.6263539791107178,
+      0.7542796730995178,
+      0.7759299278259277,
+      0.6416868567466736
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2286668013913573,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world there",
+      "there hello",
+      "world world",
+      "world there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 1,
+    "reconstruction_bar": false,
+    "contrast": -0.2621687650680542
+  },
+  {
+    "run": "gate-05-trial-10",
+    "kind": "class",
+    "answers": [
+      0.09279146790504456,
+      0.545139729976654,
+      0.8658291101455688,
+      0.25304707884788513
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.07438569338986545,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "there world",
+      "there loving",
+      "world hello",
+      "world there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -1.0651302933692932
+  },
+  {
+    "run": "gate-06-trial-01",
+    "kind": "reconstruction",
+    "answers": [
+      0.434475302696228,
+      0.4320402145385742,
+      0.5097365379333496,
+      0.3837798237800598
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.22474808048314987,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "hello world",
+      "hello there",
+      "world world",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.12352162599563599
+  },
+  {
+    "run": "gate-06-trial-02",
+    "kind": "reconstruction",
+    "answers": [
+      0.3685922920703888,
+      0.3594050407409668,
+      0.30401861667633057,
+      0.31570544838905334
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.28257054891936173,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "there loving",
+      "there loving",
+      "world there",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 0.020874083042144775
+  },
+  {
+    "run": "gate-06-trial-03",
+    "kind": "reconstruction",
+    "answers": [
+      0.4039665758609772,
+      0.5566586256027222,
+      0.7895922660827637,
+      0.3480864465236664
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.13129403935274242,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "there there",
+      "loving world",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.5941978693008423
+  },
+  {
+    "run": "gate-06-trial-04",
+    "kind": "reconstruction",
+    "answers": [
+      -0.07495200634002686,
+      0.2963937520980835,
+      0.4992787539958954,
+      0.3516343832015991
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.21876201524762018,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "hello there",
+      "world there",
+      "world there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.5189901292324066
+  },
+  {
+    "run": "gate-06-trial-05",
+    "kind": "reconstruction",
+    "answers": [
+      0.582423210144043,
+      0.6958112120628357,
+      0.7319542765617371,
+      0.6154307126998901
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2205877716022524,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "there world",
+      "world world",
+      "there world"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.22991156578063965
+  },
+  {
+    "run": "gate-06-trial-06",
+    "kind": "reconstruction",
+    "answers": [
+      0.46980011463165283,
+      0.5147168636322021,
+      0.48454731702804565,
+      0.5322417616844177
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25129615785369985,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world hello",
+      "there hello",
+      "world loving",
+      "there loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 4,
+    "reconstruction_bar": true,
+    "contrast": 0.002777695655822754
+  },
+  {
+    "run": "gate-06-trial-07",
+    "kind": "reconstruction",
+    "answers": [
+      0.7341609001159668,
+      0.7441977262496948,
+      0.6438847184181213,
+      0.5674898624420166
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2633224670663781,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello world",
+      "hello there",
+      "hello world",
+      "hello world"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.08643168210983276
+  },
+  {
+    "run": "gate-06-trial-08",
+    "kind": "reconstruction",
+    "answers": [
+      0.172143816947937,
+      0.6074598431587219,
+      0.8306167721748352,
+      0.34515416622161865
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.08288583619374812,
+    "correct": 4,
+    "class_bar": false,
+    "read_backs": [
+      "there world",
+      "there there",
+      "loving world",
+      "loving there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 2,
+    "reconstruction_bar": false,
+    "contrast": -0.9207786321640015
+  },
+  {
+    "run": "gate-06-trial-09",
+    "kind": "reconstruction",
+    "answers": [
+      0.30989164113998413,
+      0.2330802083015442,
+      0.614094614982605,
+      0.15594160556793213
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.214359886669941,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "there world",
+      "world world",
+      "there world"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": -0.3813415765762329
+  },
+  {
+    "run": "gate-06-trial-10",
+    "kind": "reconstruction",
+    "answers": [
+      0.3977245092391968,
+      0.6268452405929565,
+      0.6200352311134338,
+      0.6389545798301697
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.21251636009966468,
+    "correct": 3,
+    "class_bar": false,
+    "read_backs": [
+      "hello hello",
+      "hello hello",
+      "loving world",
+      "loving hello"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 1,
+    "reconstruction_bar": false,
+    "contrast": -0.21020138263702393
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.397976279258728,
+      0.468363881111145,
+      0.40230071544647217,
+      0.47268831729888916
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25542518496513367,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "hello hello",
+      "world world",
+      "loving loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 0.0,
+    "max_deviation_from_half": 0.10202372074127197,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-01"
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.46260517835617065,
+      0.49414128065109253,
+      0.5100505352020264,
+      0.5415866374969482
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25081580877304077,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello hello",
+      "hello hello",
+      "world world",
+      "loving loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 0.0,
+    "max_deviation_from_half": 0.04158663749694824,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-02"
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.563602089881897,
+      0.46260866522789,
+      0.5595754384994507,
+      0.4585820436477661
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25267699360847473,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello hello",
+      "hello hello",
+      "world world",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 2.9802322387695312e-08,
+    "max_deviation_from_half": 0.06360208988189697,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-03"
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.520739734172821,
+      0.44927531480789185,
+      0.50770503282547,
+      0.43624064326286316
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2517819404602051,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello hello",
+      "hello hello",
+      "loving loving",
+      "loving loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 2.9802322387695312e-08,
+    "max_deviation_from_half": 0.06375935673713684,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-04"
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.3856654465198517,
+      0.4100831151008606,
+      0.5236068964004517,
+      0.548024594783783
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25600528717041016,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello hello",
+      "hello hello",
+      "loving loving",
+      "loving loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 2.9802322387695312e-08,
+    "max_deviation_from_half": 0.11433455348014832,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-05"
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.41751599311828613,
+      0.4309227466583252,
+      0.4429655075073242,
+      0.4563722610473633
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.254182904958725,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "hello hello",
+      "world world",
+      "loving loving"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 0.0,
+    "max_deviation_from_half": 0.08248400688171387,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-06"
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.4699156880378723,
+      0.47111016511917114,
+      0.45236077904701233,
+      0.45355525612831116
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.2515415847301483,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello hello",
+      "hello hello",
+      "world world",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 0.0,
+    "max_deviation_from_half": 0.04763922095298767,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-07"
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.503344714641571,
+      0.509142279624939,
+      0.5072442889213562,
+      0.5130419135093689
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25007933378219604,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello hello",
+      "hello hello",
+      "world world",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 5.960464477539063e-08,
+    "max_deviation_from_half": 0.013041913509368896,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-08"
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.49089184403419495,
+      0.4909091591835022,
+      0.49079641699790955,
+      0.4908137321472168
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25008365511894226,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "hello hello",
+      "hello hello",
+      "loving loving",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 0.0,
+    "max_deviation_from_half": 0.009203583002090454,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-09"
+  },
+  {
+    "kind": "sum",
+    "answers": [
+      0.5409612655639648,
+      0.54743492603302,
+      0.53969806432724,
+      0.5461717844009399
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "mse": 0.25190892815589905,
+    "correct": 2,
+    "class_bar": false,
+    "read_backs": [
+      "world world",
+      "hello hello",
+      "world world",
+      "there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "reconstructed": 0,
+    "reconstruction_bar": false,
+    "contrast": 5.960464477539063e-08,
+    "max_deviation_from_half": 0.04743492603302002,
+    "half_at_float32_precision": false,
+    "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+    "sum_bar": true,
+    "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (plan section 14)",
+    "run": "sum-10"
+  }
+]

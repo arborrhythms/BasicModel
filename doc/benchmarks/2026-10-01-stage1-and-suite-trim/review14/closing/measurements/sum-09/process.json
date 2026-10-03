@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/measure.py",
+    "child",
+    "--kind",
+    "sum",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/measurements/sum-09"
+  ],
+  "pid": 73554,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 867584088,
+  "elapsed_seconds": 125.34393458299746,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/measurements/sum-09/driver.log"
+}

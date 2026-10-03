@@ -1,0 +1,129 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -11482,10 +11482,12 @@
+         """
+         self._reading_word_percepts = None
+         self._reading_word_extents = None
++        self.inputSpace._ar_grammar_leaf_mask = None
+         for name in ('rows', 'orders', 'atoms'):
+             setattr(self.inputSpace, '_ar_grammar_object_' + name, None)
+         if self._aligned_serial_word_mode():
+             return  # the canonical word boundary already calls interpret
++        self._stage_mixing_grammar_leaf_mask()
+         ps, ws, owner = self.perceptualSpace, self.wholeSpaces[0], self._concept_owner()
+         fi = getattr(ps, '_forward_input', None) or {}
+         raw = self._staged_concepts_in
+@@ -11545,6 +11547,47 @@
+             getattr(ws.subspace.what, 'primitive_properties', None), raw, positions)
+         self._reading_word_extents = brackets
+         self._stage_reading_grammar_references(grammar_words, fi)
++
++    def _stage_mixing_grammar_leaf_mask(self):
++        """Keep whitespace in perception, but off the mixing grammar's stack.
++
++        Classify the staged unit's observed surface, independently of whether
++        its word or object identity has been admitted. Unknown surfaces and
++        punctuation keep their existing grammar admission.
++        """
++        isp = self.inputSpace
++        active = getattr(isp, '_word_active_mask', None)
++        if not torch.is_tensor(active):
++            return
++        percepts = getattr(self.perceptualSpace, '_forward_input', None) or {}
++        texts = percepts.get('word_texts')
++        spans = percepts.get('part_spans')
++        raw = getattr(self, '_staged_concepts_in', None)
++        if torch.is_tensor(spans) and torch.is_tensor(raw):
++            spans = spans.detach().cpu().tolist()
++            raw = raw.detach().cpu().reshape(raw.shape[0], -1).long().tolist()
++        else:
++            spans = raw = None
++        tokens = percepts.get('tokens', ())
++        leaves = active.detach().cpu().clone()
++        for b, row in enumerate(leaves.tolist()):
++            for w, present in enumerate(row):
++                if not present:
++                    continue
++                surface = None
++                if texts is not None and b < len(texts) and w < len(texts[b]):
++                    surface = texts[b][w]
++                elif spans is not None and b < len(spans) and w < len(spans[b]):
++                    lo, hi = spans[b][w]
++                    if 0 <= lo < hi <= len(raw[b]):
++                        surface = bytes(raw[b][lo:hi]).decode('utf-8', errors='replace')
++                elif b < len(tokens) and w < len(tokens[b]):
++                    surface = tokens[b][w]
++                if isinstance(surface, bytes):
++                    surface = surface.decode('utf-8', errors='replace')
++                if isinstance(surface, str) and surface.isspace():
++                    leaves[b, w] = False
++        isp._ar_grammar_leaf_mask = leaves.to(active.device)
+ 
+     def _stage_reading_grammar_references(self, words, percepts):
+         """Stage only the mixing grammar's admitted OBJECT leaves.
+@@ -12435,6 +12478,8 @@
+         unary_map = trace.rule_map(1)
+         active = isp._word_active_mask.to(dtype=torch.bool)
+         dev = S.device
++        leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
++        leaves = active & leaf_mask if torch.is_tensor(leaf_mask) else active
+         packed = bool(getattr(isp, "_sentence_pack_enabled", False))
+         ids = getattr(isp, "_packed_sentence_ids", None)
+         if packed and torch.is_tensor(ids):
+@@ -12701,8 +12746,10 @@
+ 
+         def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+             w = (T - 1) - t
+-            wa = _col(active, w)
+-            end_b = torch.logical_and(_col(is_end, w), wa)
++            wa = _col(leaves, w)
++            # A trailing separator still locates the physical sentence end;
++            # it loads the closing state but consumes no grammar operand.
++            end_b = torch.logical_and(_col(is_end, w), _col(active, w))
+             sid = _col(ids, w).clamp(0, slots - 1)
+             loaded = pre_stack.gather(
+                 1, sid.reshape(B, 1, 1, 1).expand(B, 1, cap, D)).reshape(B, cap, D)
+@@ -12794,6 +12841,9 @@
+             torch.tensor(sid, device=reference.device),
+             candidate_basis=(basis, valid), keep_ideas=True)
+         scope = self._sentence_scope(sid) & active[:, None]
++        leaf_mask = getattr(self.inputSpace, '_ar_grammar_leaf_mask', None)
++        if torch.is_tensor(leaf_mask):
++            scope = scope & leaf_mask
+         lengths = scope.sum(-1)
+         # Compact the recovered words, not their retained references. The
+         # lexical inverse competes over every owned vocabulary spelling.
+@@ -13168,6 +13218,8 @@
+         kind_l = kind.to("cpu").tolist()
+         op_l = op.to("cpu").tolist()
+         rows = active.to("cpu").tolist()
++        leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
++        leaves = leaf_mask.to('cpu').tolist() if torch.is_tensor(leaf_mask) else rows
+         T = int(budget) if budget is not None else self._walk_budget()
+         positions_l, actions_l, targets_l, columns_l = [], [], [], []
+         for b in range(B):
+@@ -13180,6 +13232,7 @@
+             if words:
+                 hi = words[-1]
+                 base = 3 * W if hi == words_all[-1] else 3 * W + (hi + 1) * closing_width
++                words = [w for w in words if leaves[b][w]]
+ 
+                 def _at(slot):
+                     if 0 <= slot < S and kind_l[b][slot] >= 0:
+@@ -21198,6 +21251,7 @@
+         words = isp._ar_embedded_N
+         active = isp._word_active_mask.to(dtype=torch.bool)
+         B = int(words.shape[0])
++        grammar_leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
+         capacity = int(stm.capacity)
+         concept_dim = int(stm.concept_dim)
+         symbolic_passes = tuple(range(max(0, int(self.symbolicOrder))))
+@@ -21605,6 +21659,8 @@
+              object_row, object_order, object_atom, row_gate, commit,
+              routing, routing_valid) = cs_sym_payload
+             word_idea = symbolic_event[:, 0, :]
++            if torch.is_tensor(grammar_leaf_mask):
++                commit = commit & _gather_word(grammar_leaf_mask, index).reshape_as(commit)
+ 
+             if capture_intra:
+                 prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(

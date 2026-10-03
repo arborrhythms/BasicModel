@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_compiled_step_invoked.py::test_compiled_step_is_invoked"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-092.recycle.json"
+}

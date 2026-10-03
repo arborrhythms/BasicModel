@@ -1,0 +1,114 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -14385,6 +14385,7 @@
+             )
+         batch = batch_override
+         inputTensor, outputTensor = batch
++        self._probe_supplied_answers = outputTensor
+         self._stage_expectation_documents(
+             split, source_rows, int(inputTensor.shape[0])
+             if isinstance(inputTensor, torch.Tensor) else len(inputTensor))
+@@ -20605,7 +20606,30 @@
+             self._sentence_gradient_objectives = dict(
+                 reconstruction=reconstruction_cost, expectation=expectation_cost,
+                 output=output_cost)
++        answer_error = self._probe_trial_answer_error(state, sid)
++        if answer_error is not None:
++            cost = cost + answer_error
+         return cost, reconstruction, observation, pending
++
++    def _probe_trial_answer_error(self, state, sid):
++        """Measurement only: supplied numeric-answer MSE in output units."""
++        target = getattr(self, '_probe_supplied_answers', None)
++        if (not self._sentence_training or not torch.is_tensor(target)
++                or not target.numel() or not self.inputSpace.data.has_supervised_outputs):
++            return None
++        _stm, lang, _feedback = state
++        root = lang[9][:, sid]
++        slots = lang[13][:, sid].reshape(root.shape[0], 3, root.shape[-1])
++        depth = lang[14][:, sid]
++        answer = self._forward_head(None, sentence_state=(root, slots, depth))
++        pred = self.normalizer.denormalize(answer.materialize(), which='output')
++        pred = self._align_output_pred(pred, target)
++        if pred is None:
++            raise RuntimeError('probe answer and supplied target do not align')
++        error = (pred - target.to(pred)).square().reshape(root.shape[0], -1).mean(-1)
++        self._probe_answer_component = error.detach()
++        return self._probe_answer_component
++
+ 
+     @staticmethod
+     def _clause_end_state(state, sid, clauses, row_ids):
+@@ -20663,7 +20687,7 @@
+         # Optimizer updates have already happened. Admission may allocate
+         # native addresses, but it must not re-read their updated dictionary
+         # values or change the discrete identity choice that was scored.
+-        chosen = [observations[-1 if win else 0] for win in rows]
++        chosen = [observations[int(win)] for win in rows]
+         admitted = view['entries']
+         entries = []
+         for b, source in enumerate(chosen):
+@@ -20703,10 +20727,9 @@
+         # The preview owns each trial's estimate. Commit its comparison and
+         # prior-query policy outcome without training prediction twice.
+         if disc is not None:
+-            pending_a, pending_b = predictions[0], predictions[-1]
+-            disc._inter_last_meaning = [pending_b[0][b] if win else pending_a[0][b]
++            disc._inter_last_meaning = [predictions[int(win)][0][b]
+                                        for b, win in enumerate(rows)]
+-            disc._inter_last_pred_root = [pending_b[1][b] if win else pending_a[1][b]
++            disc._inter_last_pred_root = [predictions[int(win)][1][b]
+                                          for b, win in enumerate(rows)]
+             disc.observe_stm_end_state(view['observed_depths'], view['observed'],
+                 mask=view['mask'], documents=self._expectation_documents_for_slot(sid, len(rows)),
+--- a/bin/SentenceCompose.py
++++ b/bin/SentenceCompose.py
+@@ -127,27 +127,26 @@
+ 
+ 
+ def sentence_pair(cache, compose, score, step, *, active, training=True):
+-    """Score both paths, train each, then select independently in each row.
+-
+-    ``cache`` is the sentence's one perception. ``compose`` gets the exploit
+-    path on its second call so it can replay its prefix and exclude one choice.
+-    ``score`` returns a cost per row and the candidate's scratch commit value.
+-    Only sentence objectives belong here; teacher answers run at batch end.
+-    The caller publishes the returned state before perceiving the next sentence.
+-    """
++    """Probe b: greedy plus four independent deviations, all scored before training."""
+     exploit = compose(cache, None)
+-    cost_a, state_a = score(exploit, False)
+-    if cost_a.shape != active.shape:
++    cost, state = score(exploit, False)
++    if cost.shape != active.shape:
+         raise ValueError('sentence comparison requires one cost per row')
+-    saved_a = cost_a.detach().clone()
+-    if not training:
+-        return state_a, saved_a[:, None], torch.zeros_like(active)
+-    explore = compose(cache, exploit)
+-    cost_b, state_b = score(explore, True)
+-    if cost_b.shape != active.shape:
+-        raise ValueError('sentence comparison requires one cost per row')
+-    saved_b = cost_b.detach().clone()
+-    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+-    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+-    wins = active & (saved_b < saved_a)
+-    return select_rows(state_a, state_b, wins), torch.stack((saved_a, saved_b), -1), wins
++    costs, states = [cost], [state]
++    if training:
++        for _ in range(4):
++            cost, state = score(compose(cache, exploit), True)
++            if cost.shape != active.shape:
++                raise ValueError('sentence comparison requires one cost per row')
++            costs.append(cost)
++            states.append(state)
++    saved = torch.stack([cost.detach().clone() for cost in costs], -1)
++    # argmin retains the earliest trial on a tie, including greedy at index 0.
++    winner = torch.where(active, saved.argmin(-1), torch.zeros_like(active, dtype=torch.long))
++    if training:
++        for cost in costs:
++            step((cost * active.to(cost)).sum() / active.sum().clamp_min(1))
++    selected = states[0]
++    for index, state in enumerate(states[1:], 1):
++        selected = select_rows(selected, state, active & (winner == index))
++    return selected, saved, winner

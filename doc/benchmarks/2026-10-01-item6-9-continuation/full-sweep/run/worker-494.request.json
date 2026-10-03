@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_meronomy.py::test_word_metas_are_clean_words_with_bounds"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-494.recycle.json"
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+    "--worker",
+    "data/HeadEmission.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/HeadEmission.json"
+  ],
+  "pid": 89695,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 405718168,
+  "elapsed_seconds": 3.352398582996102,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/HeadEmission.log"
+}

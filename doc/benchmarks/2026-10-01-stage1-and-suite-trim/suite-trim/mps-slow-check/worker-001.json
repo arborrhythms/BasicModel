@@ -1,0 +1,25 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]"
+  ],
+  "slow_selected": [
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.6669620419997955,
+      "message": "torch._dynamo.exc.ObservedRuntimeError: raised exception RuntimeError('no grad anchor for mps:0 torch.float32: call _ensure_grad_anchors before compiling')\n\nThe above exception was the direct cause of the following exception:\ntest/test_compiled_word_chunk.py:916: in test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke\n    result = model._publish_compiled_sentence_state(compiled(raw))\n                                                    ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.Unsupported: Observed exception\nE     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.\nE     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance(\"force_eager\")`. \nE     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.\nE   \nE     Developer debug context: raised exception RuntimeError('no grad anchor for mps:0 torch.float32: call _ensure_grad_anchors before compiling')\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py\", line 903, in <lambda>\nE       model._forward_with_compiled_sentence_state(None))\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 150, in masked\nE       return method(self, *args, **kwargs)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8179, in _forward_with_compiled_sentence_state\nE       return self._forward_per_stage(\nE              ^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24318, in _forward_per_stage\nE       body_result = self._forward_body(\nE                     ^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 18026, in _forward_body\nE       return self._forward_body_per_word(\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22501, in _forward_body_per_word\nE       self._run_tensor_peer_word_pipeline(N_words))\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22046, in _run_tensor_peer_word_pipeline\nE       TensorPeerWhilePipeline().run_cs_lanes_banked(\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1304, in run_cs_lanes_banked\nE       result = torch.while_loop(cond, body, _carries_with_grad(initial))\nE                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 423, in _carries_with_grad\nE       raise RuntimeError(\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

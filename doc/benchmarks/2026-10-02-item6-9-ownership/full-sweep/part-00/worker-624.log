@@ -1,0 +1,17 @@
+......F.                                                                 [100%]
+=================================== FAILURES ===================================
+_______ test_full_role_loss_trains_source_and_predictor_but_never_target _______
+test/test_sentence_expectation.py:95: in test_full_role_loss_trains_source_and_predictor_but_never_target
+    assert encoder.weight.grad is not None and encoder.weight.grad.norm() > 0
+E   assert (None is not None)
+E    +  where None = Parameter containing:\ntensor([[-0.3119,  0.3244, -0.3625, -0.3953],\n        [ 0.0341,  0.2140, -0.3723, -0.1863],\n        [ 0.1475, -0.2352, -0.0808,  0.4007],\n        [ 0.1308, -0.1819, -0.4075,  0.1248]], requires_grad=True).grad
+E    +    where Parameter containing:\ntensor([[-0.3119,  0.3244, -0.3625, -0.3953],\n        [ 0.0341,  0.2140, -0.3723, -0.1863],\n        [ 0.1475, -0.2352, -0.0808,  0.4007],\n        [ 0.1308, -0.1819, -0.4075,  0.1248]], requires_grad=True) = Linear(in_features=4, out_features=4, bias=False).weight
+=============================== warnings summary ===============================
+test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_expectation.py::test_full_role_loss_trains_source_and_predictor_but_never_target
+1 failed, 7 passed, 1 warning in 2.59s

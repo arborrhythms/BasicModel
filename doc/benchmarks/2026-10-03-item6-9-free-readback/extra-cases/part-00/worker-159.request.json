@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-159.recycle.json"
+}

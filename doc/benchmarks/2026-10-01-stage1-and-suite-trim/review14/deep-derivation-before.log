@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_derivation_probe.py", line 48, in <module>
+    check()
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_derivation_probe.py", line 32, in check
+    positions, actions, targets, columns = BasicModel._derivation_program(
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13362, in _derivation_program
+    emit(node)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13358, in emit
+    emit(child)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13358, in emit
+    emit(child)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13358, in emit
+    emit(child)
+  [Previous line repeated 994 more times]
+RecursionError: maximum recursion depth exceeded

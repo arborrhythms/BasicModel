@@ -1,0 +1,13 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

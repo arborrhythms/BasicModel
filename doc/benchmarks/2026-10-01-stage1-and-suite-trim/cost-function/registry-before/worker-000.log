@@ -1,0 +1,64 @@
+FFFFFFFFFF                                                               [100%]
+=================================== FAILURES ===================================
+________ test_squared_error_is_ratio_of_means_and_baseline_is_detached _________
+test/test_relative_error.py:12: in test_squared_error_is_ratio_of_means_and_baseline_is_detached
+    costs.squared('answer', pred, target)
+    ^^^^^^^^^^^^^
+E   AttributeError: 'Error' object has no attribute 'squared'
+___ test_uniform_categorical_prediction_is_one_even_for_constant_targets[2] ____
+test/test_relative_error.py:25: in test_uniform_categorical_prediction_is_one_even_for_constant_targets
+    costs.categorical('category', logits, torch.zeros(3, dtype=torch.long))
+    ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Error' object has no attribute 'categorical'
+___ test_uniform_categorical_prediction_is_one_even_for_constant_targets[7] ____
+test/test_relative_error.py:25: in test_uniform_categorical_prediction_is_one_even_for_constant_targets
+    costs.categorical('category', logits, torch.zeros(3, dtype=torch.long))
+    ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Error' object has no attribute 'categorical'
+__ test_uniform_categorical_prediction_is_one_even_for_constant_targets[256] ___
+test/test_relative_error.py:25: in test_uniform_categorical_prediction_is_one_even_for_constant_targets
+    costs.categorical('category', logits, torch.zeros(3, dtype=torch.long))
+    ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Error' object has no attribute 'categorical'
+_________ test_binary_zero_logits_have_one_error_for_constant_targets __________
+test/test_relative_error.py:32: in test_binary_zero_logits_have_one_error_for_constant_targets
+    costs.binary('kind', torch.zeros(5), torch.zeros(5))
+    ^^^^^^^^^^^^
+E   AttributeError: 'Error' object has no attribute 'binary'
+___ test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive ___
+test/test_relative_error.py:38: in test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive
+    costs.squared('zero_target', torch.tensor([2., 4.]), torch.zeros(2), weight=.25)
+    ^^^^^^^^^^^^^
+E   AttributeError: 'Error' object has no attribute 'squared'
+____________ test_repeated_contributions_share_one_target_baseline _____________
+test/test_relative_error.py:49: in test_repeated_contributions_share_one_target_baseline
+    costs.squared('code', torch.tensor([2.]), torch.tensor([1.]))
+    ^^^^^^^^^^^^^
+E   AttributeError: 'Error' object has no attribute 'squared'
+_____ test_row_costs_train_one_ratio_without_amplifying_small_target_rows ______
+test/test_relative_error.py:56: in test_row_costs_train_one_ratio_without_amplifying_small_target_rows
+    costs = Error(row_mask=active)
+            ^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: Error.__init__() got an unexpected keyword argument 'row_mask'
+_____ test_nearly_solved_error_stays_small_and_regularizer_keeps_strength ______
+test/test_relative_error.py:66: in test_nearly_solved_error_stays_small_and_regularizer_keeps_strength
+    costs.squared('solved', torch.tensor([1.001]), torch.tensor([1.]))
+    ^^^^^^^^^^^^^
+E   AttributeError: 'Error' object has no attribute 'squared'
+___________ test_reporting_only_penalty_does_not_enter_trained_total ___________
+test/test_relative_error.py:74: in test_reporting_only_penalty_does_not_enter_trained_total
+    costs.squared('fit', torch.tensor([0.]), torch.tensor([1.]))
+    ^^^^^^^^^^^^^
+E   AttributeError: 'Error' object has no attribute 'squared'
+=========================== short test summary info ============================
+FAILED test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached
+FAILED test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]
+FAILED test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]
+FAILED test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]
+FAILED test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets
+FAILED test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive
+FAILED test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline
+FAILED test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows
+FAILED test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength
+FAILED test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total
+10 failed in 2.11s

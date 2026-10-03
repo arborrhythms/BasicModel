@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-03/measurement.json"
+  ],
+  "pid": 86505,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 590169504,
+  "elapsed_seconds": 144.4022808340378,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-03/driver.log"
+}

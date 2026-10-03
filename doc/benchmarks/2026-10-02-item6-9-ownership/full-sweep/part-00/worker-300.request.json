@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_interleave_lifecycle.py::test_context_pass_cannot_backpropagate_or_step",
+    "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+    "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[True]",
+    "test/test_interleave_lifecycle.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets",
+    "test/test_interleave_lifecycle.py::test_interleave_epoch_reads_a_short_final_group_once",
+    "test/test_interleave_lifecycle.py::test_interleave_checkpoint_resumes_unread_serial_prefix",
+    "test/test_interleave_lifecycle.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "test/test_interleave_lifecycle.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-300.recycle.json"
+}

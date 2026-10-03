@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_live_references.py::test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind"
+  ],
+  "completed": [
+    "test/test_live_references.py::test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_live_references.py::test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007247080029628705,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

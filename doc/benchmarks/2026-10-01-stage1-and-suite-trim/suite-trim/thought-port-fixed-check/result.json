@@ -1,0 +1,103 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_what_episode_memory.py::test_symbol_space_owns_memory_lifecycle",
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+  ],
+  "completed": [
+    "test/test_what_episode_memory.py::test_symbol_space_owns_memory_lifecycle",
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/thought-port-fixed-check/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/thought-port-fixed-check/worker-000.json"
+      ],
+      "pid": 82041,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 513475976,
+      "elapsed_seconds": 4.394587582995882,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/thought-port-fixed-check/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_what_episode_memory.py::test_symbol_space_owns_memory_lifecycle",
+        "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+      ],
+      "completed": [
+        "test/test_what_episode_memory.py::test_symbol_space_owns_memory_lifecycle",
+        "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_what_episode_memory.py::test_symbol_space_owns_memory_lifecycle",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04147733299760148,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.4804041250026785,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/thought-port-fixed-check",
+  "elapsed_seconds": 8.460126792000665,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 513475976,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/thought-port-fixed-check/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/thought-port-fixed-check/collect.json"
+    ],
+    "pid": 82023,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 433194160,
+    "elapsed_seconds": 3.6168969580030534,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/thought-port-fixed-check/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_what_episode_memory.py::test_symbol_space_owns_memory_lifecycle",
+        "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions0-True]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions1-False]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions0-True]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions1-False]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/worker-000.json"
+      ],
+      "pid": 37738,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 183714632,
+      "elapsed_seconds": 1.9110753340646625,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions0-True]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions0-True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions0-True]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0016284170560538769,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step1.py:23: in test_gate_measures_answers_not_placeholder\n    case.test_xor_class_accuracy()\ntest/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py:1275: in assertGreaterEqual\n    self.fail(self._formatMessage(msg, standardMsg))\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py:715: in fail\n    raise self.failureException(msg)\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/worker-001.json"
+      ],
+      "pid": 37739,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 180912944,
+      "elapsed_seconds": 2.8885129999835044,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions1-False]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions1-False]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions1-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00129454187117517,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/worker-002.json"
+      ],
+      "pid": 37740,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 181322592,
+      "elapsed_seconds": 3.8666362080257386,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0013314581010490656,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run",
+  "elapsed_seconds": 6.043886750005186,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 545950168,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/collect.json"
+    ],
+    "pid": 37732,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179749704,
+    "elapsed_seconds": 1.7767435000278056,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-red/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions0-True]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions1-False]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

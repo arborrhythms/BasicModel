@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/allocation_probe.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/allocation-diagnostic"
+  ],
+  "pid": 73760,
+  "exit_code": 137,
+  "reason": "memory",
+  "peak_memory_bytes": 26043044120,
+  "elapsed_seconds": 67.48360808299913,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/allocation-diagnostic/run.log"
+}

@@ -1,0 +1,26 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip"
+  ],
+  "completed": [
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip"
+  ],
+  "slow_selected": [
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.37093479197937995,
+      "message": "test/test_word_store.py:550: in test_reverse_chooser_picks_fold_op_by_roundtrip\n    assert got == {tuple(W[r1].tolist()), tuple(W[r2].tolist())}\nE   assert {(0.032511834...6077576, ...)} == {(0.032511834...6077576, ...)}\nE     \nE     Extra items in the right set:\nE     (0.03251183405518532, 0.0028807956259697676, 0.01345168985426426, 0.028815440833568573, 0.0, 0.051028355956077576, ...)\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

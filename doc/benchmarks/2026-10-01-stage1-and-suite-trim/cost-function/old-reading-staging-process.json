@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/old_reading_staging_probe.py"
+  ],
+  "pid": 90364,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 3269332088,
+  "elapsed_seconds": 8.254822707996937,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/old-reading-staging-probe.log"
+}

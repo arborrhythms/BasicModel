@@ -1,0 +1,265 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[1]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[3]",
+    "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[1]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[3]",
+    "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-000.json"
+      ],
+      "pid": 47295,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 621479232,
+      "elapsed_seconds": 4.459593125153333,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.1093815420754254,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-001.json"
+      ],
+      "pid": 47296,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 622921024,
+      "elapsed_seconds": 5.433106041979045,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.153843875043094,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-003.json"
+      ],
+      "pid": 47318,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 431965528,
+      "elapsed_seconds": 4.199588124873117,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[1]"
+      ],
+      "completed": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[1]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.02525333291850984,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-004.json"
+      ],
+      "pid": 47319,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 431850816,
+      "elapsed_seconds": 5.175266874954104,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[3]"
+      ],
+      "completed": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[3]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[3]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.02525254199281335,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-005.json"
+      ],
+      "pid": 47331,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 431015280,
+      "elapsed_seconds": 3.9080011670012027,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "completed": [
+        "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011408541817218065,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-002.json"
+      ],
+      "pid": 47297,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1017628448,
+      "elapsed_seconds": 28.826632000040263,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 26.195546249859035,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run",
+  "elapsed_seconds": 31.05892162490636,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1839681640,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/collect.json"
+    ],
+    "pid": 47262,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180683592,
+    "elapsed_seconds": 1.8175867500249296,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-green/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[1]",
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[3]",
+        "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

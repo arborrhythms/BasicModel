@@ -7,6 +7,7 @@ and its own trace remains authoritative, including when its choices are wrong.
 """
 from __future__ import annotations
 
+import math
 import torch
 from torch.nn import functional as F
 
@@ -94,7 +95,7 @@ def compose_examples(language, program, tree, *, variables=()):
     return binary, unary
 
 
-def compose_loss(language, programs, lessons):
+def compose_loss(language, programs, lessons, *, errors=None):
     """Supervise supplied forms in the same joint compose softmax.
 
     A lesson's unlabelled waiting sites are not no-operation targets. Only
@@ -107,7 +108,8 @@ def compose_loss(language, programs, lessons):
     # A supplied syntax tree has no question context. Each teacher state is
     # scored alone, independently of the last reading's context or batch size.
     context_width = getattr(layer.chooser, 'WHAT_CONTEXT_DIM', 0)
-    costs = []
+    from Layers import Error
+    errors = Error() if errors is None else errors
     for program, lesson in zip(programs, lessons):
         if lesson is None:
             continue
@@ -119,16 +121,20 @@ def compose_loss(language, programs, lessons):
             if target >= 0:
                 _, _, route = layer(window.detach()[None], slots=1,
                     what_ctx=window.new_zeros(1, context_width))
-                costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
+                probabilities = route['probabilities']
+                errors.error('compose.choice', -probabilities[0, target].clamp_min(1e-30).log(),
+                             math.log(probabilities.shape[-1]), category='grammar')
         for value, target in unary:
             if target >= 0:
                 _, _, route = layer(value.detach()[None, None], slots=1,
                     what_ctx=value.new_zeros(1, context_width))
-                costs.append(-route['probabilities'][0, target].clamp_min(1e-30).log())
-    return torch.stack(costs).mean() if costs else None
+                probabilities = route['probabilities']
+                errors.error('compose.choice', -probabilities[0, target].clamp_min(1e-30).log(),
+                             math.log(probabilities.shape[-1]), category='grammar')
+    return errors.total()
 
 
-def generate_loss(language, programs, lessons, registry, word_code):
+def generate_loss(language, programs, lessons, registry, word_code, *, errors=None):
     """Learn declared generate choices from separately supplied answer trees.
 
     Called only after the student's own output is fixed. The input's selected
@@ -137,6 +143,8 @@ def generate_loss(language, programs, lessons, registry, word_code):
     and one tree for each canonical role. Leaves resolve through the ordinary
     vocabulary; target spelling is unavailable to the inference walk.
     """
+    from Layers import Error
+    errors = Error() if errors is None else errors
     rules = {arity: {name: (i, op) for i, (name, op) in enumerate(zip(
         getattr(language, f"_generate_{'binary' if arity == 2 else 'unary'}_names"),
         getattr(language, f"_generate_{'binary' if arity == 2 else 'unary'}_ops")))}
@@ -199,7 +207,8 @@ def generate_loss(language, programs, lessons, registry, word_code):
             predicted = op.generate(parent)
             predicted = predicted if len(children) == 2 else (predicted,)
             for actual, child in zip(predicted, children):
-                numerical.append((actual - child[0]).square().sum())
+                errors.squared('generate.operands', actual.detach(), child[0],
+                               category='grammar', objective='output', trained=False)
                 teach(child, child[0])
 
         for root, role in zip(roots, roles):
@@ -208,7 +217,6 @@ def generate_loss(language, programs, lessons, registry, word_code):
         return None
     values = torch.stack(values)
     target = torch.tensor(targets, device=values.device, dtype=torch.long)
-    cost = F.cross_entropy(language.generate_policy_logits(values), target)
-    if numerical:
-        cost = cost + torch.stack(numerical).mean()
-    return cost
+    errors.categorical('generate.choice', language.generate_policy_logits(values), target,
+                       category='grammar', objective='output')
+    return errors.total()

@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-02-item6-9-reconstruction/probe_hidden_writers.py"
+  ],
+  "pid": 86946,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 552420624,
+  "elapsed_seconds": 3.804509666020749,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/hidden-writers-before/output.log"
+}

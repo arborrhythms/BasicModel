@@ -1,0 +1,78 @@
+.sFs                                                                     [100%]
+=================================== FAILURES ===================================
+________________ test_idempotent_config_trains_one_epoch_clean _________________
+test/test_reconstruction_roundtrip.py:580: in test_idempotent_config_trains_one_epoch_clean
+    rec = run_config("data/idempotent.xml", epochs=1, seed=None,
+bin/recon_bench.py:213: in run_config
+    _epoch_loop()
+bin/recon_bench.py:197: in _epoch_loop
+    out_loss, rec_loss, _, _ = model.runEpoch(
+bin/ModeSchedule.py:14: in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16437: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:14279: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14461: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14831: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9198: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10681: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8895: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8707: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24085: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13825: in _lex_embed_stem
+    self.perceptualSpace.embed_stem(in_sub)
+bin/Spaces.py:12347: in embed_stem
+    return self._embed_ladder(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:11784: in _embed_ladder
+    return self._embed_radix(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:12228: in _embed_radix
+    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:27: in encode
+    intervals = self.intervals(name, indices)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:42: in intervals
+    torch._assert_async((~valid | (indices < end - start)).all(),
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: occurrence exceeds its configured where-space capacity
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 6.25%)
+batch = 1 (Δ=0.033s, 12.50%)
+batch = 2 (Δ=0.021s, 18.75%)
+batch = 3 (Δ=0.021s, 25.00%)
+=============================== warnings summary ===============================
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+1 failed, 1 passed, 2 skipped, 1 warning in 3.89s

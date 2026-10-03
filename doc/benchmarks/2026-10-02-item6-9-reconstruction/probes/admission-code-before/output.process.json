@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_concept_code_ownership.py",
+    "--tb=short"
+  ],
+  "pid": 87968,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 432244032,
+  "elapsed_seconds": 4.105884000018705,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/admission-code-before/output.log"
+}

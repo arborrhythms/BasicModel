@@ -1,0 +1,156 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+______ test_promoted_percepts_keep_their_original_byte_addresses[MM_math] ______
+
+configuration = 'MM_math'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10cf5be30>
+
+    @pytest.mark.parametrize('configuration', ['MM_math','MM_add','idempotent','stream_smoke'])
+    def test_promoted_percepts_keep_their_original_byte_addresses(configuration, monkeypatch):
+        import util, Models, Language
+        from data import TheData
+        root=Path(__file__).resolve().parents[1]
+        path=str(root/'data'/f'{configuration}.xml')
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        util.init_config(path=path,defaults_path=str(root/'data/model.xml'))
+        Language.TheGrammar._configured=False
+        dat=dict(util.TheXMLConfig.get('architecture.data'))
+        TheData.load(dat['dataset'],dat=dat)
+        model,_=Models.BaseModel.from_config(path,data=TheData)
+        try:
+>           assert model.where_registry.slices['input'][1] >= TheData.inputLength
+E           assert 32 >= 4096
+E            +  where 4096 = <data.Data object at 0x11f021d90>.inputLength
+
+test/test_input_byte_addresses.py:19: AssertionError
+______ test_promoted_percepts_keep_their_original_byte_addresses[MM_add] _______
+
+configuration = 'MM_add'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f6dd3d0>
+
+    @pytest.mark.parametrize('configuration', ['MM_math','MM_add','idempotent','stream_smoke'])
+    def test_promoted_percepts_keep_their_original_byte_addresses(configuration, monkeypatch):
+        import util, Models, Language
+        from data import TheData
+        root=Path(__file__).resolve().parents[1]
+        path=str(root/'data'/f'{configuration}.xml')
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        util.init_config(path=path,defaults_path=str(root/'data/model.xml'))
+        Language.TheGrammar._configured=False
+        dat=dict(util.TheXMLConfig.get('architecture.data'))
+        TheData.load(dat['dataset'],dat=dat)
+        model,_=Models.BaseModel.from_config(path,data=TheData)
+        try:
+>           assert model.where_registry.slices['input'][1] >= TheData.inputLength
+E           assert 8 >= 4096
+E            +  where 4096 = <data.Data object at 0x11f021d90>.inputLength
+
+test/test_input_byte_addresses.py:19: AssertionError
+____ test_promoted_percepts_keep_their_original_byte_addresses[idempotent] _____
+
+configuration = 'idempotent'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11fab7740>
+
+    @pytest.mark.parametrize('configuration', ['MM_math','MM_add','idempotent','stream_smoke'])
+    def test_promoted_percepts_keep_their_original_byte_addresses(configuration, monkeypatch):
+        import util, Models, Language
+        from data import TheData
+        root=Path(__file__).resolve().parents[1]
+        path=str(root/'data'/f'{configuration}.xml')
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        util.init_config(path=path,defaults_path=str(root/'data/model.xml'))
+        Language.TheGrammar._configured=False
+        dat=dict(util.TheXMLConfig.get('architecture.data'))
+        TheData.load(dat['dataset'],dat=dat)
+        model,_=Models.BaseModel.from_config(path,data=TheData)
+        try:
+>           assert model.where_registry.slices['input'][1] >= TheData.inputLength
+E           assert 10 >= 4096
+E            +  where 4096 = <data.Data object at 0x11f021d90>.inputLength
+
+test/test_input_byte_addresses.py:19: AssertionError
+___ test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke] ____
+
+configuration = 'stream_smoke'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11fde82c0>
+
+    @pytest.mark.parametrize('configuration', ['MM_math','MM_add','idempotent','stream_smoke'])
+    def test_promoted_percepts_keep_their_original_byte_addresses(configuration, monkeypatch):
+        import util, Models, Language
+        from data import TheData
+        root=Path(__file__).resolve().parents[1]
+        path=str(root/'data'/f'{configuration}.xml')
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        util.init_config(path=path,defaults_path=str(root/'data/model.xml'))
+        Language.TheGrammar._configured=False
+        dat=dict(util.TheXMLConfig.get('architecture.data'))
+        TheData.load(dat['dataset'],dat=dat)
+        model,_=Models.BaseModel.from_config(path,data=TheData)
+        try:
+>           assert model.where_registry.slices['input'][1] >= TheData.inputLength
+E           assert 128 >= 4096
+E            +  where 4096 = <data.Data object at 0x11f021d90>.inputLength
+
+test/test_input_byte_addresses.py:19: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Loading text: 1 shard(s), max 10000 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 10000 docs -> 467796 sentences (376814 train, 47208 val, 43774 test)
+________________ test_missing_word_text_row_uses_observed_bytes ________________
+
+    def test_missing_word_text_row_uses_observed_bytes():
+        from types import SimpleNamespace
+        from Models import BasicModel
+        active=torch.ones(1,3,dtype=torch.bool)
+        raw=b'x y'
+        model=SimpleNamespace(inputSpace=SimpleNamespace(_word_active_mask=active),
+            perceptualSpace=SimpleNamespace(_forward_input=dict(word_texts=[None],
+                part_spans=torch.tensor([[[0,1],[1,2],[2,3]]]))),
+            _staged_concepts_in=torch.tensor([list(raw)]))
+>       BasicModel._stage_mixing_grammar_leaf_mask(model)
+
+test/test_grammar_separator.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(inputSpace=namespace(_word_active_mask=tensor([[True, True, True]])), perceptualSpace=namespace(_forward_inp...], 'part_spans': tensor([[[0, 1],
+         [1, 2],
+         [2, 3]]])}), _staged_concepts_in=tensor([[120,  32, 121]]))
+
+    def _stage_mixing_grammar_leaf_mask(self):
+        """Keep whitespace in perception, but off the mixing grammar's stack.
+    
+        Classify the staged unit's observed surface, independently of whether
+        its word or object identity has been admitted. Unknown surfaces and
+        punctuation keep their existing grammar admission.
+        """
+        isp = self.inputSpace
+        active = getattr(isp, '_word_active_mask', None)
+        if not torch.is_tensor(active):
+            return
+        percepts = getattr(self.perceptualSpace, '_forward_input', None) or {}
+        texts = percepts.get('word_texts')
+        spans = percepts.get('part_spans')
+        raw = getattr(self, '_staged_concepts_in', None)
+        if torch.is_tensor(spans) and torch.is_tensor(raw):
+            spans = spans.detach().cpu().tolist()
+            raw = raw.detach().cpu().reshape(raw.shape[0], -1).long().tolist()
+        else:
+            spans = raw = None
+        tokens = percepts.get('tokens', ())
+        leaves = active.detach().cpu().clone()
+        for b, row in enumerate(leaves.tolist()):
+            for w, present in enumerate(row):
+                if not present:
+                    continue
+                surface = None
+>               if texts is not None and b < len(texts) and w < len(texts[b]):
+                                                                ^^^^^^^^^^^^^
+E               TypeError: object of type 'NoneType' has no len()
+
+bin/Models.py:11470: TypeError
+=========================== short test summary info ============================
+FAILED test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]
+FAILED test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_add]
+FAILED test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[idempotent]
+FAILED test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke]
+FAILED test/test_grammar_separator.py::test_missing_word_text_row_uses_observed_bytes
+5 failed in 9.08s

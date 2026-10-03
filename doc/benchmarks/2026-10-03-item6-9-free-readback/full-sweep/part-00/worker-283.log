@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_normal_text_reconstruction_updates_the_grammar_chooser __________
+test/test_grammar_word_learning.py:189: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    assert any(name.startswith("mlp.") for name in changed)
+E   assert False
+E    +  where False = any(<generator object test_normal_text_reconstruction_updates_the_grammar_chooser.<locals>.<genexpr> at 0x1263a52f0>)
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=========================== short test summary info ============================
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser
+1 failed in 3.81s

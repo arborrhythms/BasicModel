@@ -1,0 +1,1814 @@
+[
+  {
+    "nodeid": "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+    "before_seconds": 185.84087391699723,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.5180719170020893,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.5180719170020893,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-017.log",
+        "elapsed_seconds": 11.377162917007809,
+        "peak_memory_bytes": 616596824,
+        "completed_cases": 5
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_assertion_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "before_seconds": 341.6819943330047,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.935672749998048,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.935672749998048,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-018.log",
+        "elapsed_seconds": 12.346877707997919,
+        "peak_memory_bytes": 463865056,
+        "completed_cases": 3
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_bounded_stm_fold.py::test_sentence_end_reduces_toward_root",
+    "before_seconds": 385.37161270900106,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.13831820800260175,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.13831820800260175,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-053.log",
+        "elapsed_seconds": 6.376036583009409,
+        "peak_memory_bytes": 463848840,
+        "completed_cases": 5
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_bounded_stm_fold.py::test_stm_never_exceeds_cap_after_forward",
+    "before_seconds": 387.02947258300264,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.1395863749930868,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.1395863749930868,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-053.log",
+        "elapsed_seconds": 6.376036583009409,
+        "peak_memory_bytes": 463848840,
+        "completed_cases": 5
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "before_seconds": 182.659196624998,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 7.322809833989595,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 7.322809833989595,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-068.log",
+        "elapsed_seconds": 22.424616375006735,
+        "peak_memory_bytes": 756581840,
+        "completed_cases": 3
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+    "before_seconds": 160.28677266700834,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 7.511330583991366,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 7.511330583991366,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-068.log",
+        "elapsed_seconds": 22.424616375006735,
+        "peak_memory_bytes": 756581840,
+        "completed_cases": 3
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+    "before_seconds": 76.0177424170106,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.23005749999720138,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.23005749999720138,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-090.log",
+        "elapsed_seconds": 7.372755208009039,
+        "peak_memory_bytes": 453117248,
+        "completed_cases": 4
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "before_seconds": 743.9514287499915,
+    "change": "compiled graph is the subject; weekly tier",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.00010541699884925038,
+        "outcome": "skipped"
+      }
+    ],
+    "after_seconds": null,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-093.log",
+        "elapsed_seconds": 33.73922504199436,
+        "peak_memory_bytes": 781912248,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [
+      {
+        "segment": "extra-cases/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-00/worker-002.log",
+        "reason": "aborted",
+        "worker_elapsed_seconds": 79.1982661249931,
+        "peak_memory_bytes": 1871547200,
+        "completed_cases_before_stop": 0,
+        "timing_scope": "partial worker wall time; includes startup and any preceding cases, not a completed case duration"
+      }
+    ],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": false
+  },
+  {
+    "nodeid": "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "before_seconds": 76.87118349999946,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.35043366700119805,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.35043366700119805,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-098.log",
+        "elapsed_seconds": 6.405868166999426,
+        "peak_memory_bytes": 552519552,
+        "completed_cases": 2
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "before_seconds": 179.85898258299858,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.7898184999939986,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.7898184999939986,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-098.log",
+        "elapsed_seconds": 6.405868166999426,
+        "peak_memory_bytes": 552519552,
+        "completed_cases": 2
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "before_seconds": 155.66576737500145,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.31079008300730493,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.31079008300730493,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-159.log",
+        "elapsed_seconds": 10.229304084001342,
+        "peak_memory_bytes": 463815904,
+        "completed_cases": 5
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "before_seconds": 304.0390377920121,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.8067168340057833,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.8067168340057833,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-159.log",
+        "elapsed_seconds": 10.229304084001342,
+        "peak_memory_bytes": 463815904,
+        "completed_cases": 5
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "before_seconds": 202.1791511249903,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.207139707999886,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.207139707999886,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-160.log",
+        "elapsed_seconds": 11.190808999992441,
+        "peak_memory_bytes": 440059080,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+    "before_seconds": null,
+    "change": "same numerical loop bodies; capture is not the subject; timeout-prone case moved to weekly tier",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.00013379201118368655,
+        "outcome": "skipped"
+      },
+      {
+        "phase": "call",
+        "seconds": 5.190523209006642,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 5.190523209006642,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-230.log",
+        "elapsed_seconds": 9.38716487500642,
+        "peak_memory_bytes": 553403712,
+        "completed_cases": 6
+      },
+      {
+        "segment": "extra-cases/part-02/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-02/worker-005.log",
+        "elapsed_seconds": 9.405813584002317,
+        "peak_memory_bytes": 1116243840,
+        "completed_cases": 1
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm",
+    "before_seconds": 453.72328191601264,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.6873501250083791,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.6873501250083791,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-230.log",
+        "elapsed_seconds": 9.38716487500642,
+        "peak_memory_bytes": 553403712,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+    "before_seconds": 305.6941527080053,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.7184975830023177,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.7184975830023177,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-233.log",
+        "elapsed_seconds": 10.216788833000464,
+        "peak_memory_bytes": 231392120,
+        "completed_cases": 7
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+    "before_seconds": 308.5160350829974,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.32408262499666307,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.32408262499666307,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-282.log",
+        "elapsed_seconds": 10.244293458992615,
+        "peak_memory_bytes": 500532496,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+    "before_seconds": 286.1297805840004,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.3206161670095753,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.3206161670095753,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-283.log",
+        "elapsed_seconds": 11.199017999999342,
+        "peak_memory_bytes": 502793512,
+        "completed_cases": 3
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_interleave_lifecycle.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+    "before_seconds": 225.60261487500975,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 1.0558652500039898,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 1.0558652500039898,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-301.log",
+        "elapsed_seconds": 11.44805091600574,
+        "peak_memory_bytes": 550749456,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+    "before_seconds": 287.4539111250051,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 1.1820772500068415,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 1.1820772500068415,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-300.log",
+        "elapsed_seconds": 131.02260833299079,
+        "peak_memory_bytes": 1886259792,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_bias_fires_on_real_model",
+    "before_seconds": 71.59769866600982,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.08083766599884257,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.08083766599884257,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-306.log",
+        "elapsed_seconds": 12.97684291600308,
+        "peak_memory_bytes": 609158632,
+        "completed_cases": 3
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]",
+    "before_seconds": 181.42575679100992,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.42995208299544174,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.42995208299544174,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-333.log",
+        "elapsed_seconds": 7.315342208996299,
+        "peak_memory_bytes": 518784416,
+        "completed_cases": 7
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle",
+    "before_seconds": 310.0769852910016,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.8540478749928297,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.8540478749928297,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-375.log",
+        "elapsed_seconds": 10.18542300000263,
+        "peak_memory_bytes": 501400848,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestProvisioning::test_provision_idempotent_count_via_runepoch_trigger",
+    "before_seconds": 908.5139025419921,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.9518317500042031,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.9518317500042031,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-372.log",
+        "elapsed_seconds": 10.325509249989409,
+        "peak_memory_bytes": 469501176,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings",
+    "before_seconds": 169.14355887500278,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.3552779589954298,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.3552779589954298,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-372.log",
+        "elapsed_seconds": 10.325509249989409,
+        "peak_memory_bytes": 469501176,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps",
+    "before_seconds": 170.72506399999838,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.3516881249961443,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.3516881249961443,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-372.log",
+        "elapsed_seconds": 10.325509249989409,
+        "peak_memory_bytes": 469501176,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward",
+    "before_seconds": 310.54188670900476,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.892820417007897,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.892820417007897,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-373.log",
+        "elapsed_seconds": 11.279552000007243,
+        "peak_memory_bytes": 470680800,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+    "before_seconds": 306.65118683400215,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 1.0063772499997867,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 1.0063772499997867,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-376.log",
+        "elapsed_seconds": 11.141543249992537,
+        "peak_memory_bytes": 495797520,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+    "before_seconds": 160.66614487499464,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.4326873749960214,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.4326873749960214,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-376.log",
+        "elapsed_seconds": 11.141543249992537,
+        "peak_memory_bytes": 495797520,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+    "before_seconds": 162.89774829200178,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.39819008400081657,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.39819008400081657,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-376.log",
+        "elapsed_seconds": 11.141543249992537,
+        "peak_memory_bytes": 495797520,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+    "before_seconds": 720.8896922910062,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.6581073330016807,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.6581073330016807,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-376.log",
+        "elapsed_seconds": 11.141543249992537,
+        "peak_memory_bytes": 495797520,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+    "before_seconds": 172.35671216700575,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.42249120799533557,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.42249120799533557,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-376.log",
+        "elapsed_seconds": 11.141543249992537,
+        "peak_memory_bytes": 495797520,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+    "before_seconds": 305.99442437500693,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.39444929199817125,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.39444929199817125,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-376.log",
+        "elapsed_seconds": 11.141543249992537,
+        "peak_memory_bytes": 495797520,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestSerialForwardAppendsStore::test_forward_grows_store_not_deque",
+    "before_seconds": 863.3327298329968,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 1.2597545419994276,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 1.2597545419994276,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-377.log",
+        "elapsed_seconds": 12.09833512500336,
+        "peak_memory_bytes": 497255672,
+        "completed_cases": 5
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+    "before_seconds": null,
+    "change": "same numerical loop bodies; capture is not the subject; long cold-start training in weekly tier",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.00013087499246466905,
+        "outcome": "skipped"
+      }
+    ],
+    "after_seconds": null,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-398.log",
+        "elapsed_seconds": 12.15040595800383,
+        "peak_memory_bytes": 618366272,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [
+      {
+        "segment": "extra-cases/part-02/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-02/worker-011.log",
+        "reason": "aborted",
+        "worker_elapsed_seconds": 34.15082404100394,
+        "peak_memory_bytes": 2251672480,
+        "completed_cases_before_stop": 0,
+        "timing_scope": "partial worker wall time; includes startup and any preceding cases, not a completed case duration"
+      }
+    ],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": false
+  },
+  {
+    "nodeid": "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "before_seconds": 118.0922712090105,
+    "change": "compiled graph is the subject; weekly tier",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.00014033300976734608,
+        "outcome": "skipped"
+      },
+      {
+        "phase": "call",
+        "seconds": 102.48640662500111,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 102.48640662500111,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-396.log",
+        "elapsed_seconds": 10.251589999999851,
+        "peak_memory_bytes": 550569304,
+        "completed_cases": 8
+      },
+      {
+        "segment": "extra-cases/part-03/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-001.log",
+        "elapsed_seconds": 108.2785125419905,
+        "peak_memory_bytes": 2207861496,
+        "completed_cases": 1
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock",
+    "before_seconds": 93.7739747500018,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.14679675000661518,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.14679675000661518,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-439.log",
+        "elapsed_seconds": 10.076596375001827,
+        "peak_memory_bytes": 479560952,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats",
+    "before_seconds": 92.59161624999251,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.2514780829951633,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.2514780829951633,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-439.log",
+        "elapsed_seconds": 10.076596375001827,
+        "peak_memory_bytes": 479560952,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_occurrence_coordinates.py::test_native_program_captures_the_symbol_band_and_one_field_time",
+    "before_seconds": 92.58877845799725,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.9960412079963135,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.9960412079963135,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-439.log",
+        "elapsed_seconds": 10.076596375001827,
+        "peak_memory_bytes": 479560952,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_output_percept_readout.py::test_model_checkpoint_preserves_readout_and_adam[False]",
+    "before_seconds": 544.0804916249908,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.8749971659999574,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.8749971659999574,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-457.log",
+        "elapsed_seconds": 9.416686249998747,
+        "peak_memory_bytes": 779323000,
+        "completed_cases": 7
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+    "before_seconds": 228.58934229100123,
+    "change": "compiled graph is the subject; weekly tier",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.00013891699200030416,
+        "outcome": "skipped"
+      },
+      {
+        "phase": "call",
+        "seconds": 92.5347620829998,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 92.5347620829998,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-465.log",
+        "elapsed_seconds": 12.366259416987305,
+        "peak_memory_bytes": 757974576,
+        "completed_cases": 6
+      },
+      {
+        "segment": "extra-cases/part-03/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-003.log",
+        "elapsed_seconds": 98.21574204199715,
+        "peak_memory_bytes": 2178796112,
+        "completed_cases": 1
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context",
+    "before_seconds": 186.0808996669948,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.8775507499958621,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.8775507499958621,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-465.log",
+        "elapsed_seconds": 12.366259416987305,
+        "peak_memory_bytes": 757974576,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_materialised_answer_uses_one_conditioning_application",
+    "before_seconds": 143.25460637499054,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.5990500839980086,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.5990500839980086,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-465.log",
+        "elapsed_seconds": 12.366259416987305,
+        "peak_memory_bytes": 757974576,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances",
+    "before_seconds": 202.66977300000144,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.9456207500043092,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.9456207500043092,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-465.log",
+        "elapsed_seconds": 12.366259416987305,
+        "peak_memory_bytes": 757974576,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present",
+    "before_seconds": 63.60339729199768,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.8742297499993583,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.8742297499993583,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-464.log",
+        "elapsed_seconds": 76.18091695800831,
+        "peak_memory_bytes": 1844857400,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+    "before_seconds": 185.58533625000564,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.7414397500106134,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.7414397500106134,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-544.log",
+        "elapsed_seconds": 6.534604500004207,
+        "peak_memory_bytes": 622953840,
+        "completed_cases": 4
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+    "before_seconds": null,
+    "change": "compiled graph is the subject; weekly tier",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.00015454199456144124,
+        "outcome": "skipped"
+      }
+    ],
+    "after_seconds": null,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-546.log",
+        "elapsed_seconds": 8.430607707996387,
+        "peak_memory_bytes": 432964760,
+        "completed_cases": 1
+      }
+    ],
+    "after_stops": [
+      {
+        "segment": "extra-cases/part-03/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-008.log",
+        "reason": "aborted",
+        "worker_elapsed_seconds": 39.10315100000298,
+        "peak_memory_bytes": 1307888064,
+        "completed_cases_before_stop": 0,
+        "timing_scope": "partial worker wall time; includes startup and any preceding cases, not a completed case duration"
+      }
+    ],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": false
+  },
+  {
+    "nodeid": "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+    "before_seconds": 123.05144133399881,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.33399291599926073,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.33399291599926073,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-566.log",
+        "elapsed_seconds": 8.206859790996532,
+        "peak_memory_bytes": 575735128,
+        "completed_cases": 5
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+    "before_seconds": 573.8616199170065,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.9637034579936881,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.9637034579936881,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-567.log",
+        "elapsed_seconds": 9.153520457999548,
+        "peak_memory_bytes": 894404144,
+        "completed_cases": 5
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "before_seconds": 413.50979666700005,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.2489227499900153,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.2489227499900153,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-587.log",
+        "elapsed_seconds": 7.318604708008934,
+        "peak_memory_bytes": 508020128,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+    "before_seconds": 296.1697045000037,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.40129025001078844,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.40129025001078844,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-606.log",
+        "elapsed_seconds": 7.3716039580031065,
+        "peak_memory_bytes": 452035784,
+        "completed_cases": 7
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+    "before_seconds": 91.30196733299817,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.1061876250023488,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.1061876250023488,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-606.log",
+        "elapsed_seconds": 7.3716039580031065,
+        "peak_memory_bytes": 452035784,
+        "completed_cases": 7
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+    "before_seconds": 73.38283741699706,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.10259370799758472,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.10259370799758472,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-606.log",
+        "elapsed_seconds": 7.3716039580031065,
+        "peak_memory_bytes": 452035784,
+        "completed_cases": 7
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_runepoch_runtime_split_no_raise",
+    "before_seconds": 75.357640000002,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.6315928749972954,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.6315928749972954,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-611.log",
+        "elapsed_seconds": 26.87743216600211,
+        "peak_memory_bytes": 834848328,
+        "completed_cases": 4
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+    "before_seconds": 158.23790654199547,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.19146533399180043,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.19146533399180043,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-611.log",
+        "elapsed_seconds": 26.87743216600211,
+        "peak_memory_bytes": 834848328,
+        "completed_cases": 4
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[True]",
+    "before_seconds": 366.030439167007,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.2537258749944158,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.2537258749944158,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-615.log",
+        "elapsed_seconds": 6.4775147500040475,
+        "peak_memory_bytes": 441419120,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+    "before_seconds": 300.4429962919967,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.30378862499492243,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.30378862499492243,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-626.log",
+        "elapsed_seconds": 276.7687788339972,
+        "peak_memory_bytes": 1808206632,
+        "completed_cases": 4
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict",
+    "before_seconds": 93.02416129098856,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.05331970799306873,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.05331970799306873,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-633.log",
+        "elapsed_seconds": 5.340652874991065,
+        "peak_memory_bytes": 0,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled",
+    "before_seconds": 90.44240929099033,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.0558385000040289,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.0558385000040289,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-633.log",
+        "elapsed_seconds": 5.340652874991065,
+        "peak_memory_bytes": 0,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial",
+    "before_seconds": 91.4385624580027,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.07798129200818948,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.07798129200818948,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-633.log",
+        "elapsed_seconds": 5.340652874991065,
+        "peak_memory_bytes": 0,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent",
+    "before_seconds": 91.63182954098738,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.05904062499757856,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.05904062499757856,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-633.log",
+        "elapsed_seconds": 5.340652874991065,
+        "peak_memory_bytes": 0,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition",
+    "before_seconds": 95.09302620800736,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.056022125005256385,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.056022125005256385,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-633.log",
+        "elapsed_seconds": 5.340652874991065,
+        "peak_memory_bytes": 0,
+        "completed_cases": 6
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "before_seconds": 176.91977295800461,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.2337564579793252,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.2337564579793252,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-847.log",
+        "elapsed_seconds": 12.084300542017445,
+        "peak_memory_bytes": 502482216,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "before_seconds": 385.57844158301305,
+    "change": "same numerical loop bodies; capture is not the subject",
+    "after_reports": [
+      {
+        "phase": "call",
+        "seconds": 0.49822591699194163,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 0.49822591699194163,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-854.log",
+        "elapsed_seconds": 9.29195366697968,
+        "peak_memory_bytes": 544507176,
+        "completed_cases": 5
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  },
+  {
+    "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "before_seconds": 125.54509558400605,
+    "change": "compiled graph subject; weekly tier",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.00011541700223460793,
+        "outcome": "skipped"
+      },
+      {
+        "phase": "call",
+        "seconds": 72.42317162499239,
+        "outcome": "failed"
+      }
+    ],
+    "after_seconds": 72.42317162499239,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-621.log",
+        "elapsed_seconds": 12.13829691700812,
+        "peak_memory_bytes": 465388888,
+        "completed_cases": 8
+      },
+      {
+        "segment": "extra-cases/part-04/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-008.log",
+        "elapsed_seconds": 77.60296024999116,
+        "peak_memory_bytes": 1198361072,
+        "completed_cases": 1
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": false
+  },
+  {
+    "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+    "before_seconds_lower_bound": 813,
+    "change": "Compilation retained; same two sentences and assertions; 128-byte/eight-slot fixture reduced to 16 bytes/three slots, one symbolic pass. Capturing process sampled before interruption.",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.00011170899961143732,
+        "outcome": "skipped"
+      }
+    ],
+    "after_seconds": null,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-091.log",
+        "elapsed_seconds": 8.342421624998678,
+        "peak_memory_bytes": 432424280,
+        "completed_cases": 3
+      }
+    ],
+    "after_stops": [
+      {
+        "segment": "extra-cases/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-00/worker-001.log",
+        "reason": "aborted",
+        "worker_elapsed_seconds": 78.22314066700346,
+        "peak_memory_bytes": 1334921664,
+        "completed_cases_before_stop": 0,
+        "timing_scope": "partial worker wall time; includes startup and any preceding cases, not a completed case duration"
+      }
+    ],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": false
+  },
+  {
+    "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "before_seconds": null,
+    "before_note": "Prior weekly failure is recorded, but this inventory has no isolated successful case duration.",
+    "change": "compiled graph across lengths is the subject; weekly tier; old first-weekly failure observed retired journal lifetime",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.0001128330040955916,
+        "outcome": "skipped"
+      }
+    ],
+    "after_seconds": null,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-094.log",
+        "elapsed_seconds": 9.209390000003623,
+        "peak_memory_bytes": 348931176,
+        "completed_cases": 8
+      }
+    ],
+    "after_stops": [
+      {
+        "segment": "extra-cases/part-01/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-01/worker-001.log",
+        "reason": "aborted",
+        "worker_elapsed_seconds": 29.340742958011106,
+        "peak_memory_bytes": 1122175256,
+        "completed_cases_before_stop": 0,
+        "timing_scope": "partial worker wall time; includes startup and any preceding cases, not a completed case duration"
+      }
+    ],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": false
+  },
+  {
+    "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "before_seconds": null,
+    "before_note": "Prior weekly failure is recorded, but this inventory has no isolated successful case duration.",
+    "change": "owned backward contract port; heavy packed reading kept in weekly tier",
+    "after_reports": [
+      {
+        "phase": "setup",
+        "seconds": 0.00012004199379589409,
+        "outcome": "skipped"
+      },
+      {
+        "phase": "call",
+        "seconds": 7.2052866669982905,
+        "outcome": "passed"
+      }
+    ],
+    "after_seconds": 7.2052866669982905,
+    "after_workers": [
+      {
+        "segment": "full-sweep/part-00/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-332.log",
+        "elapsed_seconds": 6.3561670829949435,
+        "peak_memory_bytes": 589956560,
+        "completed_cases": 8
+      },
+      {
+        "segment": "extra-cases/part-02/result.json",
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-02/worker-009.log",
+        "elapsed_seconds": 11.461818541007233,
+        "peak_memory_bytes": 1385367664,
+        "completed_cases": 1
+      }
+    ],
+    "after_stops": [],
+    "timing_scope": "pytest call intervals plus failed setup/teardown; successful shared setup is not charged to a case; worker wall includes it",
+    "verified": true
+  }
+]

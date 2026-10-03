@@ -1,0 +1,24 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row"
+  ],
+  "completed": [
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00010837500303750858,
+      "message": "test/test_sentence_journal.py:120: in test_functional_prediction_cost_does_not_mutate_an_inactive_row\n    layer = IntraSentenceLayer(2, 2, stm_capacity=3)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: IntraSentenceLayer.__init__() got multiple values for argument 'stm_capacity'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

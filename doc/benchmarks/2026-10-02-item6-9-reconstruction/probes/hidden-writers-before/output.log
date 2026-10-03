@@ -1,0 +1,15 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7532: RuntimeWarning: reconstruction_zeroed [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/parallel-concepts-1n6xhwkg/MM_20M_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 64)
+  warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.353s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+feature_refresh_without_optimizer 0.0
+reading_owner 2 features 16 field_populated False
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probe_hidden_writers.py", line 17, in <module>
+    assert getattr(owner,'_cs_last_a0',None) is not None, 'the field must read its definitions owner'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: the field must read its definitions owner

@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_sentence_generation_lesson_keeps_its_weighted_output_gradient ______
+test/test_generation_lesson.py:33: in test_sentence_generation_lesson_keeps_its_weighted_output_gradient
+    cost, *_ = BasicModel._sentence_path_cost(
+bin/Models.py:20608: in _sentence_path_cost
+    record = self._trial_understanding(state, sid, active)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute '_trial_understanding'
+=========================== short test summary info ============================
+FAILED test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient
+1 failed in 2.77s

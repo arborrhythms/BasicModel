@@ -1,0 +1,30 @@
+{
+  "epochs": 900,
+  "seed": null,
+  "configuration": "data/MM_grammar.xml",
+  "completed_epochs": 900,
+  "ending_training_mse": 0.0002043256681645289,
+  "ending_training_predictions": [
+    -0.009218692779541016,
+    0.9890351295471191,
+    0.9834010601043701,
+    -0.01834571361541748
+  ],
+  "targets": [
+    0.0,
+    1.0,
+    1.0,
+    0.0
+  ],
+  "elapsed_seconds": 448.51336970800185,
+  "after_900_updates_mse": 0.000228986275033094,
+  "after_900_updates_predictions": [
+    0.009668350219726562,
+    1.0111260414123535,
+    1.0179471969604492,
+    0.019405603408813477
+  ],
+  "store_owner_present": true,
+  "store_rows": 1024,
+  "definition_rows": 4
+}

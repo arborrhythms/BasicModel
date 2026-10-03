@@ -4,10 +4,8 @@ Covers the new-test items from
 ``doc/plans/2026-05-14-retire-maskedPrediction-IR-only-within-sentence.md``
 §"Add tests":
 
-  * XSD validation rejects ````.
   * XSD validation rejects ``<reconstruct>output</reconstruct>``.
-  * ``<reconstructionScale>`` parses; legacy ``<reverseScale>`` triggers
-    a deprecation warning and maps to the same field.
+  * ``<reconstructionScale>`` parses without a deprecation warning.
   * IR forward produces ``[B, N, predDim]`` predictions (no K axis).
   * C3 (spec sec 7): the legacy input reverse is concepts-seeded, with no
     ``<reconstruct>`` enum (retired in A1). Its ``reconstruction_reverse``
@@ -151,29 +149,11 @@ class TestXsdRejectsRetiredElements(unittest.TestCase):
                       "XSD did not flag <reconstruct>output</...>")
 
 
-# -- reverseScale deprecation shim ---------------------------------------
+# -- canonical reconstruction cost weight ------------------------------
 
 class TestReverseScaleBackcompat(unittest.TestCase):
-    """Legacy ``<reverseScale>`` is renamed to ``<reconstructionScale>``
-    in-place by the parser, with a one-shot deprecation warning so
-    existing checked-in configs keep training without manual migration.
-    """
+    """The canonical reconstruction cost weight parses without a warning."""
 
-    def test_reverse_scale_legacy_maps_through(self):
-        path = _write_tmp_xml(
-            training_extra="      <reverseScale>0.3</reverseScale>")
-        try:
-            with warnings.catch_warnings(record=True) as caught:
-                warnings.simplefilter("always")
-                init_config(path=path,
-                            defaults_path=os.path.join(_DATA, "model.xml"))
-            msgs = " ".join(str(w.message) for w in caught)
-            self.assertIn("reverseScale", msgs)
-            self.assertIn("reconstructionScale", msgs)
-            self.assertAlmostEqual(
-                float(TheXMLConfig.training("reconstructionScale")), 0.3)
-        finally:
-            os.unlink(path)
 
     def test_reconstruction_scale_parses_cleanly(self):
         path = _write_tmp_xml(

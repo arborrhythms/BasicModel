@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes _____
+test/test_mixing_reconstruction_bank.py:26: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+    assert candidates == [word.encode('utf-8') for word in surface.split()], candidates
+E   AssertionError: [b'caf\xc3\x83\xc2\xa9']
+E   assert [b'caf\xc3\x83\xc2\xa9'] == [b'caf\xc3\xa9', b'ab']
+E     
+E     At index 0 diff: b'caf\xc3\x83\xc2\xa9' != b'caf\xc3\xa9'
+E     Right contains one more item: b'ab'
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+1 failed, 1 warning in 2.02s

@@ -1,0 +1,908 @@
+{
+  "nodeid": "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+  "phase": "call",
+  "elapsed_seconds": 0.3051625420048367,
+  "profile_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/profiles-after-repair/7889c31831f3587f.prof",
+  "functions": [
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/runner.py",
+      "line": 173,
+      "function": "pytest_runtest_call",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3e-06,
+      "cumulative_seconds": 0.30503325000000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+      "line": 1705,
+      "function": "runtest",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.208e-06,
+      "cumulative_seconds": 0.305023417
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py",
+      "line": 497,
+      "function": "__call__",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 6.5410000000000006e-06,
+      "cumulative_seconds": 0.30501495900000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py",
+      "line": 111,
+      "function": "_hookexec",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.833e-06,
+      "cumulative_seconds": 0.30500775
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py",
+      "line": 76,
+      "function": "_multicall",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 9.417e-06,
+      "cumulative_seconds": 0.305005917
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+      "line": 160,
+      "function": "pytest_pyfunc_call",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 7.458e-06,
+      "cumulative_seconds": 0.304992125
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py",
+      "line": 984,
+      "function": "test_no_grad_fallback_retains_eager_stm_depth_semantics",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.000225915,
+      "cumulative_seconds": 0.304977
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 147,
+      "function": "masked",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 8.292000000000001e-06,
+      "cumulative_seconds": 0.167055125
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 8776,
+      "function": "forward",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 1.3958000000000001e-05,
+      "cumulative_seconds": 0.167033958
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 24154,
+      "function": "_forward_per_stage",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 8.608e-05,
+      "cumulative_seconds": 0.16534562500000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 17975,
+      "function": "_forward_body",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 1.2126e-05,
+      "cumulative_seconds": 0.141845625
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 22263,
+      "function": "_forward_body_per_word",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.00012270300000000002,
+      "cumulative_seconds": 0.141833499
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 21280,
+      "function": "_run_tensor_peer_word_pipeline",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.00021895800000000003,
+      "cumulative_seconds": 0.140741167
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 21107,
+      "function": "_run_sentence_word_bricks",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.000275751,
+      "cumulative_seconds": 0.13901591600000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py",
+      "line": 129,
+      "function": "sentence_pair",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 1.3249000000000001e-05,
+      "cumulative_seconds": 0.11601600000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py",
+      "line": 118,
+      "function": "__torch_function__",
+      "primitive_calls": 99863,
+      "calls": 99863,
+      "self_seconds": 0.032520629,
+      "cumulative_seconds": 0.090640024
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py",
+      "line": 318,
+      "function": "_tiny_canonical_model",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 4.825e-05,
+      "cumulative_seconds": 0.076408459
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 1796,
+      "function": "from_config",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 6.750000000000001e-06,
+      "cumulative_seconds": 0.061972125
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 7104,
+      "function": "create_from_config",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.1459000000000002e-05,
+      "cumulative_seconds": 0.061912334000000006
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 1821,
+      "function": "create_from_config",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.00014028100000000002,
+      "cumulative_seconds": 0.061890875000000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 21148,
+      "function": "compose",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 8.8959e-05,
+      "cumulative_seconds": 0.061328833000000006
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 7113,
+      "function": "create",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.6375e-05,
+      "cumulative_seconds": 0.060097625
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 16624,
+      "function": "_create_per_stage",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.000255385,
+      "cumulative_seconds": 0.06007125000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 21703,
+      "function": "stage_cs_lang",
+      "primitive_calls": 6,
+      "calls": 6,
+      "self_seconds": 0.0008639590000000001,
+      "cumulative_seconds": 0.058940459
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/copy.py",
+      "line": 118,
+      "function": "deepcopy",
+      "primitive_calls": 1,
+      "calls": 35480,
+      "self_seconds": 0.01857806,
+      "cumulative_seconds": 0.057181458000000004
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/copy.py",
+      "line": 247,
+      "function": "_reconstruct",
+      "primitive_calls": 1,
+      "calls": 6303,
+      "self_seconds": 0.002048739,
+      "cumulative_seconds": 0.057160791
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/copy.py",
+      "line": 217,
+      "function": "_deepcopy_dict",
+      "primitive_calls": 1,
+      "calls": 2407,
+      "self_seconds": 0.0037590170000000003,
+      "cumulative_seconds": 0.05714816700000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 21182,
+      "function": "score",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 9.164e-06,
+      "cumulative_seconds": 0.054664000000000004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 20741,
+      "function": "_sentence_path_cost",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 7.541600000000001e-05,
+      "cumulative_seconds": 0.054654542
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 12422,
+      "function": "_reconstruct_sentences",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.000129373,
+      "cumulative_seconds": 0.048068833000000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/test/reading_fixtures.py",
+      "line": 224,
+      "function": "eager_while",
+      "primitive_calls": 6,
+      "calls": 6,
+      "self_seconds": 7.2371e-05,
+      "cumulative_seconds": 0.047081706
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 13481,
+      "function": "choose_operation",
+      "primitive_calls": 14,
+      "calls": 14,
+      "self_seconds": 0.000653964,
+      "cumulative_seconds": 0.043049046
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 12587,
+      "function": "metadata_body",
+      "primitive_calls": 6,
+      "calls": 6,
+      "self_seconds": 0.0007210960000000001,
+      "cumulative_seconds": 0.025000085000000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py",
+      "line": 120,
+      "function": "decorate_context",
+      "primitive_calls": 59,
+      "calls": 157,
+      "self_seconds": 0.000203988,
+      "cumulative_seconds": 0.023814002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 12558,
+      "function": "metadata_fold",
+      "primitive_calls": 228,
+      "calls": 228,
+      "self_seconds": 0.0041674120000000005,
+      "cumulative_seconds": 0.023293452000000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py",
+      "line": 1779,
+      "function": "_wrapped_call_impl",
+      "primitive_calls": 30,
+      "calls": 302,
+      "self_seconds": 0.000169128,
+      "cumulative_seconds": 0.023226538
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py",
+      "line": 1787,
+      "function": "_call_impl",
+      "primitive_calls": 30,
+      "calls": 302,
+      "self_seconds": 0.000283342,
+      "cumulative_seconds": 0.023194916000000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 7380,
+      "function": "forward",
+      "primitive_calls": 14,
+      "calls": 14,
+      "self_seconds": 0.0015549600000000002,
+      "cumulative_seconds": 0.022789207000000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+      "line": 8296,
+      "function": "__init__",
+      "primitive_calls": 11,
+      "calls": 11,
+      "self_seconds": 0.000186686,
+      "cumulative_seconds": 0.022322752
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 13672,
+      "function": "_lex_embed_stem",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.00018817,
+      "cumulative_seconds": 0.020974167000000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py",
+      "line": 1976,
+      "function": "__setattr__",
+      "primitive_calls": 9227,
+      "calls": 9233,
+      "self_seconds": 0.0071763190000000004,
+      "cumulative_seconds": 0.019303104
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 12688,
+      "function": "undo_operation",
+      "primitive_calls": 50,
+      "calls": 50,
+      "self_seconds": 0.000212952,
+      "cumulative_seconds": 0.018696871
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/ReferenceContext.py",
+      "line": 170,
+      "function": "prepare_operands",
+      "primitive_calls": 14,
+      "calls": 14,
+      "self_seconds": 0.002601701,
+      "cumulative_seconds": 0.018183500000000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+      "line": 22294,
+      "function": "__init__",
+      "primitive_calls": 4,
+      "calls": 4,
+      "self_seconds": 6.937100000000001e-05,
+      "cumulative_seconds": 0.018165667
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+      "line": 23060,
+      "function": "_build_what_basis",
+      "primitive_calls": 4,
+      "calls": 4,
+      "self_seconds": 6.2798e-05,
+      "cumulative_seconds": 0.014797125000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 20929,
+      "function": "_commit_sentence",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.000154462,
+      "cumulative_seconds": 0.013931374000000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/overrides.py",
+      "line": 1722,
+      "function": "handle_torch_function",
+      "primitive_calls": 887,
+      "calls": 887,
+      "self_seconds": 0.0011401270000000001,
+      "cumulative_seconds": 0.013323360000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+      "line": 3337,
+      "function": "set_property_kind",
+      "primitive_calls": 32,
+      "calls": 32,
+      "self_seconds": 0.000114333,
+      "cumulative_seconds": 0.012657125
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py",
+      "line": 161,
+      "function": "teach",
+      "primitive_calls": 32,
+      "calls": 32,
+      "self_seconds": 0.0036193830000000003,
+      "cumulative_seconds": 0.012084834000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.isinstance>",
+      "primitive_calls": 56657,
+      "calls": 74378,
+      "self_seconds": 0.006004677000000001,
+      "cumulative_seconds": 0.012004311
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/util.py",
+      "line": 2016,
+      "function": "init_config",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 8.041e-06,
+      "cumulative_seconds": 0.011995125
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/util.py",
+      "line": 1812,
+      "function": "_parse_xml",
+      "primitive_calls": 4,
+      "calls": 4,
+      "self_seconds": 3.5134e-05,
+      "cumulative_seconds": 0.011860709
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 11672,
+      "function": "_stage_serial_concept_rows",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.000313189,
+      "cumulative_seconds": 0.011507292
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 12704,
+      "function": "body_a",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.000136243,
+      "cumulative_seconds": 0.011505083000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 12541,
+      "function": "_col_rows",
+      "primitive_calls": 1982,
+      "calls": 1982,
+      "self_seconds": 0.0018816680000000002,
+      "cumulative_seconds": 0.011145621000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 14648,
+      "function": "__init__",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.0293000000000003e-05,
+      "cumulative_seconds": 0.011001292000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/util.py",
+      "line": 1469,
+      "function": "overlay",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 3.4504e-05,
+      "cumulative_seconds": 0.010794834000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/ReferenceContext.py",
+      "line": 175,
+      "function": "propose",
+      "primitive_calls": 644,
+      "calls": 644,
+      "self_seconds": 0.000988098,
+      "cumulative_seconds": 0.010490913000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 12755,
+      "function": "body",
+      "primitive_calls": 6,
+      "calls": 6,
+      "self_seconds": 0.00024552300000000004,
+      "cumulative_seconds": 0.010464665000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/util.py",
+      "line": 1889,
+      "function": "_validate_against_schema",
+      "primitive_calls": 4,
+      "calls": 4,
+      "self_seconds": 2.3796e-05,
+      "cumulative_seconds": 0.010307458
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/util.py",
+      "line": 1940,
+      "function": "_run_schema_validation",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.9083e-05,
+      "cumulative_seconds": 0.010178708
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 9956,
+      "function": "__init__",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.00017411500000000002,
+      "cumulative_seconds": 0.010061709
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+      "line": 6431,
+      "function": "__init__",
+      "primitive_calls": 26,
+      "calls": 26,
+      "self_seconds": 0.00036704,
+      "cumulative_seconds": 0.010051834
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py",
+      "line": 506,
+      "function": "run",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.1834e-05,
+      "cumulative_seconds": 0.009933250000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+      "line": 14799,
+      "function": "__init__",
+      "primitive_calls": 4,
+      "calls": 4,
+      "self_seconds": 0.000220045,
+      "cumulative_seconds": 0.009708166
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 7613,
+      "function": "_stacked_reduced",
+      "primitive_calls": 14,
+      "calls": 14,
+      "self_seconds": 0.000528627,
+      "cumulative_seconds": 0.009663211000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 20722,
+      "function": "_sentence_observation",
+      "primitive_calls": 4,
+      "calls": 4,
+      "self_seconds": 8.3832e-05,
+      "cumulative_seconds": 0.008872208000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'reshape' of 'torch._C.TensorBase' objects>",
+      "primitive_calls": 8434,
+      "calls": 16868,
+      "self_seconds": 0.007441426,
+      "cumulative_seconds": 0.0088547
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 12649,
+      "function": "_undo_binary",
+      "primitive_calls": 50,
+      "calls": 50,
+      "self_seconds": 0.0008267810000000001,
+      "cumulative_seconds": 0.008648207
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 5369,
+      "function": "forward_with_grammar_context",
+      "primitive_calls": 252,
+      "calls": 252,
+      "self_seconds": 0.000292996,
+      "cumulative_seconds": 0.008535549
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+      "line": 19203,
+      "function": "interpret_word",
+      "primitive_calls": 8,
+      "calls": 8,
+      "self_seconds": 2.6249000000000002e-05,
+      "cumulative_seconds": 0.008483417
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 2152,
+      "function": "_ensure_configured",
+      "primitive_calls": 36,
+      "calls": 36,
+      "self_seconds": 2.4958e-05,
+      "cumulative_seconds": 0.008475125
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 1984,
+      "function": "load_from_grammar_file",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 3.1208000000000003e-05,
+      "cumulative_seconds": 0.008440000000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.id>",
+      "primitive_calls": 58222,
+      "calls": 58222,
+      "self_seconds": 0.008013768000000001,
+      "cumulative_seconds": 0.008013768000000001
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py",
+      "line": 807,
+      "function": "__init__",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 4.6875e-05,
+      "cumulative_seconds": 0.007462833
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py",
+      "line": 1791,
+      "function": "_execute_child",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 6.366600000000001e-05,
+      "cumulative_seconds": 0.0073966660000000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 1110,
+      "function": "configure",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 7.5247e-05,
+      "cumulative_seconds": 0.007390917
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py",
+      "line": 930,
+      "function": "_apply",
+      "primitive_calls": 8,
+      "calls": 749,
+      "self_seconds": 0.0018713820000000002,
+      "cumulative_seconds": 0.007299834000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_tensor.py",
+      "line": 134,
+      "function": "__deepcopy__",
+      "primitive_calls": 293,
+      "calls": 586,
+      "self_seconds": 0.001165811,
+      "cumulative_seconds": 0.007216631
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 5356,
+      "function": "forward_with_context",
+      "primitive_calls": 238,
+      "calls": 238,
+      "self_seconds": 0.00017224900000000002,
+      "cumulative_seconds": 0.007155343000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'get' of 'dict' objects>",
+      "primitive_calls": 113105,
+      "calls": 113105,
+      "self_seconds": 0.00706702,
+      "cumulative_seconds": 0.007068062000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py",
+      "line": 1259,
+      "function": "to",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 8.5e-06,
+      "cumulative_seconds": 0.006799917000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 7171,
+      "function": "_derive_use_grammar",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 9.125e-06,
+      "cumulative_seconds": 0.006236
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 12675,
+      "function": "_undo_unary",
+      "primitive_calls": 50,
+      "calls": 50,
+      "self_seconds": 0.0006923210000000001,
+      "cumulative_seconds": 0.005936875
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Meaning.py",
+      "line": 140,
+      "function": "__post_init__",
+      "primitive_calls": 104,
+      "calls": 104,
+      "self_seconds": 0.000581295,
+      "cumulative_seconds": 0.005650711
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 1300,
+      "function": "_derive_thought_operations",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.000176756,
+      "cumulative_seconds": 0.005611125000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method '__reduce_ex__' of 'object' objects>",
+      "primitive_calls": 6303,
+      "calls": 6303,
+      "self_seconds": 0.001992408,
+      "cumulative_seconds": 0.005499844
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py",
+      "line": 179,
+      "function": "forward",
+      "primitive_calls": 22,
+      "calls": 22,
+      "self_seconds": 0.000140214,
+      "cumulative_seconds": 0.005267796
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method torch.where>",
+      "primitive_calls": 3144,
+      "calls": 6288,
+      "self_seconds": 0.004672375,
+      "cumulative_seconds": 0.0052240360000000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 14417,
+      "function": "local_op_from_rule_ids",
+      "primitive_calls": 386,
+      "calls": 386,
+      "self_seconds": 0.00106561,
+      "cumulative_seconds": 0.005171763
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'clamp' of 'torch._C.TensorBase' objects>",
+      "primitive_calls": 3529,
+      "calls": 7058,
+      "self_seconds": 0.004478999,
+      "cumulative_seconds": 0.005106997
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 1268,
+      "function": "_thought_contract_from_rule",
+      "primitive_calls": 134,
+      "calls": 134,
+      "self_seconds": 0.000256583,
+      "cumulative_seconds": 0.005009956
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.getattr>",
+      "primitive_calls": 31029,
+      "calls": 31467,
+      "self_seconds": 0.003003481,
+      "cumulative_seconds": 0.0049787320000000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 160,
+      "function": "_append_observed_meaning",
+      "primitive_calls": 4,
+      "calls": 4,
+      "self_seconds": 3.7090000000000004e-06,
+      "cumulative_seconds": 0.004941875
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseRow.py",
+      "line": 233,
+      "function": "write_clause",
+      "primitive_calls": 4,
+      "calls": 4,
+      "self_seconds": 0.000110749,
+      "cumulative_seconds": 0.0049040410000000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+      "line": 6895,
+      "function": "_coerce_basis",
+      "primitive_calls": 130,
+      "calls": 130,
+      "self_seconds": 0.00012854,
+      "cumulative_seconds": 0.0048517610000000004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+      "line": 21575,
+      "function": "stage_cs_sub",
+      "primitive_calls": 6,
+      "calls": 6,
+      "self_seconds": 0.000138362,
+      "cumulative_seconds": 0.004753001000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method _posixsubprocess.fork_exec>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.004707833000000001,
+      "cumulative_seconds": 0.004707833000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'to' of 'torch._C.TensorBase' objects>",
+      "primitive_calls": 3502,
+      "calls": 7004,
+      "self_seconds": 0.003938778,
+      "cumulative_seconds": 0.004663678
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py",
+      "line": 1237,
+      "function": "_thought_role_tokens",
+      "primitive_calls": 264,
+      "calls": 264,
+      "self_seconds": 0.000552252,
+      "cumulative_seconds": 0.004610157
+    }
+  ]
+}

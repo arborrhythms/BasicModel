@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot"
+  ],
+  "completed": [
+    "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0009150410005531739,
+      "message": "test/test_inverse_unary_exclusion.py:52: in test_serial_window_excludes_the_inverse_at_the_same_physical_slot\n    choice = LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=2,\nE   TypeError: LanguageSpace.choose_operation() got an unexpected keyword argument 'previous_unary'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

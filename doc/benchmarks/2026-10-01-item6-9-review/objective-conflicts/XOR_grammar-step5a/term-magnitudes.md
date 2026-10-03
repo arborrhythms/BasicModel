@@ -1,0 +1,63 @@
+# Every observed training cost term
+
+Raw and weighted units are separate; zeros remain. Missing terms have count 0. Per-trial distributions count active rows; batch distributions count batches.
+
+| Term | N | Min | p10 | Median | Mean | p90 | Max |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| band.None._reverse_event_loss.what.raw | 400 | 0.2832609 | 0.561219 | 0.7560267 | 0.7643437 | 0.9547184 | 0.9794968 |
+| band.None._reverse_event_loss.what.weighted | 400 | 0.1982827 | 0.3928533 | 0.5292187 | 0.5350406 | 0.6683029 | 0.6856477 |
+| band.None._reverse_event_loss.where.raw | 400 | 0.4534981 | 0.460585 | 0.4737099 | 0.479945 | 0.5011603 | 0.6428964 |
+| band.None._reverse_event_loss.where.weighted | 400 | 0.09069963 | 0.09211699 | 0.09474198 | 0.095989 | 0.1002321 | 0.1285793 |
+| band.None._run_batch_once.what.raw | 400 | 0.009268092 | 0.01895333 | 0.03104487 | 0.0390511 | 0.0634147 | 0.2447138 |
+| band.None._run_batch_once.what.weighted | 400 | 0.006487664 | 0.01326733 | 0.02173141 | 0.02733577 | 0.04439029 | 0.1712997 |
+| batch.accounting_residual | 400 | -1.378357e-08 | -7.674098e-09 | 2.28174e-09 | 1.739361e-09 | 1.043081e-08 | 1.778826e-08 |
+| batch.raw.arma_loss | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.raw.aux_total | 0 | — | — | — | — | — | — |
+| batch.raw.csbow | 0 | — | — | — | — | — | — |
+| batch.raw.defsp | 0 | — | — | — | — | — | — |
+| batch.raw.expectation_policy_loss | 0 | — | — | — | — | — | — |
+| batch.raw.gate_l1 | 0 | — | — | — | — | — | — |
+| batch.raw.grammar_lesson | 0 | — | — | — | — | — | — |
+| batch.raw.inter_contrastive | 0 | — | — | — | — | — | — |
+| batch.raw.inter_loss | 0 | — | — | — | — | — | — |
+| batch.raw.intra_loss | 0 | — | — | — | — | — | — |
+| batch.raw.ld_loss | 0 | — | — | — | — | — | — |
+| batch.raw.lossIn | 400 | 0.3050396 | 0.4933002 | 0.6246404 | 0.6310296 | 0.7614436 | 0.7818437 |
+| batch.raw.lossOut | 400 | 0.006487664 | 0.01326733 | 0.02173141 | 0.02733577 | 0.04439029 | 0.1712997 |
+| batch.raw.lossRev | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.raw.output_policy_loss | 0 | — | — | — | — | — | — |
+| batch.raw.readout_l1 | 0 | — | — | — | — | — | — |
+| batch.raw.sbow | 400 | 1.227438 | 1.241882 | 1.258791 | 1.277922 | 1.328275 | 1.605078 |
+| batch.raw.selected_pol_loss | 0 | — | — | — | — | — | — |
+| batch.raw.totalLoss | 400 | 0.1292663 | 0.1384163 | 0.1469747 | 0.1516013 | 0.1628878 | 0.2708965 |
+| batch.truth.balance_weight | 400 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 |
+| batch.truth.luminosity_weight | 400 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 |
+| batch.truth.truth_loss_weight | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.truth.universality_weight | 400 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 |
+| batch.weighted.arma_loss | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.weighted.lossIn | 400 | 0.03050396 | 0.04933002 | 0.06246404 | 0.06310296 | 0.07614436 | 0.07818437 |
+| batch.weighted.lossOut | 400 | 0.005838898 | 0.0119406 | 0.01955827 | 0.02460219 | 0.03995126 | 0.1541697 |
+| batch.weighted.lossRev | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.weighted.sbow | 400 | 0.06137191 | 0.0620941 | 0.06293956 | 0.06389611 | 0.06641373 | 0.08025392 |
+| trial.exploit.raw.expectation_contrastive | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.exploit.raw.expectation_inter | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.exploit.raw.grammar_lesson | 0 | — | — | — | — | — | — |
+| trial.exploit.raw.legacy_intra | 1600 | 0.0004650466 | 0.0008316658 | 0.00233209 | 0.03268786 | 0.01838348 | 1.941165 |
+| trial.exploit.raw.reconstruction | 1600 | -0 | 0 | 0 | 0 | 0 | 0 |
+| trial.exploit.raw.supplied_answer | 1600 | 3.070099e-07 | 0.003787938 | 0.02480346 | 0.04687066 | 0.09158792 | 1.24082 |
+| trial.exploit.weighted.expectation | 1600 | 4.650466e-05 | 8.316658e-05 | 0.000233209 | 0.003268786 | 0.001838348 | 0.1941165 |
+| trial.exploit.weighted.legacy_intra | 1600 | 4.650466e-05 | 8.316658e-05 | 0.000233209 | 0.003268786 | 0.001838348 | 0.1941165 |
+| trial.exploit.weighted.reconstruction | 1600 | -0 | 0 | 0 | 0 | 0 | 0 |
+| trial.exploit.weighted.supplied_answer | 1600 | 3.070099e-07 | 0.003787938 | 0.02480346 | 0.04687066 | 0.09158792 | 1.24082 |
+| trial.exploit.weighted.total | 1600 | 0.0001451471 | 0.004063406 | 0.02512855 | 0.05013945 | 0.0917293 | 1.241225 |
+| trial.explore.raw.expectation_contrastive | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.explore.raw.expectation_inter | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.explore.raw.grammar_lesson | 0 | — | — | — | — | — | — |
+| trial.explore.raw.legacy_intra | 1600 | 0.0005386397 | 0.001333833 | 0.003675371 | 0.07931645 | 0.05835264 | 2.325041 |
+| trial.explore.raw.reconstruction | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.explore.raw.supplied_answer | 1600 | 2.386165e-05 | 0.01281096 | 0.1892486 | 0.313933 | 0.808057 | 1.440817 |
+| trial.explore.weighted.expectation | 1600 | 5.386397e-05 | 0.0001333833 | 0.0003675371 | 0.007931645 | 0.005835264 | 0.2325041 |
+| trial.explore.weighted.legacy_intra | 1600 | 5.386397e-05 | 0.0001333833 | 0.0003675371 | 0.007931645 | 0.005835264 | 0.2325041 |
+| trial.explore.weighted.reconstruction | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.explore.weighted.supplied_answer | 1600 | 2.386165e-05 | 0.01281096 | 0.1892486 | 0.313933 | 0.808057 | 1.440817 |
+| trial.explore.weighted.total | 1600 | 0.0003482839 | 0.01313639 | 0.2005132 | 0.3218646 | 0.8100186 | 1.441142 |

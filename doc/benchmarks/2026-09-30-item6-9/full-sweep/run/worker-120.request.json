@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_phase1_normalizer.py::test_model_attaches_normalizer_to_every_space"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-120.recycle.json"
+}

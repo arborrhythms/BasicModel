@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_output_percept_readout.py::test_model_checkpoint_preserves_readout_and_adam[False]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-056.recycle.json"
+}

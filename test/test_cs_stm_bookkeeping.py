@@ -66,39 +66,6 @@ def _make_plain_model():
     return model
 
 
-class TestSigmaPerceptRetired(unittest.TestCase):
-    """The atomic-fold ``sigma_percept`` (and its ``_1`` / ``_2`` /
-    ``_sigma_percept_reverse`` helpers) are retired. CS no longer carries
-    a parameterised percept→concept fold operator at the substrate
-    level."""
-
-    def test_sigma_percept_attribute_removed(self):
-        model = _make_plain_model()
-        cs = model.conceptualSpace
-        self.assertFalse(
-            hasattr(cs, 'sigma_percept'),
-            "ConceptualSpace.sigma_percept must be retired by "
-            "Stage 1.C (CS.forward is now STM bookkeeping).")
-
-    def test_sigma_percept_variants_removed(self):
-        model = _make_plain_model()
-        cs = model.conceptualSpace
-        self.assertFalse(
-            hasattr(cs, 'sigma_percept_1'),
-            "ConceptualSpace.sigma_percept_1 (paired-sigma forward "
-            "alias) must be retired by Stage 1.C.")
-        self.assertFalse(
-            hasattr(cs, 'sigma_percept_2'),
-            "ConceptualSpace.sigma_percept_2 (paired-sigma reverse "
-            "alias) must be retired by Stage 1.C.")
-
-    def test_sigma_percept_reverse_helper_removed(self):
-        model = _make_plain_model()
-        cs = model.conceptualSpace
-        self.assertFalse(
-            hasattr(cs, '_sigma_percept_reverse'),
-            "ConceptualSpace._sigma_percept_reverse helper must be "
-            "retired with ``sigma_percept``.")
 
 
 class TestSTMInstancePreserved(unittest.TestCase):

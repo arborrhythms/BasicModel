@@ -1,0 +1,59 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -17645,9 +17645,36 @@
+ 
+ 
+     def _forward_head(self, sub):
+-        """Head: outputSpace forward."""
++        """Read a concluded serial understanding without training its producer."""
+         if self.outputSpace.concept_ids:
+             sub = self._combine_last_cs_sub
++        elif getattr(self, 'serial', False):
++            root = getattr(self, '_stm_single_S', None)
++            if not torch.is_tensor(root):
++                raise RuntimeError('a serial numeric answer requires a concluded understanding')
++            slots = getattr(self, '_tensor_final_end_slots', None)
++            depth = getattr(self, '_tensor_final_end_depth', None)
++            if not (torch.is_tensor(slots) and torch.is_tensor(depth)):
++                slots, depth = self._final_end_state(
++                    root, getattr(self, '_stm_post_depth', None))
++            B, D = root.shape
++            occupied = depth.reshape(B).abs().clamp_max(3)
++            single = torch.cat((root[:, None], root.new_zeros(B, 2, D)), dim=1)
++            slots = torch.where((occupied == 1)[:, None, None], single, slots)
++            slots = torch.where(
++                (torch.arange(3, device=root.device)[None] < occupied[:, None])[..., None],
++                slots, torch.zeros_like(slots))
++            # Preserve the existing map's parameter geometry. Unoccupied
++            # inputs are zeros; no per-word carrier can bypass the state cut.
++            shape = tuple(self.outputSpace.inputShape)
++            width = int(shape[0]) * int(shape[1])
++            torch._assert_async((occupied * D <= width).all(),
++                'the answer map cannot hold the concluded understanding')
++            value = slots.detach().reshape(B, 3 * D)
++            value = F.pad(value, (0, max(0, width - 3 * D)))[:, :width]
++            sub = SubSpace.from_tensor(value.reshape(B, *shape),
++                inputShape=shape, outputShape=shape,
++                nInputDim=shape[1], nOutputDim=shape[1])
+         return self.outputSpace(sub)
+ 
+     @staticmethod
+@@ -22227,15 +22254,9 @@
+         # NULL closing (``next_word`` -> None ended the loop) now fires
+         # the final bounded reduce sweep to the root.
+         #
+-        # SCOPE FENCE (2b-2-i): the IR loss is UNCHANGED this
+-        # increment. ``last_cs`` (the position-aligned ``[B,N,D_c]``
+-        # representation, exactly as 2b-1) is what the existing
+-        # ``_forward_head`` + ``runBatch`` P-space_role masked-LM IR tail
+-        # consumes -- the training signal is byte-identical to 2b-1.
+-        # The single S is PRODUCED and verified here (depth -> 1,
+-        # category tracks ``Grammar.start_symbol``) but NOT yet
+-        # consumed by the loss; 2b-2-ii rewires the loss to
+-        # ``reverse(S)``-vs-unmasked using exactly this S.
++        # The numeric answer reads the concluded one- or three-slot state
++        # through _forward_head, with the producer's gradient cut. The
++        # position-aligned carrier remains available to the perceptual inverse.
+         sentence_idea = None
+         sentence_post_depth = None
+         if (stm is not None and word_count > 0

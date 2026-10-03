@@ -1,0 +1,94 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_config_loads",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_dataset_is_inline",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_input_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_output_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_input_contains_sentences",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_output_labels",
+    "test/test_xor_spaces.py::TestLoadInline::test_four_training_examples",
+    "test/test_xor_spaces.py::TestLoadInline::test_labels_as_float_tensors"
+  ],
+  "completed": [
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_config_loads",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_dataset_is_inline",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_input_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_output_elements_parsed",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_input_contains_sentences",
+    "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_output_labels",
+    "test/test_xor_spaces.py::TestLoadInline::test_four_training_examples",
+    "test/test_xor_spaces.py::TestLoadInline::test_labels_as_float_tensors"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_config_loads",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033312500454485416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_dataset_is_inline",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011558301048353314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_input_elements_parsed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.887499618344009e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_output_elements_parsed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.312501060776412e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_input_contains_sentences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010149998706765473,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesConfigParsing::test_train_output_labels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010779198782984167,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestLoadInline::test_four_training_examples",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024729200231377035,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestLoadInline::test_labels_as_float_tensors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015654100570827723,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

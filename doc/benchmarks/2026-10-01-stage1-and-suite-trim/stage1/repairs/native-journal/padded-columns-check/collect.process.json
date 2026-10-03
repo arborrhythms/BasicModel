@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/repairs/native-journal/padded-columns-check/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/repairs/native-journal/padded-columns-check/collect.json"
+  ],
+  "pid": 76771,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 492324088,
+  "elapsed_seconds": 3.6733651670001564,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/repairs/native-journal/padded-columns-check/collect.log"
+}

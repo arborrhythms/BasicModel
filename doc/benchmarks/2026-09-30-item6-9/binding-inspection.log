@@ -1,0 +1,43 @@
+Starting with dynamic 2-dim embedding (words added at runtime)
+OWNER 10 10 (6, 10)
+TERMINAL 10 10
+ROOT tensor([[0.2342, 0.0000, 0.2758, 2.2349, 0.5473, 2.1839, 0.0000, 2.2520, 0.0000,
+         2.2520],
+        [0.5896, 0.0000, 0.2758, 2.2349, 0.5473, 2.1839, 0.0000, 2.2520, 0.0000,
+         2.2520],
+        [0.6826, 0.0000, 0.2758, 2.2349, 0.5473, 2.1839, 0.0000, 2.2520, 0.0000,
+         2.2520],
+        [0.7332, 0.0000, 0.2758, 2.2349, 0.5473, 2.1839, 0.0000, 2.2520, 0.0000,
+         2.2520]])
+WORD hello word 1 object 2 row 0
+WORD world word 3 object 4 row 1
+WORD there word 5 object 6 row 2
+WORD loving word 7 object 8 row 4
+_word_active_mask tensor([[ True,  True,  True, False, False, False],
+        [ True,  True,  True, False, False, False],
+        [ True,  True,  True, False, False, False],
+        [ True,  True,  True, False, False, False]])
+_ar_word_concept_rows tensor([[-1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1]])
+_ar_word_object_rows tensor([[-1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1]])
+_ar_word_object_atoms None
+PS {'tokens': [['hello', ' ', 'world'], ['hello', ' ', 'there'], ['loving', ' ', 'world'], ['loving', ' ', 'there']], 'indices': tensor([[128,  32, 129,   0,   0,   0],
+        [128,  32, 130,   0,   0,   0],
+        [131,  32, 129,   0,   0,   0],
+        [131,  32, 130,   0,   0,   0]])}
+STAGED_EXTENTS tensor([[[ 0,  5],
+         [ 6, 11]],
+
+        [[ 0,  5],
+         [ 6, 11]],
+
+        [[ 0,  6],
+         [ 7, 12]],
+
+        [[ 0,  6],
+         [ 7, 12]]])

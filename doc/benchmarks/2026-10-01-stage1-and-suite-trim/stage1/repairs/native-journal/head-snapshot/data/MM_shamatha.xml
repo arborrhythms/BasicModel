@@ -1,0 +1,103 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_shamatha: Dakpo Tashi Namgyel one-pointedness via convex-hull
+       fusion. Mirrors MM_boolean's DNF stack (NegationLayer + Sigma AND-fold
+       + Pi OR-fold) and adds the `Contiguous(S)` rule that fires
+       ContiguousLayer before NegationLayer when thought_free is on.
+       The four WholeSpace regularizer knobs (l1Lambda,
+       discontinuityLambda, impenetrableOverlap, impenetrableVariance)
+       apply regardless of mode. -->
+  <architecture>
+    <!-- subsymbolicOrder=0 keeps this one-pointed grammar out of higher-order
+         P/C/S cycles. Parser dispatch is derived from the grammar block. -->
+    <subsymbolicOrder>0</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <symbolicOrder>1</symbolicOrder>
+    <monotonic>true</monotonic>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+
+  </architecture>
+
+  <SymbolSpace>
+    <language>
+      <start>S</start>
+      <grammar>
+        <!-- Contiguous(S) was retired 2026-05-04 (duplicate of
+             disjunction at S-tier). Migrated to disjunction(S, S);
+             the post-codebook scalar-max semantics deliver the
+             same hull-style fold the rule used to provide.
+
+             Per the 2026-05-07 rollback: explicit per-tier natural
+             folds (sigma at P / S, pi at C) listed below. -->
+        <P>sigma(P)</P>
+        <C>pi(C)</C>
+        <S>sigma(S)</S>
+        <S>disjunction(S, S)</S>
+        <S>not(S)</S>
+        <S>union(C, C)</S>
+        <S>C</S>
+        <C>intersection(C, C)</C>
+        <C>P</C>
+      </grammar>
+    </language>
+  </SymbolSpace>
+
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS, PS, CS share
+       the same flat slab. CS terminal is 16*12=192; align IS/PS to
+       16*12=192 (nOutput=16, nDim=12). SS keeps nDim=12 (concept_dim
+       == symbol_dim invariant). -->
+  <InputSpace>
+    <nDim>16</nDim>
+    <nVectors>16</nVectors>
+    <nOutput>16</nOutput>
+    <codebook>quantize</codebook>
+  </InputSpace>
+
+  <PartSpace>
+    <nOutput>16</nOutput>
+    <nDim>16</nDim>
+    <nVectors>256</nVectors>
+  </PartSpace>
+
+  <!-- ConceptualSpace: hierarchical mode computes per-level shapes from
+       nPercepts=16 × dim=12.  Final level: 1 vector × 192 dim.
+       XML nDim/nVectors describe the final level for non-hierarchical compat. -->
+  <ConceptualSpace>
+    <nOutput>16</nOutput>
+    <nDim>16</nDim>
+    <nVectors>16</nVectors>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+    <nVectors>8</nVectors>
+    <!-- codebook=quantize is required so the SparsityRegLayer / VQ-VAE
+         path is active; the four regularizer knobs below operate on
+         the codebook tensor. -->
+    <discontinuityLambda>0.01</discontinuityLambda>
+    <impenetrableOverlap>0.1</impenetrableOverlap>
+    <impenetrableVariance>0.01</impenetrableVariance>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+</model>

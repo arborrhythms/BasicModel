@@ -1,0 +1,510 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: memory</h1><p>Exit 137; 112/165 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.38350041600642726</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_compile_static_loop.py::test_word_at_returns_padded_shape_past_valid_len</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.32966050002141856</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_compile_static_loop.py::test_per_word_body_does_not_recompile_on_accumulator_length</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>41.62409920801292</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.378467666974757</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.701s)
+batch = 0 (Δ=0.333s)
+</pre></td></tr><tr><td><pre>test/test_conceptual_recurrence.py::test_mm5m_forward_finite_after_combine</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.612567959004082</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_conceptual_recurrence.py::test_mm5m_combine_carrier_roundtrip</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.6412693329912145</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_conceptual_recurrence.py::test_no_recompile_fullgraph</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>43.91128833399853</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.628503249987261</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_conceptual_recurrence.py::test_parallel_ps_called_once</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.602982041018549</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_conceptual_recurrence.py::test_mm5m_grammar_builds_and_forwards</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.45519270800286904</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_conceptualize.py::test_conceptualize_dispatch</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.04936450000968762</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.2518814580107573</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 1.497s; word units 83.3% of 24 words (letters-only 100.0% of 8).
+batch = 0 (Δ=1.624s, 100.00%)
+runEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 1.659s; word units 86.5% of 192 words (letters-only 100.0% of 64).
+</pre></td></tr><tr><td><pre>test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.0130368329992052</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.635s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.306s, 100.00%)
+runEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>6.424987749982392</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.686s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.657s, 100.00%)
+runEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.507s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_cs_to_ss_forward.py::test_symbol_tower_parallel_forward_smoke</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.14151187500101514</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_returns_row_aligned_leg</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.019302375003462657</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_empty_is_none</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.01824974999180995</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_to_ss_forward.py::test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03220658400095999</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_to_ss_forward.py::test_symbol_leg_survives_repeated_sync_backward</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.021013833989854902</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_cs_to_ss_forward.py::test_symbol_leg_fallback_without_activations_stays_detached</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.01920974999666214</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dimensional_governance.py::test_mm_5m_builds_and_forwards</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.610783917014487</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dimensional_governance.py::test_serial_relaxes_symbol_dim_passthrough</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.019920292019378394</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dimensional_governance.py::test_reference_configs_still_build_no_false_positive</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.208670915977564</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_ws_matches_ps_view_shape</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.221949375001714</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.26766983297420666</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.03405129199381918</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0021482500014826655</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.6488737920008134</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.587s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_ws_routing_after_serial_migration</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.9256191249878611</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.745s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.328573958016932</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.141s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+{&#x27;present_word&#x27;: &#x27;hello&#x27;, &#x27;extent_pair&#x27;: [[1.0, 0.0]], &#x27;symbol_pair&#x27;: [1.0, 0.0]}
+{&#x27;present_word&#x27;: &#x27;loving&#x27;, &#x27;extent_pair&#x27;: [[1.0, 0.0]], &#x27;symbol_pair&#x27;: [1.0, 0.0]}
+{&#x27;present_word&#x27;: &#x27;there&#x27;, &#x27;extent_pair&#x27;: [[1.0, 0.0]], &#x27;symbol_pair&#x27;: [1.0, 0.0]}
+{&#x27;present_word&#x27;: &#x27;world&#x27;, &#x27;extent_pair&#x27;: [[1.0, 0.0]], &#x27;symbol_pair&#x27;: [1.0, 0.0]}
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_pyramid_replaces_wave</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.20716983298189007</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.141s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_pyramid_taper_topk_selection</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.6460725420038216</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.565s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_dual_towers.py::test_pyramid_grads_reach_every_rung</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.371596209006384</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.149s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.159s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.157s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_dynamic_part_padding.py::test_single_real_part_is_identity_padded_to_three</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.037711417011450976</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_dynamic_part_padding.py::test_runbatch_staging_declares_p3_and_flattened_3w_minima</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.4554258749994915</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+</pre></td></tr><tr><td><pre>test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>6.722195166978054</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=2.075s)
+batch = 0 (Δ=1.975s)
+</pre></td></tr><tr><td><pre>test/test_frozen_concepts.py::test_set_reading_primes_the_concept</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0635138750076294</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.045523791981395334</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_global_on_builds_module</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.07515783299459144</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_global_off_has_no_module</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.05735899999854155</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.20980291700107045</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.11984308302635327</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.11788808298297226</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_attention.py::test_global_params_reach_optimizer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.05576987497624941</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_consume_flag_off_by_default_on_global_config</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.07244200000423007</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.27211545800673775</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_zero_gate_matches_consume_off</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.647014209011104</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.4613611250242684</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.20272287499392405</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_answer_loss_trains_retrieval</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.27966945798834786</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.2677105409966316</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>8.716660665988456</pre></td><td><pre></pre></td><td><pre>: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.sigma.layer.d&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.sigma.layer.raw_U&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.sigma.layer.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 6120, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.routing_proj.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.layers.0.routing_proj.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 258944, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2.predictor.0.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 272, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2.predictor.0.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 36992, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2.predictor.2.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2.predictor.2.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 822, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.kind_weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 1, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.kind_bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 2702736, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.network.0.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 822, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.network.0.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 337842, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.network.2.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 411, &quot;owner&quot;: &quot;expectation&quot;, &quot;parameter&quot;: &quot;symbolSpace.subspace.layers.2._inter_predictor.network.2.bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 1, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace._readout_bias&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 17408, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.layers.0.W&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 16, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.layers.0.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 17408, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.layers.1.W&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 1088, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.layers.1.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 408000, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;answer_record_reader.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 3944, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;question_conditioners.136.weight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.synthesis_layer.raw_L&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.synthesis_layer.d&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.synthesis_layer.raw_U&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;conceptualSpaces.3.synthesis_layer.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;perceptualSpace.synthesis_layer.raw_L&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;perceptualSpace.synthesis_layer.d&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 18496, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;perceptualSpace.synthesis_layer.raw_U&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 136, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;perceptualSpace.synthesis_layer.biasWeight&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 6528, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.percept_adapter.raw_L&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 16, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.percept_adapter.d&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 256, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.percept_adapter.raw_U&quot;, &quot;writers&quot;: []}, {&quot;elements&quot;: 16, &quot;owner&quot;: &quot;output&quot;, &quot;parameter&quot;: &quot;inputSpace.outputSpace.percept_adapter.biasWeight&quot;, &quot;writers&quot;: []}]}
+</pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_config_is_masked_parallel_semantic</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.9349730419926345</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.573s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.155s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.140s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.141s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.140s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_masked_ir_training_engages</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00021649998961947858</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_concept_attention_live_not_dark</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00011591700604185462</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_masked_prediction_uses_concept_attention</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.3850730410194956</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.112s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.104s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.103s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_reconstruction_uses_word_definition_evidence</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.3410408330091741</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.099s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.088s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.088s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.086s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_masked_semantic.py::test_seeded_rerun_is_deterministic</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.49420687498059124</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.148s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.143s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.142s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.141s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.140s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>168.05478408301133</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 33.33%)
+batch = 4 (Δ=4.818s, 41.67%)
+batch = 8 (Δ=5.356s, 50.00%)
+batch = 12 (Δ=5.558s, 58.33%)
+batch = 16 (Δ=2.458s, 66.67%)
+batch = 20 (Δ=2.162s, 75.00%)
+batch = 24 (Δ=2.097s, 83.33%)
+batch = 28 (Δ=1.990s, 91.67%)
+batch = 32 (Δ=2.284s, 100.00%)
+batch = 36 (Δ=1.716s, 100.00%)
+batch = 40 (Δ=2.354s, 100.00%)
+batch = 44 (Δ=2.303s, 100.00%)
+Training throughput: 12 batches in 38.571s; word units 17.1% of 205 words (letters-only 17.1% of 205).
+batch = 0 (Δ=2.184s, 33.33%)
+batch = 4 (Δ=1.914s, 41.67%)
+batch = 8 (Δ=2.409s, 50.00%)
+batch = 12 (Δ=2.114s, 58.33%)
+batch = 16 (Δ=2.265s, 66.67%)
+batch = 20 (Δ=2.210s, 75.00%)
+batch = 24 (Δ=2.085s, 83.33%)
+batch = 28 (Δ=1.989s, 91.67%)
+batch = 32 (Δ=2.283s, 100.00%)
+batch = 36 (Δ=1.707s, 100.00%)
+batch = 40 (Δ=2.340s, 100.00%)
+batch = 44 (Δ=2.301s, 100.00%)
+Training throughput: 12 batches in 25.801s; word units 23.4% of 205 words (letters-only 23.4% of 205).
+batch = 0 (Δ=2.204s, 33.33%)
+batch = 4 (Δ=1.906s, 41.67%)
+batch = 8 (Δ=2.289s, 50.00%)
+batch = 12 (Δ=2.207s, 58.33%)
+batch = 16 (Δ=2.331s, 66.67%)
+batch = 20 (Δ=2.208s, 75.00%)
+batch = 24 (Δ=2.098s, 83.33%)
+batch = 28 (Δ=1.912s, 91.67%)
+batch = 32 (Δ=2.383s, 100.00%)
+batch = 36 (Δ=1.724s, 100.00%)
+batch = 40 (Δ=2.362s, 100.00%)
+batch = 44 (Δ=2.300s, 100.00%)
+Training throughput: 12 batches in 25.923s; word units 23.4% of 205 words (letters-only 23.4% of 205).
+batch = 0 (Δ=2.119s, 33.33%)
+batch = 4 (Δ=2.029s, 41.67%)
+batch = 8 (Δ=2.298s, 50.00%)
+batch = 12 (Δ=1.710s, 58.33%)
+batch = 16 (Δ=2.036s, 66.67%)
+batch = 20 (Δ=2.084s, 75.00%)
+batch = 24 (Δ=1.888s, 83.33%)
+batch = 28 (Δ=1.987s, 91.67%)
+batch = 32 (Δ=2.362s, 100.00%)
+batch = 36 (Δ=1.863s, 100.00%)
+batch = 40 (Δ=2.308s, 100.00%)
+batch = 44 (Δ=2.387s, 100.00%)
+Training throughput: 12 batches in 25.072s; word units 23.4% of 205 words (letters-only 23.4% of 205).
+batch = 0 (Δ=2.250s, 33.33%)
+batch = 4 (Δ=1.956s, 41.67%)
+batch = 8 (Δ=2.443s, 50.00%)
+batch = 12 (Δ=2.233s, 58.33%)
+batch = 16 (Δ=2.469s, 66.67%)
+batch = 20 (Δ=2.175s, 75.00%)
+batch = 24 (Δ=2.082s, 83.33%)
+batch = 28 (Δ=2.008s, 91.67%)
+batch = 32 (Δ=2.308s, 100.00%)
+batch = 36 (Δ=1.723s, 100.00%)
+batch = 40 (Δ=2.365s, 100.00%)
+batch = 44 (Δ=2.285s, 100.00%)
+Training throughput: 12 batches in 26.297s; word units 23.4% of 205 words (letters-only 23.4% of 205).
+batch = 0 (Δ=2.210s, 33.33%)
+batch = 4 (Δ=1.951s, 41.67%)
+batch = 8 (Δ=2.392s, 50.00%)
+batch = 12 (Δ=2.103s, 58.33%)
+batch = 16 (Δ=2.310s, 66.67%)
+batch = 20 (Δ=2.228s, 75.00%)
+batch = 24 (Δ=2.081s, 83.33%)
+batch = 28 (Δ=1.890s, 91.67%)
+batch = 32 (Δ=2.392s, 100.00%)
+batch = 36 (Δ=1.719s, 100.00%)
+batch = 40 (Δ=2.368s, 100.00%)
+batch = 44 (Δ=2.341s, 100.00%)
+Training throughput: 12 batches in 25.985s; word units 23.4% of 205 words (letters-only 23.4% of 205).
+</pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>100.37569608300691</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_parallel_topology</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.1461862919968553</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.509s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.074s, 100.00%)
+Training throughput: 1 batches in 0.059s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.060s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.060s, 100.00%)
+Training throughput: 1 batches in 0.058s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.059s, 100.00%)
+Training throughput: 1 batches in 0.057s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_serial_answer_path_varies_with_the_input</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.785656083986396</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>64.22273095897981</pre></td><td><pre>test/test_output_path_supervised.py:134: in test_output_path_memorizes_supervised_labels_on_the_serial_topology
+    assert _memorize(m, epochs=40, lr=1e-3) &gt;= 1.0
+E   assert 0.96875 &gt;= 1.0
+E    +  where 0.96875 = _memorize(BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=29, out_features=136, bias=False)\n  )\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\n), epochs=40, lr=0.001)</pre></td><td><pre> of 16).
+batch = 0 (Δ=2.040s, 100.00%)
+Training throughput: 1 batches in 1.541s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.656s, 100.00%)
+Training throughput: 1 batches in 1.654s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.507s, 100.00%)
+Training throughput: 1 batches in 1.506s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.489s, 100.00%)
+Training throughput: 1 batches in 1.487s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.503s, 100.00%)
+Training throughput: 1 batches in 1.501s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.507s, 100.00%)
+Training throughput: 1 batches in 1.505s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.589s, 100.00%)
+Training throughput: 1 batches in 1.587s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.493s, 100.00%)
+Training throughput: 1 batches in 1.491s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.522s, 100.00%)
+Training throughput: 1 batches in 1.520s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.503s, 100.00%)
+Training throughput: 1 batches in 1.502s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.976s, 100.00%)
+Training throughput: 1 batches in 1.481s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.603s, 100.00%)
+Training throughput: 1 batches in 1.601s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.539s, 100.00%)
+Training throughput: 1 batches in 1.537s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.497s, 100.00%)
+Training throughput: 1 batches in 1.495s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.509s, 100.00%)
+Training throughput: 1 batches in 1.508s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.553s, 100.00%)
+Training throughput: 1 batches in 1.552s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.616s, 100.00%)
+Training throughput: 1 batches in 1.614s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.508s, 100.00%)
+Training throughput: 1 batches in 1.506s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.524s, 100.00%)
+Training throughput: 1 batches in 1.522s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.504s, 100.00%)
+Training throughput: 1 batches in 1.503s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=2.136s, 100.00%)
+Training throughput: 1 batches in 1.623s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.535s, 100.00%)
+Training throughput: 1 batches in 1.533s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.531s, 100.00%)
+Training throughput: 1 batches in 1.529s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.540s, 100.00%)
+Training throughput: 1 batches in 1.539s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.537s, 100.00%)
+Training throughput: 1 batches in 1.535s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.627s, 100.00%)
+Training throughput: 1 batches in 1.625s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.525s, 100.00%)
+Training throughput: 1 batches in 1.524s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.538s, 100.00%)
+Training throughput: 1 batches in 1.536s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.537s, 100.00%)
+Training throughput: 1 batches in 1.535s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.540s, 100.00%)
+Training throughput: 1 batches in 1.539s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.3405479170032777</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.2453184170008171</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-development]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.059632958000293</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.5587234170234296</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-development]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.1490751249948516</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>4.024841749982443</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.029476625000825</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+batch = 0 (Δ=1.031s)
+batch = 0 (Δ=0.939s)
+batch = 0 (Δ=0.910s)
+batch = 0 (Δ=0.922s)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>4.6985271660087164</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+batch = 0 (Δ=0.938s)
+batch = 0 (Δ=0.936s)
+batch = 0 (Δ=0.756s)
+batch = 0 (Δ=0.731s)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.691664582991507</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>2.0224266659934074</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.714009083021665</pre></td><td><pre></pre></td><td><pre>[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1029/test_native_checkpoint_restore0/native.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1029/test_native_checkpoint_restore0/native.ckpt
+</pre></td></tr><tr><td><pre>test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.7266071249905508</pre></td><td><pre></pre></td><td><pre>[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1029/test_native_checkpoint_restore1/native.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1029/test_native_checkpoint_restore1/native.ckpt
+</pre></td></tr><tr><td><pre>test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>92.31116929199197</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.7429563750047237</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=1.003s)
+batch = 0 (Δ=0.750s)
+batch = 1 (Δ=0.637s)
+</pre></td></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.0214614589931443</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+batch = 0 (Δ=0.890s)
+batch = 0 (Δ=0.650s)
+batch = 1 (Δ=0.630s)
+</pre></td></tr><tr><td><pre>test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.439312375005102</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up)
+batch = 0 (Δ=1.042s)
+batch = 0 (Δ=0.747s)
+batch = 1 (Δ=0.685s)
+</pre></td></tr><tr><td><pre>test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.44718774998909794</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.28792599998996593</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>8.754688124987297</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>16.049803458998213</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.546170916990377</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>13.837118208990432</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_priming_spread_knob_stamped</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.07932908300426789</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_cs_to_ps_projection_live</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.925473208015319</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.577s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.155s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.141s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.142s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.141s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_cs_to_ws_projection_live</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.50118633400416</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.149s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.144s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.142s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.142s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.141s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_projection_bounded_across_epochs</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.9279414170014206</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.152s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.144s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.142s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.143s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.142s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.143s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.141s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.142s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.141s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.141s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.140s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_one_canonical_surface_per_tower</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.2170237500104122</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.152s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.21730674998252653</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.150s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_priming_energy.py::test_priming_rows_carry_abstraction_order</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.2151001660095062</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.150s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>42.59234462500899</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_reading_attention_on_builds_producer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.07370116701349616</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_reading_attention_off_has_no_module</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.05634637500043027</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_forward_is_finite_and_deterministic</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.20930366701213643</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_train_forward_then_backward_is_finite</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.11136241699568927</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.11672841699328274</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_registered_loss_backprops_to_producer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.13108166700112633</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_producer_scope_clears_past_last_word</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.11863095799344592</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_producer_params_reach_the_optimizer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.058727042021928355</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>3.7666488329996355</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 2.545s; word units 100.0% of 30 words (letters-only 100.0% of 30).
+</pre></td></tr><tr><td><pre>test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.231340958009241</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.49443512500147335</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.49018604200682603</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.47062033298425376</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>6.268019832990831</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 1.098s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.791813624993665</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.726s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>6.338208208006108</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 1.124s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>92.77123041599407</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 12.50%)
+batch = 8 (Δ=2.842s, 15.62%)
+batch = 16 (Δ=2.728s, 18.75%)
+batch = 24 (Δ=2.638s, 21.88%)
+batch = 32 (Δ=2.785s, 25.00%)
+batch = 40 (Δ=2.685s, 28.12%)
+batch = 48 (Δ=2.674s, 31.25%)
+batch = 56 (Δ=2.792s, 34.38%)
+batch = 64 (Δ=2.771s, 37.50%)
+batch = 72 (Δ=2.775s, 40.62%)
+batch = 80 (Δ=2.529s, 43.75%)
+batch = 88 (Δ=2.735s, 46.88%)
+batch = 96 (Δ=2.563s, 50.00%)
+batch = 104 (Δ=2.723s, 53.12%)
+batch = 112 (Δ=2.691s, 56.25%)
+batch = 120 (Δ=2.807s, 59.38%)
+batch = 128 (Δ=2.775s, 62.50%)
+batch = 136 (Δ=2.869s, 65.62%)
+batch = 144 (Δ=2.829s, 68.75%)
+batch = 152 (Δ=2.659s, 71.88%)
+batch = 160 (Δ=2.814s, 75.00%)
+batch = 168 (Δ=2.680s, 78.12%)
+batch = 176 (Δ=2.630s, 81.25%)
+batch = 184 (Δ=2.834s, 84.38%)
+batch = 192 (Δ=2.659s, 87.50%)
+batch = 200 (Δ=2.724s, 90.62%)
+batch = 208 (Δ=2.836s, 93.75%)
+batch = 216 (Δ=2.705s, 96.88%)
+batch = 224 (Δ=2.806s, 100.00%)
+batch = 232 (Δ=2.685s, 100.00%)
+batch = 240 (Δ=2.581s, 100.00%)
+batch = 248 (Δ=2.722s, 100.00%)
+Training throughput: 32 batches in 87.143s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=5.208s, 100.00%)
+Training throughput: 1 batches in 5.350s; word units 86.5% of 192 words (letters-only 100.0% of 64).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>2.982485708023887</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 2.735s; word units 83.3% of 24 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>244.34066016599536</pre></td><td><pre>test/test_reconstruction_roundtrip.py:459: in test_mm20m_grammar_free_derivation_roundtrip
+    assert rec.exact_match_rate == 1.0
+E   AssertionError: assert 0.0 == 1.0
+E    +  where 0.0 = RunRecord(config=&#x27;data/MM_ladder.xml&#x27;, seed=4045216278, epochs=3, wall_s_per_epoch=76.56520506298693, output_loss=0.06...n ModelLoss and not exposed on the model&#x27;, &#x27;epoch_times_s&#x27;: [86.36264687500079, 81.87587404198712, 71.25453608398675]}).exact_match_rate</pre></td><td><pre>batch = 0 (warm-up, 12.50%)
+batch = 8 (Δ=2.805s, 15.62%)
+batch = 16 (Δ=2.769s, 18.75%)
+batch = 24 (Δ=2.830s, 21.88%)
+batch = 32 (Δ=2.658s, 25.00%)
+batch = 40 (Δ=2.705s, 28.12%)
+batch = 48 (Δ=2.853s, 31.25%)
+batch = 56 (Δ=2.728s, 34.38%)
+batch = 64 (Δ=2.773s, 37.50%)
+batch = 72 (Δ=2.659s, 40.62%)
+batch = 80 (Δ=2.631s, 43.75%)
+batch = 88 (Δ=2.765s, 46.88%)
+batch = 96 (Δ=2.651s, 50.00%)
+batch = 104 (Δ=2.643s, 53.12%)
+batch = 112 (Δ=2.805s, 56.25%)
+batch = 120 (Δ=2.750s, 59.38%)
+batch = 128 (Δ=2.810s, 62.50%)
+batch = 136 (Δ=2.534s, 65.62%)
+batch = 144 (Δ=2.205s, 68.75%)
+batch = 152 (Δ=2.414s, 71.88%)
+batch = 160 (Δ=2.577s, 75.00%)
+batch = 168 (Δ=2.643s, 78.12%)
+batch = 176 (Δ=2.726s, 81.25%)
+batch = 184 (Δ=2.906s, 84.38%)
+batch = 192 (Δ=2.744s, 87.50%)
+batch = 200 (Δ=2.871s, 90.62%)
+batch = 208 (Δ=2.576s, 93.75%)
+batch = 216 (Δ=2.622s, 96.88%)
+batch = 224 (Δ=2.773s, 100.00%)
+batch = 232 (Δ=2.626s, 100.00%)
+batch = 240 (Δ=2.603s, 100.00%)
+batch = 248 (Δ=2.846s, 100.00%)
+Training throughput: 32 batches in 86.362s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=2.689s, 12.50%)
+batch = 8 (Δ=2.517s, 15.62%)
+batch = 16 (Δ=2.668s, 18.75%)
+batch = 24 (Δ=2.604s, 21.88%)
+batch = 32 (Δ=2.700s, 25.00%)
+batch = 40 (Δ=2.599s, 28.12%)
+batch = 48 (Δ=2.605s, 31.25%)
+batch = 56 (Δ=2.834s, 34.38%)
+batch = 64 (Δ=2.730s, 37.50%)
+batch = 72 (Δ=2.619s, 40.62%)
+batch = 80 (Δ=2.703s, 43.75%)
+batch = 88 (Δ=2.590s, 46.88%)
+batch = 96 (Δ=2.578s, 50.00%)
+batch = 104 (Δ=2.776s, 53.12%)
+batch = 112 (Δ=2.613s, 56.25%)
+batch = 120 (Δ=2.843s, 59.38%)
+batch = 128 (Δ=2.647s, 62.50%)
+batch = 136 (Δ=2.680s, 65.62%)
+batch = 144 (Δ=2.728s, 68.75%)
+batch = 152 (Δ=2.587s, 71.88%)
+batch = 160 (Δ=2.604s, 75.00%)
+batch = 168 (Δ=2.766s, 78.12%)
+batch = 176 (Δ=2.640s, 81.25%)
+batch = 184 (Δ=2.578s, 84.38%)
+batch = 192 (Δ=2.509s, 87.50%)
+batch = 200 (Δ=2.144s, 90.62%)
+batch = 208 (Δ=2.109s, 93.75%)
+batch = 216 (Δ=2.179s, 96.88%)
+batch = 224 (Δ=2.195s, 100.00%)
+batch = 232 (Δ=2.203s, 100.00%)
+batch = 240 (Δ=2.365s, 100.00%)
+batch = 248 (Δ=2.274s, 100.00%)
+Training throughput: 32 batches in 81.875s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=2.281s, 12.50%)
+batch = 8 (Δ=2.283s, 15.62%)
+batch = 16 (Δ=2.267s, 18.75%)
+batch = 24 (Δ=2.146s, 21.88%)
+batch = 32 (Δ=2.205s, 25.00%)
+batch = 40 (Δ=2.197s, 28.12%)
+batch = 48 (Δ=2.205s, 31.25%)
+batch = 56 (Δ=2.284s, 34.38%)
+batch = 64 (Δ=2.316s, 37.50%)
+batch = 72 (Δ=2.261s, 40.62%)
+batch = 80 (Δ=2.189s, 43.75%)
+batch = 88 (Δ=2.163s, 46.88%)
+batch = 96 (Δ=2.198s, 50.00%)
+batch = 104 (Δ=2.264s, 53.12%)
+batch = 112 (Δ=2.162s, 56.25%)
+batch = 120 (Δ=2.244s, 59.38%)
+batch = 128 (Δ=2.242s, 62.50%)
+batch = 136 (Δ=2.288s, 65.62%)
+batch = 144 (Δ=2.176s, 68.75%)
+batch = 152 (Δ=2.269s, 71.88%)
+batch = 160 (Δ=2.184s, 75.00%)
+batch = 168 (Δ=2.195s, 78.12%)
+batch = 176 (Δ=2.196s, 81.25%)
+batch = 184 (Δ=2.215s, 84.38%)
+batch = 192 (Δ=2.358s, 87.50%)
+batch = 200 (Δ=2.282s, 90.62%)
+batch = 208 (Δ=2.171s, 93.75%)
+batch = 216 (Δ=2.167s, 96.88%)
+batch = 224 (Δ=2.194s, 100.00%)
+batch = 232 (Δ=2.256s, 100.00%)
+batch = 240 (Δ=2.187s, 100.00%)
+batch = 248 (Δ=2.208s, 100.00%)
+Training throughput: 32 batches in 71.254s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=4.447s, 100.00%)
+Training throughput: 1 batches in 4.591s; word units 86.5% of 192 words (letters-only 100.0% of 64).
+</pre></td></tr></table></body></html>

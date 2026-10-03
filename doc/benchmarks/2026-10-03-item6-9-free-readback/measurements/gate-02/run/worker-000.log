@@ -1,0 +1,11 @@
+.F.....                                                                  [100%]
+=================================== FAILURES ===================================
+____________________ TestMMXorConvergence.test_convergence _____________________
+test/test_mm_xor.py:185: in test_convergence
+    self._fit_xor(_CONFIG, epochs=200, threshold=.20)
+test/test_mm_xor.py:165: in _fit_xor
+    self.assertLess(best_loss, threshold,
+E   AssertionError: 0.24165956676006317 not less than 0.2 : XOR loss 0.24166 after at most 200 epochs
+=========================== short test summary info ============================
+FAILED test/test_mm_xor.py::TestMMXorConvergence::test_convergence - Assertio...
+1 failed, 6 passed in 272.18s (0:04:32)

@@ -1,17 +1,4 @@
-"""analyse migration contracts (Phase 4b, analysis/synthesis dual-input
-plan rev. 2026-06-09).
-
-The meronymic analyzer is top-down ANALYSIS and lives on WholeSpace
-(``<analysis>analyse``, consuming the unity view): PS-side
-``<synthesis>analyse`` is REJECTED loudly (schema + reader), the lexicon
-synthesis path keeps the surface word resolution PS analyse used to
-provide, and the SS analysis cut shapes the stage-0 evidence
-(boundaries-define-parts; per-part coarse means).
-
-The standalone ``chunk_static(..., "analyse")`` byte-terminal learning
-machinery is covered by test_chunk_static_analyse.py /
-test_analyse_word_learning.py (knob-free analyzer plumbing).
-"""
+"""Reading-boundary validation and full surface tiling on meronomy."""
 
 import os
 import sys
@@ -27,7 +14,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 
-def _write_xml(tmpdir, *, synthesis="lexicon", lexer="byte", analysis=None,
+def _write_xml(tmpdir, *, synthesis="meronomy", lexer="byte", analysis=None,
                n_vectors=512):
     analysis_elem = (f"\n    <analysis>{analysis}</analysis>"
                      if analysis else "")
@@ -120,13 +107,6 @@ class TestAnalyseMigration(unittest.TestCase):
             with self.assertRaises((ValueError, KeyError)):
                 BaseModel.from_config(config_path=path)
 
-    def test_ws_analysis_knob_accepted(self):
-        # <analysis>grammatical on WholeSpace builds; mode is stashed.
-        from Models import BaseModel
-        with tempfile.TemporaryDirectory() as tmp:
-            path = _write_xml(tmp, analysis="grammatical")
-            model, _cfg = BaseModel.from_config(config_path=path)
-            self.assertEqual(model.wholeSpace.analysis_mode, "grammatical")
 
     def _tokens(self, synthesis, lexer="byte"):
         import torch
@@ -137,13 +117,19 @@ class TestAnalyseMigration(unittest.TestCase):
             inp = model.inputSpace.prepInput(["hello world foo"])
             with torch.no_grad():
                 model.forward(inp)
-            return model.perceptualSpace._forward_input["tokens"]
+            record = model.perceptualSpace._forward_input
+            rows = []
+            for tokens, spans in zip(record["tokens"], record["tile_spans"]):
+                raw = "".join(tokens).encode("utf-8")
+                unique = list(dict.fromkeys(tuple(pair) for pair in spans if pair[1] > pair[0]))
+                rows.append([raw[start:end].decode("utf-8") for start, end in unique])
+            return rows
 
-    def test_lexicon_synthesis_owns_full_surface_lexing(self):
+    def test_meronomy_synthesis_owns_full_surface_lexing(self):
         """The lexicon synthesis path self-lexes the whole-line surface
         (the word resolution PS analyse used to provide): word runs are
         NOT truncated to the compatibility byte-buffer token width."""
-        lexicon = [t for t in self._tokens("lexicon", lexer="word")[0] if t]
+        lexicon = [t for t in self._tokens("meronomy", lexer="word")[0] if t]
         self.assertEqual(lexicon, ["hello", " ", "world", " ", "foo"])
 
 

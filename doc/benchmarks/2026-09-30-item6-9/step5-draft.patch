@@ -1,0 +1,54 @@
+*** Begin Patch
+*** Update File: /Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py
+@@
+-    Both paths backpropagate through the same perception after an optimizer
+-    update. Autograd must read its original parameters and buffers. A shared weight may be
++    Both derivations are scored before either optimizer update. Their
++    backwards and shared perception must read the original parameters and buffers. A shared weight may be
+@@
+ def sentence_pair(cache, compose, score, step, *, active, training=True):
+-    """Derive, train, then select one path independently in each row.
++    """Score both paths, train each, then select independently in each row.
+@@
+-    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+     explore = compose(cache, exploit)
+@@
+     saved_b = cost_b.detach().clone()
++    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+     step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+*** Update File: /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py
+@@
+             before = self._snapshot_sentence_state((stm, lang, feedback))
+             observations, predictions = [], []
++            pending_steps = []
+             def compose(cached, exploit):
+                 self._sentence_trial = 'exploit' if exploit is None else 'explore'
++                self._sentence_pullback = None
+                 if self._sentence_training and torch.is_grad_enabled():
+@@
+-                return current_stm, current_lang, current_feedback
++                path = (current_stm, current_lang, current_feedback)
++                if self._sentence_training and torch.is_grad_enabled():
++                    pending_steps.append((self._sentence_trial, self._sentence_pullback, path))
++                return path
+             def score(path, alternative):
+@@
+                 predictions.append(pending)
+                 return cost, (path, reconstruction)
++            def train_trial(loss):
++                # Both graphs now exist. Restore this trial's perception
++                # pullback and scratch bindings before its own backward.
++                trial, pullback, path = pending_steps.pop(0)
++                self._sentence_trial, self._sentence_pullback = trial, pullback
++                self._restore_sentence_state(path)
++                self._sentence_train_step(loss)
+             try:
+                 (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+-                    self._sentence_train_step, active=present,
++                    train_trial, active=present,
+                     training=self._sentence_training and torch.is_grad_enabled())
+             finally:
++                pending_steps.clear()
++                self._sentence_pullback = None
+                 self._compose_exploit_actions = self._compose_forced_slots = None
+*** End Patch

@@ -1,0 +1,26 @@
+.F...........................F.......................................    [100%]
+=================================== FAILURES ===================================
+_________ TestUnaryGrammarLayers.test_not_compose_decompose_roundtrip __________
+test/test_grammar_binary_ops.py:48: in test_not_compose_decompose_roundtrip
+    self.assertTrue(torch.allclose(y[..., :2], x[..., :2].flip(dims=(-1,)), atol=1e-5))
+E   AssertionError: False is not true
+_______________ test_execute_arity1_dispatches_to_layer_forward ________________
+test/test_subspace_what_stm_contract.py:303: in test_execute_arity1_dispatches_to_layer_forward
+    assert torch.allclose(y[..., 0], x[..., 1])
+E   assert False
+E    +  where False = <built-in method allclose of type object at 0x10a7c13a0>(tensor([[-0.7000]]), tensor([[0.2000]]))
+E    +    where <built-in method allclose of type object at 0x10a7c13a0> = torch.allclose
+=============================== warnings summary ===============================
+test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_catalog
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_subspace_what_stm_contract.py::test_word_admission_preserves_the_property_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip
+FAILED test/test_subspace_what_stm_contract.py::test_execute_arity1_dispatches_to_layer_forward
+2 failed, 67 passed, 2 warnings in 2.67s

@@ -20,11 +20,11 @@ def _args(target="gpu", mode=None):
 
 def test_parse_compile_target_mlx():
     args = train.parse_args([
-        "--model", "data/MM_20M_legacy.xml",
+        "--model", "data/MM_20M_xor.xml",
         "--compile-target", "mlx",
         "--mlx-output", "output/mlx/test.pte",
     ])
-    assert args.model == "data/MM_20M_legacy.xml"
+    assert args.model == "data/MM_20M_xor.xml"
     assert args.compile_target == "mlx"
     assert args.mlx_output == "output/mlx/test.pte"
 
@@ -70,9 +70,9 @@ def test_mlx_compile_target_does_not_set_training_compile_env():
 
 
 def test_default_mlx_output_path_uses_model_stem(tmp_path):
-    xml_path = tmp_path / "data" / "MM_20M_legacy.xml"
+    xml_path = tmp_path / "data" / "MM_20M_xor.xml"
     out = train.default_mlx_output_path(str(tmp_path), str(xml_path))
-    assert out == str(tmp_path / "output" / "mlx" / "MM_20M_legacy.pte")
+    assert out == str(tmp_path / "output" / "mlx" / "MM_20M_xor.pte")
 
 
 def test_venv_python_honors_basicmodel_python(monkeypatch):
@@ -83,6 +83,6 @@ def test_venv_python_honors_basicmodel_python(monkeypatch):
 def test_fineweb_uses_raw_lexer_for_embedding_skip():
     cfg = train.read_xml_config(str(
         Path(__file__).resolve().parent.parent
-        / "data" / "MM_20M_fineweb.xml"))
+        / "data" / "BasicModel.xml"))
     assert cfg["lexer"] in ("byte", "raw")
     assert cfg["lexer"] == "raw"

@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "completed": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "slow_selected": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 70.17658374999883,
+      "message": "",
+      "stdout": "400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.0140, reconstruction=0.5811\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0213, reconstruction=0.5597\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0130, reconstruction=0.5726\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0200, reconstruction=0.5500\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0140, reconstruction=0.5633\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0147, reconstruction=0.5556\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.160s, 100.00%)\r\nTrain Loss: output=0.0155, reconstruction=0.5507\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0166, reconstruction=0.5502\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0243, reconstruction=0.5323\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nTrain Loss: output=0.0247, reconstruction=0.5349\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0242, reconstruction=0.4129\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0259, reconstruction=0.5389\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.0249, reconstruction=0.5395\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0238, reconstruction=0.5402\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0226, reconstruction=0.5399\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.0208, reconstruction=0.5395\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.160s, 100.00%)\r\nTrain Loss: output=0.0201, reconstruction=0.5409\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0195, reconstruction=0.5431\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0121, reconstruction=0.5634\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0194, reconstruction=0.5482\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.162s, 100.00%)\r\nTrain Loss: output=0.0199, reconstruction=0.5505\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.0204, reconstruction=0.5520\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0217, reconstruction=0.5524\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nTrain Loss: output=0.0236, reconstruction=0.5510\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0255, reconstruction=0.5469\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0264, reconstruction=0.5422\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0272, reconstruction=0.5400\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0185, reconstruction=0.5579\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0255, reconstruction=0.5398\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0242, reconstruction=0.5428\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nTrain Loss: output=0.0229, reconstruction=0.5456\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0214, reconstruction=0.5473\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.0204, reconstruction=0.5467\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.229s, 100.00%)\r\nTrain Loss: output=0.0194, reconstruction=0.5450\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0187, reconstruction=0.5442\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0183, reconstruction=0.5442\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=5.875s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='> there' label=0.0000 predicted=0.0924 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.7245 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.9915 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.1344 MISMATCH\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-affected-final/run/worker-011.recycle.json"
+}

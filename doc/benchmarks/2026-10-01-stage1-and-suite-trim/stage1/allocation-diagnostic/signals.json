@@ -1,0 +1,17 @@
+[
+  {
+    "threshold_gib": 11,
+    "memory_bytes": 12295678464,
+    "seconds": 64.74600983299752
+  },
+  {
+    "threshold_gib": 16,
+    "memory_bytes": 17348442224,
+    "seconds": 65.21664924999641
+  },
+  {
+    "threshold_gib": 22,
+    "memory_bytes": 23924476672,
+    "seconds": 66.15646566699434
+  }
+]

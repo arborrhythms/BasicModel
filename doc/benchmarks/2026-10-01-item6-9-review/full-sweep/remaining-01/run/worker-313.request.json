@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-313.recycle.json"
+}

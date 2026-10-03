@@ -1,0 +1,92 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]"
+  ],
+  "completed": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/native-step5a-pytest/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/native-step5a-pytest/worker-000.json"
+      ],
+      "pid": 76900,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 23880852032,
+      "elapsed_seconds": 1661.9629399580008,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/native-step5a-pytest/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]"
+      ],
+      "completed": [
+        "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1658.3503206659952,
+          "message": "test/test_objective_conflicts_slow.py:38: in test_native_production_objective_measurements\n    assert result.returncode == 0, f\"Objective measurement failed; see {output / 'run.log'}\"\nE   AssertionError: Objective measurement failed; see /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/BasicModel_answers_tied_benchmark-step5a/run.log\nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '/Users/arogers/github/WikiOrac...cmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/BasicModel_answers_tied_benchmark-step5a'], returncode=1).returncode",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 25769803776,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/native-step5a-pytest",
+  "elapsed_seconds": 1663.7336247919957,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 23880852032,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/native-step5a-pytest/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/native-step5a-pytest/collect.json"
+    ],
+    "pid": 76872,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 47809064,
+    "elapsed_seconds": 1.3104949170010514,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/native-step5a-pytest/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]"
+      ],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

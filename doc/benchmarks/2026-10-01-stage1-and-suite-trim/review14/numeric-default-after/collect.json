@@ -1,0 +1,13 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

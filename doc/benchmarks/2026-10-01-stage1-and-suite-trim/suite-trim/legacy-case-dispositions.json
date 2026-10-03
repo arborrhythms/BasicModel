@@ -1,0 +1,898 @@
+[
+  {
+    "id": "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_isolates_unknown_streams",
+    "status": "retained",
+    "reason": "Keep: the index rebuild is used when loading in-use pre-index checkpoint rows; the test also checks real row identity and unknown-stream isolation (BasicModel.ckpt and item7_legacy_definition.ckpt metadata).",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+    "status": "retained",
+    "reason": "Keep: mixing binding relation IDs remain live in XOR_grammar.xml and MM_xor.xml; their namespace is not bounded by aligned dense codebook capacity.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter",
+    "status": "retained",
+    "reason": "Keep: BasicModel.xml uses aligned binding; rejecting native-width input before an incompatible mixing adapter is current behavior.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_category_codebook.py::test_category_learning_loads_legacy_vocab_extras_without_new_keys",
+    "status": "retained",
+    "reason": "Keep: BasicModel.ckpt and grammar_wording.ckpt contain old category_assign/vocabulary metadata; loading must preserve learning state.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_chooser_architecture.py::test_default_grammar_head_preserves_legacy_weights_rng_and_outputs",
+    "status": "retained",
+    "reason": "Keep: this is default GrammarLayer behavior and RNG consumption, not a separately dispatched legacy path; current complete.grammar uses it.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_chunk_layer_bpe.py::TestChunkLayerBPE::test_forward_legacy_mode_is_identity",
+    "status": "retained",
+    "reason": "Keep until deferred old-mode migration: model.xml/MM_xor.xml and other configurations still select parked PartSpace synthesis modes.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_compact_concept_codebook_state.py::test_vector_quantize_legacy_default_keeps_full_ema_state",
+    "status": "retained",
+    "reason": "Keep: non-indexed VectorQuantize defaults still serve current mixing/parallel codebooks and old reading modes; only aligned indexed codebooks omit EMA state.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_compiled_word_chunk.py::test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients",
+    "status": "retained",
+    "reason": "Keep: the K=2 compatibility scheduler is still selected by current old-reading configurations; item 12 is held. This tests loss and gradient parity on that execution path.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layer_classes_parked_in_legacy",
+    "status": "ported",
+    "reason": "Move parked implementation tests beside their owner; assertions unchanged; standalone unittest entry point, outside pytest.",
+    "evidence": [
+      "October 1 hand-off part 4 items 2\u20133",
+      "pre-trim-source.zip"
+    ]
+  },
+  {
+    "id": "test/test_contractive_linear.py::test_legacy_layer_untouched",
+    "status": "retained",
+    "reason": "Keep: NonNegativeInvertibleLinearLayer is a current layer used by the live mapping family; the test verifies its distinct parameter law, not only a retired name.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_discourse_cache_dtype.py::test_full_sentence_loop_skips_legacy_discourse_tuple_staging",
+    "status": "retained",
+    "reason": "Keep: full native sentence execution must bypass old tuple staging; older reading modes still own that staging. The case executes a current forward path.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_discourse_space.py::TestBackCompatShims::test_predict_returns_two_tuple",
+    "status": "retained",
+    "reason": "Keep: InterSentenceLayer.predict is called by Models.py; the remaining absence-only priming assertions will join item 7 consolidation.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_discourse_space.py::TestBackCompatShims::test_snapshot_alias_calls_observe",
+    "status": "removed",
+    "reason": "Remove only the three unused discourse aliases and their tests; observe and predict stay live.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_discourse_space.py::TestBackCompatShims::test_contrastive_loss_alias_returns_arma_mse",
+    "status": "removed",
+    "reason": "Remove only the three unused discourse aliases and their tests; observe and predict stay live.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_discourse_space.py::TestBackCompatShims::test_predictive_loss_alias_is_no_op",
+    "status": "removed",
+    "reason": "Remove only the three unused discourse aliases and their tests; observe and predict stay live.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_discourse_space.py::TestBackCompatShims::test_comprehension_priming_projection_is_removed",
+    "status": "consolidated",
+    "reason": "Retired-name assertions retained in the single table; no executed behavior removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ],
+    "destination": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_event_compose.py::TestLiftLowerWhen::test_content_only_operand_passes_through_legacy_fold",
+    "status": "retained",
+    "reason": "Keep: content-only operands still occur in bandless XOR fixtures and explicit operator APIs; event composition must preserve them.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_existence_ingestion.py::test_legacy_materialized_relation_without_a_vp_stays_unverified",
+    "status": "retained",
+    "reason": "Keep: current materialized incomplete relations lack predicate evidence and must stay unverified; this is an ingestion invariant.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows",
+    "status": "retained",
+    "reason": "Keep: checkpoints without fact metadata are still in use; loading must not turn conversation rows into facts.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_existence_provenance.py::test_consolidated_legacy_chain_reads_the_actual_two_role_presence",
+    "status": "retained",
+    "reason": "Keep: current chained relation readers must respect actual role presence, including end-state records loaded from older checkpoints.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_grammar_sections.py::test_legacy_flat_form_still_works",
+    "status": "retained",
+    "reason": "Keep: shipped MM_boolean/POS_smoke/MM_xor_fixture grammars still use flat declarations.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_grammar_space_scoped_starts.py::test_top_level_start_back_compat",
+    "status": "retained",
+    "reason": "Keep: XOR_grammar.xml and several shipped grammars still use top-level starts; only the unneeded bare REL_T heuristic was removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+    "status": "retained",
+    "reason": "Keep: data/grammar_wording.ckpt has the older learned grammar/order state; strict load and zero initialization of added order weights remain required.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+    "status": "retained",
+    "reason": "Keep: MentalModel, compaction overflow, and per-stage SymbolSpace ownership are current implementations; the class name is historical.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+    "status": "retained",
+    "reason": "Keep: MentalModel, compaction overflow, and per-stage SymbolSpace ownership are current implementations; the class name is historical.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
+    "status": "retained",
+    "reason": "Keep: MentalModel, compaction overflow, and per-stage SymbolSpace ownership are current implementations; the class name is historical.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_ir_only_refactor.py::TestReverseScaleBackcompat::test_reverse_scale_legacy_maps_through",
+    "status": "removed",
+    "reason": "No active configuration uses reverseScale; the canonical reconstructionScale parser test remains.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_ir_only_refactor.py::TestReverseScaleBackcompat::test_reconstruction_scale_parses_cleanly",
+    "status": "retained",
+    "reason": "Keep: reconstructionScale is the current configuration term in shipped XML; only reverseScale and its test were removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_item7_end_state_storage.py::test_legacy_checkpoint_drops_the_derivation_after_validating_its_binding",
+    "status": "removed",
+    "reason": "No in-use checkpoint contains a stored clause/program payload. Its special version-3 migration is removed; all current end-state and supported older semantic-format tests stay.",
+    "evidence": [
+      "remaining-legacy-entrypoint-uses.txt",
+      "legacy-checkpoint-string-audit.json"
+    ]
+  },
+  {
+    "id": "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "status": "retained",
+    "reason": "Keep: chronological pending-schedule validation still protects the native reading; a stale direction must not replay through current code.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ],
+    "destination": "test/test_interleave_lifecycle.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction"
+  },
+  {
+    "id": "test/test_kleene_binding.py::test_legacy_signature_without_kinds_treats_as_constants",
+    "status": "retained",
+    "reason": "Keep: Kleene binding defaults to constants when no kind metadata exists; current grammar rules and extension signatures omit kinds.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_unit_ball.py::TestTorusLegacyMode::test_torus_init_inside_canonical_cell",
+    "status": "ported",
+    "reason": "Remove only the assertion on the retired torus property; every canonical geometry assertion stays.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_unit_ball.py::TestTorusLegacyMode::test_torus_normalize_wraps",
+    "status": "retained",
+    "reason": "Keep: embed._SBOWModule explicitly constructs Lexicon(ball=False), so torus geometry and distance helpers stay. Only the unused keyword/property alias is retired.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_unit_ball.py::TestTorusLegacyMode::test_legacy_torus_kwarg_alias",
+    "status": "removed",
+    "reason": "Unused torus keyword/property aliases removed; ball=False geometry remains in production SBOW.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_unit_ball.py::TestTorusLegacyMode::test_torus_distance_primitives_still_work",
+    "status": "retained",
+    "reason": "Keep: embed._SBOWModule explicitly constructs Lexicon(ball=False), so torus geometry and distance helpers stay. Only the unused keyword/property alias is retired.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_unit_ball.py::TestTorusLegacyMode::test_unit_ball_normalize_projects_into_ball",
+    "status": "retained",
+    "reason": "Keep: embed._SBOWModule explicitly constructs Lexicon(ball=False), so torus geometry and distance helpers stay. Only the unused keyword/property alias is retired.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_live_concepts_from_percepts.py::test_aligned_compatibility_binder_does_not_take_bands_from_padded_parts",
+    "status": "retained",
+    "reason": "Keep: Models.py still calls bind_aligned_streams on aligned fixtures; padded source bands must not enter live codes.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_mereology.py::TestCopyLayer::test_copy_layer_parked_in_legacy",
+    "status": "ported",
+    "reason": "Move parked implementation tests beside their owner; assertions unchanged; standalone unittest entry point, outside pytest.",
+    "evidence": [
+      "October 1 hand-off part 4 items 2\u20133",
+      "pre-trim-source.zip"
+    ]
+  },
+  {
+    "id": "test/test_mereology.py::TestCopyLayer::test_introspection_layers_parked_in_legacy",
+    "status": "ported",
+    "reason": "Move parked implementation tests beside their owner; assertions unchanged; standalone unittest entry point, outside pytest.",
+    "evidence": [
+      "October 1 hand-off part 4 items 2\u20133",
+      "pre-trim-source.zip"
+    ]
+  },
+  {
+    "id": "test/test_meronomy_ladder.py::test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical",
+    "status": "retained",
+    "reason": "Keep until deferred item 12: old analysis modes remain selected in 32 configurations; mode dispatch and unchanged boundaries must stay covered.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans",
+    "status": "retained",
+    "reason": "Keep until deferred item 12: old analysis modes remain selected in 32 configurations; mode dispatch and unchanged boundaries must stay covered.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_meronomy_laws.py::test_no_legacy_chart_helper_names",
+    "status": "consolidated",
+    "reason": "Retired-name assertions retained in the single table; no executed behavior removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ],
+    "destination": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking",
+    "status": "retained",
+    "reason": "Keep: each case runs the current thought controller and verifies precedence, owned meanings or failure behavior; these are not name-only guards.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner",
+    "status": "retained",
+    "reason": "Keep: each case runs the current thought controller and verifies precedence, owned meanings or failure behavior; these are not name-only guards.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_normal_thought_controller.py::test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner",
+    "status": "retained",
+    "reason": "Keep: each case runs the current thought controller and verifies precedence, owned meanings or failure behavior; these are not name-only guards.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_normal_thought_controller.py::test_normal_what_uses_the_selected_thought_without_a_legacy_slot",
+    "status": "retained",
+    "reason": "Keep: each case runs the current thought controller and verifies precedence, owned meanings or failure behavior; these are not name-only guards.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_ops_lift_lower.py::TestDeprecationAliases::test_legacy_lift_is_elementwise_product",
+    "status": "removed",
+    "reason": "Unused positional polarity aliases and two-argument analytic inverses retired; all explicit-mode operator tests remain.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_ops_lift_lower.py::TestDeprecationAliases::test_legacy_lower_is_arithmetic_mean",
+    "status": "removed",
+    "reason": "Unused positional polarity aliases and two-argument analytic inverses retired; all explicit-mode operator tests remain.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_ops_lift_lower.py::TestDeprecationAliases::test_legacy_liftReverse_inverts_product",
+    "status": "removed",
+    "reason": "Unused positional polarity aliases and two-argument analytic inverses retired; all explicit-mode operator tests remain.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_ops_lift_lower.py::TestDeprecationAliases::test_legacy_lowerReverse_inverts_mean",
+    "status": "removed",
+    "reason": "Unused positional polarity aliases and two-argument analytic inverses retired; all explicit-mode operator tests remain.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_ops_lift_lower.py::TestDeprecationAliases::test_legacy_form_polarity_swap",
+    "status": "removed",
+    "reason": "Unused positional polarity aliases and two-argument analytic inverses retired; all explicit-mode operator tests remain.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer",
+    "status": "retained",
+    "reason": "Keep: the current supplied-answer path must be independent of unrelated parity memory; actual answers are compared.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_output_synthesis.py::test_what_reaches_output_not_the_legacy_head",
+    "status": "retained",
+    "reason": "Keep: current What/output resolution must use its owned meaning and cannot route to an obsolete surface reader; actual execution is checked.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_output_synthesis.py::test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner",
+    "status": "retained",
+    "reason": "Keep: current What/output resolution must use its owned meaning and cannot route to an obsolete surface reader; actual execution is checked.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_output_walk.py::test_question_conditioner_legacy_singular_checkpoint_reloads_strictly",
+    "status": "retained",
+    "reason": "Keep: data/BasicModel.ckpt contains question_conditioner.* singular keys and must reload strictly into the width-indexed current reader.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_legacy_lexicon_mode_keeps_chunklayer_path",
+    "status": "retained",
+    "reason": "Keep until deferred item 12: lexicon synthesis is still selected by shipped configurations.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_input_module_list_gone",
+    "status": "consolidated",
+    "reason": "Retired-name assertions retained in the single table; no executed behavior removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ],
+    "destination": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_concept_module_list_gone",
+    "status": "consolidated",
+    "reason": "Retired-name assertions retained in the single table; no executed behavior removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ],
+    "destination": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+    "status": "retained",
+    "reason": "Keep: a current query must never interpret dictionary rows as concept IDs; this verifies rejection and identity semantics on the live query path.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward",
+    "status": "retained",
+    "reason": "Keep: callable grammar entries still traverse the current permission mask; the case verifies actual masking in forward.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_reference_lookup_gauge.py::test_sphere_snap_knob_off_is_legacy_cosine",
+    "status": "retained",
+    "reason": "Keep: the absent/disabled sphere-snap knob still selects the current default cosine lookup; not a retired entry point.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_relative_rule_detection_collapsed.py::test_rel_t_back_compat_fallback",
+    "status": "removed",
+    "reason": "No active grammar needs an unnamed REL_T fallback; transitional_pos already names relative_truth.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+    "status": "retained",
+    "reason": "Keep: the current sentence objective must survive compatibility event reporting used by old reading modes; it measures real cost and gradients.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+    "status": "retained",
+    "reason": "Keep: old root-predictor checkpoint state exists in grammar_wording.ckpt, and current structured expectation retains explicit operand orientation and padding masks.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_sentence_expectation.py::test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration",
+    "status": "retained",
+    "reason": "Keep: old root-predictor checkpoint state exists in grammar_wording.ckpt, and current structured expectation retains explicit operand orientation and padding masks.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_space_carrier_bridge.py::test_legacy_spaces_pipeline_via_fresh_snapshot_adapters",
+    "status": "removed",
+    "reason": "Tests require the unused Space-to-carrier snapshot adapter. The live capability/version assertion path stays in test_executor_advances_bound_space_version_and_invalidates_replicas; checkpoint loading stays in test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_space_carrier_bridge.py::test_legacy_stage_requires_explicit_training_safety_migration",
+    "status": "removed",
+    "reason": "Tests require the unused Space-to-carrier snapshot adapter. The live capability/version assertion path stays in test_executor_advances_bound_space_version_and_invalidates_replicas; checkpoint loading stays in test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_space_carrier_bridge.py::test_legacy_stage_requires_an_explicit_pipeline_safety_audit",
+    "status": "removed",
+    "reason": "Tests require the unused Space-to-carrier snapshot adapter. The live capability/version assertion path stays in test_executor_advances_bound_space_version_and_invalidates_replicas; checkpoint loading stays in test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_space_carrier_bridge.py::test_dense_carrier_round_trips_through_unowned_legacy_input_adapter",
+    "status": "removed",
+    "reason": "Tests require the unused Space-to-carrier snapshot adapter. The live capability/version assertion path stays in test_executor_advances_bound_space_version_and_invalidates_replicas; checkpoint loading stays in test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_space_carrier_bridge.py::test_prior_trace_and_typed_mutations_survive_legacy_snapshot",
+    "status": "removed",
+    "reason": "Tests require the unused Space-to-carrier snapshot adapter. The live capability/version assertion path stays in test_executor_advances_bound_space_version_and_invalidates_replicas; checkpoint loading stays in test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners",
+    "status": "retained",
+    "reason": "Keep: in-use BasicModel.ckpt contains pre-owner module aliases; strict migration to one owner remains required. Uncalled snapshot converters and their cases were removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_sparse_compile_boundary.py::test_compile_none_preserves_legacy_sentence_loop",
+    "status": "retained",
+    "reason": "Keep: MODEL_COMPILE=none is a current execution choice; older reading modes remain until item 12.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_structural_preference.py::test_six_word_legacy_pipeline_retains_every_stage_and_feedback_delay",
+    "status": "retained",
+    "reason": "Keep until deferred item 12: the generic reading scheduler still handles older configurations and must retain stages and feedback timing.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_thought_checkpoint_credit.py::test_restoring_a_legacy_question_detaches_its_prompt",
+    "status": "retained",
+    "reason": "Keep: LTMSlot/WhatQuestion checkpoints remain readable by the current interaction-memory owner; the remaining test verifies restoration detaches metadata, without the retired credit reservation.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_thought_legacy_boundaries.py::test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode",
+    "status": "removed",
+    "reason": "Only the uncalled legacy credit reservation path is retired. Native thought credit/boundary cases remain in test_thought_history_boundaries.py and test_thought_review.py; legacy checkpoint replay and underflow cases remain.",
+    "evidence": [
+      "remaining-legacy-entrypoint-uses.txt",
+      "legacy-checkpoint-string-audit.json"
+    ]
+  },
+  {
+    "id": "test/test_thought_legacy_boundaries.py::test_legacy_credit_reservation_can_end_before_forward_establishes_batch",
+    "status": "removed",
+    "reason": "Only the uncalled legacy credit reservation path is retired. Native thought credit/boundary cases remain in test_thought_history_boundaries.py and test_thought_review.py; legacy checkpoint replay and underflow cases remain.",
+    "evidence": [
+      "remaining-legacy-entrypoint-uses.txt",
+      "legacy-checkpoint-string-audit.json"
+    ]
+  },
+  {
+    "id": "test/test_thought_legacy_boundaries.py::test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary",
+    "status": "removed",
+    "reason": "Only the uncalled legacy credit reservation path is retired. Native thought credit/boundary cases remain in test_thought_history_boundaries.py and test_thought_review.py; legacy checkpoint replay and underflow cases remain.",
+    "evidence": [
+      "remaining-legacy-entrypoint-uses.txt",
+      "legacy-checkpoint-string-audit.json"
+    ]
+  },
+  {
+    "id": "test/test_thought_legacy_boundaries.py::test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner",
+    "status": "removed",
+    "reason": "Only the uncalled legacy credit reservation path is retired. Native thought credit/boundary cases remain in test_thought_history_boundaries.py and test_thought_review.py; legacy checkpoint replay and underflow cases remain.",
+    "evidence": [
+      "remaining-legacy-entrypoint-uses.txt",
+      "legacy-checkpoint-string-audit.json"
+    ]
+  },
+  {
+    "id": "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+    "status": "retained",
+    "reason": "Keep: LTMSlot checkpoint replay and underflow validation are still used by current memory loading; nonzero return support is a current ordinary-thought invariant. Uncalled legacy credit reservation cases were removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
+    "status": "retained",
+    "reason": "Keep: LTMSlot checkpoint replay and underflow validation are still used by current memory loading; nonzero return support is a current ordinary-thought invariant. Uncalled legacy credit reservation cases were removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition",
+    "status": "retained",
+    "reason": "Keep: LTMSlot checkpoint replay and underflow validation are still used by current memory loading; nonzero return support is a current ordinary-thought invariant. Uncalled legacy credit reservation cases were removed.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
+    "status": "retained",
+    "reason": "Keep: shipped structural layers implement forward/reverse and the current checked operation catalog adapts those real methods.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
+    "status": "retained",
+    "reason": "Keep until deferred item 12: retained older reading/reasoning configurations still call the open-mode reader; the test checks its actual output shape.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_one_defaults_serial",
+    "status": "retained",
+    "reason": "Keep until deferred item 12: shipped older XML omits explicit serial mode and relies on symbolicOrder-derived dispatch.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_zero_defaults_parallel",
+    "status": "retained",
+    "reason": "Keep until deferred item 12: shipped older XML omits explicit serial mode and relies on symbolicOrder-derived dispatch.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_two_defaults_serial_for_legacy_configs",
+    "status": "retained",
+    "reason": "Keep until deferred item 12: shipped older XML omits explicit serial mode and relies on symbolicOrder-derived dispatch.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_when_range_encoding.py::test_back_compat_D_kwarg_is_ignored",
+    "status": "removed",
+    "reason": "The unused magnitude-tense D keyword is retired; temporal range behavior stays.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+    "status": "retained",
+    "reason": "Keep: in-use pre-property checkpoints contain WholeSpace conceptual/category state; it must be dropped rather than interpreted as current property codes.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_wide_concept_codebook.py::test_codebook_forward_topk_zero_preserves_legacy_activation",
+    "status": "retained",
+    "reason": "Keep: current mixing codebook fixtures still use forward_topk=0 dense activation; the test checks actual values.",
+    "evidence": [
+      "legacy-path-use-audit.json",
+      "legacy-checkpoint-string-audit.json",
+      "remaining-legacy-entrypoint-uses.txt"
+    ]
+  },
+  {
+    "id": "test/test_word_buffer_flush.py::test_legacy_scalar_path_unaffected_by_buffer",
+    "status": "removed",
+    "reason": "Only the retired scalar word-adder overload is exercised.",
+    "evidence": [
+      "remaining-legacy-entrypoint-uses.txt",
+      "legacy-checkpoint-string-audit.json"
+    ]
+  }
+]

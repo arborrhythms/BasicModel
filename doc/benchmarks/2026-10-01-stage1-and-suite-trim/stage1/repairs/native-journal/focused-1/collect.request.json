@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_sentence_journal.py",
+    "test/test_sentence_compose.py",
+    "test/test_item7_end_state_storage.py",
+    "test/test_live_references.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

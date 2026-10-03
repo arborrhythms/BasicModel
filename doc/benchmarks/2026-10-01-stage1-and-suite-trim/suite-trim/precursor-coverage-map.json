@@ -1,0 +1,440 @@
+{
+  "status": "Reviewed in plan \u00a713: distinguish retired marker/word-terminal behavior from related live byte and surface coverage; current ports and removals are in review13/changes.json.",
+  "use_audit": "precursor-and-dead-code-use-audit.json",
+  "functions": {
+    "EndpointSumWhere": {
+      "decision": "doc/Mereology.md:400-415 (endpoint-sum Where retired 2026-07-09; live start-only WhereEncoding retained)",
+      "live": "Spaces.WhereEncoding; test_where_bracket.py stays"
+    },
+    "byte_fallback_vector": {
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live": "PartSpace/percept_store byte rows; test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes; UTF-8 ports planned"
+    },
+    "divide_into_attested": {
+      "decision": "Live equivalent retained",
+      "live": "WholeSpace.stage_analysis_spans and test_within_whole_division.py live cases"
+    },
+    "MeronymicRouter": {
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live": "Canonical PartSpace/WholeSpace ladder; no live cosine/depth-penalty route law"
+    },
+    "MeronymicAnalyzer.analyze / analyze_routed": {
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live": "Models._lex_embed_stem, WholeSpace.stage_analysis_spans; test_meronomy_ladder.py"
+    },
+    "MeronymicAnalyzer.synthesize / synthesize_tree / _resolve_marker": {
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only); doc/specs/2026-09-29-operator-catalogue.md:97 (item 5.5: markers are leaves; surface handles forms)",
+      "live": "ordered byte witness, SurfaceLayer.reconstruct, generate-stack operand order; exact surface ports planned"
+    },
+    "MeronymicAnalyzer.terminal_view": {
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only); doc/Mereology.md:400-415 (endpoint-sum Where retired 2026-07-09; live start-only WhereEncoding retained)",
+      "live": "staged _ar_embedded_N/part ids/masks/offsets; fixed-shape live ladder checks"
+    },
+    "soft_operator_compose": {
+      "decision": "doc/specs/2026-09-26-one-operation-per-round.md:298-311 (soft superposition deliberately removed; selected hard operator only)",
+      "live": "hard compiled chooser in test_compose_operations.py"
+    }
+  },
+  "tests": [
+    {
+      "id": "test/test_marker_replay_canonical.py::test_marker_id_resolved_to_canonical_surface",
+      "action": "retire precursor case",
+      "decision": "doc/specs/2026-09-29-operator-catalogue.md:97 (item 5.5: markers are leaves; surface handles forms); plan \u00a713: the per-operator marker-spelling registry is retired with its remaining orphan interfaces",
+      "old_body": "def test_marker_id_resolved_to_canonical_surface():\n    \"\"\"An int PS marker id is resolved to its canonical surface via the\n    resolver, then placed at the infix position.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    an = MeronymicAnalyzer()\n    tree = (\"op\", _OpEmits(5), (\"leaf\", \"cat\"), (\"leaf\", \"dog\"))\n    out = an.synthesize_tree(tree, marker_resolver=lambda mid: {5: \"and\"}[mid])\n    assert out == \"cat and dog\"\n",
+      "new_bodies": [],
+      "related_live_coverage": [
+        "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+        "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers"
+      ],
+      "live_coverage": [],
+      "coverage_note": "The live surface/operand-order tests are related behavior, not an equivalent of per-operator canonical marker spelling replay."
+    },
+    {
+      "id": "test/test_marker_replay_canonical.py::test_opaque_marker_id_never_interpolated",
+      "action": "retire precursor case",
+      "decision": "doc/specs/2026-09-29-operator-catalogue.md:97 (item 5.5: markers are leaves; surface handles forms); plan \u00a713: the per-operator marker-spelling registry is retired with its remaining orphan interfaces",
+      "old_body": "def test_opaque_marker_id_never_interpolated():\n    \"\"\"Without a resolver, an opaque PS marker id is NOT leaked into the\n    surface; replay degrades to bare juxtaposition instead.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    an = MeronymicAnalyzer()\n    tree = (\"op\", _OpEmits(5), (\"leaf\", \"cat\"), (\"leaf\", \"dog\"))\n    out = an.synthesize_tree(tree)\n    assert \"5\" not in out\n    assert out == \"cat dog\"\n",
+      "new_bodies": [],
+      "related_live_coverage": [
+        "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+        "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers"
+      ],
+      "live_coverage": [],
+      "coverage_note": "The live surface/operand-order tests are related behavior, not an equivalent of per-operator canonical marker spelling replay."
+    },
+    {
+      "id": "test/test_marker_replay_canonical.py::test_string_marker_path_unchanged",
+      "action": "retire precursor case",
+      "decision": "doc/specs/2026-09-29-operator-catalogue.md:97 (item 5.5: markers are leaves; surface handles forms); plan \u00a713: the per-operator marker-spelling registry is retired with its remaining orphan interfaces",
+      "old_body": "def test_string_marker_path_unchanged():\n    \"\"\"A surface-string marker (the learned-co-occurrence path) still places\n    directly -- back-compat with the analyze->emit E2E.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    an = MeronymicAnalyzer()\n    tree = (\"op\", _OpEmits(\"and\"), (\"leaf\", \"cat\"), (\"leaf\", \"dog\"))\n    assert an.synthesize_tree(tree) == \"cat and dog\"\n",
+      "new_bodies": [],
+      "related_live_coverage": [
+        "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+        "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers"
+      ],
+      "live_coverage": [],
+      "coverage_note": "The live surface/operand-order tests are related behavior, not an equivalent of per-operator canonical marker spelling replay."
+    },
+    {
+      "id": "test/test_operator_superposition.py::test_soft_operator_compose_one_hot_equals_hard",
+      "action": "retire precursor case",
+      "decision": "doc/specs/2026-09-26-one-operation-per-round.md:298-311 (soft superposition deliberately removed; selected hard operator only)",
+      "live_coverage": [
+        "test/test_compose_operations.py (hard selection and chooser gradients)"
+      ],
+      "old_body": "def test_soft_operator_compose_one_hot_equals_hard():\n    \"\"\"A one-hot operator distribution reduces to that operator's hard\n    compose -- the typed grammar is preserved.\"\"\"\n    from perceptual_analyzer import soft_operator_compose\n    from Language import GRAMMAR_LAYER_CLASSES\n    left, right = torch.tensor([0.2, 0.0]), torch.tensor([0.8, 0.0])\n    hard = GRAMMAR_LAYER_CLASSES[\"intersection\"]().compose(left, right)\n    soft = soft_operator_compose({\"intersection\": 1.0}, left, right)\n    assert torch.allclose(soft, hard)\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_operator_superposition.py::test_soft_operator_compose_superposes_operators",
+      "action": "retire precursor case",
+      "decision": "doc/specs/2026-09-26-one-operation-per-round.md:298-311 (soft superposition deliberately removed; selected hard operator only)",
+      "live_coverage": [
+        "test/test_compose_operations.py (hard selection and chooser gradients)"
+      ],
+      "old_body": "def test_soft_operator_compose_superposes_operators():\n    \"\"\"A spread distribution superposes operators into a genuine blend\n    distinct from either hard operator (A-and-B vs A-or-B discrimination).\"\"\"\n    from perceptual_analyzer import soft_operator_compose\n    from Language import GRAMMAR_LAYER_CLASSES\n    left, right = torch.tensor([0.2, 0.0]), torch.tensor([0.8, 0.0])\n    inter = GRAMMAR_LAYER_CLASSES[\"intersection\"]().compose(left, right)\n    union = GRAMMAR_LAYER_CLASSES[\"union\"]().compose(left, right)\n    assert not torch.allclose(inter, union)   # min vs max really differ\n    soft = soft_operator_compose(\n        {\"intersection\": 0.5, \"union\": 0.5}, left, right)\n    assert torch.allclose(soft, 0.5 * inter + 0.5 * union)\n    assert not torch.allclose(soft, inter) and not torch.allclose(soft, union)\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_analyze_routed.py::test_routed_known_word_is_one_terminal",
+      "action": "retire precursor case",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+        "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes"
+      ],
+      "old_body": "def test_routed_known_word_is_one_terminal():\n    \"\"\"A known word routes to ONE stop terminal (its percept id); an unknown\n    word falls back to byte terminals -- via the learned DP, not util.parse.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    known = {\"book\": (torch.ones(4), 11)}\n    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))\n\n    oss1 = _oss()\n    an.analyze_routed(\"book\", oss1)\n    assert oss1.depth(0) == 1\n    assert oss1.get(0, 0)[\"part_id\"] == 11\n    assert oss1.get(0, 0)[\"span_start\"] == 0 and oss1.get(0, 0)[\"span_end\"] == 4\n\n    oss2 = _oss()\n    an.analyze_routed(\"xyz\", oss2)\n    assert oss2.depth(0) == 3\n    assert all(oss2.get(0, i)[\"part_id\"] == -1 for i in range(3))\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_analyze_routed.py::test_routed_analysis_round_trips",
+      "action": "ported original behavior to the live eager byte boundary",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces"
+      ],
+      "old_body": "def test_routed_analysis_round_trips():\n    \"\"\"Reverse synthesis from the routed analysis record replays the\n    surface exactly (markers replayed as their terminals).\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    known = {\"book\": (torch.ones(4), 11)}\n    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))\n    oss = _oss()\n    record = an.analyze_routed(\"book xyz\", oss)\n    assert an.synthesize(record) == \"book xyz\"\n    # The known word is one stop terminal; the rest are byte terminals.\n    parts = [r[\"text\"] for r in sorted(record, key=lambda r: r[\"start\"])]\n    assert \"book\" in parts\n",
+      "new_bodies": [
+        {
+          "id": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces",
+          "body": "@pytest.mark.parametrize(\"surface\", [\"the book has a cover\", \"a b\", \"book xyz\"])\ndef test_surface_witness_replays_words_and_spaces(native_ladder, surface):\n    raw, spans, units, atoms, *_ = _witness(native_ladder, surface)\n    assert raw.decode(\"utf-8\") == surface\n    assert \" \" in raw.decode(\"utf-8\")\n    if surface == \"book xyz\":\n        assert \"book\" in units\n"
+        }
+      ]
+    },
+    {
+      "id": "test/test_ps_analyze_routed.py::test_routed_terminal_view_consumable",
+      "action": "retire precursor case",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+        "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes"
+      ],
+      "old_body": "def test_routed_terminal_view_consumable():\n    \"\"\"The routed analysis exposes the fixed-capacity terminal stream the\n    PS-to-SS binding / PS.forward consume, with endpoint-sum .where.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    known = {\"book\": (torch.ones(4), 11)}\n    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))\n    oss = _oss()\n    an.analyze_routed(\"book\", oss)\n    view = an.terminal_view(oss)\n    assert view[\"what\"].shape == (1, 64, 4)\n    assert int(view[\"len\"][0]) == 1\n    s, e = an.where.decode(view[\"where\"][0, 0])\n    assert (s, e) == (0, 4)\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_analyzer.py::test_boundary_matches_word_lexer",
+      "action": "retire precursor case",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes"
+      ],
+      "old_body": "def test_boundary_matches_word_lexer():\n    \"\"\"With whitespace-boundary segmentation the analyzer's spans match the\n    current word lexer (util.parse lex='words').\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    from util import parse\n    surface = \"the book has a cover\"\n    oss = _oss()\n    an = MeronymicAnalyzer()\n    an.analyze(surface, oss, granularity=\"word\")\n\n    expected = [(s, s + len(t.encode(\"utf-8\"))) for (t, s) in parse(surface, \"words\")]\n    got = [(oss.get(0, i)[\"span_start\"], oss.get(0, i)[\"span_end\"])\n           for i in range(oss.depth(0))]\n    assert got == expected, (got, expected)\n    assert oss.depth(0) == len(expected)\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_analyzer.py::test_ps_analyzer_byte_fallback",
+      "action": "ported original behavior to the live eager byte boundary",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row"
+      ],
+      "old_body": "def test_ps_analyzer_byte_fallback():\n    \"\"\"An unknown surface is covered by byte terminals (total fallback).\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    oss = _oss()\n    an = MeronymicAnalyzer()\n    an.analyze(\"zq\", oss, granularity=\"byte\")\n    assert oss.depth(0) == 2\n    for i, (s, e) in enumerate([(0, 1), (1, 2)]):\n        t = oss.get(0, i)\n        assert t[\"part_id\"] == -1            # byte fallback = unknown id\n        assert t[\"span_start\"] == s and t[\"span_end\"] == e\n        assert float(torch.linalg.vector_norm(t[\"vec\"])) > 0\n",
+      "new_bodies": [
+        {
+          "id": "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
+          "body": "def test_unfamiliar_word_keeps_every_nonzero_byte_row(native_ladder):\n    model = native_ladder\n    raw, spans, units, atoms, ids, mask = _witness(model, \"zq\")\n    assert raw == b\"zq\"\n    assert spans == [(0, 1), (1, 2)]\n    rows = model.perceptualSpace.percept_store._basis.lookup_rows(ids[mask])\n    assert rows.shape[0] == 2\n    assert bool((torch.linalg.vector_norm(rows, dim=-1) > 0).all())\n"
+        }
+      ]
+    },
+    {
+      "id": "test/test_ps_analyzer.py::test_ps_analyzer_prefers_known_word",
+      "action": "retire precursor case",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse",
+        "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes"
+      ],
+      "old_body": "def test_ps_analyzer_prefers_known_word():\n    \"\"\"Once 'book' is a known percept, the analyzer emits ONE terminal for\n    it instead of four byte terminals; an unknown word falls back to bytes.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    known = {\"book\": (torch.ones(4), 11)}\n    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))\n\n    oss1 = _oss()\n    an.analyze(\"book\", oss1, granularity=\"auto\")\n    assert oss1.depth(0) == 1\n    assert oss1.get(0, 0)[\"part_id\"] == 11\n\n    oss2 = _oss()\n    an.analyze(\"xyz\", oss2, granularity=\"auto\")\n    assert oss2.depth(0) == 3              # 3 byte terminals\n    assert all(oss2.get(0, i)[\"part_id\"] == -1 for i in range(3))\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_analyzer.py::test_terminal_stream_fixed_capacity",
+      "action": "retire precursor case",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+        "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes"
+      ],
+      "old_body": "def test_terminal_stream_fixed_capacity():\n    \"\"\"The terminal view keeps fixed [1, cap, D] shape while len changes.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    an = MeronymicAnalyzer()\n    oss_a = _oss(cap=64, dim=4)\n    an.analyze(\"a b\", oss_a, granularity=\"word\")\n    va = an.terminal_view(oss_a)\n    oss_b = _oss(cap=64, dim=4)\n    an.analyze(\"a b c d\", oss_b, granularity=\"word\")\n    vb = an.terminal_view(oss_b)\n    assert va[\"what\"].shape == vb[\"what\"].shape == (1, 64, 4)\n    assert int(va[\"len\"][0]) != int(vb[\"len\"][0])\n    # mask matches len\n    assert int(va[\"mask\"][0].sum()) == int(va[\"len\"][0])\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_analyzer.py::test_terminal_stream_where_is_endpoint_sum",
+      "action": "retire precursor case",
+      "decision": "doc/Mereology.md:400-415 (endpoint-sum Where retired 2026-07-09; live start-only WhereEncoding retained)",
+      "live_coverage": [
+        "test/test_where_bracket.py (kept; live codec has a different contract)"
+      ],
+      "old_body": "def test_terminal_stream_where_is_endpoint_sum():\n    \"\"\"Each terminal's .where is the endpoint-sum key of its source span.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    an = MeronymicAnalyzer()\n    surface = \"hello world\"\n    oss = _oss()\n    an.analyze(surface, oss, granularity=\"word\")\n    view = an.terminal_view(oss)\n    n = int(view[\"len\"][0])\n    for i in range(n):\n        s, e = an.where.decode(view[\"where\"][0, i])\n        assert (s, e) == (oss.get(0, i)[\"span_start\"], oss.get(0, i)[\"span_end\"])\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_byte_fallback_utf8.py::test_routed_byte_fallback_round_trips_non_ascii",
+      "action": "ported original behavior to the live eager byte boundary",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii"
+      ],
+      "old_body": "def test_routed_byte_fallback_round_trips_non_ascii():\n    \"\"\"A non-ASCII surface with no percept store routes to byte terminals and\n    reconstructs EXACTLY -- no mojibake, even when a multi-byte glyph is split\n    across byte terminals.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    an = MeronymicAnalyzer()                 # no percept_lookup -> byte fallback\n    for surface in (\"caf\u00e9 d\u00e9j\u00e0\", \"na\u00efve\u2014oz\", \"\u65e5\u672c\u8a9e test\", \"a\u00e9b\"):\n        oss = _oss()\n        record = an.analyze_routed(surface, oss)\n        assert an.synthesize(record) == surface, surface\n",
+      "new_bodies": [
+        {
+          "id": "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+          "body": "def test_byte_witness_round_trips_non_ascii(native_ladder):\n    for surface in (\"caf\u00e9 d\u00e9j\u00e0\", \"na\u00efve\u2014oz\", \"\u65e5\u672c\u8a9e test\", \"a\u00e9b\"):\n        raw, *_ = _witness(native_ladder, surface)\n        assert raw.decode(\"utf-8\") == surface, surface\n"
+        }
+      ]
+    },
+    {
+      "id": "test/test_ps_byte_fallback_utf8.py::test_routed_byte_terminals_preserve_offsets_and_dont_overlap",
+      "action": "ported original behavior to the live eager byte boundary",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap"
+      ],
+      "old_body": "def test_routed_byte_terminals_preserve_offsets_and_dont_overlap():\n    \"\"\"Terminal spans are contiguous byte offsets covering the whole surface\n    with no overlap (binary-tiling guarantee), in UTF-8 byte units.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    an = MeronymicAnalyzer()\n    surface = \"caf\u00e9 d\u00e9j\u00e0\"\n    nbytes = len(surface.encode(\"utf-8\"))\n    record = an.analyze_routed(surface, _oss())\n    spans = sorted((r[\"start\"], r[\"end\"]) for r in record)\n    assert spans[0][0] == 0\n    assert spans[-1][1] == nbytes\n    for (s0, e0), (s1, e1) in zip(spans, spans[1:]):\n        assert e0 == s1, (spans)            # contiguous, non-overlapping\n",
+      "new_bodies": [
+        {
+          "id": "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+          "body": "def test_byte_witness_offsets_cover_the_surface_without_overlap(native_ladder):\n    surface = \"caf\u00e9 d\u00e9j\u00e0\"\n    raw, spans, *_ = _witness(native_ladder, surface)\n    spans = sorted(spans)\n    assert spans[0][0] == 0\n    assert spans[-1][1] == len(surface.encode(\"utf-8\"))\n    for (s0, e0), (s1, e1) in zip(spans, spans[1:]):\n        assert e0 == s1, spans\n    assert raw == surface.encode(\"utf-8\")\n"
+        }
+      ]
+    },
+    {
+      "id": "test/test_ps_byte_fallback_utf8.py::test_split_multibyte_glyph_has_no_replacement_char",
+      "action": "ported original behavior to the live eager byte boundary",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes"
+      ],
+      "old_body": "def test_split_multibyte_glyph_has_no_replacement_char():\n    \"\"\"A byte terminal that is a partial UTF-8 sequence must NOT be recorded\n    as the U+FFFD replacement char -- the exact bytes are preserved.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    an = MeronymicAnalyzer()\n    record = an.analyze_routed(\"\u00e9\", _oss())  # 0xC3 0xA9, likely split to bytes\n    assert \"\ufffd\" not in an.synthesize(record)\n    # Every terminal carries its exact source bytes summing to the surface.\n    raws = b\"\".join(r[\"raw\"] for r in sorted(record, key=lambda r: r[\"start\"]))\n    assert raws == \"\u00e9\".encode(\"utf-8\")\n",
+      "new_bodies": [
+        {
+          "id": "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+          "body": "def test_split_multibyte_witness_keeps_raw_bytes(native_ladder):\n    raw, *_ = _witness(native_ladder, \"\u00e9\")\n    assert \"\ufffd\" not in raw.decode(\"utf-8\")\n    assert raw == \"\u00e9\".encode(\"utf-8\")\n"
+        }
+      ]
+    },
+    {
+      "id": "test/test_ps_byte_fallback_utf8.py::test_known_word_with_byte_fallback_mix_round_trips",
+      "action": "retired admitted-word terminal behavior; exact byte replay stays covered independently",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only); plan \u00a713.5: rung 0 keeps byte atoms after admission, so the analyzer word-id terminal behavior is retired",
+      "live_coverage": [],
+      "old_body": "def test_known_word_with_byte_fallback_mix_round_trips():\n    \"\"\"A mixed surface -- an ASCII known word plus a non-ASCII byte-fallback\n    region -- still yields one stop terminal for the known word, every\n    terminal carries its exact bytes, and the whole surface round-trips.\n    (The word lexer splits non-ASCII words, so 'caf\u00e9' here is byte fallback;\n    byte-exact reconstruction makes that lossless anyway.)\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    known = {\"book\": (torch.ones(4), 7)}\n    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))\n    oss = _oss()\n    record = an.analyze_routed(\"book caf\u00e9\", oss)\n    assert an.synthesize(record) == \"book caf\u00e9\"\n    stop = [r for r in record if r[\"part_id\"] == 7]\n    assert len(stop) == 1 and stop[0][\"text\"] == \"book\"\n    assert all(\"raw\" in r for r in record)\n",
+      "superseded_port_bodies": [
+        {
+          "id": "test/test_meronomy_utf8.py::test_admitted_word_and_utf8_bytes_replay_together",
+          "body": "def test_admitted_word_and_utf8_bytes_replay_together(fresh_ladder):\n    model = fresh_ladder\n    ps = model.perceptualSpace\n    for _ in range(max(1, int(ps.chunk_promotion_threshold or 2))):\n        _stage(model, [\"book\"])\n        ps.flush_pending_promotions()\n    assert ps.percept_store.get_id(b\"book\") is not None\n    raw, spans, units, atoms, *_ = _witness(model, \"book caf\u00e9\")\n    assert raw.decode(\"utf-8\") == \"book caf\u00e9\"\n    stop = [i for i, unit in enumerate(units) if unit == \"book\"]\n    assert len(stop) == 1\n    assert b\"\".join(atoms[stop[0]]) == b\"book\"\n    assert all(isinstance(atom, bytes) for unit in atoms for atom in unit)\n"
+        }
+      ],
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_meronymic_router.py::test_route_once_selects_exactly_one_best_merge",
+      "action": "retire standalone cosine/depth-penalty routing law with its implementation",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes"
+      ],
+      "old_body": "def test_route_once_selects_exactly_one_best_merge():\n    from perceptual_analyzer import MeronymicRouter\n    router = MeronymicRouter(keep_bias=0.0)\n    copy = torch.zeros(1, 6, 1)\n    scores = torch.tensor([[[3.], [-1.], [4.], [2.], [1.]]])\n    assert router.route_once(copy, scores)['merges'] == [2]\n    assert router.route_once(copy, -scores.abs())['merges'] == []\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_meronymic_router.py::test_route_once_returns_soft_marginals",
+      "action": "retire standalone cosine/depth-penalty routing law with its implementation",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes"
+      ],
+      "old_body": "def test_route_once_returns_soft_marginals():\n    \"\"\"route_once exposes soft marginals alongside the one hard route; a\n    confident merge has a near-1 reduce marginal.\"\"\"\n    from perceptual_analyzer import MeronymicRouter\n    router = MeronymicRouter()\n    copy_score = torch.zeros(1, 3, 1)\n    reduce_score = torch.tensor([[[6.0], [-6.0]]])  # merge pair 0, not pair 1\n    out = router.route_once(copy_score, reduce_score)\n    assert out[\"merges\"] == [0]\n    marg = out[\"reduce_marginal\"]\n    assert marg[0] > 0.95 and marg[1] < 0.05\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_meronymic_router.py::test_depth_penalty_monotonically_reduces_merges",
+      "action": "retire standalone cosine/depth-penalty routing law with its implementation",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes"
+      ],
+      "old_body": "def test_depth_penalty_monotonically_reduces_merges():\n    \"\"\"Higher depth penalty -> non-increasing merge count (finer terminals).\n    The penalty uniformly shifts the signed-neighborhood merge evidence, so\n    one round can only lose positive pairs as it rises (provably\n    monotonic; the iterated route mutates vectors and is not).\"\"\"\n    from perceptual_analyzer import MeronymicRouter\n    torch.manual_seed(1)\n    atoms = torch.randn(9, 16)\n    counts = []\n    for pen in [-1.0, -0.25, 0.0, 0.25, 0.5, 0.9, 2.0]:\n        router = MeronymicRouter(depth_penalty=pen)\n        cs, rs = router.scores(atoms)\n        counts.append(len(router.route_once(cs, rs)[\"merges\"]))\n    assert counts == sorted(counts, reverse=True), counts\n    assert counts[-1] == 0, \"a very high penalty leaves every atom a terminal\"\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_meronymic_router.py::test_known_word_merges_unknown_stays_bytes",
+      "action": "retire precursor case",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse",
+        "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes"
+      ],
+      "old_body": "def test_known_word_merges_unknown_stays_bytes():\n    \"\"\"Coherent atoms (a known word's bytes) merge into one chunk; an\n    incoherent (unknown / byte-fallback) region stays as singleton\n    terminals. This is the learned analogue of stop-vs-byte routing.\"\"\"\n    from perceptual_analyzer import MeronymicRouter\n    D = 12\n    w = torch.zeros(D); w[0] = 1.0            # 3 identical \"known word\" atoms\n    u1 = torch.zeros(D); u1[5] = 1.0          # mutually orthogonal \"unknown\"\n    u2 = torch.zeros(D); u2[9] = 1.0\n    atoms = torch.stack([w, w, w, u1, u2])\n    # Penalty between the unknown similarity (0) and the known similarity (1).\n    router = MeronymicRouter(depth_penalty=0.5)\n    segs = router.route(atoms)[\"segments\"]\n    assert (0, 3) in segs, segs              # the known word is one chunk\n    assert (3, 4) in segs and (4, 5) in segs  # unknown bytes stay separate\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_meronymic_router.py::test_single_atom_and_empty_are_total",
+      "action": "retire standalone cosine/depth-penalty routing law with its implementation",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes"
+      ],
+      "old_body": "def test_single_atom_and_empty_are_total():\n    \"\"\"A length-1 surface routes to one terminal; length-0 to none (the\n    byte/atom cover is total, so the router always has a valid route).\"\"\"\n    from perceptual_analyzer import MeronymicRouter\n    router = MeronymicRouter()\n    one = router.route(torch.randn(1, 8))\n    assert one[\"segments\"] == [(0, 1)] and one[\"n_merges\"] == 0\n    zero = router.route(torch.zeros(0, 8))\n    assert zero[\"segments\"] == [] and zero[\"n_merges\"] == 0\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_reverse_e2e.py::test_meronymic_reverse_replays_surface",
+      "action": "ported original behavior to the live eager byte boundary",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces"
+      ],
+      "old_body": "def test_meronymic_reverse_replays_surface():\n    \"\"\"IdeaSubSpace route metadata (the analysis record) reconstructs the\n    observed surface exactly.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    surface = \"the book has a cover\"\n    an = MeronymicAnalyzer()\n    record = an.analyze(surface, _oss(), granularity=\"word\")\n    assert an.synthesize(record) == surface\n",
+      "new_bodies": [
+        {
+          "id": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces",
+          "body": "@pytest.mark.parametrize(\"surface\", [\"the book has a cover\", \"a b\", \"book xyz\"])\ndef test_surface_witness_replays_words_and_spaces(native_ladder, surface):\n    raw, spans, units, atoms, *_ = _witness(native_ladder, surface)\n    assert raw.decode(\"utf-8\") == surface\n    assert \" \" in raw.decode(\"utf-8\")\n    if surface == \"book xyz\":\n        assert \"book\" in units\n"
+        }
+      ]
+    },
+    {
+      "id": "test/test_ps_reverse_e2e.py::test_meronymic_synthesis_can_emit_spaces",
+      "action": "ported original behavior to the live eager byte boundary",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces"
+      ],
+      "old_body": "def test_meronymic_synthesis_can_emit_spaces():\n    \"\"\"Synthesis places spaces without a word-tokenizer: the space is a real\n    terminal in the record and is replayed.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    an = MeronymicAnalyzer()\n    record = an.analyze(\"a b\", _oss(), granularity=\"word\")\n    recon = an.synthesize(record)\n    assert recon == \"a b\"\n    assert \" \" in recon\n",
+      "new_bodies": [
+        {
+          "id": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces",
+          "body": "@pytest.mark.parametrize(\"surface\", [\"the book has a cover\", \"a b\", \"book xyz\"])\ndef test_surface_witness_replays_words_and_spaces(native_ladder, surface):\n    raw, spans, units, atoms, *_ = _witness(native_ladder, surface)\n    assert raw.decode(\"utf-8\") == surface\n    assert \" \" in raw.decode(\"utf-8\")\n    if surface == \"book xyz\":\n        assert \"book\" in units\n"
+        }
+      ]
+    },
+    {
+      "id": "test/test_ps_reverse_e2e.py::test_grammar_has_no_and_token",
+      "action": "move unchanged assertion into consolidated retired-name guard",
+      "decision": "doc/specs/2026-09-29-operator-catalogue.md:97 (item 5.5: markers are leaves; surface handles forms)",
+      "live_coverage": [
+        "test/test_retired_names.py::test_retired_names_remain_absent"
+      ],
+      "old_body": "def test_grammar_has_no_and_token():\n    \"\"\"The connective 'and' is NOT a grammar token anywhere (marker word\n    lists were deleted) -- it can only enter via a learned marker.\"\"\"\n    from Language import Grammar\n    g = Grammar()\n    g.load_from_grammar_file(\"complete.grammar\")\n    for r in g.rules:\n        toks = [c.strip() for c in str(r.lhs).split(\",\")] + list(r.rhs_symbols or ())\n        assert \"and\" not in toks and \"AND\" not in toks\n",
+      "new_bodies": [
+        {
+          "id": "test/test_retired_names.py::test_retired_names_remain_absent",
+          "body": "def test_retired_names_remain_absent():\n    import torch\n    import Language\n    import Layers\n    import Models\n    from util import TheXMLConfig\n\n    for address, names in ATTRIBUTES:\n        owner = _resolve(address)\n        for name in names:\n            assert not hasattr(owner, name), (address, name)\n    for address, names, strip_doc in SOURCES:\n        source = inspect.getsource(_resolve(address))\n        if strip_doc:\n            head, _, rest = source.partition('\"\"\"')\n            source = head + rest.partition('\"\"\"')[2]\n        for name in names:\n            assert name not in source, (address, name)\n    for address, names in SIGNATURES:\n        parameters = inspect.signature(_resolve(address)).parameters\n        for name in names:\n            assert name not in parameters, (address, name)\n\n    instances = (\n        (Layers.ConceptualCombine(content_dim=6, naive=False, sigma_pi_mode='full'),\n            ('reverse_dropped', 'aug_dim')),\n        (Layers.ConceptAllocator(), ('chain_idx', 'joint')),\n        (Layers.SparseLayer(4, 3), ('ensure_row_key', 'embed_pair', 'constituents',\n            'row_is_identity', 'assign_row', 'hebbian_strengthen_row')),\n        (Language.RuleCodebook(num_rules=1), ('forward_to_parent_what',)),\n        (Layers.TruthLayer(nDim=8, max_truths=16), ('should_store',)),\n        (Layers.InterSentenceLayer(n_symbols=4, max_depth=2, n_dim=3, p=5, q=2,\n            concept_dim=6, batch=1), ('prime', 'cast')),\n        (Layers.ChunkLayer(nDim=8, bpe=True, n_vectors=1024, word_learning=2),\n            ('split', 'merge', 'threshold', 'score_pair', 'encode', 'decode', 'should_merge')),\n    )\n    for owner, names in instances:\n        for name in names:\n            assert not hasattr(owner, name), (type(owner).__name__, name)\n    assert hasattr(instances[-1][0], 'merges')\n    for cls in (Layers.PiLayer2, Layers.SigmaLayer2):\n        instance = cls(4, 4)\n        for name in ('_to_mult', '_from_mult'):\n            assert name not in cls.__dict__\n            assert not hasattr(instance, name)\n        for method in ('forward', 'reverse', 'compose'):\n            source = inspect.getsource(getattr(cls, method))\n            for name in ('_to_mult', '_from_mult', 'atanh', 'tanh'):\n                assert name not in source, (cls.__name__, method, name)\n    lift = Layers.LiftLayer(wholeSpace=None, perceptualSpace=None)\n    assert getattr(lift, 'raw_gate', None) is None\n    assert 'raw_gate' not in dict(lift.named_parameters())\n    from embed import WordVectors\n    words = WordVectors(torch.randn(4, 8), ['a', 'b', 'c', 'd'])\n    assert not hasattr(words, 'tie_to_codebook')\n    assert words._tied_param_getter is None\n    assert hasattr(Layers.Ops, 'eval_chart') and hasattr(Layers.Ops, 'eval_chart_inv')\n    assert hasattr(Language.SymbolSpace, 'forward_concept_to_symbol')\n\n    factories, models = _models(), {}\n    try:\n        for key, path, names in MODEL_ATTRIBUTES:\n            if key not in models:\n                # Reproduce pytest's former per-case singleton reset.\n                Language.TheGrammar._configured = False\n                TheXMLConfig._requirements.clear()\n                models[key] = factories[key]()\n            values = [models[key]]\n            for field in filter(None, path.split('.')):\n                values = ([item for value in values for item in value] if field == '*'\n                          else [getattr(value, field) for value in values])\n            for value in values:\n                for name in names:\n                    assert not hasattr(value, name), (key, path, name)\n        assert callable(getattr(models['enum'], 'reverseReconstruct', None))\n        assert not isinstance(vars(models['enum']).get('reconstruct'), str)\n    finally:\n        for model in models.values():\n            model.End()\n\n    cfg = Models.BaseModel.load_config(str(ROOT / 'data/model.xml'))\n    for name in ARCHITECTURE_KEYS:\n        assert name not in cfg['architecture'], name\n    cfg = Models.BaseModel.load_config(str(ROOT / 'data/XOR_grammar.xml'))\n    assert 'routerKind' not in cfg['SymbolSpace']\n    for path in (ROOT / 'data/complete.grammar', ROOT / 'test/fixtures/transitional_pos.grammar'):\n        grammar = Language.Grammar()\n        grammar.load_from_grammar_file(str(path))\n        for rule in grammar.rules:\n            tokens = [s.strip() for s in str(rule.lhs).split(',')] + list(rule.rhs_symbols or ())\n            for token in tokens:\n                if path.name == 'complete.grammar':\n                    assert token not in GRAMMAR_TOKENS, (token, rule.canonical)\n                assert not token.endswith('_MARK'), (token, rule.canonical)\n        for name in ('copy', 'swap'):\n            assert name not in {rule.method_name for rule in grammar.rules if rule.method_name}\n    for name in ('grammar2.cfg', 'grammar_legacy.cfg'):\n        assert not (ROOT / 'data' / name).exists(), name\n"
+        }
+      ]
+    },
+    {
+      "id": "test/test_ps_reverse_e2e.py::test_e2e_round_trip_with_learned_marker",
+      "action": "retire operator-bound spelling/tree protocol; preserve live carrier and witness behavior",
+      "decision": "doc/specs/2026-09-29-operator-catalogue.md:97 (item 5.5: markers are leaves; surface handles forms); doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_surface_grammar.py::test_surface_inverse_uses_only_supplied_occurrence_witness",
+        "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact"
+      ],
+      "old_body": "def test_e2e_round_trip_with_learned_marker():\n    \"\"\"End-to-end: analyze -> [op, X, Y] -> execute -> reverse -> emit ->\n    surface, with 'and' a LEARNED marker (absorb/emit), not a grammar token.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    from Language import GRAMMAR_LAYER_CLASSES\n    surface = \"cat and dog\"\n    an = MeronymicAnalyzer()\n\n    # 1. analyze surface into terminals; 'and' is a surface terminal.\n    record = an.analyze(surface, _oss(), granularity=\"word\")\n    assert \"and\" in [r[\"text\"] for r in record]\n\n    # 2. the connective is absorbed as conjunction's marker (learned from\n    #    co-occurrence); content operands are cat / dog.\n    conj = GRAMMAR_LAYER_CLASSES[\"conjunction\"]()\n    conj.absorb(left=\"cat\", right=\"and\", marker_id=\"and\")\n\n    # 3. operator-prefixed [conjunction, cat, dog] executes to a combined\n    #    meaning (the operator combines, contributing no meaning of its own).\n    cat_vec, dog_vec = torch.ones(4), torch.full((4,), 2.0)\n    idea = conj.compose(cat_vec, dog_vec)\n    assert idea.shape == cat_vec.shape\n\n    # 4. reverse (SS analysis) recovers operands; emit replays the marker.\n    # ADAPTED (2026-07-04 serial plan Task 1): the no-basis stub is\n    # revoked -- recovery runs the mereology recommender against the\n    # operand codebook and must RECOMPOSE faithfully.\n    class _Shim:\n        def __init__(self, W):\n            self._W = W\n\n        def getW(self):\n            return self._W\n\n    left_back, right_back = conj.generate(\n        idea, basis=_Shim(torch.stack([cat_vec, dog_vec])))\n    assert torch.equal(conj.compose(left_back, right_back),\n                       idea.expand_as(left_back)\n                       if left_back.shape != idea.shape else idea)\n    assert conj.emit() == \"and\"\n\n    # 5. PS meronymic synthesis reconstructs the surface from the\n    #    operator-prefixed tree (marker placed at the T2 infix position).\n    tree = (\"op\", conj, (\"leaf\", \"cat\"), (\"leaf\", \"dog\"))\n    assert an.synthesize_tree(tree) == surface\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_where.py::test_endpoint_sum_where_decodes_span",
+      "action": "retire precursor case",
+      "decision": "doc/Mereology.md:400-415 (endpoint-sum Where retired 2026-07-09; live start-only WhereEncoding retained)",
+      "live_coverage": [
+        "test/test_where_bracket.py (kept; live codec has a different contract)"
+      ],
+      "old_body": "def test_endpoint_sum_where_decodes_span():\n    \"\"\"Encode then decode recovers (start, end) on the integer grid.\"\"\"\n    from perceptual_analyzer import EndpointSumWhere\n    enc = EndpointSumWhere(namespace=256)\n    for (s, e) in [(0, 3), (5, 6), (10, 42), (100, 128), (0, 1), (7, 7)]:\n        w = enc.encode(s, e)\n        assert tuple(w.shape) == (2,)\n        ds, de = enc.decode(w)\n        assert (ds, de) == (s, e), (s, e, ds, de)\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_where.py::test_endpoint_sum_where_rebase_preserves_length",
+      "action": "retire precursor case",
+      "decision": "doc/Mereology.md:400-415 (endpoint-sum Where retired 2026-07-09; live start-only WhereEncoding retained)",
+      "live_coverage": [
+        "test/test_where_bracket.py (kept; live codec has a different contract)"
+      ],
+      "old_body": "def test_endpoint_sum_where_rebase_preserves_length():\n    \"\"\"Rebasing a span to a different center keeps the magnitude / decoded\n    length (length lives in the radius, center in the angle).\"\"\"\n    from perceptual_analyzer import EndpointSumWhere\n    enc = EndpointSumWhere(namespace=256)\n    w1 = enc.encode(10, 14)   # center 12, length 4\n    w2 = enc.encode(40, 44)   # center 42, length 4 (rebased)\n    r1 = float(torch.linalg.vector_norm(w1))\n    r2 = float(torch.linalg.vector_norm(w2))\n    assert abs(r1 - r2) < 1e-5, (r1, r2)\n    s1, e1 = enc.decode(w1)\n    s2, e2 = enc.decode(w2)\n    assert (e1 - s1) == (e2 - s2) == 4\n    assert s1 != s2\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_where.py::test_endpoint_sum_where_rejects_ambiguous_period",
+      "action": "retire precursor case",
+      "decision": "doc/Mereology.md:400-415 (endpoint-sum Where retired 2026-07-09; live start-only WhereEncoding retained)",
+      "live_coverage": [
+        "test/test_where_bracket.py (kept; live codec has a different contract)"
+      ],
+      "old_body": "def test_endpoint_sum_where_rejects_ambiguous_period():\n    \"\"\"A span whose center/length approach or exceed the recoverable\n    half-period is flagged not-recoverable and does not round-trip.\"\"\"\n    from perceptual_analyzer import EndpointSumWhere\n    enc = EndpointSumWhere(namespace=8)   # half-period = 16\n    assert enc.is_recoverable(0, 4)\n    assert not enc.is_recoverable(0, 100)\n    s, e = enc.decode(enc.encode(0, 100))\n    assert (s, e) != (0, 100)\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_ps_where.py::test_endpoint_sum_where_batched",
+      "action": "retire precursor case",
+      "decision": "doc/Mereology.md:400-415 (endpoint-sum Where retired 2026-07-09; live start-only WhereEncoding retained)",
+      "live_coverage": [
+        "test/test_where_bracket.py (kept; live codec has a different contract)"
+      ],
+      "old_body": "def test_endpoint_sum_where_batched():\n    \"\"\"Decode works on a batched [..., 2] tensor of keys.\"\"\"\n    from perceptual_analyzer import EndpointSumWhere\n    enc = EndpointSumWhere(namespace=256)\n    spans = [(0, 3), (10, 42), (100, 128)]\n    keys = torch.stack([enc.encode(s, e) for (s, e) in spans], dim=0)\n    starts, ends = enc.decode(keys)\n    assert [int(x) for x in starts] == [s for s, _ in spans]\n    assert [int(x) for x in ends] == [e for _, e in spans]\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_within_whole_division.py::test_unattested_punct_run_divides_into_attested_parts",
+      "action": "remove duplicate precursor coverage; live WholeSpace path stays",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_within_whole_division.py::test_live_default_on_divides_punct_run"
+      ],
+      "old_body": "def test_unattested_punct_run_divides_into_attested_parts():\n    \"\"\"`\").\"` is ONE punct-whole but divides into two concepts `)` + `.` when\n    each is independently attested (the T3 example).\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    known = {\")\": (torch.ones(4), 41), \".\": (torch.ones(4) * 2, 46)}\n    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),\n                           divide_within_whole=True)\n    oss = _oss()\n    an.analyze(\").\", oss, granularity=\"type\")\n    assert oss.depth(0) == 2, _terminals(oss)\n    # Two attested concepts, IN ORDER, each a STOP terminal (its part id).\n    assert oss.get(0, 0)[\"part_id\"] == 41            # \")\"\n    assert oss.get(0, 1)[\"part_id\"] == 46            # \".\"\n    assert (oss.get(0, 0)[\"span_start\"], oss.get(0, 0)[\"span_end\"]) == (0, 1)\n    assert (oss.get(0, 1)[\"span_start\"], oss.get(0, 1)[\"span_end\"]) == (1, 2)\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_within_whole_division.py::test_attested_whole_preferred_over_parts",
+      "action": "remove duplicate precursor coverage; live WholeSpace path stays",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept"
+      ],
+      "old_body": "def test_attested_whole_preferred_over_parts():\n    \"\"\"`\"...\"` attested as its own entry stays ONE concept even though `\".\"` is\n    also attested -- longest match prefers the whole over its parts.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    known = {\"...\": (torch.ones(4), 100), \".\": (torch.ones(4) * 2, 46)}\n    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),\n                           divide_within_whole=True)\n    oss = _oss()\n    an.analyze(\"...\", oss, granularity=\"type\")\n    assert oss.depth(0) == 1, _terminals(oss)\n    assert oss.get(0, 0)[\"part_id\"] == 100           # the ellipsis whole\n    assert (oss.get(0, 0)[\"span_start\"], oss.get(0, 0)[\"span_end\"]) == (0, 3)\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_within_whole_division.py::test_no_complete_tiling_keeps_byte_fallback",
+      "action": "remove duplicate precursor coverage; live WholeSpace path stays",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span"
+      ],
+      "old_body": "def test_no_complete_tiling_keeps_byte_fallback():\n    \"\"\"An unattested run with NO complete attested tiling keeps the EXISTING\n    fallback: divide-on and divide-off yield byte-identical terminals.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    # \".\" attested but neither \"@\" nor \"#\" is, so the punct-whole \"@#\" has no\n    # complete attested tiling and no attested byte -> pure byte fallback.\n    known = {\".\": (torch.ones(4) * 2, 46)}\n    surface = \"@#\"\n\n    off = _oss()\n    MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),\n                      divide_within_whole=False).analyze(\n        surface, off, granularity=\"type\")\n\n    on = _oss()\n    MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),\n                      divide_within_whole=True).analyze(\n        surface, on, granularity=\"type\")\n\n    assert _terminals(on) == _terminals(off), (_terminals(on), _terminals(off))\n    # And it IS the byte fallback (every terminal an unknown byte).\n    assert on.depth(0) == 2\n    assert all(on.get(0, i)[\"part_id\"] == -1 for i in range(2))\n",
+      "new_bodies": []
+    },
+    {
+      "id": "test/test_within_whole_division.py::test_attested_run_is_never_divided",
+      "action": "remove duplicate precursor coverage; live WholeSpace path stays",
+      "decision": "doc/plans/2026-09-10-meronomy-fold-ladder.md:35-155 (canonical descending type tiling and ordered byte witness; standalone analyzer/router are reference only)",
+      "live_coverage": [
+        "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+        "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words"
+      ],
+      "old_body": "def test_attested_run_is_never_divided():\n    \"\"\"A run that is itself attested stays ONE concept regardless of whether\n    its characters are also attested standalone.\"\"\"\n    from perceptual_analyzer import MeronymicAnalyzer\n    known = {\"book\": (torch.ones(4), 11),\n             \"b\": (torch.ones(4), 1), \"o\": (torch.ones(4), 2),\n             \"k\": (torch.ones(4), 3)}\n    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),\n                           divide_within_whole=True)\n    oss = _oss()\n    an.analyze(\"book\", oss, granularity=\"type\")\n    assert oss.depth(0) == 1, _terminals(oss)\n    assert oss.get(0, 0)[\"part_id\"] == 11\n",
+      "new_bodies": []
+    }
+  ]
+}

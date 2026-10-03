@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_meronomy_smoke.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 6.056675084000744,
+  "batch": 12,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 4.753789375004999,
+  "output_loss": 0.10479366034269333,
+  "reconstruction_loss": 0.0995965525507927,
+  "completed": true,
+  "total_seconds": 10.81047050000052
+}

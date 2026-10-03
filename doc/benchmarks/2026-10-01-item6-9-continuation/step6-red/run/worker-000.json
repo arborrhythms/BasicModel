@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient"
+  ],
+  "completed": [
+    "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002555332999691018,
+      "message": "test/test_grammar_reconstruction_gate.py:15: in test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient\n    assert torch.equal(pair, basis[0]) or torch.equal(pair, basis[0].flip(0))\nE   assert (False or False)\nE    +  where False = <built-in method equal of type object at 0x10cfa93a0>(tensor([[0.0944, 0.1056],\\n        [0.0944, 0.1056]], grad_fn=<StackBackward0>), tensor([[0.2000, 0.0000],\\n        [0.0000, 0.2000]]))\nE    +    where <built-in method equal of type object at 0x10cfa93a0> = torch.equal\nE    +  and   False = <built-in method equal of type object at 0x10cfa93a0>(tensor([[0.0944, 0.1056],\\n        [0.0944, 0.1056]], grad_fn=<StackBackward0>), tensor([[0.0000, 0.2000],\\n        [0.2000, 0.0000]]))\nE    +    where <built-in method equal of type object at 0x10cfa93a0> = torch.equal\nE    +    and   tensor([[0.0000, 0.2000],\\n        [0.2000, 0.0000]]) = <built-in method flip of Tensor object at 0x12856c6e0>(0)\nE    +      where <built-in method flip of Tensor object at 0x12856c6e0> = tensor([[0.2000, 0.0000],\\n        [0.0000, 0.2000]]).flip",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,24 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_retired_names.py::test_retired_names_remain_absent"
+  ],
+  "completed": [
+    "test/test_retired_names.py::test_retired_names_remain_absent"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_retired_names.py::test_retired_names_remain_absent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.55096920899814,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nStarting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nStarting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

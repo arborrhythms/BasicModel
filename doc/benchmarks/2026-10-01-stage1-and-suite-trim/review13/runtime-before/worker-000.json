@@ -1,0 +1,33 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes"
+  ],
+  "completed": [
+    "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.8141549579959246,
+      "message": "test/test_sentence_journal.py:110: in test_packed_word_and_closing_leave_other_sentence_rows_unchanged\n    assert not any(stray), f'operations outside the open sentence: {stray}; changed={changed}'\nE   AssertionError: operations outside the open sentence: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; changed=[(1, 2, 0), (1, 3, 0), (1, 4, 0), (1, 4, 4), (1, 4, 5), (1, 4, 6), (1, 4, 9), (1, 4, 13), (1, 4, 17), (1, 4, 18), (1, 4, 19), (1, 4, 22), (1, 4, 26), (1, 4, 27), (1, 4, 28), (1, 4, 31), (1, 4, 33)]\nE   assert not True\nE    +  where True = any([0, 0, 0, 0, 0, 0, ...])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.032423584001662675,
+      "message": "test/test_mixing_reconstruction_bank.py:21: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes\n    assert b''.join(target) == surface.encode('utf-8'), target\nE   AssertionError: [b'caf', b'\\xc3\\xa9', b' ', b'd', b'\\xc3\\xa9', b'j']\nE   assert b'caf\\xc3\\xa9 d\\xc3\\xa9j' == b'caf\\xc3\\xa9...\\xa9j\\xc3\\xa0'\nE     \nE     Use -v to get more diff",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n  Building span table: 0/256 docs\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

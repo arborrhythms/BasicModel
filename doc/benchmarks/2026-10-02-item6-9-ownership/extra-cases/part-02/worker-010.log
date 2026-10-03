@@ -1,0 +1,33 @@
+..F.F.                                                                   [100%]
+=================================== FAILURES ===================================
+_____________________ test_concept_attention_live_not_dark _____________________
+test/test_masked_semantic.py:157: in test_concept_attention_live_not_dark
+    assert lv is not None and float(lv[0]) > 0.0, lv
+E   AssertionError: [0.0, 0.0, 0.0, 0.0]
+E   assert ([0.0, 0.0, 0.0, 0.0] is not None and 0.0 > 0.0)
+E    +  where 0.0 = float(0.0)
+__________________ test_reconstruction_uses_category_evidence __________________
+test/test_masked_semantic.py:179: in test_reconstruction_uses_category_evidence
+    assert _events_differ(base["rev"], mint["rev"])
+E   assert False
+E    +  where False = _events_differ(tensor([[[ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1...41, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291]]]), tensor([[[ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1...41, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291]]]))
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.098s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.089s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.087s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.088s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.087s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_masked_semantic.py::test_config_is_masked_parallel_semantic
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_masked_semantic.py::test_concept_attention_live_not_dark - A...
+FAILED test/test_masked_semantic.py::test_reconstruction_uses_category_evidence
+2 failed, 4 passed, 1 warning in 4.31s

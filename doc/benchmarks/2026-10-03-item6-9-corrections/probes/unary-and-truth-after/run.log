@@ -1,0 +1,140 @@
+F......                                                                  [100%]
+=================================== FAILURES ===================================
+___________________ test_saved_roots_follow_operand_unaries ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13bc955b0>
+
+    def test_saved_roots_follow_operand_unaries(monkeypatch):
+        import Models
+        from Language import LanguageSpace, ConjunctionLayer, NotLayer
+        folder = Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-03-item6-9-free-readback/xor-ownership'
+        saved = torch.load(folder/'geometry-start-stage-1.pt', weights_only=True)
+        codes = {int(row): code for row, code in zip(saved['rows'], saved['codes'])}
+        pairs = [(0, 1), (0, 2), (4, 1), (4, 2)]
+        basis = torch.stack([torch.stack([codes[a], codes[b]]) for a,b in pairs])
+        roots = torch.tensor(json.loads((folder/'geometry-start.json').read_text())['roots']['values'])
+        conjunction, negation = ConjunctionLayer(), NotLayer()
+        language = SimpleNamespace()
+        for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
+                     'reverse_unary_step'):
+            setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
+        language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
+        language.local_op_from_rule_ids = LanguageSpace.local_op_from_rule_ids
+        language._tree_layer = lambda arity: (SimpleNamespace(ops=[conjunction]) if arity == 2
+                                             else SimpleNamespace(unary_ops=[negation]))
+        B, W, D, cap = 4, 2, 10, 3
+        steps = W*3+(W+1)*2*cap
+        rule_ids = torch.zeros(B, steps, dtype=torch.long)
+        arities = torch.zeros_like(rule_ids)
+        arities[:, 3] = 2
+        arities[2:, 0] = 1
+        arities[[1,3], 4] = 1
+        rule_ids[arities == 1] = 1
+        trace = SimpleNamespace(choices=lambda: (rule_ids, arities, arities > 0),
+            _choice_positions=torch.zeros_like(rule_ids),
+            rule_map=lambda arity: torch.tensor([0 if arity == 2 else 1]))
+        owner = SimpleNamespace(inputSpace=SimpleNamespace(_word_active_mask=torch.ones(B,W,dtype=torch.bool)),
+            languageSpace=language, conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=cap)),
+            _reconstruction_stack=lambda: trace, reconstruction_basis_limit=2)
+        owner._byte_word_cost = MethodType(Models.BasicModel._byte_word_cost, owner)
+        def eager_loop(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(Models, '_reconstruction_while_loop', eager_loop)
+>       recovered, _, _, unavailable, _ = Models.BasicModel._reconstruct_sentences(
+            owner, roots, basis, roots[:, None],
+            end_slots=torch.cat((roots[:,None],torch.zeros(B,2,D)),1),
+            end_depth=torch.ones(B,dtype=torch.long), candidate_basis=(basis,torch.ones(B,2,dtype=torch.bool)),
+            keep_ideas=True)
+
+test/test_readback_operand_unaries.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:12427: in _reconstruct_sentences
+    recovered) = _reconstruction_while_loop(
+test/test_readback_operand_unaries.py:44: in eager_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t = tensor(0)
+stack = tensor([[[ 0.5135,  0.5174,  0.4587,  0.0686, -0.0902, -0.0156, -0.3851,
+          -0.2435,  0.0243,  0.1924],
+       ... 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000,  0.0000,  0.0000]]], grad_fn=<WhereBackward0>)
+depth = tensor([1, 1, 1, 1])
+idea_sum = tensor([[0.2680],
+        [0.0000],
+        [0.1570],
+        [0.1858]], grad_fn=<ScatterAddBackward0>)
+byte_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]], grad_fn=<ScatterAddBackward0>)
+count = tensor([[1.],
+        [1.],
+        [1.],
+        [1.]], grad_fn=<ScatterAddBackward0>)
+trunc = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]], grad_fn=<ScatterAddBackward0>)
+recovered = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]],
+
+        [[0., ...[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<AddBackward0>)
+
+    def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+        w = (T - 1) - t
+        wa = _col(leaves, w)
+        # A trailing separator still locates the physical sentence end;
+        # it loads the closing state but consumes no grammar operand.
+        end_b = torch.logical_and(_col(is_end, w), _col(active, w))
+        sid = _col(ids, w).clamp(0, slots - 1)
+        loaded = pre_stack.gather(
+            1, sid.reshape(B, 1, 1, 1).expand(B, 1, cap, D)).reshape(B, cap, D)
+        loaded_depth = pre_depth.gather(1, sid.reshape(B, 1)).reshape(B)
+        stack = torch.where(end_b.reshape(B, 1, 1), loaded, stack)
+        depth = torch.where(end_b, loaded_depth, depth)
+        ref_w = _word_col(reference, w).detach()
+        ref_w = torch.where(wa[:, None], ref_w, torch.zeros_like(ref_w))
+        unavailable = torch.zeros(B, dtype=torch.bool, device=dev)
+        for r in reversed(range(3)):
+            slot = (3 * w + r).reshape(1).expand(B)
+            stack, depth, bad_round = undo_operation(stack, depth, slot, wa, sid)
+            unavailable = unavailable | bad_round
+        # pop: the top is the recovered word, scored on the spot
+        top = stack[:, 0, :]
+        underflow = torch.logical_and(wa, depth < 1)
+        pop_w = wa.to(S.dtype)
+        idea_d = (top - ref_w).square().mean(-1)
+        byte_d = self._byte_word_cost(
+            top, w, bank_n, bank_bytes,
+            bank_valid & (bank_sentence_ids == sid[:, None])[:, :, None],
+            bytes_bwp, valid_bwp, byte_ready, priming=bank_weights)
+        col = sid.reshape(B, 1)
+        idea_sum = idea_sum.scatter_add(1, col, (idea_d * pop_w).reshape(B, 1))
+        byte_sum = byte_sum.scatter_add(1, col, (byte_d * pop_w).reshape(B, 1))
+        count = count.scatter_add(1, col, pop_w.reshape(B, 1))
+        popped = torch.cat((stack[:, 1:, :], torch.zeros_like(stack[:, :1, :])), dim=1)
+        stack = torch.where(wa.reshape(B, 1, 1), popped, stack)
+        depth = depth - torch.logical_and(wa, depth >= 1).to(depth.dtype)
+        bad = underflow | unavailable
+        trunc = trunc.scatter_add(1, col, bad.to(S.dtype).reshape(B, 1))
+        if keep_ideas:
+>           recovered = self._tensor_write_word_column(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                recovered, w, torch.where(wa.reshape(B, 1), top, _word_col(recovered, w)))
+E           AttributeError: 'types.SimpleNamespace' object has no attribute '_tensor_write_word_column'
+
+bin/Models.py:12418: AttributeError
+=============================== warnings summary ===============================
+test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries
+1 failed, 6 passed, 1 warning in 2.78s

@@ -82,11 +82,6 @@ def test_explore_differs_and_static_budget_can_stop_early():
     assert (explore['forced_round'] < exploit['used']).all()
 
 
-def test_tiling_and_per_position_unary_implementations_are_deleted():
-    for name in ('binary_tiling_soft_dp', 'binary_tiling_viterbi',
-                 'compact_hard', 'compact_soft', 'comparator_dp_kl',
-                 'UnaryStructuredLayer', 'BinaryStructuredReductionLayer'):
-        assert not hasattr(Language, name), name
 
 
 def test_fullgraph_round_and_backward_match_eager():

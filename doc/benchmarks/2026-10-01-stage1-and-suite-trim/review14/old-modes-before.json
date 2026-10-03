@@ -1,0 +1,262 @@
+[
+  {
+    "config": "data/LM_5M.xml",
+    "path": "PartSpace/synthesis",
+    "value": "bpe"
+  },
+  {
+    "config": "data/LM_5M.xml",
+    "path": "WholeSpace/analysis",
+    "value": "byte"
+  },
+  {
+    "config": "data/LM_5M_IR.xml",
+    "path": "PartSpace/synthesis",
+    "value": "lexicon"
+  },
+  {
+    "config": "data/MM_20M_legacy.xml",
+    "path": "PartSpace/synthesis",
+    "value": "bpe"
+  },
+  {
+    "config": "data/MM_20M_legacy.xml",
+    "path": "WholeSpace/analysis",
+    "value": "byte"
+  },
+  {
+    "config": "data/MM_400M.xml",
+    "path": "PartSpace/synthesis",
+    "value": "lexicon"
+  },
+  {
+    "config": "data/MM_400M.xml",
+    "path": "WholeSpace/analysis",
+    "value": "raw"
+  },
+  {
+    "config": "data/MM_add.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_add.xml",
+    "path": "WholeSpace/analysis",
+    "value": "byte"
+  },
+  {
+    "config": "data/MM_add_verb.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_add_verb.xml",
+    "path": "WholeSpace/analysis",
+    "value": "word"
+  },
+  {
+    "config": "data/MM_bpe.xml",
+    "path": "PartSpace/synthesis",
+    "value": "bpe"
+  },
+  {
+    "config": "data/MM_bpe.xml",
+    "path": "WholeSpace/analysis",
+    "value": "byte"
+  },
+  {
+    "config": "data/MM_decode.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_decode.xml",
+    "path": "WholeSpace/analysis",
+    "value": "raw"
+  },
+  {
+    "config": "data/MM_global.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_global.xml",
+    "path": "WholeSpace/analysis",
+    "value": "word"
+  },
+  {
+    "config": "data/MM_init_scale.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_ltm_consolidation_fixture.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_masked_semantic.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_masked_semantic.xml",
+    "path": "WholeSpace/analysis",
+    "value": "raw"
+  },
+  {
+    "config": "data/MM_math.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_math.xml",
+    "path": "WholeSpace/analysis",
+    "value": "byte"
+  },
+  {
+    "config": "data/MM_mereology.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_mereology.xml",
+    "path": "WholeSpace/analysis",
+    "value": "raw"
+  },
+  {
+    "config": "data/MM_mereology_serial.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_mereology_serial.xml",
+    "path": "WholeSpace/analysis",
+    "value": "raw"
+  },
+  {
+    "config": "data/MM_meronomy_smoke.xml",
+    "path": "WholeSpace/analysis",
+    "value": "word"
+  },
+  {
+    "config": "data/MM_overlap_tiling.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_overlap_tiling.xml",
+    "path": "WholeSpace/analysis",
+    "value": "raw"
+  },
+  {
+    "config": "data/MM_phrase_decode.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_phrase_decode.xml",
+    "path": "WholeSpace/analysis",
+    "value": "word"
+  },
+  {
+    "config": "data/MM_qa.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_qa.xml",
+    "path": "WholeSpace/analysis",
+    "value": "word"
+  },
+  {
+    "config": "data/MM_query_reasoning.xml",
+    "path": "WholeSpace/analysis",
+    "value": "word"
+  },
+  {
+    "config": "data/MM_reading.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_reading.xml",
+    "path": "WholeSpace/analysis",
+    "value": "word"
+  },
+  {
+    "config": "data/MM_sequence_predict.xml",
+    "path": "PartSpace/synthesis",
+    "value": "bpe"
+  },
+  {
+    "config": "data/MM_sequence_predict.xml",
+    "path": "WholeSpace/analysis",
+    "value": "byte"
+  },
+  {
+    "config": "data/MM_sparse_concept.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_sparse_concept.xml",
+    "path": "WholeSpace/analysis",
+    "value": "raw"
+  },
+  {
+    "config": "data/MM_symbol_tower.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_symbol_tower.xml",
+    "path": "WholeSpace/analysis",
+    "value": "raw"
+  },
+  {
+    "config": "data/MM_symbolic_iter.xml",
+    "path": "PartSpace/synthesis",
+    "value": "bpe"
+  },
+  {
+    "config": "data/MM_xor.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MM_xor.xml",
+    "path": "WholeSpace/analysis",
+    "value": "byte"
+  },
+  {
+    "config": "data/MM_xor_fixture.xml",
+    "path": "PartSpace/synthesis",
+    "value": "radix"
+  },
+  {
+    "config": "data/MentalModel.xml",
+    "path": "WholeSpace/analysis",
+    "value": "sentence"
+  },
+  {
+    "config": "data/RamsifiedModel.xml",
+    "path": "WholeSpace/analysis",
+    "value": "sentence"
+  },
+  {
+    "config": "data/model.xml",
+    "path": "PartSpace/synthesis",
+    "value": "lexicon"
+  },
+  {
+    "config": "data/stream_smoke.xml",
+    "path": "WholeSpace/analysis",
+    "value": "sentence"
+  }
+]

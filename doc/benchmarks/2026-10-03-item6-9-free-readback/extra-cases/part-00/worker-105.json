@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+  ],
+  "completed": [
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+  ],
+  "slow_selected": [
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07203662497340702,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

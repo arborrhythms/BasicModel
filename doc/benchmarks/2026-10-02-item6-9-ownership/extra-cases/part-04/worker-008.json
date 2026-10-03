@@ -1,0 +1,26 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+  ],
+  "completed": [
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+  ],
+  "slow_selected": [
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 72.42317162499239,
+      "message": "test/test_sentence_compose.py:171: in test_real_packed_ends_train_before_the_next_sentence\n    assert model._sentence_winners[sid].tolist() == [True, False]\nE   assert [False, False] == [True, False]\nE     \nE     At index 0 diff: False != True\nE     Use -v to get more diff",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

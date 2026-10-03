@@ -1,0 +1,55 @@
+....F...........F...............                                         [100%]
+=================================== FAILURES ===================================
+____ test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes _____
+test/test_mixing_reconstruction_bank.py:26: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+    assert candidates == [word.encode('utf-8') for word in surface.split()], candidates
+E   AssertionError: [b'caf\xc3\xa9']
+E   assert [b'caf\xc3\xa9'] == [b'caf\xc3\xa9', b'ab']
+E     
+E     Right contains one more item: b'ab'
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/256 docs
+_______________________ test_retired_names_remain_absent _______________________
+test/test_retired_names.py:200: in test_retired_names_remain_absent
+    assert token not in GRAMMAR_TOKENS, (token, rule.canonical)
+E   AssertionError: ('ABS_T', 'ABS_T -> ABS_T')
+E   assert 'ABS_T' not in frozenset({'ABS_T', 'ADJ', 'ADV', 'AND', 'AP', 'AP4', ...})
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Starting with dynamic 1016-dim embedding (words added at runtime)
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_legacy.ckpt, starting fresh
+=============================== warnings summary ===============================
+test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7665: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-364/test_mixing_reconstruction_kee0/XOR_utf8_reconstruction.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7665: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-364/test_mixing_reconstruction_sta0/XOR_grammar_reconstruction.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7665: RuntimeWarning: output_state_boundary [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-364/test_no_compile_reconstruction0/XOR_grammar_eager_reconstruction.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_retired_names.py::test_retired_names_remain_absent
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7665: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpynrkp3b1.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_retired_names.py::test_retired_names_remain_absent
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7665: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+FAILED test/test_retired_names.py::test_retired_names_remain_absent - Asserti...
+2 failed, 30 passed, 6 warnings in 20.35s

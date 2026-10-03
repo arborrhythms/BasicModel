@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+  ],
+  "pid": 74453,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 545342928,
+  "elapsed_seconds": 4.121056875010254,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-corrections/probes/sparse-definition-fixture/run.log"
+}

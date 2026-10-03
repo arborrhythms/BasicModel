@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_meronomy.py::test_phrase_whole_dominates_its_word_parts"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-535.recycle.json"
+}

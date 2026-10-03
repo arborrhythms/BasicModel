@@ -1,0 +1,8 @@
+{
+  "closing_campaign.py": "38b1e84f060920c374e18f756ae61a90813185cb3693320429be1b680b0ca480",
+  "measure.py": "0b4d6ac3ea3dc203d3fb0fb6b13edb1c2793ee83fd72bdd4c0c035e779c9af67",
+  "measure_mm_grammar.py": "1c5fcdad2665693aedb3bd57a32578fc6f64ead0179555fbcddc8368aab92d77",
+  "xor_observer.py": "3edb4678cd798a39371188d9b73e5c2b2717abebe4773a65ac67cda12fa96449",
+  "attribution_probe.py": "f513db7d2b47a686f62a2c0d4f36fedcbd2c2567027db151a1ac0301a86f3f8f",
+  "full_sweep.py": "3b874144df54bdf8bfbccbcbe5c565ba9f26e75ffe6dbf2b09220077a663dae2"
+}

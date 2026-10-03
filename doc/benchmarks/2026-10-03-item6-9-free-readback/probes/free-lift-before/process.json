@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank"
+  ],
+  "pid": 42486,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 486147488,
+  "elapsed_seconds": 3.8723513330041897,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/free-lift-before/run.log"
+}

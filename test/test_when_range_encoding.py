@@ -57,13 +57,6 @@ def test_components_stay_in_unit_interval():
             assert float(enc.encode(s, e).abs().max()) <= 1.0 + 1e-6, (s, e)
 
 
-def test_back_compat_D_kwarg_is_ignored():
-    # The retired magnitude-tense ``D`` kwarg is accepted (legacy call sites) and
-    # has NO effect -- encode(t) == encode(t, D=anything).
-    enc = _enc()
-    base = enc.encode(7)
-    for D in (0.0, 0.3, 0.5, 1.0):
-        assert torch.allclose(enc.encode(7, D=D), base, atol=0)
 
 
 # ---------------------------------------------------------------------------

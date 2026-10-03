@@ -1,0 +1,15 @@
+[collect] 6 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.5s; peak 0.05 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-001] 1 selectors; limit 1800s, 8.0 GiB
+[worker-002] 1 selectors; limit 1800s, 8.0 GiB
+[worker-003] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 4.5s; peak 0.40 GiB
+[worker-001] exit 0; 5.4s; peak 0.40 GiB
+[worker-002] exit 0; 6.4s; peak 0.40 GiB
+[worker-003] exit 0; 7.4s; peak 0.40 GiB
+[worker-004] 1 selectors; limit 1800s, 8.0 GiB
+[worker-005] 1 selectors; limit 1800s, 8.0 GiB
+[worker-004] exit 0; 4.0s; peak 0.40 GiB
+[worker-005] exit 0; 5.0s; peak 0.40 GiB
+{"reason": "passed", "selected": 6, "completed": 6}

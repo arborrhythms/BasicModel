@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-034.recycle.json"
+}

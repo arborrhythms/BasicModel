@@ -1,0 +1,6 @@
+[collect] 2 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.4s; peak 0.05 GiB
+[worker-000] 5 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 5.0s; peak 0.43 GiB
+Result: passed, exit 0; 5/5 cases completed.
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/weekly-target-check/result.json

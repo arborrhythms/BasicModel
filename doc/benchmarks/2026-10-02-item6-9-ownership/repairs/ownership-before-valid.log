@@ -1,0 +1,34 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_expectation_does_not_write_its_context_or_routing ____________
+
+    def test_expectation_does_not_write_its_context_or_routing():
+        from Layers import IntraSentenceLayer
+        layer = IntraSentenceLayer(4, 3, routing_dim=2)
+        source = torch.randn(2, 3, 4, requires_grad=True)
+        routing = torch.randn(2, 2, requires_grad=True)
+        layer(source, routing=routing).square().sum().backward()
+>       assert source.grad is None
+E       assert tensor([[[-0.9737,  0.0000,  0.0000,  1.8350],\n         [ 0.0000,  0.7038,  1.6514,  1.8350],\n         [ 0.0000,  0.70...321,  0.0000,  0.7761],\n         [ 0.0000,  3.8321,  0.0000,  0.7761],\n         [ 2.3101,  3.8321,  2.1284,  0.7761]]]) is None
+E        +  where tensor([[[-0.9737,  0.0000,  0.0000,  1.8350],\n         [ 0.0000,  0.7038,  1.6514,  1.8350],\n         [ 0.0000,  0.70...321,  0.0000,  0.7761],\n         [ 0.0000,  3.8321,  0.0000,  0.7761],\n         [ 2.3101,  3.8321,  2.1284,  0.7761]]]) = tensor([[[ 0.2071,  1.1563, -1.6652,  0.1947],\n         [ 1.5277, -0.5020,  0.9063,  0.5152],\n         [-1.4792, -0.63...5],\n         [ 1.3469,  0.2766, -1.3284,  0.1502],\n         [-0.0855,  0.7287,  0.7039,  0.4414]]], requires_grad=True).grad
+
+test/test_objective_ownership.py:11: AssertionError
+_______ test_objectives_write_only_their_owners_even_with_shared_graphs ________
+
+    def test_objectives_write_only_their_owners_even_with_shared_graphs():
+>       from ObjectiveOwnership import backward_owned
+E       ModuleNotFoundError: No module named 'ObjectiveOwnership'
+
+test/test_objective_ownership.py:17: ModuleNotFoundError
+________ test_reconstruction_pullback_cannot_credit_an_answer_parameter ________
+
+    def test_reconstruction_pullback_cannot_credit_an_answer_parameter():
+>       from ObjectiveOwnership import backward_owned
+E       ModuleNotFoundError: No module named 'ObjectiveOwnership'
+
+test/test_objective_ownership.py:30: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED test/test_objective_ownership.py::test_expectation_does_not_write_its_context_or_routing
+FAILED test/test_objective_ownership.py::test_objectives_write_only_their_owners_even_with_shared_graphs
+FAILED test/test_objective_ownership.py::test_reconstruction_pullback_cannot_credit_an_answer_parameter
+3 failed in 1.99s

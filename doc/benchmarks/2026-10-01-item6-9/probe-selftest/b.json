@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_selftest.py",
+    "b"
+  ],
+  "pid": 80623,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 554583312,
+  "elapsed_seconds": 4.392276583937928,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe-selftest/b.log"
+}

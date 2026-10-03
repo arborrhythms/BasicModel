@@ -25,7 +25,9 @@
        it is dark when no consumer is wired). NEVER mutate the shared MM_20M_legacy.xml;
        flip knobs HERE. -->
   <architecture>
-    <!-- parallel mereology: per-stage forward, no serial grammar loop. -->
+    <!-- TruthSet assertions require a selected grammatical closing. Read
+         their plain text through the serial grammar before LTM admission. -->
+    <serial>true</serial>
     <symbolicOrder>0</symbolicOrder>
     <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
@@ -78,7 +80,7 @@
     <nOutputDim>1024</nOutputDim>
 
     <invertible>true</invertible>
-    <synthesis>radix</synthesis>
+    <synthesis>meronomy</synthesis>
   </PartSpace>
 
   <ConceptualSpace>
@@ -97,7 +99,7 @@
     <lexer>raw</lexer>
     <!-- word-cut parts: stage the whitespace word brackets the reading
          producer reads as its attention keys. -->
-    <analysis>word</analysis>
+    <analysis>meronomy</analysis>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
     <nVectors>65536</nVectors>
@@ -118,4 +120,9 @@
     <nOutputDim>1</nOutputDim>
   </OutputSpace>
 
+  <SymbolSpace>
+    <language>
+      <grammar>default.grammar</grammar>
+    </language>
+  </SymbolSpace>
 </model>

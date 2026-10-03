@@ -1,0 +1,10 @@
+{
+  "reason": "The full 256-word bound expands the repaired numerical journal from 25 to 784 frames. Replace it with a fixed existing word bucket before the final production measurement, keeping small-sentence memory near the repair. This superseded prototype is incomplete and is not the requested final peak.",
+  "progress": {
+    "pid": 45941,
+    "seconds": 700.4573222499894,
+    "memory_bytes": 25545761608
+  },
+  "stop_was_sent": false,
+  "reason_for_no_signal": "The guard had already terminated the worker for exceeding 24 GiB; os.kill raised ProcessLookupError."
+}

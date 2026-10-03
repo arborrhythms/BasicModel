@@ -1,0 +1,13 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

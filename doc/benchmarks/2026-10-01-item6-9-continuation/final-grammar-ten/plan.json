@@ -1,0 +1,28 @@
+{
+  "trials_per_gate": 10,
+  "seed": null,
+  "class_bar": {
+    "correct": 4,
+    "mse_less_than": 0.05
+  },
+  "epochs": 400,
+  "worker_bytes": 8589934592,
+  "aggregate_bytes": 25769803776,
+  "max_workers": 3,
+  "companion": "None",
+  "harness": {
+    "draft_step6.py": "c5b5fc0752126bb3c146f5124036ac29583a6dea8a3c7d91747cc521b66d8851",
+    "measure.py": "4fb7a708bb83fd624f63f712365c6405ef6dd44f74ffc10f7a60f6b46eb94933",
+    "native-field-probe-draft.py": "dda3c897a321384e312a10453ff11919adc05eb0e1cd1a5bf8fd8cc4ea9a91b9",
+    "audit.py": "e421b1d89da65dfa3f07a06befdb970ffde21b2147e70afcc713e7e24fcdc3a4",
+    "check.py": "492e3a35db59d6e95919064067e38070f2f6d0ca98aa0eff981e14169cbd6590",
+    "grammar_trials.py": "6229b9510a4e082265740878ee89a914c2e3dd46badbd473c75139e5276d0f08",
+    "run_full.py": "47f447b910900d0fa2a90f81dcaabb4ce12cac3d8c567a5addab015f4aeadea5",
+    "measure_mm_grammar.py": "1c5fcdad2665693aedb3bd57a32578fc6f64ead0179555fbcddc8368aab92d77",
+    "sum_control.py": "84bc3944f3057f115e3b18630ef896b2c67caa3d1c15caae162a6fc9557c8b77",
+    "xor_observer.py": "7d93513cf9e8450eb04d954456aea1988a5a65c10476cfe9487b4461efb22a64",
+    "summarize_xor.py": "883fec878714207c3df68b8d4a81e9987b6ec9a820ef39e4ea8668cdb710b881",
+    "step7-probe-draft.py": "2b63a4535ce767ce7f2e2da2a5a3f306c355f34e3f94ec0f91ffbab0f2169f59",
+    "step6-probe-draft.py": "78fca96469cb4661f455445f91ac91606966c5ebf8852f7a36c664a8ef1eb1ca"
+  }
+}

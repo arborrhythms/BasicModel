@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_stage_caches_retired.py",
+    "test/test_query_phase_fullgraph.py",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph"
+  ],
+  "pid": 42808,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2153581952,
+  "elapsed_seconds": 598.4365165409981,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/compiled-free-before/run.log"
+}

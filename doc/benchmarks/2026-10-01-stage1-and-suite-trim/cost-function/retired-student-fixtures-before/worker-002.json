@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name"
+  ],
+  "completed": [
+    "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.023604290996445343,
+      "message": "test/test_tied_reconstruction_objective.py:69: in test_student_checkpoint_migrates_shared_weights_and_adam_by_name\n    legacy = _build_ladder_variant(tmp_path, \"old_student\", [\ntest/test_meronomy_ladder.py:480: in _build_ladder_variant\n    init_config(path=str(config), defaults_path=str(_DATA / \"model.xml\"))\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml:111: element detachedReverse: Schemas validity error : Element 'detachedReverse': The actual value 'true' does not match the fixed value constraint 'false'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

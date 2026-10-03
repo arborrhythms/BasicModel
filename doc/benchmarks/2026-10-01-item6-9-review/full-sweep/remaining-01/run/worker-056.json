@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_followup.py::test_evaluation_epoch_preserves_an_unfinished_training_group"
+  ],
+  "completed": [
+    "test/test_item9b_followup.py::test_evaluation_epoch_preserves_an_unfinished_training_group"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_followup.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 102.05048620900197,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nTraining throughput: 1 batches in 101.767s; word units 100.0% of 6 words (letters-only 100.0% of 6).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,1 @@
+{"nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip", "kind": "reconstruction", "config": "data/MM_20M_xor.xml", "epochs": 160, "seed": null, "exact_match_rate": 1.0, "where_recovery": 1.0, "output_loss": 0.1832137554883957, "recon_loss": 6.0371734434738755e-05, "gate": 27}

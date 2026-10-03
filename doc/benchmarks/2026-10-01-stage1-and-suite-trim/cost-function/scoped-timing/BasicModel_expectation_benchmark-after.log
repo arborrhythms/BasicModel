@@ -1,0 +1,25 @@
+Loading text: 1 shard(s), max 2000 docs from /Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price/data/fineweb
+Loaded 2000 docs -> 90679 sentences (74582 train, 7770 val, 8327 test)
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped_timing.py", line 78, in <module>
+    if a.child:child(a.source.resolve(),a.config,a.arm,a.output.resolve())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped_timing.py", line 33, in child
+    output_loss,recon_loss,_,_=model.runEpoch(optimizer=optimizer,batchSize=batch,split='train',max_batches=1)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price/bin/ModeSchedule.py", line 14, in run
+    return method(model, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price/bin/Models.py", line 16497, in runEpoch
+    queued_tick = prefetcher.next()
+                  ^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price/bin/Models.py", line 16173, in next
+    raise self._exc
+  File "/Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price/bin/Models.py", line 16134, in _produce
+    tick = self._next_fn()
+           ^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price/bin/data.py", line 447, in next_packed_tick
+    raise ValueError(
+ValueError: complete sentence exceeds the packed word capacity: source index 23968 has 72 words, capacity is 64; refusing to clip it

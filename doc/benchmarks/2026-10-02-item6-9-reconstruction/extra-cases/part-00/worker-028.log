@@ -1,0 +1,18 @@
+........                                                                 [100%]
+=============================== warnings summary ===============================
+test/test_reading_attention.py::test_reading_attention_on_builds_producer
+test/test_reading_attention.py::test_forward_is_finite_and_deterministic
+test/test_reading_attention.py::test_train_forward_then_backward_is_finite
+test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss
+test/test_reading_attention.py::test_registered_loss_backprops_to_producer
+test/test_reading_attention.py::test_producer_scope_clears_past_last_word
+test/test_reading_attention.py::test_producer_params_reach_the_optimizer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1705: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_reading_attention.py::test_forward_is_finite_and_deterministic
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+8 passed, 8 warnings in 3.36s

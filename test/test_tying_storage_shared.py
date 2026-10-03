@@ -9,7 +9,7 @@ of the untied contract on the same fixture:
 
   * inserting a word grows ONLY the PS-side lexicon (the SS codebook
     prototype is bit-identical before/after);
-  * the freshly inserted row is readable through ``wv._vectors`` (the
+  * the freshly inserted row is readable through ``weight`` (the
     local Parameter) and carries the inserted values;
   * ``key_to_index`` keeps the identity-style PS-local row mapping the
     decode's inverse map relies on (no SS orth_idx remapping).
@@ -37,7 +37,7 @@ _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 import Models  # noqa: E402
 import Language  # noqa: E402
-from Spaces import Embedding  # noqa: E402
+from Layers import RadixLayer  # noqa: E402
 from util import init_config  # noqa: E402
 
 
@@ -58,21 +58,21 @@ class TestUntiedWordFlow(unittest.TestCase):
     def test_insert_grows_ps_only(self):
         model = _build_model()
         emb = model.perceptualSpace.vocabulary
-        self.assertIsInstance(emb, Embedding)
+        self.assertIsInstance(emb, RadixLayer)
         ws = model.wholeSpace
         W = ws.subspace.what.getW()
         ws_before = None if W is None else W.detach().clone()
-        rows_before = int(emb.wv._vectors.shape[0])
-        active_before = len(emb.wv.index_to_key)
-        parameter = emb.wv._vectors
+        rows_before = int(emb._basis.W.shape[0])
+        active_before = len(emb)
+        parameter = emb._basis.W
 
-        vec = torch.zeros(int(emb.wv._vectors.shape[1]))
+        vec = torch.zeros(int(emb._basis.W.shape[1]))
         vec[0] = 0.7
-        emb.insert("untiedword", vector=vec)
+        emb.insert(b"untiedword", init_vector=vec)
 
-        self.assertEqual(len(emb.wv.index_to_key), active_before + 1)
-        self.assertEqual(int(emb.wv._vectors.shape[0]), rows_before)
-        self.assertIs(emb.wv._vectors, parameter)
+        self.assertEqual(len(emb), active_before + 1)
+        self.assertEqual(int(emb._basis.W.shape[0]), rows_before)
+        self.assertIs(emb._basis.W, parameter)
         if ws_before is not None:
             self.assertTrue(
                 torch.equal(ws_before, ws.subspace.what.getW().detach()),
@@ -83,23 +83,23 @@ class TestUntiedWordFlow(unittest.TestCase):
     def test_inserted_row_reads_back_through_local_parameter(self):
         model = _build_model()
         emb = model.perceptualSpace.vocabulary
-        wv = emb.wv
-        vec = torch.zeros(int(wv._vectors.shape[1]))
+        weight = emb._basis.W
+        vec = torch.zeros(int(weight.shape[1]))
         vec[0] = 0.25
-        emb.insert("localrow", vector=vec)
-        idx = wv.key_to_index["localrow"]
-        row = wv._vectors[idx].detach()
+        emb.insert(b"localrow", init_vector=vec)
+        idx = emb.get_id(b"localrow")
+        row = weight[idx].detach()
         self.assertAlmostEqual(float(row[0]), 0.25, places=5)
         self.assertEqual(
-            wv._vectors.data_ptr(), wv._local_vectors.data_ptr(),
+            weight.data_ptr(), emb._basis.W.data_ptr(),
             "the readable storage must be the LOCAL Parameter")
 
     def test_key_to_index_stays_ps_local(self):
         model = _build_model()
         emb = model.perceptualSpace.vocabulary
-        wv = emb.wv
-        n = int(wv._vectors.shape[0])
-        for key, idx in list(wv.key_to_index.items())[:64]:
+        weight = emb._basis.W
+        n = int(weight.shape[0])
+        for key, idx in list(emb.hash_map.items())[:64]:
             self.assertTrue(0 <= int(idx) < n, (
                 f"key {key!r} maps to row {idx}, outside the PS-local "
                 f"storage [0, {n}) -- the SS orth_idx remapping is "

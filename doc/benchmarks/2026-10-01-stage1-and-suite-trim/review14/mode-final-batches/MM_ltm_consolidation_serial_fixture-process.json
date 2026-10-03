@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+    "--child",
+    "--config",
+    "data/MM_ltm_consolidation_serial_fixture.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_serial_fixture.json"
+  ],
+  "pid": 63281,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 556434776,
+  "elapsed_seconds": 4.191338250006083,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_serial_fixture.log"
+}

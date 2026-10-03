@@ -1,0 +1,653 @@
+{
+  "status": "Read-only pre-trim audit; no deletions made.",
+  "source_search": {
+    "perceptual_analyzer": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "perceptual_analyzer",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/Language.py:5043:# ``perceptual_analyzer.soft_operator_compose``) plus an MSE loss",
+        "bin/Language.py:5050:    differentiable analogue of ``perceptual_analyzer.soft_operator_compose``.",
+        "bin/Spaces.py:925:# in float). This is the invertible EndpointSumWhere form (perceptual_analyzer.py)",
+        "bin/Spaces.py:1036:    in perceptual_analyzer.py is a different codec and keeps it).",
+        "bin/Spaces.py:3293:        (``perceptual_analyzer.EndpointSumWhere.div_term = pi/(2*namespace)``).",
+        "test/test_ps_byte_fallback_utf8.py:35:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_byte_fallback_utf8.py:46:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_byte_fallback_utf8.py:61:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_byte_fallback_utf8.py:76:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_within_whole_division.py:46:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_within_whole_division.py:63:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_within_whole_division.py:77:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_within_whole_division.py:102:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_meronymic_router.py:26:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_meronymic_router.py:37:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_meronymic_router.py:52:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_meronymic_router.py:68:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_meronymic_router.py:84:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_analyze_routed.py:33:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyze_routed.py:52:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyze_routed.py:66:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_where.py:25:    from perceptual_analyzer import EndpointSumWhere",
+        "test/test_ps_where.py:37:    from perceptual_analyzer import EndpointSumWhere",
+        "test/test_ps_where.py:53:    from perceptual_analyzer import EndpointSumWhere",
+        "test/test_ps_where.py:63:    from perceptual_analyzer import EndpointSumWhere",
+        "test/test_ps_reverse_e2e.py:33:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_reverse_e2e.py:43:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_reverse_e2e.py:65:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_operator_superposition.py:31:    from perceptual_analyzer import soft_operator_compose",
+        "test/test_operator_superposition.py:42:    from perceptual_analyzer import soft_operator_compose",
+        "test/test_marker_replay_canonical.py:42:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_marker_replay_canonical.py:52:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_marker_replay_canonical.py:63:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:32:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:48:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:63:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:80:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:96:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_where_bracket.py:9:``EndpointSumWhere`` span key (perceptual_analyzer.py) is a separate codec and"
+      ]
+    },
+    "EndpointSumWhere": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "EndpointSumWhere",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/perceptual_analyzer.py:8:  * :class:`EndpointSumWhere` -- the invertible endpoint-sum span key",
+        "bin/perceptual_analyzer.py:27:class EndpointSumWhere:",
+        "bin/perceptual_analyzer.py:271:        self.where = where_enc or EndpointSumWhere(namespace=namespace)",
+        "bin/architecture.py:22:retired from the muxed band (the analyzer's EndpointSumWhere keeps it).",
+        "bin/Spaces.py:925:# in float). This is the invertible EndpointSumWhere form (perceptual_analyzer.py)",
+        "bin/Spaces.py:1035:    retired from the muxed band (the analyzer's ``EndpointSumWhere`` span key",
+        "bin/Spaces.py:3293:        (``perceptual_analyzer.EndpointSumWhere.div_term = pi/(2*namespace)``).",
+        "test/test_where_bracket.py:9:``EndpointSumWhere`` span key (perceptual_analyzer.py) is a separate codec and",
+        "test/test_ps_where.py:25:    from perceptual_analyzer import EndpointSumWhere",
+        "test/test_ps_where.py:26:    enc = EndpointSumWhere(namespace=256)",
+        "test/test_ps_where.py:37:    from perceptual_analyzer import EndpointSumWhere",
+        "test/test_ps_where.py:38:    enc = EndpointSumWhere(namespace=256)",
+        "test/test_ps_where.py:53:    from perceptual_analyzer import EndpointSumWhere",
+        "test/test_ps_where.py:54:    enc = EndpointSumWhere(namespace=8)   # half-period = 16",
+        "test/test_ps_where.py:63:    from perceptual_analyzer import EndpointSumWhere",
+        "test/test_ps_where.py:64:    enc = EndpointSumWhere(namespace=256)"
+      ]
+    },
+    "byte_fallback_vector": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "byte_fallback_vector",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/perceptual_analyzer.py:90:def byte_fallback_vector(text, dim):",
+        "bin/perceptual_analyzer.py:282:        return byte_fallback_vector(text, oss.percept_dim), -1",
+        "bin/perceptual_analyzer.py:406:            [byte_fallback_vector(bytes([byte_]), dim) for byte_ in raw])",
+        "bin/perceptual_analyzer.py:444:                vec = byte_fallback_vector(seg, oss.percept_dim)"
+      ]
+    },
+    "divide_into_attested": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "divide_into_attested",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/perceptual_analyzer.py:107:def divide_into_attested(surface, is_attested):",
+        "bin/perceptual_analyzer.py:338:                    parts = divide_into_attested("
+      ]
+    },
+    "MeronymicRouter": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "MeronymicRouter",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/perceptual_analyzer.py:134:class MeronymicRouter:",
+        "bin/perceptual_analyzer.py:382:        meronymic operation router (:class:`MeronymicRouter`) instead of the",
+        "bin/perceptual_analyzer.py:403:            router = MeronymicRouter(depth_penalty=2.0)",
+        "test/test_ps_meronymic_router.py:26:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_meronymic_router.py:27:    router = MeronymicRouter(keep_bias=0.0)",
+        "test/test_ps_meronymic_router.py:37:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_meronymic_router.py:38:    router = MeronymicRouter()",
+        "test/test_ps_meronymic_router.py:52:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_meronymic_router.py:57:        router = MeronymicRouter(depth_penalty=pen)",
+        "test/test_ps_meronymic_router.py:68:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_meronymic_router.py:75:    router = MeronymicRouter(depth_penalty=0.5)",
+        "test/test_ps_meronymic_router.py:84:    from perceptual_analyzer import MeronymicRouter",
+        "test/test_ps_meronymic_router.py:85:    router = MeronymicRouter()"
+      ]
+    },
+    "MeronymicAnalyzer": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "MeronymicAnalyzer",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/perceptual_analyzer.py:10:  * :class:`MeronymicAnalyzer` -- analyzes a surface whole into perceptual",
+        "bin/perceptual_analyzer.py:237:class MeronymicAnalyzer:",
+        "test/test_ps_analyze_routed.py:1:\"\"\"Learned-route PS analysis wired into MeronymicAnalyzer (Phase R3).",
+        "test/test_ps_analyze_routed.py:33:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyze_routed.py:35:    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))",
+        "test/test_ps_analyze_routed.py:52:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyze_routed.py:54:    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))",
+        "test/test_ps_analyze_routed.py:66:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyze_routed.py:68:    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))",
+        "test/test_ps_byte_fallback_utf8.py:35:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_byte_fallback_utf8.py:36:    an = MeronymicAnalyzer()                 # no percept_lookup -> byte fallback",
+        "test/test_ps_byte_fallback_utf8.py:46:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_byte_fallback_utf8.py:47:    an = MeronymicAnalyzer()",
+        "test/test_ps_byte_fallback_utf8.py:61:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_byte_fallback_utf8.py:62:    an = MeronymicAnalyzer()",
+        "test/test_ps_byte_fallback_utf8.py:76:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_byte_fallback_utf8.py:78:    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))",
+        "test/test_within_whole_division.py:13:standalone ``MeronymicAnalyzer`` mirror (``granularity=\"type\"``).",
+        "test/test_within_whole_division.py:46:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_within_whole_division.py:48:    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),",
+        "test/test_within_whole_division.py:63:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_within_whole_division.py:65:    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),",
+        "test/test_within_whole_division.py:77:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_within_whole_division.py:84:    MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),",
+        "test/test_within_whole_division.py:89:    MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),",
+        "test/test_within_whole_division.py:102:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_within_whole_division.py:106:    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),",
+        "test/test_ps_reverse_e2e.py:33:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_reverse_e2e.py:35:    an = MeronymicAnalyzer()",
+        "test/test_ps_reverse_e2e.py:43:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_reverse_e2e.py:44:    an = MeronymicAnalyzer()",
+        "test/test_ps_reverse_e2e.py:65:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_reverse_e2e.py:68:    an = MeronymicAnalyzer()",
+        "test/test_marker_replay_canonical.py:42:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_marker_replay_canonical.py:43:    an = MeronymicAnalyzer()",
+        "test/test_marker_replay_canonical.py:52:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_marker_replay_canonical.py:53:    an = MeronymicAnalyzer()",
+        "test/test_marker_replay_canonical.py:63:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_marker_replay_canonical.py:64:    an = MeronymicAnalyzer()",
+        "test/test_ps_analyzer.py:1:\"\"\"MeronymicAnalyzer compatibility mode (PS forward analysis).",
+        "test/test_ps_analyzer.py:32:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:36:    an = MeronymicAnalyzer()",
+        "test/test_ps_analyzer.py:48:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:50:    an = MeronymicAnalyzer()",
+        "test/test_ps_analyzer.py:63:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:65:    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t))",
+        "test/test_ps_analyzer.py:80:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:81:    an = MeronymicAnalyzer()",
+        "test/test_ps_analyzer.py:96:    from perceptual_analyzer import MeronymicAnalyzer",
+        "test/test_ps_analyzer.py:97:    an = MeronymicAnalyzer()"
+      ]
+    },
+    "soft_operator_compose": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "soft_operator_compose",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/perceptual_analyzer.py:538:def soft_operator_compose(dist, left, right=None, *, classes=None):",
+        "bin/perceptual_analyzer.py:554:        raise ValueError(\"soft_operator_compose: distribution sums to 0\")",
+        "bin/Language.py:5043:# ``perceptual_analyzer.soft_operator_compose``) plus an MSE loss",
+        "bin/Language.py:5050:    differentiable analogue of ``perceptual_analyzer.soft_operator_compose``.",
+        "bin/Language.py:5053:    flows to it, unlike the float-coerced ``soft_operator_compose``). A",
+        "test/test_operator_superposition.py:28:def test_soft_operator_compose_one_hot_equals_hard():",
+        "test/test_operator_superposition.py:31:    from perceptual_analyzer import soft_operator_compose",
+        "test/test_operator_superposition.py:35:    soft = soft_operator_compose({\"intersection\": 1.0}, left, right)",
+        "test/test_operator_superposition.py:39:def test_soft_operator_compose_superposes_operators():",
+        "test/test_operator_superposition.py:42:    from perceptual_analyzer import soft_operator_compose",
+        "test/test_operator_superposition.py:48:    soft = soft_operator_compose("
+      ]
+    },
+    "GrammaticalQueryRegistry": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "GrammaticalQueryRegistry",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/Queries.py:1585:class GrammaticalQueryRegistry:"
+      ]
+    },
+    "checked_query_declarations": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "checked_query_declarations",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/Queries.py:2406:def checked_query_declarations(declarations):"
+      ]
+    },
+    "_active_percept_prototypes": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "_active_percept_prototypes",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/Language.py:92:def _active_percept_prototypes(percept_store):"
+      ]
+    },
+    "_rotate_where": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "_rotate_where",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/Language.py:3165:def _rotate_where(where, theta=0.6):"
+      ]
+    },
+    "_CBOWModule": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "_CBOWModule",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/embed.py:1769:class _CBOWModule(nn.Module):"
+      ]
+    },
+    "_ar_valid_pos": {
+      "command": [
+        "rg",
+        "-n",
+        "-F",
+        "_ar_valid_pos",
+        "bin",
+        "data",
+        "test",
+        "--glob",
+        "!*.pt",
+        "--glob",
+        "!*.ckpt"
+      ],
+      "exit_code": 0,
+      "matches": [
+        "bin/Models.py:24190:        self._ar_valid_pos = None  # IR has no per-cursor axis.",
+        "test/test_padded_rows_no_op.py:86:    \"\"\"`model._ar_valid_pos` (loss-side mask) is the stem's `valid_mask`.",
+        "test/test_padded_rows_no_op.py:88:    runBatch's loss path masks the loss with `_ar_valid_pos`. The",
+        "test/test_padded_rows_no_op.py:95:    # _ar_valid_pos pointer matching the stem's mask).",
+        "test/test_padded_rows_no_op.py:97:    valid_pos = getattr(model, '_ar_valid_pos', None)",
+        "test/test_padded_rows_no_op.py:99:        pytest.skip(\"_ar_valid_pos not populated in this branch\")"
+      ]
+    }
+  },
+  "checkpoint_listing_command": [
+    "rg",
+    "--files",
+    "-g",
+    "*.pt",
+    "-g",
+    "*.pth",
+    "-g",
+    "*.ckpt",
+    "-g",
+    "*.safetensors",
+    "-g",
+    "!**/benchmarks/**",
+    "-g",
+    "!**/.venv/**"
+  ],
+  "checkpoint_metadata": [
+    {
+      "path": "data/BasicModel.ckpt",
+      "size": 4597846207,
+      "metadata_members": {
+        "BasicModel.ckpt/data.pkl": {
+          "bytes": 1696472,
+          "sha256": "fc9263478507e309cbd6f0979fee0d896d59fa5da2917915ad24904d325748cc"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    },
+    {
+      "path": "data/grammar_wording.ckpt",
+      "size": 8644970,
+      "metadata_members": {
+        "grammar_wording.ckpt/data.pkl": {
+          "bytes": 365609,
+          "sha256": "0cb379963190c3276c25e6d6c293a5beca41cb3eda4a33f2e1ebdad779c562eb"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    },
+    {
+      "path": "output/item9-packed-capture2.pt",
+      "size": 1470549,
+      "metadata_members": {
+        "item9-packed-capture2/data.pkl": {
+          "bytes": 9940,
+          "sha256": "7b2b89678879c2b642743da1ecdd5ba7211bfb8faa478100ce6901c6d2645ada"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    },
+    {
+      "path": "output/item9-single-capture2.pt",
+      "size": 1964967,
+      "metadata_members": {
+        "item9-single-capture2/data.pkl": {
+          "bytes": 14985,
+          "sha256": "67aed5b7cf4145ccdf803273270f69003358d5066cecefc63a267d1e441f9da7"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    },
+    {
+      "path": "test/fixtures/item7_byte_columns.pt",
+      "size": 85141,
+      "metadata_members": {
+        "item7_byte_columns/data.pkl": {
+          "bytes": 1192,
+          "sha256": "c79dac6de94c6dcf011eb723513dde8c58e3a3c968187d52eb6eae69f827a108"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    },
+    {
+      "path": "test/fixtures/item7_legacy_definition.pt",
+      "size": 9480,
+      "metadata_members": {
+        "legacy-definition/data.pkl": {
+          "bytes": 2760,
+          "sha256": "4cc737a70eae06d826feb2bbcf0116bdfdfab196267a3d92f7d735b74ce19de8"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    },
+    {
+      "path": "output/item9-packed-capture.pt",
+      "size": 1470453,
+      "metadata_members": {
+        "item9-packed-capture/data.pkl": {
+          "bytes": 9940,
+          "sha256": "7b2b89678879c2b642743da1ecdd5ba7211bfb8faa478100ce6901c6d2645ada"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    },
+    {
+      "path": "output/item9-single-capture.pt",
+      "size": 1964826,
+      "metadata_members": {
+        "item9-single-capture/data.pkl": {
+          "bytes": 14985,
+          "sha256": "67aed5b7cf4145ccdf803273270f69003358d5066cecefc63a267d1e441f9da7"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    },
+    {
+      "path": "output/item9-packed-recon.pt",
+      "size": 1027109,
+      "metadata_members": {
+        "item9-packed-recon/data.pkl": {
+          "bytes": 1183,
+          "sha256": "262976f59374a53e442c24dee69d3dae5b0521decdcf4b73dce88d2cd788e635"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    },
+    {
+      "path": "output/item9-single-recon.pt",
+      "size": 1369701,
+      "metadata_members": {
+        "item9-single-recon/data.pkl": {
+          "bytes": 1677,
+          "sha256": "4857da4000522fb33bb457db1aba425761d0058831e1bc0266a1b6d8a9294704"
+        }
+      },
+      "symbol_hits": {
+        "perceptual_analyzer": [],
+        "EndpointSumWhere": [],
+        "byte_fallback_vector": [],
+        "divide_into_attested": [],
+        "MeronymicRouter": [],
+        "MeronymicAnalyzer": [],
+        "soft_operator_compose": [],
+        "GrammaticalQueryRegistry": [],
+        "checked_query_declarations": [],
+        "_active_percept_prototypes": [],
+        "_rotate_where": [],
+        "_CBOWModule": [],
+        "_ar_valid_pos": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5/candidate/gate-08/run/worker-000.recycle.json"
+}

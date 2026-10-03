@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration"
+  ],
+  "completed": [
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration"
+  ],
+  "slow_selected": [
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.613285833009286,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.010s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+  ],
+  "completed": [
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_consumer_drives_seed_on_shape_match",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.679199865786359e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode_d3.py', 64, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

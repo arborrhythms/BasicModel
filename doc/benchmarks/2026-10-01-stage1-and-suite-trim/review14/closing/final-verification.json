@@ -1,0 +1,15 @@
+{
+  "source_matched": true,
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "complete_sweep": true,
+  "selected": 5060,
+  "completed": 5057,
+  "triaged_failures": 74,
+  "archive_unchanged": true,
+  "complete_port_pairs": 172,
+  "documentation_files": 6,
+  "relative_links_checked": 189,
+  "running_sweep_workers": 0,
+  "new_design_implemented": false,
+  "review_stop": true
+}

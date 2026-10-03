@@ -1,0 +1,15 @@
+{
+  "method": "read-only HEAD source comparison; no HEAD execution",
+  "configuration_identical_to_HEAD": true,
+  "test_body_identical_to_HEAD": false,
+  "fixture_needle_present_at_HEAD": false,
+  "head_whole_space": "<WholeSpace>\n    <analysis>meronomy</analysis>\n    <nInput>8</nInput>\n    <nInputDim>1024</nInputDim>\n    <nVectors>65536</nVectors>\n    <nDim>1024</nDim>\n    <nOutput>8</nOutput>\n    <nOutputDim>1024</nOutputDim>\n\n    <invertible>true</invertible>\n    <butterfly>true</butterfly>\n  </WholeSpace>",
+  "conclusion": "Incomplete configuration port: the test changes MM_20M_legacy.xml to MM_20M_xor.xml but retains the old nOutput=1024 block matcher. That matcher exists in the original HEAD legacy configuration, but not in the replacement configuration (whose nOutput is 8, unchanged from HEAD). The case stops before exercising dimension validation. This is a recent fixture-port error, not evidence of a historical test failure.",
+  "test_bodies": {
+    "HEAD": "def test_cs_ws_recurrent_input_mismatch_raises():\n    # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=1024 and\n    # WS.nInputDim=1024. Force WS.nInputDim to mismatch while leaving its\n    # native peer output alone.\n    src = _ref_text(\"MM_20M_legacy.xml\")\n    broken = src.replace(\n        \"<nInputDim>1024</nInputDim>\\n    <nVectors>65536</nVectors>\\n\"\n        \"    <nDim>1024</nDim>\\n    <nOutput>1024</nOutput>\",\n        \"<nInputDim>999</nInputDim>\\n    <nVectors>65536</nVectors>\\n\"\n        \"    <nDim>1024</nDim>\\n    <nOutput>1024</nOutput>\")\n    assert broken != src, \"fixture edit did not apply (SS block changed?)\"\n    with pytest.raises(ValueError) as ei:\n        _build_from_text(broken, \"cs_ws_mismatch\")\n    msg = str(ei.value)\n    assert \"CS->WS recurrent input\" in msg, msg\n    assert \"999\" in msg and \"1024\" in msg, msg",
+    "candidate": "def test_cs_ws_recurrent_input_mismatch_raises():\n    # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=1024 and\n    # WS.nInputDim=1024. Force WS.nInputDim to mismatch while leaving its\n    # native peer output alone.\n    src = _ref_text(\"MM_20M_xor.xml\")\n    broken = src.replace(\n        \"<nInputDim>1024</nInputDim>\\n    <nVectors>65536</nVectors>\\n\"\n        \"    <nDim>1024</nDim>\\n    <nOutput>1024</nOutput>\",\n        \"<nInputDim>999</nInputDim>\\n    <nVectors>65536</nVectors>\\n\"\n        \"    <nDim>1024</nDim>\\n    <nOutput>1024</nOutput>\")\n    assert broken != src, \"fixture edit did not apply (SS block changed?)\"\n    with pytest.raises(ValueError) as ei:\n        _build_from_text(broken, \"cs_ws_mismatch\")\n    msg = str(ei.value)\n    assert \"CS->WS recurrent input\" in msg, msg\n    assert \"999\" in msg and \"1024\" in msg, msg"
+  },
+  "test_ast_identical_to_HEAD": false,
+  "original_HEAD_configuration": "MM_20M_legacy.xml",
+  "fixture_needle_present_in_original_HEAD_configuration": true
+}

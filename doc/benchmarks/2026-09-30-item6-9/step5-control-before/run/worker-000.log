@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_identical_second_trial_never_wins_and_both_use_original_parameters ____
+doc/benchmarks/2026-09-30-item6-9/probe_step5.py:23: in test_identical_second_trial_never_wins_and_both_use_original_parameters
+    assert observations == [2., 2.], observations
+E   AssertionError: [2.0, 1.600000023841858]
+E   assert [2.0, 1.600000023841858] == [2.0, 2.0]
+E     
+E     At index 1 diff: 1.600000023841858 != 2.0
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters
+1 failed in 1.18s

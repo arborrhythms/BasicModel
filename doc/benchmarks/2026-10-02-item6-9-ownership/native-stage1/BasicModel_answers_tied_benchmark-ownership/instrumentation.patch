@@ -1,0 +1,42 @@
+--- BasicModel._sentence_path_cost.original
++++ BasicModel._sentence_path_cost.observed
+@@ -66,4 +66,5 @@
+         cost = root.sum(-1) * 0
+     elif cost.ndim == 0:
+         cost = cost.expand(B)
++    _objective_probe.trial(self, locals())
+     return cost, reconstruction, observation, pending
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -118,6 +118,7 @@
+         trial_mode=trial_mode,
+     )
+     self._sentence_answer_questions = what_questions
++    _objective_probe.opened(self, locals())
+ 
+     # Advance the serialized model clock once per PROCESSED batch (this
+     # point is past the no-batch early raise, so it ticks exactly once on
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -939,6 +939,7 @@
+         gradient_objectives = {name: self.errors.total(objective=name)
+             for name in ('reconstruction', 'output', 'expectation')} if train else None
+ 
++        _objective_probe.batch(self, locals())
+         # Snapshot the breakdown before the backward pass so later
+         # calls to TheError.covariance() can see it in the history
+         # even if the step is aborted by a non-finite detector below.
+--- BaseModel._reconstructionReport.original
++++ BaseModel._reconstructionReport.observed
+@@ -28,6 +28,11 @@
+         _, _, allOut, allIn = self.runEpoch(batchSize=n_rows, split=split)
+     finally:
+         self.set_sigma(0.5)
++
++    if isinstance(allOut, torch.Tensor):
++        data.reconstructed_output = [x.detach().cpu() for x in allOut]
++    _objective_probe.log("endpoint_predictions_saved", split=split, rows=n_rows, console_rendering=False)
++    return
+ 
+     if not isinstance(allIn, torch.Tensor) or allIn.numel() == 0:
+         TheMessage(f"=== Input Reconstruction ({split}) ===")

@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse"
+  ],
+  "completed": [
+    "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse"
+  ],
+  "slow_selected": [
+    "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.21488475002115592,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

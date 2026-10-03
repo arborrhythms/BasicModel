@@ -1,0 +1,153 @@
+........................................................................ [ 82%]
+...............                                                          [100%]
+=============================== warnings summary ===============================
+test/test_item7_nested_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 33 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 34 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 35 gets records only, no weighted reading (overflow #3)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 36 gets records only, no weighted reading (overflow #4)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 37 gets records only, no weighted reading (overflow #5)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 38 gets records only, no weighted reading (overflow #6)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 39 gets records only, no weighted reading (overflow #7)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 40 gets records only, no weighted reading (overflow #8)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 41 gets records only, no weighted reading (overflow #9)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 42 gets records only, no weighted reading (overflow #10)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 43 gets records only, no weighted reading (overflow #11)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 44 gets records only, no weighted reading (overflow #12)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 45 gets records only, no weighted reading (overflow #13)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 46 gets records only, no weighted reading (overflow #14)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 47 gets records only, no weighted reading (overflow #15)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 48 gets records only, no weighted reading (overflow #16)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 49 gets records only, no weighted reading (overflow #17)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 50 gets records only, no weighted reading (overflow #18)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 51 gets records only, no weighted reading (overflow #19)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 52 gets records only, no weighted reading (overflow #20)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 53 gets records only, no weighted reading (overflow #21)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 54 gets records only, no weighted reading (overflow #22)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 55 gets records only, no weighted reading (overflow #23)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 56 gets records only, no weighted reading (overflow #24)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 57 gets records only, no weighted reading (overflow #25)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 58 gets records only, no weighted reading (overflow #26)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 59 gets records only, no weighted reading (overflow #27)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 60 gets records only, no weighted reading (overflow #28)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 61 gets records only, no weighted reading (overflow #29)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 62 gets records only, no weighted reading (overflow #30)
+    warnings.warn(
+
+test/test_item7_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:18192: RuntimeWarning: CS concept inventory exhausted (64 rows): concept 63 gets records only, no weighted reading (overflow #31)
+    warnings.warn(
+
+test/test_item7_property_only.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:5566: UserWarning: Shared ConceptualSpace checkpoint migration: selected the stage-0 similarity dictionary as canonical and replaced 21 divergent stage/alias tensor(s).
+    self._canonicalize_shared_concept_checkpoint_state(state, model_state)
+
+test/test_item7_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13594: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_item7_reduction_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-219/test_first_and_later_words_kee0/tiny_chunk_model.xml]: Data.what target (2, 16) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_item7_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-219/test_first_and_later_words_kee0/tiny_chunk_model.xml]: head pred (2, 1, 1) vs labels (2, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 37 warnings in 10.38s

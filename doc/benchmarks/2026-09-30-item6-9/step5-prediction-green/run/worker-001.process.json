@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-prediction-green/run/worker-001.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-prediction-green/run/worker-001.json"
+  ],
+  "pid": 58144,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 687179240,
+  "elapsed_seconds": 6.1892464170232415,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-prediction-green/run/worker-001.log"
+}

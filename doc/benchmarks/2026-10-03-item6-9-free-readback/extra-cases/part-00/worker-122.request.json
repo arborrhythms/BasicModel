@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-122.recycle.json"
+}

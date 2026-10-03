@@ -1,0 +1,201 @@
+[
+  {
+    "nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+    "phase": "resource",
+    "outcome": "timeout",
+    "duration": 1801.0359274580005,
+    "message": "30-minute worker timeout; no kept assertion was completed."
+  },
+  {
+    "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 1628.005253667001,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=665.579s)\r\nbatch = 2 (\u0394=307.443s)\r\n"
+  },
+  {
+    "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 1390.340166957998,
+    "message": "",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 1150.5819157920014,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 1030.0090400830013,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=155.203s)\r\nbatch = 0 (\u0394=7.611s)\r\nbatch = 0 (\u0394=1.951s)\r\n"
+  },
+  {
+    "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 917.0329438749977,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 902.6829497500003,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 902.1719227089998,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 881.9056645830024,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 878.7320189999991,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 878.1518878329989,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 873.6120265420032,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 777.4345645419999,
+    "message": "",
+    "stdout": "MEASURED_OPERATOR_GRADIENTS {\"operator.CS.surface\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": 0.0, \"output_negative_streak\": 1, \"output_norm\": 3.0755942464786887, \"output_reconstruction_norm_ratio\": 8.834326160355898e+23, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 3.4814135120802304e-24, \"reconstruction_output_cosine\": -0.03521898586323879}}\n"
+  },
+  {
+    "nodeid": "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 770.4108012079996,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 628.5434492910026,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+  },
+  {
+    "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 595.9383857920002,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 556.2594828750007,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 50.00%)\r\nbatch = 1 (\u0394=1.018s, 100.00%)\r\nrunEpoch(train): hit max_batches=2 cap; cursor exiting early (2 batches processed, ds.all_done=False).\r\nTraining throughput: 2 batches in 555.980s; word units 66.7% of 6 words (letters-only 100.0% of 2).\r\n"
+  },
+  {
+    "nodeid": "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 550.4273653749988,
+    "message": "",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 464.306958125002,
+    "message": "",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 432.95385629200246,
+    "message": "",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 406.2605222909988,
+    "message": "",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 375.243534833,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\ngeneration-gradient-evidence {\"output_loop\": true, \"initialization\": \"ambient RNG\", \"output_loss\": 0.05638092756271362, \"stepped_shared_groups\": [], \"conclusion_gradient\": 0}\n"
+  },
+  {
+    "nodeid": "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 328.77107758299826,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 314.126620250001,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+    "phase": "call",
+    "outcome": "passed",
+    "duration": 307.79784391700014,
+    "message": "",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+  }
+]

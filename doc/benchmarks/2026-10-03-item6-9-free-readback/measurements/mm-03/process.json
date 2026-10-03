@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/measure.py",
+    "child",
+    "--kind",
+    "mm",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/measurements/mm-03"
+  ],
+  "pid": 54006,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2455833840,
+  "elapsed_seconds": 522.7172537500155,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/measurements/mm-03/driver.log"
+}

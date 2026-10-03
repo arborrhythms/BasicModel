@@ -79,7 +79,7 @@ RECON FINDINGS (the six areas the dispatch enumerates)
      byte-slots -> row resolve.  ``mphf_table_rows`` (line 8403)
      gathers the rows.
    - Runtime entry: ``PartSpace._embed_mphf`` (line 8540) is the
-     ``<synthesis>mphf</synthesis>`` path; ``_embed_bpe`` (line 7776) is
+     ``<synthesis>meronomy</synthesis>`` path; ``_embed_bpe`` (line 7776) is
      the BPE / trie path that also resolves through ``self.subspace.what``.
    - MIGRATION: PS keeps the MPHF *algorithm* (``_mphf_gpu_layer``,
      ``_mphf_static_tables``) but the *target codebook* shifts from
@@ -367,7 +367,7 @@ E.  ``data/*.xml``
           MM_grammar.xml: missing nInputDim / nOutputDim everywhere;
                           defaults fill in.  Audit needed: verify the
                           defaults yield the invariant.
-          MM_20M_legacy.xml: IS.nOutput=1024 * nDim=6 = 6144;
+          MM_20M_xor.xml: IS.nOutput=1024 * nDim=6 = 6144;
                      PS.nInput=1024 * nDim=6 = 6144;
                      CS.nOutput=8 * nDim=1024 = 8192.  FAILS (6144 vs
                      8192).  This config is the progressive-bottleneck
@@ -555,7 +555,7 @@ XML files to update:
   MM_xor.xml             -- audit only (no edit expected -- already
                             satisfies the invariant).
   MM_xor_loopback.xml    -- audit only.
-  MM_20M_legacy.xml              -- OPEN: needs controller decision on invariant
+  MM_20M_xor.xml              -- OPEN: needs controller decision on invariant
                             interpretation (per-slot vs flat slab) before
                             edit.
   MM_grammar.xml         -- audit; potentially add explicit
@@ -738,17 +738,6 @@ class TestSSCodebookPairedInsertRetired(unittest.TestCase):
     code; row id = the written symbol); the lexicon stays PS-local.
     """
 
-    def test_paired_insert_api_is_gone(self):
-        model = _make_plain_model()
-        ws = model.wholeSpace
-        self.assertFalse(
-            hasattr(ws, "insert_paired_word"),
-            "WholeSpace.insert_paired_word must be RETIRED (Step 3 of "
-            "the 2026-06-10 symbolic-iteration plan).")
-        self.assertFalse(
-            hasattr(ws, "mark_word_atom"),
-            "the mark_word_atom autobind fallback retires with the "
-            "paired-row machinery.")
 
     def test_lexicon_insert_leaves_ws_codebook_untouched(self):
         model = _make_plain_model()
@@ -757,9 +746,9 @@ class TestSSCodebookPairedInsertRetired(unittest.TestCase):
         cb = ws.subspace.what
         self.assertIsInstance(cb, Codebook)
         W_before = cb.getW().detach().clone()
-        vec = torch.zeros(int(emb.wv._vectors.shape[1]))
+        vec = torch.zeros(int(emb._basis.W.shape[1]))
         vec[0] = 0.5
-        emb.insert("novelword", vector=vec)
+        emb.insert(b"novelword", init_vector=vec)
         self.assertTrue(
             torch.equal(W_before, cb.getW().detach()),
             "a PS-side lexicon insert must leave the SS codebook "
@@ -919,7 +908,7 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
 
     @pytest.mark.slow
     def test_mm_5m_satisfies_flat_slab(self):
-        self._load_and_validate(os.path.join(_DATA_DIR, "MM_20M_legacy.xml"))
+        self._load_and_validate(os.path.join(_DATA_DIR, "MM_20M_xor.xml"))
 
     def test_mm_grammar_satisfies_flat_slab(self):
         self._load_and_validate(os.path.join(_DATA_DIR, "MM_grammar.xml"))
@@ -946,8 +935,3 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-def test_retired_wholespace_taxonomy_writer_is_absent():
-    from Spaces import WholeSpace
-    assert not hasattr(WholeSpace, "insert_meta")

@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_definition_sparsity.py::test_multi_row_sums_each_concept_independently"
+  ],
+  "completed": [
+    "test/test_definition_sparsity.py::test_multi_row_sums_each_concept_independently"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_definition_sparsity.py::test_multi_row_sums_each_concept_independently",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012644999660551548,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

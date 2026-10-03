@@ -1,0 +1,210 @@
+[
+  {
+    "file": "test/test_chunk_static_analyse.py",
+    "test": "test_analyse_cold_is_byte_level_within_words",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_analyse_cold_is_byte_level_within_words():\n    \"\"\"No learned merges -> byte terminals within each word run (the\n    'initially fails' state: not yet word lexing). Whitespace is dropped,\n    mirroring lexicon's stream.split().\"\"\"\n    assert PartSpace.chunk_static(b\"hi ox\", \"analyse\") == [\n        b\"h\", b\"i\", b\"o\", b\"x\"]"
+  },
+  {
+    "file": "test/test_chunk_static_analyse.py",
+    "test": "test_analyse_learned_merges_recover_words",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_analyse_learned_merges_recover_words():\n    \"\"\"A learned within-word merge collapses that run to a word terminal;\n    runs without a learned merge stay byte-level.\"\"\"\n    units = PartSpace.chunk_static(b\"hi ox\", \"analyse\",\n                                         merges={(b\"h\", b\"i\")})\n    assert units == [b\"hi\", b\"o\", b\"x\"]"
+  },
+  {
+    "file": "test/test_chunk_static_analyse.py",
+    "test": "test_analyse_converges_to_lexicon",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_analyse_converges_to_lexicon():\n    \"\"\"With every within-word pair learned, analyse reproduces space\n    (lexicon) lexing exactly -- 'reproduce the behavior we have now'.\"\"\"\n    merges = {(b\"h\", b\"i\"), (b\"o\", b\"x\")}\n    assert (PartSpace.chunk_static(b\"hi ox\", \"analyse\", merges)\n            == PartSpace.chunk_static(b\"hi ox\", \"lexicon\"))"
+  },
+  {
+    "file": "test/test_chunk_static_analyse.py",
+    "test": "test_analyse_never_merges_across_whitespace",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_analyse_never_merges_across_whitespace():\n    \"\"\"Whitespace is a hard boundary: a learned pair that straddles a space\n    never fires (the space-lexer split happens first).\"\"\"\n    units = PartSpace.chunk_static(b\"hi ox\", \"analyse\",\n                                         merges={(b\"i\", b\"o\")})\n    assert b\"io\" not in units\n    assert b\"\".join(units) == b\"hiox\""
+  },
+  {
+    "file": "test/test_chunk_static_analyse.py",
+    "test": "test_analyse_iterates_merges_to_multibyte_words",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_analyse_iterates_merges_to_multibyte_words():\n    \"\"\"Bottom-up merge is iterative: chained learned pairs grow a multi-byte\n    word from characters.\"\"\"\n    merges = {(b\"t\", b\"h\"), (b\"th\", b\"e\")}\n    assert PartSpace.chunk_static(b\"the\", \"analyse\", merges) == [b\"the\"]"
+  },
+  {
+    "file": "test/test_chunk_static_analyse.py",
+    "test": "test_existing_modes_unchanged",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_existing_modes_unchanged():\n    \"\"\"lexicon / bpe behavior is untouched; an unknown mode still raises.\"\"\"\n    assert PartSpace.chunk_static(b\"the quick fox\", \"lexicon\") == [\n        b\"the\", b\"quick\", b\"fox\"]\n    assert PartSpace.chunk_static(b\"ab\", \"bpe\") == [b\"a\", b\"b\"]\n    with pytest.raises(ValueError):\n        PartSpace.chunk_static(b\"x\", \"not_a_mode\")"
+  },
+  {
+    "file": "test/test_analyse_word_learning.py",
+    "test": "test_learned_merges_converge_to_word_lexing",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_learned_merges_converge_to_word_lexing():\n    \"\"\"After learning enough merges, analyse reproduces space (lexicon)\n    lexing on the corpus words -- the converged target behavior.\"\"\"\n    merges = PartSpace.learn_merges(_CORPUS, num_merges=64)\n    for line in _CORPUS:\n        assert (PartSpace.chunk_static(line, \"analyse\", merges)\n                == PartSpace.chunk_static(line, \"lexicon\")), line"
+  },
+  {
+    "file": "test/test_analyse_word_learning.py",
+    "test": "test_cold_is_byte_level_before_learning",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_cold_is_byte_level_before_learning():\n    \"\"\"With no learned merges the analyzer is byte-level (initially fails).\"\"\"\n    assert PartSpace.chunk_static(b\"hello\", \"analyse\") == [\n        bytes([c]) for c in b\"hello\"]"
+  },
+  {
+    "file": "test/test_analyse_word_learning.py",
+    "test": "test_partial_learning_is_subword",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_partial_learning_is_subword():\n    \"\"\"A single learned merge collapses one pair -> sub-word units, fewer\n    than the byte count but not yet the whole word.\"\"\"\n    merges = PartSpace.learn_merges([b\"ab ab ab ab\"], num_merges=1)\n    units = PartSpace.chunk_static(b\"ab\", \"analyse\", merges)\n    assert units == [b\"ab\"]                       # the only pair learned\n    units3 = PartSpace.chunk_static(b\"abc\", \"analyse\", merges)\n    assert units3 == [b\"ab\", b\"c\"]"
+  },
+  {
+    "file": "test/test_analyse_word_learning.py",
+    "test": "test_learning_respects_whitespace_boundaries",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_learning_respects_whitespace_boundaries():\n    \"\"\"Merges are learned WITHIN words only -- a cross-space pair is never\n    learned (the space-lexer bounds the statistics).\"\"\"\n    merges = PartSpace.learn_merges([b\"ax xa\"] * 5, num_merges=8)\n    # 'x x' across the space must never become a learned merge.\n    assert (b\"x\", b\"x\") not in set(\n        tuple(m) if not isinstance(m, tuple) else m for m in merges)\n    # within-word pairs do get learned.\n    assert PartSpace.chunk_static(b\"ax\", \"analyse\", merges) == [b\"ax\"]"
+  },
+  {
+    "file": "test/test_partition_symbolicspace_state.py",
+    "test": "test_chunk_static_modes_smoke",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_chunk_static_modes_smoke():\n    \"\"\"Smoke-test the supported chunking modes.  Task 7.2 removed the\n    grammar-client call from PartSpace.forward; ``chunk_static``\n    itself was never in scope, so this is a belt-and-braces sentinel\n    against accidental drift of the two-way (bpe | lexicon) switch.\n    \"\"\"\n    lex = Spaces.PartSpace.chunk_static(b\"the cat sat\", mode=\"lexicon\")\n    assert lex == [b\"the\", b\"cat\", b\"sat\"]\n    bpe = Spaces.PartSpace.chunk_static(b\"abc\", mode=\"bpe\")\n    assert bpe == [b\"a\", b\"b\", b\"c\"]"
+  },
+  {
+    "file": "test/test_space_equiv_selfcheck.py",
+    "test": "test_identity_candidate_passes",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_identity_candidate_passes():\n    n = run_space_gate(Spaces.PartSpace, \"_embed_bpe\",\n                        candidate_fn=Spaces.PartSpace._embed_bpe_trie,\n                        snapshot=_bpe_snapshot, max_batches=2)\n    assert n > 0, \"gate exercised nothing (config not BPE mode?)\""
+  },
+  {
+    "file": "test/test_space_equiv_selfcheck.py",
+    "test": "test_perturbed_candidate_is_caught",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_perturbed_candidate_is_caught():\n    ref = Spaces.PartSpace._embed_bpe_trie\n\n    def perturbed(self, *a, **k):\n        out = ref(self, *a, **k)\n        # Perturb an observable that the reference call deterministically\n        # rebuilds. Selection-index perturbation became a no-op when this\n        # fixture's cold-start codebook had only one row (modulo V == 1).\n        active = getattr(self, \"_bpe_word_mask\", None)\n        if torch.is_tensor(active) and active.numel():\n            self._bpe_word_mask = torch.ones_like(active) - active\n        return out\n\n    with pytest.raises(AssertionError, match=\"DIVERGENCE\"):\n        run_space_gate(Spaces.PartSpace, \"_embed_bpe\",\n                        candidate_fn=perturbed,\n                        snapshot=_bpe_snapshot, max_batches=2)"
+  },
+  {
+    "file": "test/test_perceptual_chunking.py",
+    "test": "test_synthesis_mode_lexicon_splits_on_spaces",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_synthesis_mode_lexicon_splits_on_spaces():\n    byte_stream = b\"the quick fox\"\n    units = PartSpace.chunk_static(byte_stream, mode=\"lexicon\")\n    assert units == [b\"the\", b\"quick\", b\"fox\"]"
+  },
+  {
+    "file": "test/test_perceptual_chunking.py",
+    "test": "test_synthesis_mode_bpe_returns_learned_segments",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_synthesis_mode_bpe_returns_learned_segments():\n    # Expect BPE to produce consistent subword tokens -- smoke test only.\n    byte_stream = b\"running\"\n    units = PartSpace.chunk_static(byte_stream, mode=\"bpe\")\n    assert isinstance(units, list)\n    assert all(isinstance(u, (bytes, str)) for u in units)\n    assert b\"\".join(\n        u if isinstance(u, bytes) else u.encode() for u in units\n    ) == byte_stream"
+  },
+  {
+    "file": "test/test_perceptual_chunking.py",
+    "test": "test_chunking_invalid_mode_raises",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_chunking_invalid_mode_raises():\n    with pytest.raises(ValueError):\n        PartSpace.chunk_static(b\"x\", mode=\"not_a_mode\")"
+  },
+  {
+    "file": "test/test_perceptual_chunking.py",
+    "test": "test_embedding_token_stream_honors_bpe_fallback_mode",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_embedding_token_stream_honors_bpe_fallback_mode():\n    emb = Embedding()\n    emb.byte_mode = False\n    emb.synthesis_mode = \"bpe\"\n\n    assert emb._token_stream(\"hi\") == [(\"h\", 0), (\"i\", 1)]"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_init_reads_new_config_fields",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_init_reads_new_config_fields(self):\n        \"\"\"Task 3: PartSpace reads <synthesis>, <nVectors>, <wordLearning>.\"\"\"\n        import tempfile\n        from util import init_config\n        import Spaces\n\n        with tempfile.TemporaryDirectory() as tmp:\n            path = _write_minimal_bpe_xml(tmp, n_vectors=512)\n            init_config(path=path,\n                        defaults_path=os.path.join(_PROJECT, \"data\", \"model.xml\"))\n            self.assertEqual(\n                Spaces.TheXMLConfig.space(\"PartSpace\", \"synthesis\"), \"bpe\")\n            self.assertEqual(\n                int(Spaces.TheXMLConfig.space(\"PartSpace\", \"nVectors\")), 512)\n            self.assertEqual(\n                int(Spaces.TheXMLConfig.space(\"PartSpace\", \"wordLearning\")), 2)"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_init_rejects_bpe_with_nVectors_below_256",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_init_rejects_bpe_with_nVectors_below_256(self):\n        \"\"\"Task 4: bpe mode requires nVectors>=256.\"\"\"\n        import tempfile\n        from Models import BaseModel\n\n        with tempfile.TemporaryDirectory() as tmp:\n            path = _write_minimal_bpe_xml(tmp, n_vectors=128)\n            with self.assertRaises(ValueError) as ctx:\n                BaseModel.from_config(config_path=path)\n            self.assertIn(\"nVectors\", str(ctx.exception))\n            self.assertIn(\"257\", str(ctx.exception))"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_init_accepts_bpe_with_nVectors_256",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_init_accepts_bpe_with_nVectors_256(self):\n        \"\"\"Task 4: nVectors>=256 is accepted; chunk_layer is built in bpe mode.\"\"\"\n        import tempfile\n        from Models import BaseModel\n\n        with tempfile.TemporaryDirectory() as tmp:\n            path = _write_minimal_bpe_xml(tmp, n_vectors=512)\n            model, cfg = BaseModel.from_config(config_path=path)\n            ps = model.perceptualSpace\n            self.assertEqual(ps.synthesis_mode, \"bpe\")\n            self.assertEqual(ps.word_learning, 2)\n            self.assertTrue(ps.chunk_layer.bpe)\n            self.assertEqual(ps.chunk_layer.n_vectors, 512)\n            self.assertEqual(ps.chunk_layer.word_learning, 2)"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_forward_bpe_emits_word_level_vectors",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_forward_bpe_emits_word_level_vectors(self):\n        \"\"\"Task 5: BPE forward pass emits [B, nOutput, nDim] with one position per whitespace word.\"\"\"\n        import tempfile\n        import torch\n        from Models import BaseModel\n\n        with tempfile.TemporaryDirectory() as tmp:\n            path = _write_minimal_bpe_xml(tmp, n_vectors=512)\n            model, cfg = BaseModel.from_config(config_path=path)\n            ps = model.perceptualSpace\n\n            input_text = [\"hello world foo\"]\n            inp_tensor = model.inputSpace.prepInput(input_text)\n            # ``ps.subspace`` is a working buffer the body CONSUMES after the\n            # PartSpace stage (the per-stage cs.forward loop + head\n            # mutate it), so reading it after the full forward is fragile.\n            # Capture PartSpace.forward's OUTPUT (the percept) at the\n            # source instead.\n            captured = {}\n            _orig_ps_fwd = ps.forward\n\n            def _cap(x, *a, **k):\n                out = _orig_ps_fwd(x, *a, **k)\n                # Spec doc/specs/2026-05-21-subspace-slot-architecture.md:\n                # default ``materialize()`` (mode='active') applies the\n                # activation-presence gate (word_active mask), so non-word\n                # positions zero out. ``mode='event'`` is the raw event.\n                captured[\"active\"] = out.materialize().detach().clone()\n                return out\n\n            ps.forward = _cap\n            try:\n                with torch.no_grad():\n                    _ = model.forward(inp_tensor)\n            finally:\n                ps.forward = _orig_ps_fwd\n\n            ps_event = captured.get(\"active\")\n            self.assertIsNotNone(ps_event, \"PartSpace.forward must emit a percept\")\n            self.assertEqual(ps_event.shape[0], 1)\n            # PartSpace is a (4,4) muxed space_role, so the materialized\n            # event is the full EVENT width = content(4) + .where(4) +\n            # .when(4) = 12, matching <PartSpace><nDim>12 in the fixture\n            # above (2026-07-09 multi-rung pass: .where widened 2->4).\n            self.assertEqual(ps_event.shape[-1], 12)\n            non_zero_rows = (ps_event[0].abs().sum(dim=-1) > 0).sum().item()\n            self.assertGreaterEqual(non_zero_rows, 1,\n                \"At least one position must have a non-zero vector\")\n            # BPE emits one position per byte (cold-start uses 256-byte\n            # vocab; nothing merges into multi-byte chunks at init), so\n            # the upper bound is the slot count (nOutput=32), not the\n            # word count (3). The \"word-level\" assumption was tightened\n            # to per-byte after the cold-start vocab change.\n            self.assertLessEqual(non_zero_rows, ps_event.shape[1],\n                \"Non-zero positions must fit within the nOutput slot count\")"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_max_fusion_elementwise_max",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_max_fusion_elementwise_max(self):\n        \"\"\"MAX fusion of two sub-tokens equals elementwise max of their embeddings.\"\"\"\n        import tempfile\n        import torch\n        from Models import BaseModel\n\n        with tempfile.TemporaryDirectory() as tmp:\n            path = _write_minimal_bpe_xml(tmp, n_vectors=512)\n            model, cfg = BaseModel.from_config(config_path=path)\n            ps = model.perceptualSpace\n            codebook = ps.subspace.what\n\n            for ch in ('a', 'b'):\n                if ch not in codebook.pretrain.key_to_index:\n                    codebook.insert(ch)\n            with torch.no_grad():\n                idx_a = codebook._token_to_index('a')\n                idx_b = codebook._token_to_index('b')\n                v_a = torch.tensor([1.0, 0.0, 0.5, 0.0])\n                v_b = torch.tensor([0.0, 1.0, 0.3, 0.0])\n                codebook.wv._vectors.data[idx_a] = v_a\n                codebook.wv._vectors.data[idx_b] = v_b\n                codebook.wv._normed = None\n\n            fused = ps._max_fuse_subtokens([(97,), (98,)], codebook)\n            expected = torch.max(v_a, v_b)\n            self.assertTrue(torch.allclose(fused, expected, atol=1e-6),\n                f\"MAX fusion mismatch: got {fused}, expected {expected}\")"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_train_step_respects_nVectors_cap",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_train_step_respects_nVectors_cap(self):\n        \"\"\"Task 7: train_step stops growing vocab once len(vocab) == n_vectors.\"\"\"\n        import torch\n        from Layers import ChunkLayer\n\n        layer = ChunkLayer(nDim=4, bpe=True,\n                           n_vectors=260, word_learning=1)\n        layer.train()\n        batch = torch.tensor(\n            [list(b\"abababababababababab\") + [0] * 4],\n            dtype=torch.long,\n        )\n        for _ in range(100):\n            layer.train_step(batch, k_merges=4)\n        self.assertLessEqual(len(layer.vocab), 260,\n            f\"vocab overflow: got {len(layer.vocab)}, cap was 260\")"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_bpe_constructs_shared_store_with_aligned_ids",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_bpe_constructs_shared_store_with_aligned_ids(self):\n        ps = self._build_ps(\"bpe\")\n        store = ps.percept_store\n        self.assertIsNotNone(\n            store, \"bpe mode must construct the shared byte store\")\n        cl = ps.chunk_layer\n        self.assertIs(cl.percept_store, store,\n                      \"ChunkLayer must be wired to the shared store\")\n        self.assertEqual(len(store), len(cl.vocab))\n        for cid, bt in cl.id_to_bytes.items():\n            self.assertEqual(store.get_id(bytes(bt)), cid)\n            self.assertEqual(store.bytes_for(cid), bytes(bt))"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_mphf_constructs_shared_store_with_aligned_ids",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_mphf_constructs_shared_store_with_aligned_ids(self):\n        ps = self._build_ps(\"mphf\")\n        store = ps.percept_store\n        self.assertIsNotNone(\n            store, \"mphf mode must construct the shared byte store\")\n        cl = ps.chunk_layer\n        self.assertIs(cl.percept_store, store)\n        self.assertEqual(len(store), len(cl.vocab))\n        for cid, bt in cl.id_to_bytes.items():\n            self.assertEqual(store.bytes_for(cid), bytes(bt))"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_promotion_mirrors_into_store",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_promotion_mirrors_into_store(self):\n        import torch\n        ps = self._build_ps(\"bpe\")\n        cl = ps.chunk_layer\n        before = len(cl.vocab)\n        # Crafted stats: one dominant pair ('a','b') promotes on the\n        # first train_step (V=256 < cold_start_floor skips the lift\n        # gate; vocab not full).\n        seq = torch.tensor([[97, 98] * 64], dtype=torch.long)\n        added = cl.train_step(seq, k_merges=1)\n        self.assertGreaterEqual(added, 1, \"crafted pair must promote\")\n        self.assertGreater(len(cl.vocab), before)\n        self.assertEqual(len(ps.percept_store), len(cl.vocab),\n                         \"promotions must mirror into the shared store\")\n        for cid in (c for c in cl.id_to_bytes if c >= before):\n            self.assertEqual(ps.percept_store.bytes_for(cid),\n                             bytes(cl.id_to_bytes[cid]))"
+  },
+  {
+    "file": "test/test_perceptualspace_bpe_forward.py",
+    "test": "test_bytes_for_round_trips_smoke_prompt_through_store",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_bytes_for_round_trips_smoke_prompt_through_store(self):\n        ps = self._build_ps(\"bpe\")\n        cl = ps.chunk_layer\n        prompt = b\"hello world\"\n        pids = [cl.vocab[(b,)] for b in prompt]\n        self.assertEqual(b\"\".join(cl.bytes_for(i) for i in pids), prompt)\n        # Identical through the store surface radix uses.\n        self.assertEqual(\n            b\"\".join(ps.percept_store.bytes_for(i) for i in pids), prompt)"
+  },
+  {
+    "file": "test/test_chunk_layer_bpe.py",
+    "test": "test_mm_bpe_config_drives_chunk_layer_flags",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_mm_bpe_config_drives_chunk_layer_flags(self):\n        \"\"\"MM_bpe.xml config should produce a BPE-mode ChunkLayer.\"\"\"\n        from util import init_config\n        import Spaces\n        from Layers import ChunkLayer\n\n        cfg_path = os.path.join(_PROJECT, \"data\", \"MM_bpe.xml\")\n        init_config(\n            path=cfg_path,\n            defaults_path=os.path.join(_PROJECT, \"data\", \"model.xml\"),\n        )\n        cfg = Spaces.TheXMLConfig\n        self.assertEqual(cfg.space(\"PartSpace\", \"synthesis\"), \"bpe\",\n                         \"MM_bpe.xml must set chunking=bpe\")\n        n_vec = int(cfg.space(\"PartSpace\", \"nVectors\"))\n        freq = int(cfg.space(\"PartSpace\", \"wordLearning\"))\n        layer = ChunkLayer(\n            nDim=8,\n            bpe=(cfg.space(\"PartSpace\", \"synthesis\") == \"bpe\"),\n            n_vectors=n_vec,\n            word_learning=freq,\n        )\n        self.assertTrue(layer.bpe)\n        self.assertEqual(layer.n_vectors, n_vec)\n        self.assertEqual(layer.word_learning, freq)"
+  },
+  {
+    "file": "test/test_perceptual_loopback.py",
+    "test": "test_legacy_lexicon_mode_keeps_chunklayer_path",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_legacy_lexicon_mode_keeps_chunklayer_path(self):\n        \"\"\"The MM_xor_loopback config doesn't set <synthesis>; the default\n        is ``lexicon`` (Phase 4b: PS analyse was retired to SS <analysis>;\n        lexicon is the closest surviving word-resolution mode), which\n        resolves word runs through the ChunkLayer / Embedding path, so\n        ``percept_store`` stays ``None``.\"\"\"\n        m = _fresh_model()\n        ps_space = m.perceptualSpace\n        # The default lexicon mode uses the chunklayer / Embedding path\n        # (no PerceptStore).\n        self.assertEqual(ps_space.synthesis_mode, \"lexicon\")\n        self.assertIsNone(ps_space.percept_store,\n                          \"lexicon (default) must leave percept_store unset \"\n                          \"so the legacy ChunkLayer / Embedding path \"\n                          \"stays authoritative\")\n        # vocabulary property falls back to subspace.vocabulary in\n        # non-radix mode (the base Space behaviour).\n        self.assertIs(ps_space.vocabulary, ps_space.subspace.vocabulary)"
+  },
+  {
+    "file": "test/test_input_word_cursor.py",
+    "test": "test_bpe_word_mask_is_the_validity_signal_when_present",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_bpe_word_mask_is_the_validity_signal_when_present():\n    \"\"\"With a BPE peer in ``bpe`` chunking, the NULL/end signal is the\n    peer's ``_bpe_word_mask`` (matching ``forward``'s source of truth),\n    NOT the nonzero-vector fallback -- so trailing nonzero vectors that\n    the mask marks invalid are still excluded.\"\"\"\n    next_word, self = _bare_inputspace()\n    self._per_word_enabled = True\n    B, T, D = 2, 6, 5\n    # Entire buffer is nonzero (nonzero-vector fallback would say all 6\n    # are valid)...\n    self._ar_embedded = torch.randn(B, T, D) + 1.0\n    # ...but the BPE word mask says only the first 3 slots are real.\n    mask = torch.zeros(B, T)\n    mask[:, :3] = 1.0\n    self._peer_perceptual = types.SimpleNamespace(\n        synthesis_mode=\"bpe\", _bpe_word_mask=mask)\n    # Re-cache after seeding the BPE peer (the cache key changed).\n    self._valid_len_host = _compute_valid_len_host(\n        self._ar_embedded, self._peer_perceptual)\n\n    seen = 0\n    while next_word(self) is not None:\n        seen += 1\n        assert seen <= T\n    assert seen == 3, \"mask (not nonzero-vector) defines valid length\"\n    assert self._per_word_cursor == 3"
+  },
+  {
+    "file": "test/test_analyse_chunking_forward.py",
+    "test": "test_ws_analysis_knob_accepted",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only.",
+    "old": "def test_ws_analysis_knob_accepted(self):\n        # <analysis>grammatical on WholeSpace builds; mode is stashed.\n        from Models import BaseModel\n        with tempfile.TemporaryDirectory() as tmp:\n            path = _write_xml(tmp, analysis=\"grammatical\")\n            model, _cfg = BaseModel.from_config(config_path=path)\n            self.assertEqual(model.wholeSpace.analysis_mode, \"grammatical\")"
+  },
+  {
+    "file": "test/test_use_flags.py",
+    "test": "test_flags_match_expected [MM_bpe subcase]",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only."
+  },
+  {
+    "file": "test/test_config_matrix.py",
+    "test": "test_config_builds_runs_and_reconstructs[legacy]",
+    "reason": "Plan \u00a714 retires the old reading mode and its implementation; this case exercises that path only."
+  },
+  {
+    "file": "test/test_dual_input_contract.py",
+    "test": "test_word_analysis_boundaries_shape_evidence",
+    "old": "@pytest.mark.slow\ndef test_word_analysis_boundaries_shape_evidence():\n    # Phase 4b contract: BOUNDARIES SHAPE THE EVIDENCE. With\n    # <analysis>word, the whitespace-cut parts define the PARTS whose\n    # coarse means become the stage-0 symbolic evidence (part k ->\n    # symbol slot k) -- replacing the uniform-region pooling that\n    # remains the byte-mode default. The hand-checked means are\n    # asserted on the threaded PRE-SNAP carrier (the evidence z_e\n    # before the live SS codebook snap).\n    m = _build(\"MM_20M_xor.xml\")\n    ws = m.wholeSpace\n    # \"hi ox\" as byte codes, padded with the null sentinel.\n    text = b\"hi ox\"\n    u = torch.zeros(2, 1, 32, dtype=torch.int64)\n    u[:, 0, :len(text)] = torch.tensor(list(text), dtype=torch.int64)\n    u_snapshot = u.clone()\n    # byte mode (default): uniform pooling.\n    ws.analysis_mode = \"byte\"\n    assert ws.stage_analysis_spans(u) is None\n    ws._staged_analysis_spans = None\n    ev_byte = ws.forward(u, cs_out=m._empty_seed_ss).materialize().clone()\n    # word mode: parts are the whitespace-cut spans.\n    ws.analysis_mode = \"word\"\n    spans = ws.stage_analysis_spans(u)\n    assert spans is not None and spans.shape == (2, 2, 2), (\n        f\"'hi ox' must cut into TWO parts per row, got \"\n        f\"{None if spans is None else tuple(spans.shape)}\")\n    assert spans[0].tolist() == [[0, 2], [3, 5]]\n    assert torch.equal(u, u_snapshot), \"analysis must not alter the unity\"\n    ws._staged_analysis_spans = spans\n    try:\n        ev_word = ws.forward(\n            u, cs_out=m._empty_seed_ss).materialize().clone()\n        z_pre = ws._stage0_z_pre_snap.detach().clone()\n    finally:\n        ws._staged_analysis_spans = None\n        ws.analysis_mode = \"byte\"\n    assert not torch.equal(ev_byte, ev_word), (\n        \"word-cut evidence must differ from uniform-region evidence\")\n    # Slot k carries part k's coarse mean on the pre-snap carrier:\n    # tanh(mean(part bytes) / 128), broadcast across the carrier width.\n    import math\n    exp0 = math.tanh((ord(\"h\") + ord(\"i\")) / 2.0 / 128.0)\n    exp1 = math.tanh((ord(\"o\") + ord(\"x\")) / 2.0 / 128.0)\n    assert abs(float(z_pre[0, 0, 0]) - exp0) < 1e-5, (\n        f\"part-0 mean: expected {exp0:.6f}, got {float(z_pre[0, 0, 0]):.6f}\")\n    assert abs(float(z_pre[0, 1, 0]) - exp1) < 1e-5, (\n        f\"part-1 mean: expected {exp1:.6f}, got {float(z_pre[0, 1, 0]):.6f}\")\n    # Slots beyond the part count stay neutral (0), like null padding.\n    assert float(z_pre[0, 2:, :].abs().max()) == 0.0\n",
+    "reason": "Compares the retired byte and word analysis dispatches and the retired uniform-region evidence path; plan \u00a714. Native predicate/type-run behavior stays tested in test_type_run_spans.py."
+  },
+  {
+    "file": "test/test_type_run_spans.py",
+    "test": "test_stage_byte_mode_returns_none",
+    "old": "def test_stage_byte_mode_returns_none():\n    for mode in (\"byte\", \"raw\", \"sentence\"):\n        assert _stage(mode, \"abc def\") is None\n",
+    "reason": "Only the retired byte/raw/sentence analysis bypasses returned None for present input; native absent-input assertion stays."
+  }
+]

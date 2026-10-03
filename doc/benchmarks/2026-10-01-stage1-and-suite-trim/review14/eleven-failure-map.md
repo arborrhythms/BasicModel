@@ -1,0 +1,17 @@
+# The eleven preceding sweep failures
+
+These are the eleven cases in the preceding closing sweep, with their disposition and saved focused verification. The final full sweep supplies the final-source outcomes; focused results are not silently substituted for it.
+
+| Original case | Disposition and repair | Focused passing records |
+|---|---|---|
+| `test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root` | retired by the explicit section-14 decision: The retired production path and its tests are removed; complete old bodies are in remaining-test-deletions.json. | retired |
+| `test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite` | retired by the explicit section-14 decision: The retired production path and its tests are removed; complete old bodies are in remaining-test-deletions.json. | retired |
+| `test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline` | kept: The three forced not operations make the original one-pole fixture disjoint from the younger operand. The mixed-sign port preserves all final-state assertions and now exercises nonempty intersection. | repairs-focus-2/worker-004.json |
+| `test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient` | kept: Use the registry fixture and mean its row costs, retaining the original .7 weighted output gradient assertion. | migration-contracts-after/worker-001.json |
+| `test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths` | kept: Bound sentence journals by existing static word buckets; initialize/reset graph-visible trial attributes and Error owners before capture. | final-migration-ports/worker-004.json; journal-buckets-after/worker-000.json |
+| `test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused` | kept: Zero-weight terms never read their source registry. The original optimizer-momentum assertion remains. | repairs-focus-2/worker-003.json |
+| `test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective` | retired by the explicit section-14 decision: The retired production path and its tests are removed; complete old bodies are in remaining-test-deletions.json. | retired |
+| `test/test_tied_operator_reconstruction.py::test_word_scoring_honors_existing_nul_termination` | kept: Keep the NUL and gradient assertions. Unknown surfaces have no reconstruction term and are counted once. | repairs-focus-2/worker-005.json |
+| `test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet]` | kept: Keep both promotion cases and all byte-target assertions; no admitted candidate contributes zero, with an explicit unavailable count. | repairs-focus-2/worker-008.json |
+| `test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alph]` | kept: Keep both promotion cases and all byte-target assertions; no admitted candidate contributes zero, with an explicit unavailable count. | repairs-focus-2/worker-008.json |
+| `test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name` | kept: The current data/BasicModel.ckpt has twelve student keys. Keep its one-way loader migration, and build the old inert serialized shape without a retired student runtime. | repairs-focus-2/worker-009.json |

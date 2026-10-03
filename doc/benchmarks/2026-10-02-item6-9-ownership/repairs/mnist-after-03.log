@@ -1,0 +1,132 @@
+.FF                                                                      [100%]
+=================================== FAILURES ===================================
+_____________ test_real_mnist_subset_trains_one_short_batch[False] _____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-812/test_real_mnist_subset_trains_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10788a4b0>
+ergodic = False
+
+    @pytest.mark.parametrize('ergodic', [False, True])
+    def test_real_mnist_subset_trains_one_short_batch(tmp_path, monkeypatch, ergodic):
+        import data, util, Models
+        root=Path(__file__).resolve().parents[1]
+        # Use rows from the real downloaded files; bound only this test's subset.
+        read_csv=data.pd.read_csv
+        monkeypatch.setattr(data.pd,'read_csv',lambda path,*a,**kw:read_csv(path,*a,nrows=32,**kw))
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        monkeypatch.setenv('BASIC_AUTOLOAD','false')
+        monkeypatch.setenv('BASIC_AUTOSAVE','false')
+        path=tmp_path/'mnist.xml'
+        path.write_text((root/'data/mnist.xml').read_text().replace('<architecture>',
+            f'<architecture><ergodic>{str(ergodic).lower()}</ergodic>',1))
+        util.init_config(path=str(path),defaults_path=str(root/'data/model.xml'))
+        data.TheData.load('mnist')
+        model,_=Models.BaseModel.from_config(str(path),data=data.TheData)
+        try:
+            assert model.ergodic is ergodic
+            assert len(data.TheData.train_input)==32
+            assert data.TheData.inputLength==784
+            optimizer=model.getOptimizer(lr=.001)
+            raw,target=next(iter(data.TheData.data_loader(split='train',num_streams=2)))
+>           batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_mnist.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Spaces.py:9705: in prepInput
+    return inputBatch.reshape(inputBatch.shape[0], *self.inputShape)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10c93d1c0>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[-0.4150],
+         [-0.4150],
+         [-0.4150],
+         ...,
+         [-0.4150],
+         [-0.4150],
+   ...   [-0.4150],
+         [-0.4150],
+         ...,
+         [-0.4150],
+         [-0.4150],
+         [-0.4150]]]), 2, 1, 1)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[2, 1, 1]' is invalid for input of size 1568
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+_____________ test_real_mnist_subset_trains_one_short_batch[True] ______________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-812/test_real_mnist_subset_trains_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x125eb99a0>
+ergodic = True
+
+    @pytest.mark.parametrize('ergodic', [False, True])
+    def test_real_mnist_subset_trains_one_short_batch(tmp_path, monkeypatch, ergodic):
+        import data, util, Models
+        root=Path(__file__).resolve().parents[1]
+        # Use rows from the real downloaded files; bound only this test's subset.
+        read_csv=data.pd.read_csv
+        monkeypatch.setattr(data.pd,'read_csv',lambda path,*a,**kw:read_csv(path,*a,nrows=32,**kw))
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        monkeypatch.setenv('BASIC_AUTOLOAD','false')
+        monkeypatch.setenv('BASIC_AUTOSAVE','false')
+        path=tmp_path/'mnist.xml'
+        path.write_text((root/'data/mnist.xml').read_text().replace('<architecture>',
+            f'<architecture><ergodic>{str(ergodic).lower()}</ergodic>',1))
+        util.init_config(path=str(path),defaults_path=str(root/'data/model.xml'))
+        data.TheData.load('mnist')
+        model,_=Models.BaseModel.from_config(str(path),data=data.TheData)
+        try:
+            assert model.ergodic is ergodic
+            assert len(data.TheData.train_input)==32
+            assert data.TheData.inputLength==784
+            optimizer=model.getOptimizer(lr=.001)
+            raw,target=next(iter(data.TheData.data_loader(split='train',num_streams=2)))
+>           batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_mnist.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Spaces.py:9705: in prepInput
+    return inputBatch.reshape(inputBatch.shape[0], *self.inputShape)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10c93d1c0>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[-0.4150],
+         [-0.4150],
+         [-0.4150],
+         ...,
+         [-0.4150],
+         [-0.4150],
+   ...   [-0.4150],
+         [-0.4150],
+         ...,
+         [-0.4150],
+         [-0.4150],
+         [-0.4150]]]), 2, 1, 1)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[2, 1, 1]' is invalid for input of size 1568
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+=========================== short test summary info ============================
+FAILED test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]
+FAILED test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]
+2 failed, 1 passed in 2.71s

@@ -1,0 +1,17 @@
+{
+  "config": "data/MentalModel.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.6980770000081975,
+  "batch": 64,
+  "scope": "understanding",
+  "reconstruct_in_loop": true,
+  "training_seconds": 1.0142094589973567,
+  "output_loss": 0.17318543791770935,
+  "reconstruction_loss": 0.0001152878103312105,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": 0,
+  "total_seconds": 2.7128997500112746
+}

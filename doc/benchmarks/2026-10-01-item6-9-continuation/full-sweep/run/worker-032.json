@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]"
+  ],
+  "completed": [
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]"
+  ],
+  "slow_selected": [
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011300000005576294,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py', 475, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

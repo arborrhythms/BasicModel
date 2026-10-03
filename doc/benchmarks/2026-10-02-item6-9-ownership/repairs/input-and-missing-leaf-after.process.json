@@ -1,0 +1,18 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_input_byte_addresses.py",
+    "test/test_grammar_separator.py",
+    "test/test_mixing_reconstruction_bank.py",
+    "--maxfail=5"
+  ],
+  "pid": 17915,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1211385656,
+  "elapsed_seconds": 11.908078790991567,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/input-and-missing-leaf-after.log"
+}

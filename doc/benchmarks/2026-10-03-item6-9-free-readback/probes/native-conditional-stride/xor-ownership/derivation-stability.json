@@ -1,0 +1,202 @@
+[
+  {
+    "batch_row": 0,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      1
+    ],
+    "epochs": 162,
+    "modal_fraction": 0.7037037037037037,
+    "distinct_derivations": 2,
+    "modal_derivation": [
+      [
+        2,
+        2,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 114
+      },
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 48
+      }
+    ]
+  },
+  {
+    "batch_row": 1,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      2
+    ],
+    "epochs": 162,
+    "modal_fraction": 0.5246913580246914,
+    "distinct_derivations": 3,
+    "modal_derivation": [
+      [
+        2,
+        2,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 40
+      },
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 85
+      },
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 37
+      }
+    ]
+  },
+  {
+    "batch_row": 2,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      1
+    ],
+    "epochs": 162,
+    "modal_fraction": 1.0,
+    "distinct_derivations": 1,
+    "modal_derivation": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        2,
+        2,
+        1
+      ],
+      [
+        1,
+        0,
+        0
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 162
+      }
+    ]
+  },
+  {
+    "batch_row": 3,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      2
+    ],
+    "epochs": 162,
+    "modal_fraction": 1.0,
+    "distinct_derivations": 1,
+    "modal_derivation": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        2,
+        2,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 162
+      }
+    ]
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "markdown_files": 9,
+  "relative_links": 20,
+  "missing": [],
+  "new_regression_cases": {
+    "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False]": "passed",
+    "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[True]": "passed",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]": "passed",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]": "passed",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]": "passed",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]": "passed",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]": "passed",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]": "passed",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]": "passed",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[False-exploit]": "passed",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[False-explore]": "passed",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[True-exploit]": "passed",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[True-explore]": "passed"
+  },
+  "historical_policy_file_identical_to_head": true,
+  "source_summary": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/final-verification.json"
+}

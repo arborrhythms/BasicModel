@@ -1,0 +1,7 @@
+{
+  "cause": "XOR summary displayed the historical embedding accuracy placeholder instead of computing class count from saved answers.",
+  "measurements_rerun": 0,
+  "source_or_assertions_changed": false,
+  "outcomes_changed": false,
+  "repair": "Postprocess the same stored four answers and targets into MSE and correct-class count."
+}

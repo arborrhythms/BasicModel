@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_concept_binding_operators.py",
+    "test/test_reconstruction_precedence.py",
+    "test/test_free_reconstruction.py",
+    "test/test_definition_attribution.py",
+    "test/test_gradient_factorization.py",
+    "test/test_grammar_separator.py",
+    "test/test_inverse_recommend.py",
+    "test/test_restricted_candidate_inverse.py",
+    "test/test_sentence_comparison.py",
+    "test/test_objective_ownership.py",
+    "test/test_grammar_object_leaves.py",
+    "test/test_tied_operator_reconstruction.py",
+    "test/test_grammar_binary_ops.py",
+    "test/test_row_local_concept_optimizer.py"
+  ],
+  "pid": 41843,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1434192080,
+  "elapsed_seconds": 37.06102762502269,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/ports-and-operators-after/run.log"
+}

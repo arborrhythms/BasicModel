@@ -1,0 +1,348 @@
+FFFFF.                                                                   [100%]
+=================================== FAILURES ===================================
+____________ test_packed_rows_reconstruct_each_sentence_separately _____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-829/test_packed_rows_reconstruct_e0')
+
+    @pytest.mark.slow
+    def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
+        """Requirement 3: one traversal per completed sentence; packed rows keep
+        separate per-sentence costs; every word of every sentence recovered."""
+        m = _build_ladder_variant(tmp_path, "recon16", [
+            ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+            ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+            ("<packSentences>false</packSentences>",
+             "<packSentences>false</packSentences>\n      <reconstructInLoop>true</reconstructInLoop>")])
+        m._tensor_peer_while_eager = True
+        m._chart_compose_per_word = lambda: None
+        m._recon_keep_ideas = True
+        m._install_unit_span_fn()
+        # The compiled and eager traversals must receive the same hard path.
+        # Sampling a different path is not a reconstruction parity failure.
+        _select_completed_binary_path(m)
+        _stage_packed(m, [["12 plus 1", "3 plus 4"], ["ab cd"]])
+        with torch.no_grad(), m._sentence_run():
+            out = m._forward_with_compiled_sentence_state(None)
+        m._publish_compiled_sentence_state(out)
+        isp = m.inputSpace
+        ids = isp._packed_sentence_ids
+        active = isp._word_active_mask
+        assert int(ids[0].max()) == 1 and int(ids[1].max()) == 0
+        costs = m._recon_sentence_costs                      # [B, slots]
+        assert bool(torch.isfinite(costs).all())
+        assert costs.shape[0] == 2 and costs.shape[1] >= 2
+>       assert not bool(m._recon_truncated.any())
+E       assert not True
+E        +  where True = bool(tensor(True))
+E        +    where tensor(True) = <built-in method any of Tensor object at 0x121707480>()
+E        +      where <built-in method any of Tensor object at 0x121707480> = tensor([ True, False]).any
+E        +        where tensor([ True, False]) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...ncoding): WhenStartDurationEncoding()\n  (answer_record_reader): SentenceRecordReader()\n  (_staged_in_sub): SubSpace()\n)._recon_truncated
+
+test/test_reverse_traversal.py:335: AssertionError
+_____________ test_traversal_compiles_into_the_one_sentence_graph ______________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-829/test_traversal_compiles_into_t0')
+
+    @pytest.mark.slow
+    def test_traversal_compiles_into_the_one_sentence_graph(tmp_path):
+        m = _traversal_model(tmp_path)
+        with m._sentence_run():
+            _run(m, ["12 plus 1", "3 plus 4"])
+        eager_ideas, eager_cost = m._recon_ideas.clone(), m._recon_cost.clone()
+        records = list(m._sentence_understandings.values())
+        try:
+            compiled_ideas, compiled_costs = _compiled_record_reconstruction(m, records)
+>           assert torch.allclose(compiled_costs.sum(-1), eager_cost, atol=1e-4)
+E           assert False
+E            +  where False = <built-in method allclose of type object at 0x10cf393a0>(tensor([0.0003, 0.0003]), tensor([0.8492, 1.7226]), atol=0.0001)
+E            +    where <built-in method allclose of type object at 0x10cf393a0> = torch.allclose
+E            +    and   tensor([0.0003, 0.0003]) = <built-in method sum of Tensor object at 0x1468ff7f0>(-1)
+E            +      where <built-in method sum of Tensor object at 0x1468ff7f0> = tensor([[0.0003, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],\n        [0.0003, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]).sum
+
+test/test_reverse_traversal.py:360: AssertionError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_______ test_native_packing_preserves_each_sentence_and_owned_program[0] _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-829/test_native_packing_preserves_0')
+initialization = 0
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("initialization", range(3))
+    def test_native_packing_preserves_each_sentence_and_owned_program(tmp_path, initialization):
+        # Repeated ambient initializations, never a selected or pinned seed.
+        model = build_model(tmp_path)
+        # Ragged packs include a row ending at the first sentence slot, repeated
+        # words and a later sentence with a multi-digit unit split.
+        rows = [["9 plus 1", "14 plus 1"], ["2 plus 1"]]
+        try:
+            model._install_unit_span_fn()
+            warm_vocabulary(model, rows)
+            packed = measure_layout(model, rows, packed=True)
+            single = measure_layout(model, rows, packed=False)
+            for key, actual in packed.items():
+                expected = single[key]
+                assert not actual["truncated"] and not expected["truncated"]
+                for name in ("reference", "actions", "root", "recovered", "byte_cost"):
+>                   torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,
+                                               msg=lambda msg: f"{key} {name}: {msg}")
+E                                              AssertionError: (0, 0) byte_cost: Scalars are not close!
+E                                              
+E                                              Expected 0.00034456231514923275 but got 0.0002794245083350688.
+E                                              Absolute difference: 6.513780681416392e-05 (up to 1e-06 allowed)
+E                                              Relative difference: 0.18904506949911865 (up to 1e-05 allowed)
+
+test/test_packed_reconstruction_parity.py:149: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.551s)
+batch = 0 (Δ=0.335s)
+batch = 1 (Δ=0.273s)
+_______ test_native_packing_preserves_each_sentence_and_owned_program[1] _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-829/test_native_packing_preserves_1')
+initialization = 1
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("initialization", range(3))
+    def test_native_packing_preserves_each_sentence_and_owned_program(tmp_path, initialization):
+        # Repeated ambient initializations, never a selected or pinned seed.
+        model = build_model(tmp_path)
+        # Ragged packs include a row ending at the first sentence slot, repeated
+        # words and a later sentence with a multi-digit unit split.
+        rows = [["9 plus 1", "14 plus 1"], ["2 plus 1"]]
+        try:
+            model._install_unit_span_fn()
+            warm_vocabulary(model, rows)
+            packed = measure_layout(model, rows, packed=True)
+            single = measure_layout(model, rows, packed=False)
+            for key, actual in packed.items():
+                expected = single[key]
+                assert not actual["truncated"] and not expected["truncated"]
+                for name in ("reference", "actions", "root", "recovered", "byte_cost"):
+>                   torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,
+                                               msg=lambda msg: f"{key} {name}: {msg}")
+E                                              AssertionError: (0, 0) byte_cost: Scalars are not close!
+E                                              
+E                                              Expected 0.19342274963855743 but got 0.18653279542922974.
+E                                              Absolute difference: 0.006889954209327698 (up to 1e-06 allowed)
+E                                              Relative difference: 0.03562121943878227 (up to 1e-05 allowed)
+
+test/test_packed_reconstruction_parity.py:149: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.547s)
+batch = 0 (Δ=0.336s)
+batch = 1 (Δ=0.270s)
+_______ test_native_packing_preserves_each_sentence_and_owned_program[2] _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-829/test_native_packing_preserves_2')
+initialization = 2
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("initialization", range(3))
+    def test_native_packing_preserves_each_sentence_and_owned_program(tmp_path, initialization):
+        # Repeated ambient initializations, never a selected or pinned seed.
+        model = build_model(tmp_path)
+        # Ragged packs include a row ending at the first sentence slot, repeated
+        # words and a later sentence with a multi-digit unit split.
+        rows = [["9 plus 1", "14 plus 1"], ["2 plus 1"]]
+        try:
+            model._install_unit_span_fn()
+            warm_vocabulary(model, rows)
+            packed = measure_layout(model, rows, packed=True)
+            single = measure_layout(model, rows, packed=False)
+            for key, actual in packed.items():
+                expected = single[key]
+                assert not actual["truncated"] and not expected["truncated"]
+                for name in ("reference", "actions", "root", "recovered", "byte_cost"):
+>                   torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,
+                                               msg=lambda msg: f"{key} {name}: {msg}")
+E                                              AssertionError: (0, 0) byte_cost: Scalars are not close!
+E                                              
+E                                              Expected 1.479589581489563 but got 1.5298365354537964.
+E                                              Absolute difference: 0.0502469539642334 (up to 1e-06 allowed)
+E                                              Relative difference: 0.03396006202858481 (up to 1e-05 allowed)
+
+test/test_packed_reconstruction_parity.py:149: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.575s)
+batch = 0 (Δ=0.346s)
+batch = 1 (Δ=0.280s)
+=============================== warnings summary ===============================
+test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7519: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-829/test_native_packing_preserves_0/packed_parity.xml]: Data.what target (3, 16) replaces the loader output (3, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7519: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-829/test_native_packing_preserves_1/packed_parity.xml]: Data.what target (3, 16) replaces the loader output (3, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7519: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-829/test_native_packing_preserves_2/packed_parity.xml]: Data.what target (3, 16) replaces the loader output (3, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately
+FAILED test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph
+FAILED test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]
+FAILED test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]
+FAILED test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]
+5 failed, 1 passed, 4 warnings in 44.64s

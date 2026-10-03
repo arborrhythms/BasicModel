@@ -43,7 +43,7 @@ from embed import (
 )
 from data import Data, TheData
 from Layers import (Layer, PiLayer, SigmaLayer, NegationLayer,
-                    RunStructureLayer, WhereTilingLayer,
+                    RunStructureLayer,
                     SigmaConceptsFromPercepts,
                     IndexedSigmaConceptsFromPercepts)  # custom layers
 from Layers import PropertyTilingLayer, char_class_region, WORD as _WORD_CLASS  # char-class property tiling (S6/B1)
@@ -71,9 +71,9 @@ from space_carrier import SpaceCarrierMixin
 
 
 LanguageOperationChoice = namedtuple(
-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid")
+    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives",
+    defaults=(None,))
 """One immutable operation/location choice; only ConceptualSpace applies it."""
-
 
 
 def gauge_orient(u, referent):
@@ -174,42 +174,8 @@ def _sparse_embedding_eager(indices, weight):
     return F.embedding(indices, weight, sparse=True)
 
 
-class _ReadOnlyCodebookLookup(torch.autograd.Function):
-    """Eager autograd boundary for a non-trainable codebook read.
-
-    The contextual ConceptualSpace dictionary is deliberately a buffer: its
-    sentence-boundary rotation is its only update law.  MPS AOT nevertheless
-    needs an autograd boundary between the eager indexed read and the compiled
-    recurrent sentence body.  ``boundary_token`` gives the returned rows that
-    boundary without making the storage differentiable; backward explicitly
-    returns no gradients for either input.
-    """
-
-    @staticmethod
-    def forward(ctx, weight, indices, boundary_token):
-        """Gather rows while keeping ``weight`` read-only."""
-        return F.embedding(indices, weight)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        """The dictionary and boundary token have no backward ownership."""
-        return None, None, None
 
 
-@torch.compiler.disable
-def _read_only_codebook_lookup_eager(indices, weight):
-    """Read contextual codebook rows outside AOT without a ``W`` gradient.
-
-    ``weight`` is a persistent buffer with ``requires_grad=False``.  The tiny
-    ephemeral token is not model state and receives no gradient; it exists
-    only so the returned working tensor retains the same eager-to-AOT
-    partition as a trainable sparse embedding read.  Consumers may therefore
-    differentiate their own computation through the rows, while the codebook
-    itself remains entirely outside autograd.
-    """
-    token = torch.zeros(
-        (), device=weight.device, dtype=weight.dtype, requires_grad=True)
-    return _ReadOnlyCodebookLookup.apply(weight, indices, token)
 
 
 def registration_loss(pi_fold, sigma_fold, codes):
@@ -486,6 +452,7 @@ class ReadingAttention(nn.Module):
         sel_end = (alpha * end).sum(dim=-1) / Nf
         next_where = torch.stack([sel_start, sel_end], dim=-1)  # [B, 2]
         ce_loss = None
+        self._last_errors = Error()
         if training and 0 <= int(read_idx) < K:
             tgt_real = real[:, int(read_idx)]                # [B]
             if bool(tgt_real.any()):
@@ -493,6 +460,10 @@ class ReadingAttention(nn.Module):
                 nll = -logp[:, int(read_idx)]                # [B]
                 w = tgt_real.to(nll.dtype)
                 ce_loss = (nll * w).sum() / w.sum().clamp_min(1.0)
+                outcomes = ((~consumed) & real).sum(-1).to(nll)
+                baseline = torch.where(outcomes > 0, outcomes, torch.ones_like(outcomes)).log()
+                self._last_errors.error('reading_attention', nll, baseline, mask=tgt_real,
+                                        category='expectation')
         return next_where, ce_loss, alpha
 
 
@@ -654,12 +625,12 @@ class GlobalAttention(nn.Module):
             cos_s = zeros_bm if cos_s is None else cos_s.to(dtype)
             boosts = s.get("boosts")
             if boosts is not None and torch.is_tensor(boosts):
-                bv = boosts.detach().to(dtype)
-                if bv.shape[0] >= M:
-                    bv = bv[:M]
-                else:
-                    bv = torch.cat([bv, bv.new_zeros(M - bv.shape[0])])
-                boost_feat = bv.view(1, M).expand(B, M)
+                bv = boosts.detach().to(device=dev, dtype=dtype)
+                if bv.ndim == 1:
+                    bv = bv[None].expand(B, -1)
+                if bv.shape[0] != B:
+                    raise ValueError('attention boosts must belong to each batch row')
+                boost_feat = F.pad(bv[:, :M], (0, max(0, M-bv.shape[1])))
             else:
                 boost_feat = zeros_bm
             sid_feat = torch.full((B, M), sid / max(self._N_SPACES - 1, 1),
@@ -921,8 +892,8 @@ class ActiveEncoding(Encoding):
 # EXTENT (length). With ``scale = 0.5`` an INSTANT (start == end) collapses to
 # the legacy single-quadrature point ``[sin(c*dt), cos(c*dt)]`` -- BYTE-IDENTICAL
 # to the pre-bracket WhereEncoding / WhenEncoding stamp (``0.5 * 2 == 1`` exactly
-# in float). This is the invertible EndpointSumWhere form (perceptual_analyzer.py)
-# adopted into the muxed event tail so ``.where`` / ``.when`` carry the start-end
+# in float). This endpoint-sum helper remains for range encodings; the live
+# WhereEncoding below uses the start only. A range codec carries the start-end
 # bracket the mereology contiguity test reads directly (center = position/time,
 # extent = spatial size / duration). ``decode`` (the inherited atan2 center) is
 # scale-and-sum invariant, so it stays byte-identical and returns the center;
@@ -1031,8 +1002,8 @@ class WhereEncoding(QuadratureEncoding):
     atan2 per pair + HF branch resolution by LF: a single period trades range
     against resolution; the ladder carries both. The END is NOT in the band --
     content terminates the tile (Alec 2026-07-09); the endpoint-sum bracket is
-    retired from the muxed band (the analyzer's ``EndpointSumWhere`` span key
-    in perceptual_analyzer.py is a different codec and keeps it).
+    retired from the muxed band. The standalone analyzer using that span key
+    was retired with its separate routing protocol.
 
     Index is computed dynamically from nWhere and nWhen so the slots always
     align with the muxed layout ``[what, where, when]``:
@@ -1215,10 +1186,6 @@ _WHEN_PERIOD = 65536
 _WHEN_MAXT = _WHEN_PERIOD
 # Legacy standalone fixture period. Complete models use the registry capacity.
 _WHERE_PERIOD_DEFAULT = 8192
-# ``_WHEN_TENSE_DEFAULT`` is RETAINED only as a back-compat constant for the many
-# construction sites that pass ``encode(t, D=_WHEN_TENSE_DEFAULT)``; the ``D``
-# kwarg is now ignored (tense is the interval-vs-now relation, not a magnitude).
-_WHEN_TENSE_DEFAULT = 0.5
 # Tense TIME step in clock ticks: one tense step (PAST / FUTURE, _lift_when /
 # _lower_when) shifts the event-time center by this many ticks toward past /
 # future, preserving the event duration.
@@ -1244,8 +1211,7 @@ class WhenRangeEncoding(QuadratureEncoding):
     (``self.t``): center < now = past, interval straddles now = present, center
     > now = future. ``TenseLayer`` / ``_lift_when`` / ``_lower_when`` move the
     event-time CENTER (``shift_time``), preserving duration. The former
-    magnitude-D tense axis is retired (the ``D`` kwarg on ``encode`` is accepted
-    for back-compat and ignored). nDim=2 (== nWhere); disabled (nDim=0) when
+    magnitude-D tense axis is retired. nDim=2 (== nWhere); disabled (nDim=0) when
     n_when=0.
     """
     index = []
@@ -1264,13 +1230,12 @@ class WhenRangeEncoding(QuadratureEncoding):
         # .when is an INSTANT at the absolute model time.
         self.t = 0
 
-    def encode(self, start, end=None, D=None):
+    def encode(self, start, end=None):
         """Endpoint-sum bracket key for an event over time span ``[start, end]``.
 
         ``end is None`` (every legacy single-time call site) => an INSTANT at
         ``start`` (magnitude 1). A distinct ``end`` carries the real event
-        duration: angle = time center, magnitude = duration. ``D`` is accepted
-        for back-compat with the retired magnitude-tense scheme and IGNORED."""
+        duration: angle = time center, magnitude = duration."""
         return _bracket_encode(start, end, self.div_term)
 
     def decode(self, encoded):
@@ -1939,23 +1904,14 @@ class Basis(nn.Module):
         return None
 
     def _bind_vq_to_owned_parameter(self):
-        """Keep VQ's operational view on this Basis's registered storage.
-
-        Most codebooks own a trainable ``nn.Parameter``.  A contextual
-        ConceptualSpace dictionary instead owns a persistent read-only buffer;
-        its VQ has EMA disabled and is only an operational reader.  Keep the
-        legacy method name because the surrounding construction code uses it,
-        but bind whichever registered storage owns ``W``.
-        """
+        """Keep VQ's operational view on this Basis's registered parameter."""
         vq = getattr(self, 'vq', None)
         W = self._parameters.get('W')
         if W is None:
             W = self._buffers.get('W')
         if (
             vq is not None
-            and (isinstance(W, nn.Parameter)
-                 or (bool(getattr(self, "contextual_rotation_only", False))
-                     and isinstance(W, torch.Tensor)))
+            and isinstance(W, nn.Parameter)
             and hasattr(vq, 'bind_external_codebook')
         ):
             vq.bind_external_codebook(W)
@@ -2278,32 +2234,32 @@ class Basis(nn.Module):
         Bitonic: sign flip. Monotonic: paired-index flip."""
         return Ops.negationReverse(x, monotonic=monotonic)
 
-    def conjunctionReverse(self, result, y, monotonic=False):
+    def intersectionReverse(self, result, y, monotonic=False):
         """Inverse-recommend ``(x1, x2)`` for conjunction.
 
-        Delegates to :func:`Ops.conjunctionReverse`, which draws the
+        Delegates to :func:`Ops.intersectionReverse`, which draws the
         pair from the augmented codebook (learned ``self.getW()`` plus
         the ⊥ / ⊤ sentinels). Returns ``(result, result)`` if no
         codebook is available.
         """
-        W = self._codebook_or_none("conjunctionReverse")
+        W = self._codebook_or_none("intersectionReverse")
         if W is None:
             return result, result
-        return Ops.conjunctionReverse(
+        return Ops.intersectionReverse(
             result, y, W, monotonic=monotonic, unit_ball=self.unit_ball)
 
-    def disjunctionReverse(self, result, y, monotonic=False):
+    def unionReverse(self, result, y, monotonic=False):
         """Inverse-recommend ``(x1, x2)`` for disjunction.
 
-        Delegates to :func:`Ops.disjunctionReverse`, which draws the
+        Delegates to :func:`Ops.unionReverse`, which draws the
         pair from the augmented codebook (learned ``self.getW()`` plus
         the ⊥ / ⊤ sentinels). Returns ``(result, result)`` if no
         codebook is available.
         """
-        W = self._codebook_or_none("disjunctionReverse")
+        W = self._codebook_or_none("unionReverse")
         if W is None:
             return result, result
-        return Ops.disjunctionReverse(
+        return Ops.unionReverse(
             result, y, W, monotonic=monotonic, unit_ball=self.unit_ball)
 
     # -- Synthesis / analysis dispatchers (lift / lower) ------------------
@@ -2340,7 +2296,7 @@ class Basis(nn.Module):
             W = self._codebook_or_none("Basis.lift inverse")
             if W is None:
                 return X1, X1
-            return Ops.disjunctionReverse(
+            return Ops.unionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
                 left_rows=left_rows, right_rows=right_rows,
                 left_priming=left_priming, right_priming=right_priming)
@@ -2348,7 +2304,7 @@ class Basis(nn.Module):
             W = self._codebook_or_none("Basis.lift inverse")
             if W is None:
                 return X1, X1
-            return Ops.conjunctionReverse(
+            return Ops.intersectionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
                 left_rows=left_rows, right_rows=right_rows,
                 left_priming=left_priming, right_priming=right_priming)
@@ -2379,7 +2335,7 @@ class Basis(nn.Module):
             W = self._codebook_or_none("Basis.lower inverse")
             if W is None:
                 return X1, X1
-            return Ops.conjunctionReverse(
+            return Ops.intersectionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
                 left_rows=left_rows, right_rows=right_rows,
                 left_priming=left_priming, right_priming=right_priming)
@@ -2387,7 +2343,7 @@ class Basis(nn.Module):
             W = self._codebook_or_none("Basis.lower inverse")
             if W is None:
                 return X1, X1
-            return Ops.disjunctionReverse(
+            return Ops.unionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
                 left_rows=left_rows, right_rows=right_rows,
                 left_priming=left_priming, right_priming=right_priming)
@@ -2753,7 +2709,6 @@ class Codebook(Tensor):
         # creating an autograd edge to the dictionary. Plain Python metadata
         # deliberately stays out of state_dict: it is a runtime ownership
         # policy selected by the model configuration.
-        self.contextual_rotation_only = False
         # VQ EMA storage policy is fixed before ``create``.  True preserves
         # the historical VectorQuantize buffers and update law.  The canonical
         # aligned ConceptualSpace dictionary explicitly opts out because it is
@@ -2922,19 +2877,7 @@ class Codebook(Tensor):
         """
         if self.W is None:
             return None
-        if (bool(getattr(self, "contextual_rotation_only", False))
-                and not isinstance(idx, slice)):
-            if not torch.is_tensor(idx):
-                idx = torch.as_tensor(
-                    idx, dtype=torch.long, device=self.W.device)
-            else:
-                idx = idx.to(device=self.W.device, dtype=torch.long)
-            # The context-owned table is a buffer, not a trainable embedding.
-            # Keep an eager custom-autograd boundary for MPS AOT, but its
-            # backward returns no W gradient.  A mutating consumer must make
-            # its own working tensor; this zero-copy gather is read-only.
-            rows = _read_only_codebook_lookup_eager(idx, self.W)
-        elif (bool(getattr(self, "sparse_lookup_grad", False))
+        if (bool(getattr(self, "sparse_lookup_grad", False))
               and not isinstance(idx, slice)):
             if not torch.is_tensor(idx):
                 idx = torch.as_tensor(
@@ -2952,112 +2895,7 @@ class Codebook(Tensor):
             return _unorm_ste(rows)
         return rows
 
-    def enable_contextual_rotation(self, *, shared_storage=None):
-        """Make this codebook a context-owned, rotation-only dictionary.
 
-        Concept atoms are initialized on the unit sphere by :meth:`addVectors`.
-        In this mode ``W`` is a persistent buffer, so it cannot enter an
-        optimizer or acquire a gradient.  The indexed read retains an explicit
-        eager read-only boundary for compiled consumers; it is not a codebook
-        learning path.  BaseModel instead takes one detached sentence snapshot
-        after the ordinary optimizer step, reduces contextual SBOW evidence by
-        row, and calls :meth:`rotate_rows` once.
-
-        ``shared_storage`` lets peer ConceptualSpace wrappers retain one exact
-        buffer object.  It is used only while converting the already-aligned
-        construction-time Parameters; normal callers use the default.
-        """
-        W = self._parameters.get("W", self._buffers.get(
-            "W", getattr(self, "W", None)))
-        if not isinstance(W, torch.Tensor) or W.ndim != 2:
-            raise RuntimeError(
-                "Codebook.enable_contextual_rotation requires an allocated "
-                "2-D W")
-        if shared_storage is None:
-            if not isinstance(W, nn.Parameter):
-                raise RuntimeError(
-                    "Codebook.enable_contextual_rotation requires a "
-                    "construction-time nn.Parameter W")
-            storage = W.detach()
-        else:
-            storage = shared_storage
-            if (not isinstance(storage, torch.Tensor)
-                    or storage.ndim != 2
-                    or tuple(storage.shape) != tuple(W.shape)
-                    or storage.data_ptr() != W.data_ptr()):
-                raise RuntimeError(
-                    "contextual peer codebooks must share the same 2-D W "
-                    "storage before buffer conversion")
-        if "W" in self._parameters:
-            del self._parameters["W"]
-        if "W" in self._buffers:
-            del self._buffers["W"]
-        self.register_buffer("W", storage, persistent=True)
-        with torch.no_grad():
-            self.W.requires_grad_(False)
-        self.contextual_rotation_only = True
-        if getattr(self, "_capacity_frozen", False):
-            self._frozen_storage_kind = "buffer"
-            self._frozen_parameter_id = id(self.W)
-        self._bind_vq_to_owned_parameter()
-        self._assert_frozen_parameter_identity()
-        return self.W
-
-    @torch.no_grad()
-    def rotate_rows(self, rows, tangent, step_size):
-        """Apply one reduced tangent update as an exact sphere rotation.
-
-        ``rows`` must name unique codebook rows and ``tangent`` supplies one
-        accumulated contextual direction per row.  The radial component is
-        removed and the exponential-map update
-
-        ``cos(theta) * atom + sin(theta) * tangent_hat``
-
-        preserves the initial unit norm without a later normalization pass.
-        The update is intentionally detached and uses a single indexed write;
-        on MPS ``index_put_`` avoids the large-destination ``index_copy_``
-        path that dominated the former RowLocalAdam/normalizer boundary.
-        """
-        if not bool(getattr(self, "contextual_rotation_only", False)):
-            raise RuntimeError(
-                "Codebook.rotate_rows requires enable_contextual_rotation()")
-        W = self._parameters.get("W", getattr(self, "W", None))
-        if not isinstance(W, torch.Tensor) or W.ndim != 2:
-            raise RuntimeError("Codebook.rotate_rows requires a 2-D W")
-        if not torch.is_tensor(rows) or not torch.is_tensor(tangent):
-            raise TypeError("Codebook.rotate_rows expects tensor rows/tangent")
-        rows = rows.reshape(-1).to(device=W.device, dtype=torch.long)
-        if rows.numel() == 0:
-            return rows
-        if tangent.ndim != 2 or int(tangent.shape[0]) != int(rows.shape[0]):
-            raise ValueError(
-                "Codebook.rotate_rows tangent must be [len(rows), D]")
-        if int(tangent.shape[1]) != int(W.shape[1]):
-            raise ValueError(
-                "Codebook.rotate_rows tangent width does not match W")
-
-        # All working arithmetic remains local to the touched rows.  The
-        # codebook's construction invariant is unit norm; unlike the former
-        # post-step projection this method never normalizes stored atoms.
-        atom = W.index_select(0, rows).float()
-        direction = tangent.to(device=W.device, dtype=torch.float32)
-        direction = direction - (direction * atom).sum(
-            dim=-1, keepdim=True) * atom
-        magnitude = direction.norm(p=2, dim=-1, keepdim=True)
-        unit_direction = direction / magnitude.clamp_min(1e-12)
-        theta = float(step_size) * magnitude
-        rotated = (torch.cos(theta) * atom
-                   + torch.sin(theta) * unit_direction)
-        # A zero tangent has undefined direction but a zero angle; selecting
-        # the old atom makes that identity exact even for a denormal input.
-        rotated = torch.where(magnitude > 1e-12, rotated, atom)
-        rotated = rotated.to(dtype=W.dtype)
-        if W.device.type == "mps":
-            W.index_put_((rows,), rotated, accumulate=False)
-        else:
-            W.index_copy_(0, rows, rotated)
-        self._svd_dirty = True
-        return rows
 
     def _refresh_frozen_W(self, value, operation):
         """Copy a same-shape refresh into frozen ``W`` without swapping it.
@@ -3288,8 +3126,7 @@ class Codebook(Tensor):
         frequency is tied to the input length (the k-th harmonic completes
         only ~k/2 cycles over all ``n_positions``), not a fixed ladder that
         would oscillate every few positions and be unlearnable over a long
-        input. This mirrors the codebase's sub-half-period span convention
-        (``perceptual_analyzer.EndpointSumWhere.div_term = pi/(2*namespace)``).
+        input. The sub-half-period convention uses ``pi/(2*namespace)``.
         The learnable property row is the low-frequency atom; the basis
         enforces the coarseness.
 
@@ -5279,9 +5116,6 @@ class Embedding(Basis):
             return parse(text, lex='bytes')
         if getattr(self, 'lexer_mode', 'word') == 'sentence':
             return parse(self._to_text(text), lex='sentences')
-        mode = getattr(self, 'synthesis_mode', 'lexicon')
-        if mode in ('bpe', 'mphf'):
-            return self._char_stream(text)
         # word / words mode: parse + explicit null-sentinel append.
         as_text = self._to_text(text)
         toks = list(parse(as_text, lex='words'))
@@ -5292,9 +5126,6 @@ class Embedding(Basis):
             toks.append(('\x00', len(as_text)))
         return toks
 
-    def _char_stream(self, text):
-        """Tokenize text as per-character units with positional indices."""
-        return [(ch, i) for i, ch in enumerate(self._to_text(text))]
 
     def _token_to_index(self, text):
         if text in self.pretrain.key_to_index:
@@ -5883,13 +5714,13 @@ class Embedding(Basis):
             return self.pretrain.sbow_step(words)
         return self.pretrain.train_step(words)
 
-    def sbow_loss(self, words):
+    def sbow_loss(self, words, *, errors=None):
         """Return SBOW loss tensor for joint optimization (no backward/step).
 
         The caller adds this to the model loss before a single backward pass.
         Returns a scalar loss tensor, or None if insufficient words.
         """
-        return self.pretrain.sbow_loss(words)
+        return self.pretrain.sbow_loss(words, errors=errors)
 
     def save_embeddings(self, path, truth_data=None, bpe_section=None):
         """Save current embedding vectors and vocabulary to a ``.pt``/``.kv``
@@ -6535,8 +6366,8 @@ class SubSpace(nn.Module):
         # SyntacticLayer.compose chart writes per-cell entries via the
         # vector-typed ``add_word`` overload below; the outer doc-streaming
         # loop then calls ``flush_word_buffer`` once per tick to materialize
-        # ``self.word`` for legacy consumers. The scalar ``add_word`` overload
-        # is preserved for direct callers (tests, ``_compose_activation``).
+        # ``self.word`` for consumers. ``add_word`` accepts tensor records;
+        # the retired scalar overload no longer participates in this buffer.
         # ``word_records`` layout matches WordEncoding's 7-slot tuple
         # (batch, vector, order, rule, leaf1, leaf2, leaf3); ``word_count``
         # is the per-cell depth. Registered as buffers so ``.to(device)``
@@ -7388,43 +7219,9 @@ class SubSpace(nn.Module):
 
     def add_word(self, batch, vector, rule, order=0,
                  leaf1=-1, leaf2=-1, leaf3=-1, pos=0):
-        """Append one or more word entries.
-
-        Two overloads share this entry point:
-
-        * **Scalar form** -- ``batch``, ``vector``, ``rule`` are ``int``.
-          Appends one validated 7-tuple to ``self.word``. Used by the
-          legacy compose path and direct callers (tests,
-          ``_compose_activation``). ``pos`` is recorded into
-          ``pos_records`` mirroring the word slot (no-op for the
-          scalar list).
-
-        * **Vector form** -- ``batch`` is a 1-D long tensor of cell
-          indices into the ``[B*K]`` flat row space. ``vector``,
-          ``rule``, ``order``, ``leaf*``, ``pos`` are 1-D long tensors
-          of the same length (or ``int`` broadcast over the active
-          rows). Writes into the per-cell tensor buffers
-          ``word_records`` / ``pos_records`` / ``word_count`` via
-          scatter, with no host sync. The outer doc-streaming loop
-          calls ``flush_word_buffer`` once per tick to materialize the
-          buffer's contents back into ``self.word`` for legacy
-          consumers (``decompose``, ``reconstruct``, the SVO walker,
-          derivation-trace tests). See plan §6c.
-
-        The vector form is gated on ``isinstance(batch, torch.Tensor)``;
-        anything else falls through to the scalar form so existing
-        callers keep working unchanged.
-
-        ``pos`` defaults to 0 ('?', wildcard) to preserve back-compat
-        for callers that don't carry POS.
-        """
-        if isinstance(batch, torch.Tensor):
-            self._add_word_vec(batch, vector, rule, order=order,
-                               leaf1=leaf1, leaf2=leaf2, leaf3=leaf3,
-                               pos=pos)
-            return
-        self.word.append(self.wordEncoding.encode(
-            batch, vector, rule, order, leaf1, leaf2, leaf3))
+        """Scatter word entries for active tensor row IDs into the tick buffer."""
+        self._add_word_vec(batch, vector, rule, order=order,
+                           leaf1=leaf1, leaf2=leaf2, leaf3=leaf3, pos=pos)
 
     def ensure_word_buffer(self, n_cells):
         """Resize ``word_records`` / ``word_count`` to hold ``n_cells`` rows.
@@ -8678,17 +8475,20 @@ class Space(SpaceCarrierMixin, nn.Module):
         W = cb.getW() if (cb is not None and hasattr(cb, 'getW')) else None
         return int(W.shape[0]) if torch.is_tensor(W) else 0
 
-    def _priming_surface(self, V, device=None):
-        b = getattr(self, "_priming_boosts", None)
-        if b is None or int(b.shape[0]) != int(V):
-            b = torch.ones(int(V), device=device)
-            object.__setattr__(self, "_priming_boosts", b)
-        elif device is not None and b.device != device:
-            # Follow the caller's rows (e.g. a CPU-built model moved to mps):
-            # a stale-device surface would crash the index_add_ writes.
-            b = b.to(device)
-            object.__setattr__(self, "_priming_boosts", b)
-        return b
+    def _priming_surface(self, V, device=None, batch=None):
+        """One persistent seen/desire surface for each batch stream."""
+        old = getattr(self, '_priming_boosts', None)
+        B = int(batch if batch is not None else old.shape[0] if old is not None else 1)
+        if old is None or old.shape[0] != B:
+            surface = torch.ones(B, int(V), device=device)
+        elif old.shape[1] != int(V):
+            surface = torch.ones(B, int(V), device=device or old.device)
+            count = min(int(V), old.shape[1])
+            surface[:, :count] = old[:, :count].to(surface)
+        else:
+            surface = old.to(device=device) if device is not None else old
+        object.__setattr__(self, '_priming_boosts', surface)
+        return surface
 
     def _priming_edges(self):
         """``(src, dst, |w|)`` diffusion graph over this Space's priming
@@ -8723,68 +8523,60 @@ class Space(SpaceCarrierMixin, nn.Module):
         return orders[:t._priming_dim()]
 
     @torch.no_grad()
-    def prime_seen(self, rows, bump=1.0, decay=None):
-        """SEEN write (Architecture sec C, simplified law): decay the
-        surface toward neutral 1.0, DIFFUSE a ``<primingSpread>`` fraction
-        of each connected row's standing energy to its neighbors (energy
-        moves, never amplifies -- so successive primes propagate energy
-        further out into the connected symbols), then bump the rows that
-        fired -- bottom-up things are primed in virtue of being seen.
-        Rows are CANONICAL-codebook rows; per-stage callers delegate."""
-        t = self._priming_target()
-        if t is not self:
-            return t.prime_seen(rows, bump=bump, decay=decay)
+    def prime_seen(self, rows, bump=1.0, decay=None, *, active_rows=None):
+        """Decay, diffuse existing energy, then bump this row's seen symbols."""
+        target = self._priming_target()
+        if target is not self:
+            return target.prime_seen(rows, bump=bump, decay=decay, active_rows=active_rows)
         V = self._priming_dim()
-        if V <= 0 or rows is None or not torch.is_tensor(rows):
+        if V <= 0 or not torch.is_tensor(rows):
             return None
-        d = float(decay if decay is not None
-                  else getattr(self, "_priming_decay", 0.9))
-        b = self._priming_surface(V, device=rows.device)
-        b.mul_(d).add_(1.0 - d)
-        s = float(getattr(self, "_priming_spread", 0.0) or 0.0)
-        edges = self._priming_edges() if s > 0.0 else None
+        rows = rows.reshape(1, -1) if rows.ndim < 2 else rows.reshape(rows.shape[0], -1)
+        B = rows.shape[0]
+        surface = self._priming_surface(V, device=rows.device, batch=B)
+        active = (torch.ones(B, device=rows.device, dtype=torch.bool) if active_rows is None
+                  else active_rows.to(device=rows.device, dtype=torch.bool))
+        d = float(decay if decay is not None else getattr(self, '_priming_decay', .9))
+        surface.copy_(torch.where(active[:, None], surface * d + 1 - d, surface))
+        spread = float(getattr(self, '_priming_spread', 0.) or 0.)
+        edges = self._priming_edges() if spread > 0 else None
         if edges is not None:
-            src, dst, w = edges
-            keep = (src < V) & (dst < V)
-            src = src[keep].to(b.device)
-            dst = dst[keep].to(b.device)
-            w = w[keep].to(device=b.device, dtype=b.dtype)
-            if int(src.numel()):
-                # Per-source normalized transfer: each connected row gives
-                # away s * energy, split over its |edge| weights; the flow
-                # is conservative (dst gains exactly what src loses).
-                deg = torch.zeros(V, device=b.device,
-                                  dtype=b.dtype).index_add_(0, src, w)
-                flow = s * (b[src] - 1.0) * (w / deg[src].clamp(min=1e-12))
-                b.index_add_(0, dst, flow)
-                b.index_add_(0, src, -flow)
-        r = rows.reshape(-1).long().clamp(0, V - 1)
-        b.index_add_(0, r, torch.full((int(r.numel()),), float(bump),
-                                      device=b.device, dtype=b.dtype))
-        b.clamp_(min=0.0)
-        return b
+            src, dst, weight = (value.to(surface.device) for value in edges)
+            valid = (src >= 0) & (src < V) & (dst >= 0) & (dst < V)
+            src, dst, weight = src[valid], dst[valid], weight[valid].to(surface.dtype)
+            # Keep all outgoing edges of each energetic source, so source
+            # normalization is identical to diffusion over the full graph.
+            energetic = ((surface[:, src] != 1) & active[:, None]).any(0)
+            src, dst, weight = src[energetic], dst[energetic], weight[energetic]
+            degree = surface.new_zeros(V).index_add_(0, src, weight)
+            flow = spread * (surface[:, src] - 1) * (weight / degree[src])
+            flow = flow * active[:, None].to(flow)
+            surface.index_add_(1, dst, flow)
+            surface.index_add_(1, src, -flow)
+        valid = (rows >= 0) & (rows < V) & active[:, None]
+        surface.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(surface) * float(bump))
+        surface.clamp_(min=0.)
+        return surface
 
     @torch.no_grad()
     def prime_desire(self, rows, valence=1.0, bump=1.0):
-        """DESIRED (+) / HATED (-) write: signed suppression, floor 0,
-        never a veto -- top-down things are primed in virtue of being
-        desired or hated. Rows are CANONICAL-codebook rows (delegated)."""
-        t = self._priming_target()
-        if t is not self:
-            return t.prime_desire(rows, valence=valence, bump=bump)
+        """Apply signed desire without crossing batch streams."""
+        target = self._priming_target()
+        if target is not self:
+            return target.prime_desire(rows, valence=valence, bump=bump)
         V = self._priming_dim()
-        if V <= 0 or rows is None or not torch.is_tensor(rows):
+        if V <= 0 or not torch.is_tensor(rows):
             return None
-        b = self._priming_surface(V, device=rows.device)
-        r = rows.reshape(-1).long().clamp(0, V - 1)
-        b.index_add_(0, r, torch.full((int(r.numel()),),
-                                      float(valence) * float(bump),
-                                      device=b.device, dtype=b.dtype))
-        b.clamp_(min=0.0)
-        return b
+        rows = rows.reshape(1, -1) if rows.ndim < 2 else rows.reshape(rows.shape[0], -1)
+        surface = self._priming_surface(V, device=rows.device, batch=rows.shape[0])
+        valid = (rows >= 0) & (rows < V)
+        surface.scatter_add_(1, rows.long().clamp(0, V-1),
+                             valid.to(surface) * float(valence) * float(bump))
+        surface.clamp_(min=0.)
+        return surface
 
     def priming_weights(self):
-        """The single quadratic priming surface ``[V]`` over the CANONICAL
+        """The per-stream quadratic priming surface ``[B, V]`` over the CANONICAL
         codebook rows (neutral 1.0), or ``None`` when never written."""
         return getattr(self._priming_target(), "_priming_boosts", None)
 
@@ -9582,7 +9374,7 @@ class InputSpace(Space):
         self.min_frequency = float(min_frequency)
         self.neg_samples = neg_samples
         self.embedding_path = embedding_path
-        self.embedding_source = data.train_input if data.train_input else None
+        self.embedding_source = data.train_input if len(data.train_input) else None
         super().__init__(inputShape, spaceShape, outputShape)
         # InputSpace operates on raw [B, N, D] tensors directly (no forwardBegin/End).
         # Override any flatten-derived nInputDim/nOutputDim to skip reshape.
@@ -9745,7 +9537,12 @@ class InputSpace(Space):
             # compile-scoped-to-model architecture, not async tricks.)
             return host.to(TheDevice.get())
         self._host_input_slab = None  # no host origin -> device fallback
-        return inputBatch  # already [B, D, 1] and on device after toDevice()
+        if self.model_type != 'embedding' and torch.is_tensor(inputBatch):
+            # Numeric datasets expose scalar pixels as [B, D, 1], while a
+            # configured input may present the same values as [B, 1, D].
+            # Respect the declared layout without changing their order.
+            return inputBatch.reshape(inputBatch.shape[0], *self.inputShape)
+        return inputBatch
 
     def _clear_sentence_pack(self):
         """Drop request-scoped packed-sentence metadata."""
@@ -10313,12 +10110,7 @@ class InputSpace(Space):
             # Numeric path only (text/embedding returns early above). IS has
             # no peer PartSpace here, so validity falls back to the
             # nonzero-content test.
-            _bpe_mask_valid = None
-            _Te = embedded.shape[1]
-            if _bpe_mask_valid is not None:
-                _valid_pos = _bpe_mask_valid[:, :_Te] > 0
-            else:
-                _valid_pos = embedded.detach().abs().sum(dim=-1) > 0
+            _valid_pos = embedded.detach().abs().sum(dim=-1) > 0
             _any_pos = _valid_pos.any(dim=0)
             if torch.is_tensor(_any_pos) and _any_pos.any().item():
                 self._valid_len_host = int(
@@ -10342,23 +10134,6 @@ class InputSpace(Space):
         peer = None
         N = int(self.outputShape[0])
 
-        # When peer is in BPE chunking mode, ``peer._bpe_word_mask``
-        # ([B, N], 1.0 where the slot holds a real BPE-fused word
-        # vector and 0.0 in padding) is the source of truth for both
-        # validity AND the per-position event mask.  Without it,
-        # validity would fall back to ``embedded.abs().sum > 0``, which
-        # is always True for muxed events (where/when components stay
-        # nonzero even at padding positions).
-        #
-        # ``chunking=none`` (byte-direct) installs the same
-        # ``_bpe_word_mask`` attribute via ``(byte_indices != 0)``; the
-        # windowed view is identical so we accept it here under the
-        # same name. (``peer`` resolved above for the output-width handoff.)
-        bpe_mask = (getattr(peer, "_bpe_word_mask", None)
-                    if peer is not None
-                    and getattr(peer, "synthesis_mode", None) in ("bpe", "none", "mphf")
-                    else None)
-
         # Pad / truncate to N.
         if T < N:
             pad = torch.zeros(
@@ -10369,13 +10144,8 @@ class InputSpace(Space):
             embedded_N = embedded[:, :N, :]
         else:
             embedded_N = embedded
-        if bpe_mask is not None:
-            valid_mask = bpe_mask[:, :N].any(dim=1).reshape(B, 1)
-            bpe_mask_N = bpe_mask[:, :N] if bpe_mask.shape[1] >= N else bpe_mask
-        else:
-            valid_mask = (embedded_N.abs().sum(dim=-1) > 0).any(
-                dim=1).reshape(B, 1)
-            bpe_mask_N = None
+        valid_mask = (embedded_N.abs().sum(dim=-1) > 0).any(
+            dim=1).reshape(B, 1)
         sub = self.subspace
         # ``set_event`` clears ``_demuxed`` — that's correct when the
         # input came in muxed (text path), but the numeric-vocab path
@@ -10401,21 +10171,7 @@ class InputSpace(Space):
         # Kept as tensors (never ``.item()``'d) so the compiled loop
         # never gates control flow on a host int.
         self._ar_embedded_N = embedded_N
-        if bpe_mask_N is not None:
-            if bpe_mask_N.shape[1] >= N:
-                _wam = (bpe_mask_N[:, :N] > 0)
-            else:
-                _wpad = torch.zeros(
-                    B, N - bpe_mask_N.shape[1],
-                    dtype=torch.bool, device=bpe_mask_N.device)
-                _wam = torch.cat([bpe_mask_N > 0, _wpad], dim=1)
-        else:
-            _wam = embedded_N.detach().abs().sum(dim=-1) > 0
-        self._word_active_mask = _wam
-        if peer is not None and bpe_mask_N is not None:
-            peer._bpe_word_mask_flat = bpe_mask_N
-        elif peer is not None:
-            peer._bpe_word_mask_flat = None
+        self._word_active_mask = embedded_N.detach().abs().sum(dim=-1) > 0
         if len(self._end_of_stream) != B:
             self._end_of_stream = [False] * B
         ss = self._model_symbolSpace
@@ -10494,7 +10250,6 @@ class InputSpace(Space):
         self._word_index_N = torch.where(
             active, widx, torch.full_like(widx, -1))
         self._word_last_slot_mask = active.clone()
-        ps._bpe_word_mask_flat = None
         if len(self._end_of_stream) != B:
             self._end_of_stream = [False] * B
         ss = self._model_symbolSpace
@@ -10588,7 +10343,6 @@ class InputSpace(Space):
             return sub
         if getattr(ps, "_serial_word_major", False):
             return self._finalize_serial_word_stem(sub, ps)
-        _mode = getattr(ps, "synthesis_mode", None)
         source_valid_pos = None
         if getattr(self, "lexer", None) != "raw":
             with torch.no_grad():
@@ -10596,13 +10350,9 @@ class InputSpace(Space):
                 if _wbuf is not None:
                     _first = _wbuf[..., 0] if _wbuf.dim() == 3 else _wbuf
                     source_valid_pos = (_first.long() != 0)
-        bpe_mask = (getattr(ps, "_bpe_word_mask", None)
-                    if _mode in ("bpe", "none", "mphf", "lexicon") else None)
         with torch.no_grad():
             _Te = embedded.shape[1]
-            if bpe_mask is not None:
-                _valid_pos = bpe_mask[:, :_Te] > 0
-            elif source_valid_pos is not None:
+            if source_valid_pos is not None:
                 _valid_pos = source_valid_pos[:, :_Te]
             else:
                 _valid_pos = embedded.detach().abs().sum(dim=-1) > 0
@@ -10626,17 +10376,11 @@ class InputSpace(Space):
             embedded_N = embedded[:, :N, :]
         else:
             embedded_N = embedded
-        if bpe_mask is not None:
-            valid_mask = bpe_mask[:, :N].any(dim=1).reshape(B, 1)
-            bpe_mask_N = bpe_mask[:, :N] if bpe_mask.shape[1] >= N else bpe_mask
-        elif source_valid_pos is not None:
+        if source_valid_pos is not None:
             src_valid = source_valid_pos.to(device=embedded_N.device)
             valid_mask = src_valid[:, :N].any(dim=1).reshape(B, 1)
-            bpe_mask_N = None
         else:
-            valid_mask = (embedded_N.abs().sum(dim=-1) > 0).any(
-                dim=1).reshape(B, 1)
-            bpe_mask_N = None
+            valid_mask = (embedded_N.abs().sum(dim=-1) > 0).any(dim=1).reshape(B, 1)
         was_demuxed = sub._demuxed
         sub.set_event(embedded_N)
         if was_demuxed:
@@ -10644,26 +10388,16 @@ class InputSpace(Space):
         sub.valid_mask = valid_mask
         sub.stem_embedded = True
         self._ar_embedded_N = embedded_N
-        if bpe_mask_N is not None:
-            if bpe_mask_N.shape[1] >= N:
-                _wam = (bpe_mask_N[:, :N] > 0)
+        if source_valid_pos is not None:
+            src_valid = source_valid_pos.to(device=embedded_N.device)
+            if src_valid.shape[1] >= N:
+                _wam = src_valid[:, :N]
             else:
-                _wpad = torch.zeros(
-                    B, N - bpe_mask_N.shape[1],
-                    dtype=torch.bool, device=bpe_mask_N.device)
-                _wam = torch.cat([bpe_mask_N > 0, _wpad], dim=1)
+                _wpad = torch.zeros(B, N - src_valid.shape[1],
+                                   dtype=torch.bool, device=embedded_N.device)
+                _wam = torch.cat([src_valid, _wpad], dim=1)
         else:
-            if source_valid_pos is not None:
-                src_valid = source_valid_pos.to(device=embedded_N.device)
-                if src_valid.shape[1] >= N:
-                    _wam = src_valid[:, :N]
-                else:
-                    _wpad = torch.zeros(
-                        B, N - src_valid.shape[1],
-                        dtype=torch.bool, device=embedded_N.device)
-                    _wam = torch.cat([src_valid, _wpad], dim=1)
-            else:
-                _wam = embedded_N.detach().abs().sum(dim=-1) > 0
+            _wam = embedded_N.detach().abs().sum(dim=-1) > 0
         self._word_active_mask = _wam
         # serialObjectMeta (doc/specs/mereological-order-raising.md "Serial-mode
         # word-at-a-time loop"): surface the per-slot WORD INDEX ``[B,N]`` and
@@ -10695,7 +10429,6 @@ class InputSpace(Space):
                 # non-meronomy configs (their active slots are always >= 0).
                 self._word_last_slot_mask = (
                     (widx != _shifted) & _wam & (widx >= 0))
-        ps._bpe_word_mask_flat = bpe_mask_N
         if len(self._end_of_stream) != B:
             self._end_of_stream = [False] * B
         ss = self._model_symbolSpace
@@ -10862,10 +10595,8 @@ class InputSpace(Space):
             by 1;
           * returns ``None`` (the NULL/end-of-sentence closing) once the
             cursor reaches the end of valid lexed content. End-of-valid
-            is the SAME validity signal ``forward`` uses: the peer's
-            ``_bpe_word_mask`` ([B, T], 1.0 at real word slots) when in
-            ``bpe``/``none`` chunking, else ``abs().sum(-1) > 0`` over
-            the embedded slab. The valid length is the max real-token
+            is the same embedded-content validity signal ``forward`` uses:
+            ``abs().sum(-1) > 0`` over the embedded slab. The valid length is the max real-token
             count across rows (``any`` over the batch, matching how
             ``forward`` reduces ``valid_mask``). The stop is therefore
             purely the input's NULL/end sentinel -- NEVER a model output
@@ -11165,7 +10896,7 @@ class PartSpace(Space):
         self.byte_mode = (self.lexer == "byte")
         self.min_frequency = float(TheXMLConfig.data_param("minFrequency", 0.0))
         self.neg_samples = int(TheXMLConfig.training("negSamples", 64))
-        self.embedding_source = TheData.train_input if TheData.train_input else None
+        self.embedding_source = TheData.train_input if len(TheData.train_input) else None
 
         super().__init__(inputShape, spaceShape, outputShape)
         # Pre-resolve the muxed .where coordinates while execution is eager.
@@ -11208,32 +10939,14 @@ class PartSpace(Space):
                 f"with <synthesis>{_legacy_chunking}</synthesis>.")
         try:
             _requested_synthesis = str(
-                TheXMLConfig.space(section, "synthesis") or "lexicon"
+                TheXMLConfig.space(section, "synthesis") or "meronomy"
             ).strip().lower()
         except KeyError:
-            _requested_synthesis = "lexicon"
-        # Mereology is the sole live synthesis path. Historical tokenizers
-        # remain callable through Legacy.py for checkpoint/config parity, but
-        # never enter the canonical mode dispatch below.
-        self._meronomy = (_requested_synthesis == "meronomy")
-        self._mereological = self._meronomy
-        self._meronomy_words = self._meronomy
-        if self._meronomy:
-            self.synthesis_mode = "radix"
-            self._legacy_synthesis_mode = None
-        elif _requested_synthesis == "analyse":
-            # analyse moved to WholeSpace.analysis; PS only owns synthesis.
-            raise ValueError(
-                "PartSpace <synthesis>analyse</synthesis> was removed "
-                "(Phase 4b): the meronymic analyzer is ANALYSIS and lives "
-                "on WholeSpace as <analysis>grammatical</analysis>. Pick a "
-                "synthesis mode for PS (lexicon is the closest surviving "
-                "word-resolution mode).")
-        else:
-            from Legacy import normalize_part_synthesis_mode
-            self._legacy_synthesis_mode = normalize_part_synthesis_mode(
-                _requested_synthesis)
-            self.synthesis_mode = self._legacy_synthesis_mode
+            _requested_synthesis = "meronomy"
+        if _requested_synthesis != "meronomy":
+            raise ValueError("PartSpace.synthesis must be meronomy; old reading modes are retired")
+        self.synthesis_mode = "meronomy"
+        self._meronomy = self._mereological = self._meronomy_words = True
         # Radix promotion defaults; ignored unless radix/meronomy builds a store.
         try:
             self.chunk_promotion_threshold = int(
@@ -11247,17 +10960,6 @@ class PartSpace(Space):
                 or 2)
         except (KeyError, TypeError, ValueError):
             self.chunk_promotion_min_length = 2
-        # <wordStore>: the percept store's WORD collection (type="words",
-        # RadixLayer.word_ids) becomes the reverse() recommenders' candidate
-        # basis (doc/plans/2026-07-12-word-store-typed-reverse.md). Default
-        # OFF = the existing basis pick, byte-identical.
-        try:
-            _wst = TheXMLConfig.space(section, "wordStore")
-        except KeyError:
-            _wst = None
-        self.word_store_reverse = (_wst if isinstance(_wst, bool)
-                                   else str(_wst or "").strip().lower()
-                                   in ("true", "1", "yes", "on"))
         if isinstance(lexical_basis, Embedding):
             lexical_basis.synthesis_mode = self.synthesis_mode
             lexical_basis.lexer_mode = self.lexer
@@ -11266,9 +10968,6 @@ class PartSpace(Space):
                 TheXMLConfig.space(section, "wordLearning") or 2)
         except (KeyError, TypeError, ValueError):
             self.word_learning = 2
-        if self._legacy_synthesis_mode is not None:
-            from Legacy import validate_part_synthesis
-            validate_part_synthesis(self, self._legacy_synthesis_mode)
         self._recovered_input = None
         # Reverse stores a report-only decode thunk to avoid eager host reads.
         self._recovered_input_thunk = None
@@ -11294,44 +10993,22 @@ class PartSpace(Space):
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
-            bpe=(self.synthesis_mode in ("bpe", "mphf")),
+            bpe=False,
             n_vectors=self.nVectors,
             word_learning=self.word_learning,
         )
-        # Radix/meronomy builds the authoritative surface-form PerceptStore.
-        if self.synthesis_mode == "radix":
-            from Layers import RadixLayer as _PerceptStore
-            # RadixLayer refers to the Space-owned Codebook basis without
-            # registering it a second time.
+        # The native reading owns one surface-form store on its Codebook.
+        from Layers import RadixLayer as _PerceptStore
+        self.percept_store = None
+        if self.model_type == "embedding":
             self.percept_store = _PerceptStore(
-                self.nDim,
-                initial_cap=max(int(self.nVectors), 1),
+                self.nDim, initial_cap=max(int(self.nVectors), 1),
                 promotion_threshold=self.chunk_promotion_threshold,
                 promotion_min_length=self.chunk_promotion_min_length,
-                word_bounded=self._meronomy_words,
-                basis=self.subspace.what,
-            )
-        elif self.synthesis_mode in ("bpe", "mphf"):
-            from Layers import RadixLayer as _PerceptStore
-            # Mirror BPE/MPHF chunk ids into a private byte-level PerceptStore.
-            self.percept_store = _PerceptStore(
-                self.nDim,
-                initial_cap=max(int(self.nVectors), 256),
-                promotion_threshold=self.chunk_promotion_threshold,
-                promotion_min_length=self.chunk_promotion_min_length,
-            )
-            _sb = self.percept_store._basis
-            _sw = _sb.getW()
-            if _sw is None:
-                _sb.setW(nn.Parameter(torch.zeros(
-                    max(int(self.nVectors), 256), int(self.nDim))))
-            elif not isinstance(_sw, nn.Parameter):
-                _sb.setW(nn.Parameter(_sw.detach().clone()))
-        else:
-            self.percept_store = None
-        # Native prototype storage has one optimizer owner in either mode.
-        # Admission never replaces it or moves its moments.
-        self._optimize_radix_codebook = self.synthesis_mode == "radix"
+                word_bounded=True, basis=self.subspace.what)
+        # Numeric carriers have no lexical dictionary. Native text prototype
+        # storage has one optimizer owner; admission preserves its moments.
+        self._optimize_radix_codebook = self.percept_store is not None
         if self._optimize_radix_codebook:
             _radix_w = self.subspace.what._parameters.get("W")
             if (isinstance(_radix_w, nn.Parameter)
@@ -11351,77 +11028,6 @@ class PartSpace(Space):
                     if (_p.requires_grad
                             and all(_p is not q for q in self.params)):
                         self.params.append(_p)
-        # Opt-in/opt-out: the frozen-vocab GPU BPE tokenizer
-        # (``_embed_bpe_gpu``) is bit-identical to the trie path
-        # (test/bpe_gpu_equiv.py) but is NOT the production default --
-        # measured slower at this scale and it does not, by itself,
-        # unlock CUDAGraph capture (other implicit syncs gate that).
-        # Set ``perceptualSpace._bpe_gpu_enabled = True`` (with a frozen
-        # vocab, ``word_learning <= 0``) to route through it; default
-        # off keeps production on the verified trie path. Explicit
-        # attribute (no getattr default) so the toggle is discoverable.
-        self._bpe_gpu_enabled = False
-        # BPE / MPHF GPU tokenizer Layers (algorithms only; static tables
-        # cached on this PartSpace as ``self._bpe_static_tables`` /
-        # ``self._mphf_static_tables`` keyed by frozen-vocab size).
-        # Construction is cheap (no params); the layers are kept on
-        # ``self.layers`` so the standard Layer cascade (Start/End,
-        # set_sigma, paramUpdate) reaches them -- they are no-ops for
-        # those hooks but participate in the inventory.
-        from Layers import BPEGpuLayer as _BPEGpuLayer
-        from Layers import MPHFGpuLayer as _MPHFGpuLayer
-        self._bpe_gpu_layer = _BPEGpuLayer()
-        self._mphf_gpu_layer = _MPHFGpuLayer()
-        self.layers.append(self._bpe_gpu_layer)
-        self.layers.append(self._mphf_gpu_layer)
-        # Rework A: the frozen MPHF->table static tensors, built ONCE
-        # over the frozen lexicon key set (mirrors ``_bpe_static_tables``;
-        # cache keyed by lexicon row count -- frozen => never rebuilt
-        # after the first build). ``None`` until the first
-        # ``_mphf_resolve`` call; lazily built there so non-grammar /
-        # numeric configs (no per-word MPHF route) never pay for it.
-        self._mphf_static_tables = None
-        # Auto-load a previously-saved BPE codebook from the same
-        # ``.kv`` artifact that hosts the Lexicon. The artifact format
-        # (defined in :mod:`embed`) carries Lexicon + BPE side-by-side
-        # under ``kind="both"``; if the file exists and has a BPE section,
-        # loading restores the merge table so subsequent training
-        # avoids the cold-start vocab-growth recompile pressure under
-        # ``torch.compile``. Setting ``word_learning=0`` (the
-        # frozen marker) at the same time prevents further growth so
-        # Inductor's cache stays warm. Failure modes (missing file,
-        # lexicon-only artifact, schema mismatch) downgrade to a
-        # one-line warning -- the layer falls back to its empty
-        # cold-start state.
-        if self.chunk_layer.bpe:
-            embedding_path = TheXMLConfig.get("architecture.embeddingPath", None)
-            if embedding_path and os.path.exists(embedding_path):
-                try:
-                    from embed import inspect_artifact
-                    info = inspect_artifact(embedding_path)
-                    if info.get("has_bpe"):
-                        self.chunk_layer.load(embedding_path)
-                        TheMessage(
-                            f"[PartSpace] Loaded BPE codebook "
-                            f"({info['bpe_size']} entries) from "
-                            f"{embedding_path}")
-                    else:
-                        TheMessage(
-                            f"[PartSpace] No BPE section in "
-                            f"{embedding_path} (kind={info.get('kind')!r}); "
-                            f"starting with the 256-byte cold-start vocab.")
-                except Exception as e:
-                    TheMessage(
-                        f"[PartSpace] BPE auto-load skipped "
-                        f"({type(e).__name__}: {e}); starting cold.")
-        # Task 4: wire the shared byte store AFTER the auto-load so the
-        # initial mirror covers a restored merge table in one pass
-        # (subsequent promotions / loads mirror incrementally inside
-        # ChunkLayer). Radix keeps its own store/trie wiring -- the
-        # ChunkLayer is not on the radix embed path.
-        if (self.percept_store is not None
-                and self.synthesis_mode in ("bpe", "mphf")):
-            self.chunk_layer.mirror_to_store(self.percept_store)
 
     def _register_requirements(self):
         """Register PartSpace-specific config requirements.
@@ -11502,97 +11108,36 @@ class PartSpace(Space):
         return basis
 
     def _build_what_basis(self):
-        """Lexicon home: build the Embedding when running in text mode.
-
-        Returns ``None`` for non-embedding models (numeric path uses the
-        codebook directly). For embedding models, configures the
-        Embedding with the lexicon size, vector dim, source artifact,
-        and minimum-frequency / negative-sample knobs.
-
-        NOTE: post-lexicon-migration, the Embedding is logically owned
-        by WholeSpace -- ``WholeSpace.vocabulary`` returns this
-        same Embedding instance via a shared reference. PartSpace
-        still builds and binds it here at construction time because the
-        input pipeline (InputSpace._lex_batch, PartSpace._embed)
-        wires through ``self.subspace.what`` at the lexical-lookup
-        site. The "codebook IS the lexicon" unification on S is
-        realized by S's ``vocabulary`` property forwarding to this same
-        Embedding, with all orthographic-API methods (train_embeddings,
-        sbow_loss, reconstruct_data, ...) accessible from S.
-        """
+        """The native surface store shares the Space-owned learnable Codebook."""
         if self.model_type != "embedding":
             return None
-        # 2026-06-04: in radix mode the percept vectors live on a Codebook
-        # ``.what`` Basis shared with the PerceptStore (RadixLayer), instead
-        # of the lexicon Embedding -- ONE percept codebook, owned by the
-        # SubSpace on ``.what``, that the RadixLayer references. The
-        # synthesis mode is read from XML directly here (this runs inside
-        # super().__init__, before ``self.synthesis_mode`` is stashed).
-        # Phase 4a (rev. 2026-06-09): the knob is <synthesis>; the legacy
-        # <chunking> spelling is rejected loudly by the main reader.
-        try:
-            _synthesis = TheXMLConfig.space(self.config_section, "synthesis")
-        except (KeyError, TypeError, ValueError):
-            _synthesis = None
-        # ``meronomy`` routes through the radix percept codebook (it aliases
-        # to radix in the main reader; this raw read runs earlier in
-        # super().__init__, before the alias, so accept it here too).
-        if _synthesis in ("radix", "meronomy"):
-            cb = Codebook()
-            cb.use_dot_product = bool(getattr(self, "use_dot_product", False))
-            cb.create(1, self.nVectors, self.nDim, customVQ=False)
-            cb.ergodic = self.ergodic
-            # 2026-06-04: the radix percept codebook is a *learnable*
-            # store -- the RadixLayer seeds / reads / grows its rows and
-            # gradients train the percept prototypes. ``create(customVQ=
-            # False)`` leaves ``W`` a plain tensor, which
-            # ``_clear_runtime_basis`` (``setW(None)``) treats as a
-            # transient per-batch payload and wipes mid-forward, so the
-            # permanent codebook vanishes and ``RadixLayer.insert`` /
-            # ``lookup`` hit ``getW() is None``. Register ``W`` as an
-            # nn.Parameter: a Parameter is permanent (``setW(None)``
-            # preserves it), learnable, and counted exactly once -- the
-            # ``.what`` Codebook owns it; the RadixLayer adopts it via
-            # ``object.__setattr__`` (no double-registration).
-            _w = cb.getW()
-            if _w is None:
-                cb.setW(nn.Parameter(
-                    torch.zeros(int(self.nVectors), int(self.nDim))))
-            elif not isinstance(_w, nn.Parameter):
-                cb.setW(nn.Parameter(_w.detach().clone()))
-            # Mark the radix percept Codebook as a [0,1] presence store so the
-            # complement-aware decode keys here and ONLY here. The lexicon
-            # Embedding returned below stays unmarked (signed; sign = form
-            # content). See doc/Spaces.md#percept-live-path.
-            cb.is_percept_store = True
-            return cb
-        basis = Embedding()
-        basis.ergodic = self.ergodic
-        # Embedding.create's second arg is *nVectors* = codebook
-        # capacity (one row per lexicon entry), NOT the output sequence
-        # length. Pass ``self.nVectors`` (the XML PartSpace
-        # ``<nVectors>``) so the synth path's
-        # ``len(BPE vocab) == nVectors`` invariant holds and so the
-        # codebook tensor's row count matches the configured capacity.
-        basis.create(
-            self.inputShape[0],
-            self.nVectors,
-            self.nDim,
-            embedding_path=self.embedding_path,
-            source=self.embedding_source,
-            min_frequency=self.min_frequency,
-            neg_samples=self.neg_samples,
-            byte_mode=self.byte_mode,
-        )
-        return basis
+        cb = Codebook()
+        cb.use_dot_product = bool(getattr(self, "use_dot_product", False))
+        cb.create(1, self.nVectors, self.nDim, customVQ=False)
+        cb.ergodic = self.ergodic
+        # 2026-06-04: the radix percept codebook is a *learnable*
+        # store -- the RadixLayer seeds / reads / grows its rows and
+        # gradients train the percept prototypes. ``create(customVQ=
+        # False)`` leaves ``W`` a plain tensor, which
+        # ``_clear_runtime_basis`` (``setW(None)``) treats as a
+        # transient per-batch payload and wipes mid-forward, so the
+        # permanent codebook vanishes and ``RadixLayer.insert`` /
+        # ``lookup`` hit ``getW() is None``. Register ``W`` as an
+        # nn.Parameter: a Parameter is permanent (``setW(None)``
+        # preserves it), learnable, and counted exactly once -- the
+        # ``.what`` Codebook owns it; the RadixLayer adopts it via
+        # ``object.__setattr__`` (no double-registration).
+        _w = cb.getW()
+        if _w is None:
+            cb.setW(nn.Parameter(
+                torch.zeros(int(self.nVectors), int(self.nDim))))
+        elif not isinstance(_w, nn.Parameter):
+            cb.setW(nn.Parameter(_w.detach().clone()))
+        # Mark the radix percept Codebook as a [0,1] presence store so the
+        # complement-aware decode keys here and ONLY here. See doc/Spaces.md#percept-live-path.
+        cb.is_percept_store = True
+        return cb
 
-    # ------------------------------------------------------------------
-    # Knowledge artifact attach: PartSpace owns the surface-form
-    # WordVectors (``self.wv``); attach_knowledge stamps the artifact's
-    # ``word_table.ref_ids`` onto ``wv.ref_ids`` so the chart's lexical
-    # lookup step can navigate word → reference via taxonomy / codebook.
-    # See plan §Phase 2 — Loaders.
-    # ------------------------------------------------------------------
     def attach_knowledge(self, view):
         """Attach a ``KnowledgeView`` and stamp ``ref_ids`` onto ``self.wv``.
 
@@ -11618,7 +11163,7 @@ class PartSpace(Space):
         chunking modes keep the existing Embedding/Codebook on
         ``self.subspace.what`` -- the base-class property handles them.
         """
-        if (getattr(self, "synthesis_mode", None) == "radix"
+        if (getattr(self, "synthesis_mode", None) == "meronomy"
                 and getattr(self, "percept_store", None) is not None):
             return self.percept_store
         return super().vocabulary
@@ -11751,252 +11296,7 @@ class PartSpace(Space):
         See class docstring for the operation contract.
         """
         pass
-    @staticmethod
-    def chunk_static(stream: bytes, mode: str, merges=None) -> list:
-        """Chunking switch: bpe | lexicon | analyse.
 
-        - lexicon: split on whitespace (word-level).
-        - bpe: cold-start BPE (byte-level fallback when no trained merges).
-        - analyse: the meronymic analyzer as the front end. The default
-          perceptual op is a space-lexer (whitespace = a hard boundary);
-          within each word run, bottom-up merge combines the byte pairs the
-          analyzer has LEARNED (``merges``, a set of ``(left_bytes,
-          right_bytes)`` tuples, empty when nothing is learned yet). Cold,
-          the analyzer codebook holds only the whole-input vector + every
-          byte, so it emits byte terminals -- it 'initially fails' to
-          reproduce word lexing; once every adjacent within-word pair is a
-          learned merge, the run collapses to a word and the result equals
-          lexicon (space) lexing.
-        """
-        if mode == "lexicon":
-            return stream.split()
-        if mode == "bpe":
-            return [bytes([b]) for b in stream]
-        if mode == "analyse":
-            return PartSpace._analyse_chunk(stream, merges)
-        raise ValueError(
-            f"chunking mode must be bpe|lexicon|analyse, got {mode!r}"
-        )
-
-    @staticmethod
-    def _analyse_chunk(stream: bytes, merges=None) -> list:
-        """Space-lexer + bottom-up merge segmentation (see ``chunk_static``).
-
-        Whitespace is split first (the space-lexer boundary), so merge never
-        crosses a space. Within each run, learned ``merges`` grow words from
-        characters: an ORDERED list (from :meth:`learn_merges`) is applied in
-        BPE rank order (lowest-rank applicable pair first); a SET is applied
-        greedily and order-independently (hand-given merges). With no learned
-        merges every run stays byte-level.
-        """
-        if not merges:
-            return [bytes([b]) for run in stream.split() for b in run]
-        ranks = (None if isinstance(merges, (set, frozenset))
-                 else {tuple(p): i for i, p in enumerate(merges)})
-        units = []
-        for run in stream.split():
-            segs = [bytes([b]) for b in run]
-            if ranks is not None:                       # BPE rank order
-                while len(segs) > 1:
-                    best_i, best_r = None, None
-                    for i in range(len(segs) - 1):
-                        r = ranks.get((segs[i], segs[i + 1]))
-                        if r is not None and (best_r is None or r < best_r):
-                            best_i, best_r = i, r
-                    if best_i is None:
-                        break
-                    segs = (segs[:best_i]
-                            + [segs[best_i] + segs[best_i + 1]]
-                            + segs[best_i + 2:])
-            else:                                       # greedy set
-                changed = True
-                while changed and len(segs) > 1:
-                    changed = False
-                    merged = []
-                    i = 0
-                    while i < len(segs):
-                        if (i + 1 < len(segs)
-                                and (segs[i], segs[i + 1]) in merges):
-                            merged.append(segs[i] + segs[i + 1])
-                            i += 2
-                            changed = True
-                        else:
-                            merged.append(segs[i])
-                            i += 1
-                    segs = merged
-            units.extend(segs)
-        return units
-
-    @staticmethod
-    def learn_merges(corpus, num_merges):
-        """Bottom-up merge learning (BPE, whitespace-bounded).
-
-        Iteratively promote the most frequent adjacent WITHIN-word pair to a
-        learned merge, up to ``num_merges`` times. The space-lexer bounds the
-        statistics -- pairs are counted only inside whitespace-delimited runs,
-        so a merge never crosses a space. Returns the ordered list of learned
-        ``(left, right)`` byte-pairs (BPE rank order) for
-        ``chunk_static(..., 'analyse', merges)``; once the within-word pairs
-        of a word are learned, that word collapses to a single terminal and
-        the analyzer reproduces word (lexicon) lexing.
-        """
-        from collections import Counter
-        words = []
-        for line in corpus:
-            raw = line if isinstance(line, bytes) else str(line).encode("utf-8")
-            for run in raw.split():
-                words.append([bytes([b]) for b in run])
-        merges = []
-        for _ in range(int(num_merges)):
-            pairs = Counter()
-            for w in words:
-                for i in range(len(w) - 1):
-                    pairs[(w[i], w[i + 1])] += 1
-            if not pairs:
-                break
-            best = max(pairs.items(), key=lambda kv: (kv[1], kv[0]))[0]
-            merges.append(best)
-            a, b = best
-            for wi, w in enumerate(words):
-                merged, i = [], 0
-                while i < len(w):
-                    if i + 1 < len(w) and w[i] == a and w[i + 1] == b:
-                        merged.append(a + b)
-                        i += 2
-                    else:
-                        merged.append(w[i])
-                        i += 1
-                words[wi] = merged
-        return merges
-
-    def _embed(self, upstream_vspace):
-        """Decode the upstream null-terminated UTF-8 byte buffer into tokens,
-        do codebook work (OOV discovery + insert + index resolution), populate
-        this subspace with what/where/when indices, and materialize.
-
-        InputSpace.forward has already populated upstream_vspace with:
-          - what.W:  [B, N, nWhat] null-terminated UTF-8 byte buffer
-          - where.W: [B, N] byte offsets (long)
-          - when.W:  [B, N] sequential positions (long)
-
-        This method owns all codebook operations. InputSpace never touches
-        the codebook.
-        """
-        what_buf = upstream_vspace.materialize(mode="what")
-        if what_buf is None:
-            raise RuntimeError(
-                "PartSpace._embed: upstream subspace.what is empty. "
-                "InputSpace.forward must lex into subspace.what.W before "
-                "PartSpace.forward runs.")
-
-        dev = TheDevice.get()
-        batch = what_buf.shape[0]
-        n_upstream = what_buf.shape[1]
-        nIdeas = self.outputShape[0]
-        codebook = self.subspace.what  # Embedding (the lexicon lives here)
-
-        # Token text per slot. InputSpace._lex_batch already had these
-        # strings on the host and stashed the (bit-identical)
-        # decode-equivalent on the subspace; use it to skip the
-        # decode_tokens ``buf.tolist()`` GPU->host sync (residual B,
-        # doc/BrickHostSyncStatus.md). Fall back to decoding the byte
-        # buffer for callers that set what.W without host tokens
-        # (internal _embed reuse, direct-construction tests).
-        host_tokens = getattr(upstream_vspace, '_host_tokens', None)
-        if host_tokens is not None:
-            batch_tokens = host_tokens
-        else:
-            batch_tokens = upstream_vspace.whatEncoding.decode_tokens(
-                what_buf)
-        max_tokens_seen = 0
-        for row in batch_tokens:
-            # Largest index of a non-empty slot, plus one (0 if all empty).
-            for n in range(len(row) - 1, -1, -1):
-                if row[n]:
-                    row_len = n + 1
-                    break
-            else:
-                row_len = 0
-            if row_len > max_tokens_seen:
-                max_tokens_seen = row_len
-        if max_tokens_seen > nIdeas:
-            warnings.warn(
-                f"PartSpace._embed: input produced "
-                f"{max_tokens_seen} tokens but nOutput={nIdeas}; "
-                f"truncating {max_tokens_seen - nIdeas} tokens.",
-                stacklevel=2,
-            )
-
-        # OOV discovery + insert on our codebook
-        oov_seen = set()
-        oov_words = []
-        for row in batch_tokens:
-            for text in row[:nIdeas]:
-                if (text and text not in codebook.pretrain.key_to_index
-                        and text not in oov_seen):
-                    oov_words.append(text)
-                    oov_seen.add(text)
-        if oov_words and not getattr(codebook, 'byte_mode', False):
-            for word in oov_words:
-                codebook.insert(word)
-            if codebook.optimize_embedding:
-                model = getattr(codebook, '_model', None)
-                if model is not None:
-                    model.rebuild_optimizer()
-
-        # Index resolution: token text -> codebook index per slot.
-        # Build on CPU as a Python list-of-lists, then materialize the
-        # device tensor in one shot. The previous "torch.full + per-cell
-        # in-place write" pattern triggered the Inductor cudagraphs
-        # warning ``skipping cudagraphs due to mutated inputs`` -- the
-        # captured graph can't include tensor mutations on freshly-
-        # allocated buffers. A single ``torch.tensor(indices_2d)`` call
-        # is graph-friendly (the allocation is part of the graph; no
-        # post-allocation mutation).
-        null_idx = codebook.wv.key_to_index.get("\x00", 0)
-        indices_2d = [[null_idx] * nIdeas for _ in range(batch)]
-        for b, row in enumerate(batch_tokens):
-            for n in range(min(len(row), nIdeas)):
-                text = row[n]
-                if text:
-                    indices_2d[b][n] = codebook._token_to_index(text)
-        # Build on the HOST then stage once, SYNCHRONOUSLY (correct +
-        # race-free; non_blocking on an ephemeral pinned buffer
-        # corrupts data when freed pre-transfer -- the NaN source).
-        what_indices = torch.tensor(
-            indices_2d, dtype=torch.long, device='cpu').to(dev)
-
-        # where / when come straight from the upstream buffer.
-        where_raw = upstream_vspace.materialize(mode="where")
-        when_raw = upstream_vspace.materialize(mode="when")
-        if where_raw is not None and where_raw.ndim == 3:
-            where_raw = self.subspace.whereEncoding.decode_index(where_raw)
-        if when_raw is not None and when_raw.ndim == 3:
-            when_raw = self.subspace.whenEncoding.decode_index(when_raw)
-        if self.nWhere > 0:
-            if where_raw is not None:
-                where_indices = where_raw[:, :nIdeas].long()
-            else:
-                where_indices = torch.zeros(batch, nIdeas, dtype=torch.long, device=dev)
-        else:
-            where_indices = None
-        if self.nWhen > 0:
-            if when_raw is not None:
-                when_indices = when_raw[:, :nIdeas].long()
-            else:
-                when_indices = torch.zeros((batch, nIdeas), device=dev, dtype=torch.long) + self.subspace.whenEncoding.t
-        else:
-            when_indices = None
-
-        self.subspace.whereEncoding.p = 0
-        self.subspace.set_forward_content(what_indices, where_indices, when_indices)
-        self.subspace.normalize("input", target="what", normalize=True)
-        # Pre-attention embedded/muxed tensor. Stashed here because
-        # InputSpace no longer materializes in text mode.
-        self._embedded_input = self.subspace.materialize()
-        self._last_tokens = batch_tokens
-        self._forward_input = {'tokens': batch_tokens, 'indices': what_indices}
-        return self.subspace
 
     def _radix_part_events(self, part_ids, part_offsets=None):
         """Gather local radix constituents into muxed PartSpace events.
@@ -12305,7 +11605,8 @@ class PartSpace(Space):
 
     def _embed_ladder(self, upstream_vspace):
         """Canonical meronomy stem (fold ladder, Phase 1)."""
-        if (getattr(self, "_serial_object_meta", False)
+        if ((getattr(self, "_serial_object_meta", False)
+                 or getattr(self, "_serial_reading", False))
                 and int(getattr(self, "_serial_word_capacity", 0) or 0) > 0):
             return self._embed_ladder_word_major(upstream_vspace)
         return self._embed_radix(upstream_vspace)
@@ -12381,6 +11682,20 @@ class PartSpace(Space):
                          if int(e0) > int(s0) and int(e0) <= len(raw)]
             if not spans:
                 spans = [(int(s0), int(e0)) for (s0, e0) in Meronomy.word_spans(raw)]
+            if not getattr(self, '_serial_object_meta', False):
+                # The analysis may omit separator runs from its property
+                # wholes. Perception still owns those bytes. Preserve the
+                # chosen cuts and insert each uncovered span as one unit;
+                # the mixing grammar separately excludes whitespace leaves.
+                complete, cursor = [], 0
+                for start, end in sorted(spans):
+                    if start > cursor:
+                        complete.append((cursor, start))
+                    complete.append((start, end))
+                    cursor = end
+                if cursor < len(raw):
+                    complete.append((cursor, len(raw)))
+                spans = complete
             word_texts_rows.append([raw[s0:e0].decode("latin1") for s0, e0 in spans])
             staged_words = []
             for word_index in range(word_capacity):
@@ -12777,541 +12092,6 @@ class PartSpace(Space):
         }
         return self.subspace
 
-    def _delivered_bytes(self, upstream_vspace):
-        """The bytes IS DELIVERED (the raw surface, UNRESIZED -- for
-        byte-mode it is exactly the old byte-token sequence); the legacy
-        what-carrier is the fallback for pre-delivery callers."""
-        raw = getattr(upstream_vspace, "_raw_surface", None)
-        if torch.is_tensor(raw) and raw.dim() == 2:
-            n = getattr(upstream_vspace, "_raw_slots", None)
-            if n is not None and raw.shape[-1] > int(n):
-                raw = raw[..., :int(n)]              # the old token-loop cap
-            return raw.long()
-        buf = upstream_vspace.materialize(mode="what")
-        if buf is None:
-            return None
-        return (buf[..., 0] if buf.dim() == 3 else buf).long()
-
-    def _embed_bpe(self, upstream_vspace):
-        """Dispatch BPE embedding: GPU tensor tokenizer when the vocab
-        is FROZEN (``word_learning <= 0`` -- the CPU-pretrain -> freeze
-        -> GPU-train workflow), else the legacy trie walk.
-
-        The GPU path is zero host-sync (no ``byte_indices.tolist()``);
-        it is asserted bit-identical to the trie path by
-        ``test/bpe_gpu_equiv.py`` before being trusted. Any build/shape
-        problem falls back to the trie path (never silently wrong --
-        the fallback is the verified reference).
-        """
-        cl = self.chunk_layer
-        frozen = (bool(getattr(cl, "bpe", False))
-                  and int(getattr(cl, "word_learning", 0) or 0) <= 0)
-        # Opt-in/opt-out (``self._bpe_gpu_enabled``, default False --
-        # set in __init__). Bit-identical to the trie path but not the
-        # production default: measured slower at this scale and it does
-        # not by itself unlock CUDAGraph capture (other implicit syncs
-        # gate that). Kept gated for future perf work.
-        if frozen and self._bpe_gpu_enabled:
-            try:
-                return self._embed_bpe_gpu(upstream_vspace)
-            except self._bpe_gpu_layer._BPEGpuUnavailable:
-                pass  # fall through to the verified trie reference
-        return self._embed_bpe_trie(upstream_vspace)
-
-    def _embed_bpe_gpu(self, upstream_vspace):
-        """Frozen-vocab GPU tokenizer path: static tensor tables +
-        parallel longest-match + on-device greedy consumption +
-        tensor word-segmentation -> the same ``_bpe_emit`` tail. Zero
-        ``cudaMemcpyDtoH``. Raises ``BPEGpuLayer._BPEGpuUnavailable`` if
-        the static tables cannot be built (caller falls back to the
-        trie path).
-        """
-        bpe = self._bpe_gpu_layer
-        what_buf = self._delivered_bytes(upstream_vspace)
-        if what_buf is None:
-            raise RuntimeError(
-                "PartSpace._embed_bpe_gpu: upstream subspace.what "
-                "is empty.")
-        byte_indices = what_buf
-        codebook = self.subspace.what
-        batch = what_buf.shape[0]
-        nIdeas = self.outputShape[0]
-        dev = TheDevice.get()
-        null_idx = codebook.wv.key_to_index.get("\x00", 0)
-
-        # Static tables: build ONCE per (frozen) vocab, cache. Rebuild
-        # only if the vocab size changed (frozen => never after build).
-        cl = self.chunk_layer
-        vsig = int(cl._next_id)
-        tab = getattr(self, "_bpe_static_tables", None)
-        if tab is None or tab.get("_vsig") != vsig:
-            try:
-                tab = bpe.build_static_tables(
-                    cl, codebook, byte_indices.device)
-            except AssertionError as e:
-                raise bpe._BPEGpuUnavailable(str(e))
-            tab["_vsig"] = vsig
-            self._bpe_static_tables = tab
-
-        best_id, best_len = bpe.gpu_longest_match(byte_indices, tab)
-        chunk_ids, tok_count = bpe.gpu_chunk_ids(
-            byte_indices, best_id, best_len)
-        sub_cb, sub_target, sub_pos, keep = bpe.segment_words(
-            chunk_ids, tok_count, tab, nIdeas)
-        return self._bpe_emit_gpu(
-            upstream_vspace, codebook, batch, nIdeas, dev, null_idx,
-            sub_cb, sub_target, sub_pos, keep)
-
-    def _embed_bpe_trie(self, upstream_vspace):
-        """Legacy trie-walk BPE path -- the verified reference and the
-        fallback for non-frozen (growing) vocab.
-
-        Decode the upstream byte buffer, BPE-tokenize via ChunkLayer,
-        group sub-tokens by whitespace word-boundary, look up each
-        byte-tuple chunk in the codebook, then MAX-fuse sub-token
-        vectors within each word.  Emit one [nDim] vector per word.
-
-        Implementation is **batch-flat**. The previous form built three
-        nested ``[B][nIdeas]`` Python lists -- one of ints, one of floats,
-        one of ``[nDim]`` GPU tensors -- then materialized them with
-        ``torch.tensor`` and ``torch.stack(torch.stack(...))``. The
-        per-word ``_max_fuse_subtokens`` allocated and stacked a fresh
-        list of vectors for every word (~960 stacks per batch on
-        MM_20M). This form does:
-
-            * ONE Python sweep over all chunks in the batch, collecting
-              per-sub-token codebook indices + a global word-segment id,
-              plus per-word routing tuples ``(b, slot, first-sub-idx)``.
-            * ONE ``vectors[flat_idx]`` gather producing every
-              sub-token vector across the batch in a single op.
-            * ONE ``scatter_reduce_(amax)`` collapsing the gathered
-              vectors into ``[N_words, nDim]`` via segment ids.
-            * ONE fancy-index assignment placing those into
-              ``[B, nIdeas, nDim]``.
-
-        Net: 2 small H2Ds + 1 gather + 1 reduce + 1 scatter for the
-        whole batch's MAX-fuse, regardless of word/sub-token count.
-        """
-        what_buf = self._delivered_bytes(upstream_vspace)
-        if what_buf is None:
-            raise RuntimeError(
-                "PartSpace._embed_bpe: upstream subspace.what is empty. "
-                "InputSpace.forward must lex into subspace.what.W before "
-                "PartSpace.forward runs.")
-
-        dev = TheDevice.get()
-        batch = what_buf.shape[0]
-        nIdeas = self.outputShape[0]
-        codebook = self.subspace.what
-        boundary = self.chunk_layer.BOUNDARY_BYTES
-        chunk_frozen = (
-            int(getattr(self.chunk_layer, 'word_learning', 0) or 0) <= 0)
-
-        if what_buf.dim() == 3:
-            byte_indices = what_buf[..., 0].long()
-        else:
-            byte_indices = what_buf.long()
-
-        if self.chunk_layer.bpe and self.training:
-            self.chunk_layer.train_step(byte_indices)
-
-        # ---- Fused trie walk + per-word assembly --------------------
-        # The previous two-pass form built ``all_chunks`` /
-        # ``all_spans`` (Python list-of-lists per row) and then
-        # iterated them again to assemble words. Fused into one walk:
-        # as we descend the trie at each position, we resolve the
-        # matched chunk to its codebook index and either accumulate
-        # it into the current word or flush at a boundary. Saves the
-        # intermediate list-of-lists allocation entirely.
-        self.chunk_layer._ensure_trie()
-        trie = self.chunk_layer._trie
-        id_to_bytes = self.chunk_layer.id_to_bytes
-        vocab = self.chunk_layer.vocab
-
-        null_idx = codebook.wv.key_to_index.get("\x00", 0)
-        key_to_index = codebook.pretrain.key_to_index
-        token_to_index = codebook._token_to_index
-        chunk_key_to_latin1 = self._chunk_key_to_latin1
-        byte_mode = bool(getattr(codebook, 'byte_mode', False))
-
-        rows = byte_indices.tolist()
-        N_buf = byte_indices.shape[1]
-
-        # Per-sub-token (flat) and per-word (routing) Python lists. Only
-        # ints get appended, no tensors -- the heavy lifting is one
-        # gather later, not many small stacks.
-        flat_subtoken_idx = []   # codebook row idx for each resolved sub-token
-        flat_word_seg     = []   # segment id (running word_id) per ^
-        per_word_first    = []   # first sub-token's codebook idx, per word
-        per_word_b        = []   # batch row, per word
-        per_word_slot     = []   # word slot within row, per word
-        word_id = 0
-
-        def _resolve(byte_tuple):
-            """Sub-token byte tuple → codebook int index, or None.
-
-            Frozen-vocab missing key is a load-mismatch bug → assert.
-            Active mode falls back to ``codebook.insert`` so newly
-            promoted BPE merges don't stall the batch.
-            """
-            latin1 = chunk_key_to_latin1(byte_tuple)
-            if not latin1:
-                return None
-            if latin1 not in key_to_index:
-                if byte_mode:
-                    return None
-                assert not chunk_frozen, (
-                    f"_embed_bpe: key {latin1!r} missing from frozen "
-                    f"codebook.pretrain (word_learning<=0). .kv "
-                    f"load mismatch -- BPE section and lexicon "
-                    f"embeddings disagree.")
-                codebook.insert(latin1)
-            return token_to_index(latin1)
-
-        for b in range(batch):
-            row = rows[b]
-            word_idx = 0
-            cur_subs = []   # codebook indices for the in-progress word
-            i = 0
-            while i < N_buf:
-                bval = row[i]
-                if bval == 0:
-                    break
-                # Inline trie walk: descend children byte-by-byte,
-                # tracking the longest match seen.
-                node = trie
-                matched_id = None
-                matched_len = 0
-                j = i
-                while j < N_buf:
-                    child = node[0].get(row[j])
-                    if child is None:
-                        break
-                    node = child
-                    j += 1
-                    if node[1] is not None:
-                        matched_id = node[1]
-                        matched_len = j - i
-                if matched_id is None:
-                    # 256 single-byte ids are always seeded; defensive
-                    # fallback for unexpected vocab gaps.
-                    matched_id = vocab.get((bval,), bval)
-                    matched_len = 1
-                matched_key = id_to_bytes.get(matched_id, (bval,))
-                is_boundary = all(bv in boundary for bv in matched_key)
-                if is_boundary:
-                    if cur_subs and word_idx < nIdeas:
-                        per_word_first.append(cur_subs[0])
-                        per_word_b.append(b)
-                        per_word_slot.append(word_idx)
-                        for cb_idx in cur_subs:
-                            flat_subtoken_idx.append(cb_idx)
-                            flat_word_seg.append(word_id)
-                        word_id += 1
-                        word_idx += 1
-                    cur_subs = []
-                else:
-                    resolved = _resolve(matched_key)
-                    if resolved is not None:
-                        cur_subs.append(resolved)
-                i += matched_len
-            # Trailing word (row ended without a final boundary chunk).
-            if cur_subs and word_idx < nIdeas:
-                per_word_first.append(cur_subs[0])
-                per_word_b.append(b)
-                per_word_slot.append(word_idx)
-                for cb_idx in cur_subs:
-                    flat_subtoken_idx.append(cb_idx)
-                    flat_word_seg.append(word_id)
-                word_id += 1
-
-        return self._bpe_emit(
-            upstream_vspace, codebook, batch, nIdeas, dev, null_idx,
-            flat_subtoken_idx, flat_word_seg, per_word_first,
-            per_word_b, per_word_slot, word_id)
-
-    def _bpe_emit(self, upstream_vspace, codebook, batch, nIdeas, dev,
-                  null_idx, flat_idx, flat_seg, per_word_first,
-                  per_word_b, per_word_slot, word_id):
-        """Shared tail for both _embed_bpe paths: gather codebook
-        vectors, segmented MAX-fuse per word, place at (b, slot), mux
-        where/when, setW. The 5 routing arrays may be Python lists
-        (trie path -> one H2D via ``as_tensor``) or already-on-device
-        tensors (GPU path -> ``as_tensor`` is a no-op, zero DtoH).
-        """
-        # ---- Tensor materialization (no Python list-of-tensors) -----
-        # Output tensors live on whatever device the codebook's
-        # vectors currently sit on; gather + scatter respect that
-        # device naturally. ``vectors`` is the nn.Parameter that
-        # ``.to()`` migrates with the surrounding module.
-        vectors = codebook.wv._vectors
-        target_device = vectors.device
-        nDim = self.nDim
-
-        word_active = torch.zeros(
-            batch, nIdeas, dtype=torch.float32, device=target_device)
-        what_indices = torch.full(
-            (batch, nIdeas), null_idx, dtype=torch.long, device=target_device)
-        word_vectors = torch.zeros(
-            batch, nIdeas, nDim, dtype=vectors.dtype, device=target_device)
-
-        if word_id > 0:
-            # ``as_tensor``: trie path passes Python lists (one H2D);
-            # GPU path passes device tensors (no-op -> zero DtoH).
-            flat_idx_t = torch.as_tensor(
-                flat_idx, dtype=torch.long, device=target_device)
-            flat_seg_t = torch.as_tensor(
-                flat_seg, dtype=torch.long, device=target_device)
-            per_word_first_t = torch.as_tensor(
-                per_word_first, dtype=torch.long, device=target_device)
-            per_word_b_t = torch.as_tensor(
-                per_word_b, dtype=torch.long, device=target_device)
-            per_word_slot_t = torch.as_tensor(
-                per_word_slot, dtype=torch.long, device=target_device)
-
-            # ONE gather: every sub-token's vector across the batch.
-            gathered = vectors[flat_idx_t]  # [N_subs, nDim]
-
-            # Segmented MAX via scatter_reduce_(amax). Init to -inf so
-            # the first scatter writes the actual sub-token value, and
-            # subsequent scatters within the same segment max with it.
-            per_word_max = torch.full(
-                (word_id, nDim), float('-inf'),
-                dtype=vectors.dtype, device=target_device)
-            per_word_max.scatter_reduce_(
-                0, flat_seg_t.unsqueeze(-1).expand(-1, nDim),
-                gathered, reduce='amax', include_self=True)
-
-            # Place per-word results at (b, slot) coordinates in the
-            # [B, nIdeas, *] outputs. Empty slots stay zero / null_idx.
-            word_vectors[per_word_b_t, per_word_slot_t] = per_word_max
-            what_indices[per_word_b_t, per_word_slot_t] = per_word_first_t
-            word_active[per_word_b_t, per_word_slot_t] = 1.0
-
-        return self._bpe_finalize(
-            upstream_vspace, word_vectors, what_indices, word_active,
-            batch, nIdeas, dev)
-
-    def _bpe_finalize(self, upstream_vspace, word_vectors,
-                      what_indices, word_active, batch, nIdeas, dev):
-        """Shared tail of both BPE emitters: pull where/when from the
-        upstream buffer, set_forward_content, mux ``word_vectors`` with
-        the where/when encodings, ``setW`` the muxed event, stash the
-        BPE word mask. Identical for the trie and GPU paths -- they
-        differ only in how the [B,nIdeas,*] word arrays are built."""
-        where_raw = upstream_vspace.materialize(mode="where")
-        when_raw = upstream_vspace.materialize(mode="when")
-        if where_raw is not None and where_raw.ndim == 3:
-            where_raw = self.subspace.whereEncoding.decode_index(where_raw)
-        if when_raw is not None and when_raw.ndim == 3:
-            when_raw = self.subspace.whenEncoding.decode_index(when_raw)
-        where_indices = (where_raw[:, :nIdeas].long()
-                         if (self.nWhere > 0 and where_raw is not None)
-                         else (torch.zeros(batch, nIdeas, dtype=torch.long, device=dev)
-                               if self.nWhere > 0 else None))
-        when_indices = (when_raw[:, :nIdeas].long()
-                        if (self.nWhen > 0 and when_raw is not None)
-                        else (torch.zeros((batch, nIdeas), dtype=torch.long, device=dev) + self.subspace.whenEncoding.t
-                              if self.nWhen > 0 else None))
-
-        self.subspace.whereEncoding.p = 0
-        self.subspace.set_forward_content(
-            what_indices, where_indices, when_indices,
-            activation=word_active)
-
-        # Mux ``word_vectors`` ([B, nIdeas, nDim]) with the where/when
-        # encodings so the cached event matches the muxed width
-        # ``nDim + nWhere + nWhen`` that ``forwardEnd`` reshapes
-        # against. Setting the event at plain ``nDim`` width caused
-        # ``[B, nIdeas * nDim] / muxedSize`` to round to a wrong
-        # sequence length (e.g. 1024 * 6 / 8 = 768) and trip a shape
-        # mismatch against the [B, nIdeas] BPE word mask. ``materialize``
-        # would otherwise gather codebook rows by ``what_indices``,
-        # which gives the *first sub-token's* vector, not the
-        # MAX-fused word vector we computed -- hence we must persist
-        # this per-batch MAX-fused tensor on ``.event`` directly.
-        #
-        # KNOWN OUTLIER under spec
-        # doc/specs/2026-05-21-subspace-slot-architecture.md: this is
-        # neither a codebook lookup nor a pure-event store. For configs
-        # where ``.event`` is codebook-bearing (MM_xor / MM_20M muxed),
-        # this write currently rides the ``_active_payload`` band-aid.
-        # Stage 3 of the retirement plan
-        # (doc/plans/2026-05-21-active-payload-retirement.md) addresses
-        # this case explicitly. Surface here is the public setter so
-        # the migration only has to change ``SubSpace.set_event`` to
-        # route differently — no further changes here.
-        event_parts = [word_vectors]
-        if self.nWhere > 0 and where_indices is not None:
-            event_parts.append(self.subspace.whereEncoding.encode(where_indices))
-        if self.nWhen > 0 and when_indices is not None:
-            event_parts.append(self.subspace.whenEncoding.encode(when_indices))
-        muxed_event = (torch.cat(event_parts, dim=-1)
-                       if len(event_parts) > 1 else word_vectors)
-        # Spec-aligned write: route through ``SubSpace.set_muxed`` so
-        # the codebook-bearing case (MM_xor / MM_20M with codebook on
-        # ``.event``) snaps the MAX-pooled fused vector through the
-        # codebook (writing the selection on ``_index``), and the
-        # plain-Tensor case (MM_grammar, byte-mode) stores per-batch on
-        # ``event.W`` directly. ``materialize`` reconstructs as
-        # ``codebook[_index]`` for muxed configs — the selection IS
-        # the storage. Per spec invariant "input width ≤ codebook
-        # nDim", the snap is well-defined here.
-        self.subspace.set_muxed(muxed_event)
-        self._embedded_input = muxed_event
-        self._bpe_word_mask = word_active
-        # Only InputSpace.forward can produce the AR-windowed [B*K, N]
-        # mask. Clear any stale value when _embed_bpe is used directly
-        # (non-AR / inference paths) so PartSpace.forward falls
-        # back to this fresh unwindowed [B, N] mask.
-        self._bpe_word_mask_flat = None
-        return self.subspace
-
-    def _bpe_emit_gpu(self, upstream_vspace, codebook, batch, nIdeas, dev,
-                      null_idx, sub_cb, sub_target, sub_pos, keep):
-        """Static-shape GPU emitter: scatter the per-position
-        ``[B,T]`` segmentation into static ``[B*nIdeas]`` word buffers
-        (no dense word-id, no ``.item()``, no boolean compaction ->
-        zero DtoH). Produces the same [B,nIdeas,*] word arrays the trie
-        path builds, then the shared ``_bpe_finalize`` tail. Asserted
-        bit-identical to the trie path by test/bpe_gpu_equiv.py.
-        """
-        vectors = codebook.wv._vectors
-        tdev = vectors.device
-        nDim = self.nDim
-        BN = batch * nIdeas
-        flat_t = sub_target.reshape(-1).to(tdev)             # [B*T]
-        cb_safe = sub_cb.clamp(min=0).reshape(-1)            # -1 -> 0
-        gathered = vectors[cb_safe]                          # [B*T, nDim]
-
-        # Segmented MAX into [BN(+trash), nDim]; trash row B*nIdeas
-        # absorbs non-kept positions, then sliced off.
-        per_word_max = torch.full(
-            (BN + 1, nDim), float('-inf'),
-            dtype=vectors.dtype, device=tdev)
-        per_word_max.scatter_reduce_(
-            0, flat_t.unsqueeze(-1).expand(-1, nDim), gathered,
-            reduce='amax', include_self=True)
-
-        keep_f = keep.reshape(-1).to(torch.int64)
-        active_flat = torch.zeros(BN + 1, dtype=torch.int64, device=tdev)
-        active_flat.scatter_reduce_(
-            0, flat_t, keep_f, reduce='amax', include_self=True)
-        word_active = (active_flat[:BN].reshape(batch, nIdeas)
-                       .to(torch.float32))
-
-        word_max = per_word_max[:BN].reshape(batch, nIdeas, nDim)
-        word_vectors = torch.where(
-            word_active.unsqueeze(-1) > 0, word_max,
-            torch.zeros((), dtype=vectors.dtype, device=tdev))
-
-        # First sub-token (smallest token pos) per word: pack
-        # ``pos * K + cb`` so ``amin`` keeps the lowest-pos entry and
-        # ``% K`` recovers its codebook row. K > max codebook row.
-        K = int(vectors.shape[0]) + 1
-        BIG = (sub_pos.numel() + 1) * K
-        packed = torch.where(
-            keep, sub_pos.to(torch.int64) * K + sub_cb,
-            torch.full_like(sub_pos, BIG)).reshape(-1).to(tdev)
-        packed_min = torch.full((BN + 1,), BIG, dtype=torch.int64,
-                                device=tdev)
-        packed_min.scatter_reduce_(
-            0, flat_t, packed, reduce='amin', include_self=True)
-        first_cb = packed_min[:BN] % K
-        what_indices = torch.where(
-            packed_min[:BN] < BIG, first_cb,
-            torch.full_like(first_cb, null_idx)
-        ).reshape(batch, nIdeas)
-
-        return self._bpe_finalize(
-            upstream_vspace, word_vectors, what_indices, word_active,
-            batch, nIdeas, dev)
-
-    def _chunk_key_to_latin1(self, byte_tuple):
-        """Convert a byte-tuple key (e.g., (104, 101)) to its latin-1 string."""
-        return "".join(chr(int(b) & 0xFF) for b in byte_tuple)
-
-    def _chunk_to_codebook_idx(self, word_subtokens, codebook):
-        """Resolve a list of byte-tuple sub-tokens to a codebook index.
-
-        With a frozen BPE codebook (``word_learning <= 0``) every
-        sub-token's latin-1 key MUST already live in
-        ``codebook.pretrain.key_to_index`` -- the load pass is supposed
-        to populate one entry per BPE chunk. A missing key here means
-        either a load misalignment (the .kv file's BPE section and
-        embeddings disagree) or runtime BPE drift; either way it would
-        silently grow the codebook and is a real bug. Assert loudly so
-        the failure is obvious instead of corrupting the codebook.
-
-        In active-learning mode (``word_learning > 0``) a missing
-        key is expected and we fall back to ``Embedding.insert``.
-
-        Returns the index of the first sub-token (used for bookkeeping;
-        the real word vector comes from MAX fusion).
-        """
-        keys = [self._chunk_key_to_latin1(bt) for bt in word_subtokens]
-        chunk_frozen = (
-            int(getattr(self.chunk_layer, 'word_learning', 0) or 0) <= 0)
-        for key in keys:
-            if (key and key not in codebook.pretrain.key_to_index
-                    and not getattr(codebook, 'byte_mode', False)):
-                assert not chunk_frozen, (
-                    f"_chunk_to_codebook_idx: key {key!r} missing from "
-                    f"frozen codebook.pretrain (word_learning<=0). "
-                    f"This indicates a .kv load mismatch -- either the "
-                    f"BPE section and the lexicon embeddings disagree, "
-                    f"or word_learning was set to 0 before all BPE "
-                    f"chunks made it into the lexicon.")
-                codebook.insert(key)
-        return codebook._token_to_index(keys[0]) if keys else 0
-
-    def _max_fuse_subtokens(self, word_subtokens, codebook):
-        """MAX-fuse sub-token vectors into a single [nDim] word vector.
-
-        Resolves each sub-token byte-tuple to its codebook row index,
-        gathers all rows in one tensor lookup, and returns the
-        per-dimension maximum. Avoids the previous Python ``vecs = []``
-        + ``torch.stack(vecs)`` + ``stacked.max(dim=0)`` pattern, which
-        allocated one Python list and one stack-temporary per word
-        (~960 words/batch on MM_20M). The single ``vectors[idx_tensor]``
-        gather + ``amax(dim=0)`` keeps the hot path tensor-native and
-        runs on whatever device the codebook lives on (no device
-        coupling to the caller).
-        """
-        if not word_subtokens:
-            return torch.zeros(self.nDim, device=codebook.wv._vectors.device)
-        # Collect codebook row indices for sub-tokens that resolve.
-        # Under a frozen BPE codebook (``word_learning <= 0``)
-        # every sub-token's latin-1 key MUST already live in
-        # ``codebook.pretrain.key_to_index`` -- a missing key here is
-        # the same .kv load mismatch we assert against in
-        # ``_chunk_to_codebook_idx``. The active-learning branch
-        # (``word_learning > 0``) silently skips unresolved keys
-        # since new chunks may legitimately not be in the lexicon
-        # until the next promotion cycle catches up.
-        indices = []
-        key_to_index = codebook.pretrain.key_to_index
-        token_to_index = codebook._token_to_index
-        chunk_frozen = (
-            int(getattr(self.chunk_layer, 'word_learning', 0) or 0) <= 0)
-        for bt in word_subtokens:
-            key = self._chunk_key_to_latin1(bt)
-            if not key:
-                continue
-            if key not in key_to_index:
-                assert not chunk_frozen, (
-                    f"_max_fuse_subtokens: key {key!r} missing from "
-                    f"frozen codebook.pretrain (word_learning<=0). "
-                    f"This indicates a .kv load mismatch -- the BPE "
-                    f"section and the lexicon embeddings disagree.")
-                continue
-            indices.append(token_to_index(key))
-        if not indices:
-            return torch.zeros(self.nDim, device=codebook.wv._vectors.device)
-        vectors = codebook.wv._vectors
-        idx_tensor = torch.tensor(
-            indices, dtype=torch.long, device=vectors.device)
-        return vectors[idx_tensor].amax(dim=0)
 
     def Reset(self, batch=None, hard=True):
         """Clear caches so the next forward() does a full recompute.
@@ -13352,107 +12132,6 @@ class PartSpace(Space):
             return
         vq.learnable_codebook = True
 
-    # ---- Rework A: percept -> MPHF -> table (the consolidated core) ----
-    #
-    # Per the consolidated two-loop spec (§"Percept -> MPHF -> table",
-    # §IMPLEMENTATION DETAILS D2): each percept's byte slot passes
-    # through a minimal perfect hash producing an index in
-    # ``[0, V_percept)``; the index addresses a table whose every entry
-    # holds BOTH the literal surface word AND the ConceptualSpace
-    # activation vector for that token.
-    #
-    # The table's two halves ALREADY EXIST on this PartSpace's
-    # frozen ``Embedding`` codebook and are REUSED verbatim (a second
-    # parallel embedding over the same surface tokens would double-count
-    # gradient -- the spec's explicit NEEDS_CONTEXT trigger, resolved by
-    # reuse):
-    #   * concept-activation half == ``codebook.wv._vectors`` (the
-    #     Phase-1A.1 learnable lexicon ``nn.Parameter`` -- gradient
-    #     trained; the BPE/lexicon ``_embed*`` paths already gather from
-    #     exactly this tensor);
-    #   * surface half == ``codebook.wv.index_to_key`` (ASCII-prefilled
-    #     by ``Embedding.create``: ``\x00`` row 0 == the NULL char / per-
-    #     row cursor closing, ``chr(1..126)`` low rows, ``NULL_PERCEPT_KEY``
-    #     at ``null_percept_idx``; NO MASK row -- MASK is the all-zeros
-    #     gaussian-tail effect, not a row).
-    # Rework A therefore adds ONLY the static O(1) MPHF index function
-    # (percept bytes -> the EXISTING frozen ``key_to_index`` row) and
-    # the non-invertible reverse map (vector -> nearest row -> surface).
-
-    def _mphf_codebook(self):
-        """The ``Embedding`` codebook holding the D2 table (both halves).
-        ``None`` for numeric / non-Embedding codebooks (MPHF inapplicable
-        -- caller leaves the existing path unchanged)."""
-        cb = getattr(self.subspace, "what", None)
-        if isinstance(cb, Embedding) and getattr(cb, "wv", None) is not None:
-            return cb
-        return None
-
-    def _mphf_tables(self):
-        """Build-once / cache the frozen MPHF static tensors (mirrors the
-        ``_bpe_static_tables`` build-once pattern: keyed by lexicon row
-        count; frozen => never rebuilt after the first build). Raises
-        ``MPHFGpuLayer._MPHFUnavailable`` for a non-Embedding codebook."""
-        mphf = self._mphf_gpu_layer
-        cb = self._mphf_codebook()
-        if cb is None:
-            raise mphf._MPHFUnavailable(
-                "PartSpace._mphf_tables: non-Embedding codebook.")
-        vsig = len(cb.wv.index_to_key)
-        tab = self._mphf_static_tables
-        if tab is None or tab.get("_vsig") != vsig:
-            dev = cb.wv._vectors.device
-            tab = mphf.build_mphf_table(cb, dev)
-            tab["_vsig"] = vsig
-            self._mphf_static_tables = tab
-        return tab
-
-    def mphf_index(self, token_byte_slots, return_verified=False):
-        """The MPHF index function: percept byte slots ``[B,K,W]`` (the
-        ``InputSpace.subspace.what.W`` null-terminated utf-8 layout) ->
-        frozen lexicon row indices ``[B,K]``. Pure static tensor ops,
-        O(1) per slot, zero host sync, NON-invertible (reverse is the
-        table lookup, never an inverse hash).
-
-        When ``return_verified=True``, returns ``(row, verified)`` so the
-        caller can gate OOV->BPE-trie fallback on a true hit (vs the
-        ``null_row`` fallback row that ``mphf_index`` returns for both
-        L==0 slots and OOV)."""
-        return self._mphf_gpu_layer.mphf_index(
-            token_byte_slots, self._mphf_tables(),
-            return_verified=return_verified)
-
-    def mphf_table_rows(self, row_idx):
-        """Gather the D2 table's concept-activation rows for ``row_idx``
-        (``[...]`` long) -> ``[..., D]``. The rows ARE the reused
-        Phase-1A.1 learnable ``wv._vectors`` (gradient flows through;
-        no detach)."""
-        cb = self._mphf_codebook()
-        return cb.getW()[row_idx]
-
-    def reverse_map_concept(self, concept_vectors, return_surface=True):
-        """Non-invertible reverse map exposed for the NEXT rework (D3
-        reconstruction loss -- NOT called from the loss here).
-
-        ``concept_vectors`` ``[..., D]`` -> nearest table row index
-        ``[...]`` (tensor, no host sync) and, when ``return_surface``,
-        the parallel surface strings ``surface[idx]`` (== the literal
-        ASCII-prefilled ``index_to_key`` words; the host indexing is the
-        caller's choice, off the training-critical path). The MPHF is
-        never inverted -- this nearest-row table lookup IS the reverse
-        map (spec §"Because the table stores the surface word, the MPHF
-        need not be invertible")."""
-        cb = self._mphf_codebook()
-        if cb is None:
-            return (None, None) if return_surface else None
-        idx = self._mphf_gpu_layer.reverse_map_rows(concept_vectors, cb)
-        if not return_surface:
-            return idx
-        surf = cb.wv.index_to_key
-        flat = idx.reshape(-1).tolist()
-        strings = [surf[i] if 0 <= i < len(surf) else "" for i in flat]
-        return idx, strings
-
     def _slot_forward(self, x, quantize=True):
         """Position-local math (codebook + sparsity) on a [B, K, D] slice.
 
@@ -13468,381 +12147,16 @@ class PartSpace(Space):
         x = self._sparsity(x)
         return x
 
-    def _embed_byte(self, upstream_vspace):
-        """Byte-direct chunking (``<synthesis>none</synthesis>``).
-
-        Skips the BPE walker entirely.  Each byte from the upstream
-        buffer becomes its own perceptual slot via direct embedding-
-        table lookup at codebook index ``byte_value``.  The
-        Embedding's cold-start path seeds entries 0..255 with
-        ``byte_value == codebook_index`` (see ``NULL_PERCEPT`` seeding
-        and the ``_random_unit_ball`` init at Spaces.py:2520), so this
-        method is just:
-
-            byte_indices = upstream_vspace.what[..., 0]  # [B, N]
-            subspace.set_forward_content(byte_indices, where, when)
-
-        ``\0`` (byte 0) lands at codebook index 0 and doubles as the
-        sentence-end / pad sentinel.  ``_bpe_word_mask`` is derived as
-        ``(byte_indices != 0)`` — pure tensor op, no Python loop, no
-        graph break.  Downstream consumers (PartSpace.forward's
-        AR-window pad-and-unfold path) read the mask the same way they
-        do for BPE mode.
-        """
-        what_buf = self._delivered_bytes(upstream_vspace)
-        if what_buf is None:
-            raise RuntimeError(
-                "PartSpace._embed_byte: no delivered bytes and no "
-                "what-carrier -- InputSpace.forward must run first.")
-        dev = TheDevice.get()
-        batch = what_buf.shape[0]
-        nIdeas = self.outputShape[0]
-
-        if what_buf.dim() == 3:
-            byte_indices = what_buf[..., 0].long()
-        else:
-            byte_indices = what_buf.long()
-        # Defensive clamp: prepInput sometimes uses int8 which sign-
-        # extends negative values for byte > 127; remap to the
-        # canonical [0, 255] range so the codebook lookup hits the
-        # right entry.
-        byte_indices = byte_indices.where(byte_indices >= 0, byte_indices + 256)
-        byte_indices = byte_indices.clamp(0, 255)
-        # Trim / pad to nIdeas slots.
-        n_upstream = byte_indices.shape[1]
-        if n_upstream > nIdeas:
-            byte_indices = byte_indices[:, :nIdeas]
-        elif n_upstream < nIdeas:
-            pad = torch.zeros(
-                batch, nIdeas - n_upstream,
-                dtype=byte_indices.dtype, device=byte_indices.device)
-            byte_indices = torch.cat([byte_indices, pad], dim=1)
-
-        # where / when come straight from the upstream buffer (mirror
-        # of ``_embed`` for the lexicon path).
-        where_raw = upstream_vspace.materialize(mode="where")
-        when_raw = upstream_vspace.materialize(mode="when")
-        if self.nWhere > 0:
-            if where_raw is not None:
-                where_indices = where_raw[:, :nIdeas].long()
-            else:
-                where_indices = torch.zeros(
-                    batch, nIdeas, dtype=torch.long, device=dev)
-        else:
-            where_indices = None
-        if self.nWhen > 0:
-            if when_raw is not None:
-                when_indices = when_raw[:, :nIdeas].long()
-            else:
-                when_indices = torch.arange(
-                    nIdeas, device=dev).unsqueeze(0).expand(batch, -1)
-        else:
-            when_indices = None
-
-        self.subspace.whereEncoding.p = 0
-        self.subspace.set_forward_content(
-            byte_indices, where_indices, when_indices)
-        self.subspace.normalize("input", target="what", normalize=True)
-
-        # Stash the materialized [B, nIdeas, D] muxed event for
-        # InputSpace.forward to consume (same contract as ``_embed``
-        # and ``_embed_bpe``).
-        self._embedded_input = self.subspace.materialize()
-
-        # Word-boundary mask: bytes != 0 are real.  Matches the
-        # ``_bpe_word_mask`` contract used by InputSpace.forward's AR
-        # unfold so downstream consumers don't need a separate code
-        # path -- the windowed view is identical.
-        self._bpe_word_mask = (byte_indices != 0).to(
-            dtype=torch.float32, device=byte_indices.device)
-        return upstream_vspace
-
-    def _embed_lexicon(self, upstream_vspace):
-        """Lexicon chunking from a RAW surface: PS owns the word tokenization.
-
-        IS now hands the unanalyzed whole-line surface (2026-06-07 IS-always-
-        RAW); reconstruct it, split on words (no learned merges -- that is the
-        ``analyse`` path), then resolve through the lexicon codebook via
-        ``_embed``. This is the parse-words front-end that ``_embed`` used to
-        rely on InputSpace to provide.
-        """
-        what_buf = upstream_vspace.materialize(mode="what")
-        if what_buf is None:
-            raise RuntimeError(
-                "PartSpace._embed_lexicon: upstream subspace.what is "
-                "empty.")
-        from util import parse as _parse
-        host_tokens = getattr(upstream_vspace, '_host_tokens', None)
-        if host_tokens is None:
-            host_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
-        rows = []
-        for row in host_tokens:
-            surface = "".join(t for t in row if t)
-            rows.append([t for (t, _off) in _parse(surface, lex="words")])
-        upstream_vspace._host_tokens = rows
-        # PS owns the word slots, so PS publishes the word-active mask
-        # finalize_stem consumes (the lexicon twin of the byte-path mask).
-        nIdeas = int(self.outputShape[0])
-        _wm = torch.zeros(len(rows), nIdeas, dtype=torch.float32)
-        for b, row in enumerate(rows):
-            for n in range(min(len(row), nIdeas)):
-                if row[n]:
-                    _wm[b, n] = 1.0
-        self._bpe_word_mask = _wm.to(TheDevice.get())
-        self._bpe_word_mask_flat = None
-        return self._embed(upstream_vspace)
 
     # ``_embed_analyse`` REMOVED (Phase 4b, analysis/synthesis dual-input
-    # plan rev. 2026-06-09): the meronymic analyzer is top-down ANALYSIS
-    # and lives on WholeSpace (``<analysis>grammatical``, consuming the
-    # unity view). The standalone machinery -- ``chunk_static`` /
-    # ``learn_merges`` / ``_analyse_chunk`` -- stays here as knob-free
-    # analyzer plumbing until the deeper WS analyzer integration
-    # (Phases 5-6) relocates it.
-
-    def _embed_mphf(self, upstream_vspace):
-        """MPHF word recognition (``synthesis_mode='mphf'``): per-word,
-        ``idx = MPHF(percept_bytes) in [0, V_percept)`` -> gather from
-        the Phase-1A.1 learnable lookup ``codebook.wv._vectors[idx]``.
-        OOV (the collision-proof byte-verify misses) falls back to
-        ``_embed_bpe_trie`` for that word position only -- the verified
-        BPE reference path is the documented OOV fallback.
-
-        Word boundary detection mirrors ``_embed_bpe_trie``'s walk
-        (``BOUNDARY_BYTES`` over the upstream byte buffer). Output
-        contract matches ``_embed_bpe_trie`` exactly: routes through the
-        shared ``_bpe_emit`` -> ``_bpe_finalize`` tail so the muxed
-        ``subspace.event`` ``[B, nIdeas, D]``, ``_bpe_word_mask``
-        ``[B, nIdeas]``, and the where/when slots populate identically to
-        all the other chunking modes.
-
-        Per-word, the routing is:
-          * try MPHF over the full word byte tuple (one row gather);
-          * verified hit -> emit a single sub-token entry holding the
-            MPHF row (MAX-fuse degenerates to identity);
-          * miss (OOV) -> per-word BPE trie sub-token walk (mirrors
-            ``_embed_bpe_trie``'s inner loop), emit each sub-token.
-
-        For MPHF-applicability gate (non-Embedding codebook -- numeric
-        codebooks have no surface key set), the table build raises
-        ``MPHFGpuLayer._MPHFUnavailable``; we fall through to
-        ``_embed_bpe_trie`` for the whole batch in that case (never
-        silently wrong).
-        """
-        # Build / cache MPHF tables; non-Embedding codebooks fall back
-        # to the verified BPE trie for the whole batch.
-        try:
-            tab = self._mphf_tables()
-        except self._mphf_gpu_layer._MPHFUnavailable:
-            return self._embed_bpe_trie(upstream_vspace)
-
-        what_buf = upstream_vspace.materialize(mode="what")
-        if what_buf is None:
-            raise RuntimeError(
-                "PartSpace._embed_mphf: upstream subspace.what is "
-                "empty. InputSpace.forward must lex into subspace.what.W "
-                "before PartSpace.forward runs.")
-
-        dev = TheDevice.get()
-        batch = what_buf.shape[0]
-        nIdeas = self.outputShape[0]
-        codebook = self.subspace.what
-        boundary = self.chunk_layer.BOUNDARY_BYTES
-        chunk_frozen = (
-            int(getattr(self.chunk_layer, 'word_learning', 0) or 0) <= 0)
-
-        if what_buf.dim() == 3:
-            byte_indices = what_buf[..., 0].long()
-        else:
-            byte_indices = what_buf.long()
-
-        if self.chunk_layer.bpe and self.training:
-            self.chunk_layer.train_step(byte_indices)
-
-        # ---- Phase 1: per-word boundary walk to collect word byte
-        # tuples per (b, word_slot). Mirrors ``_embed_bpe_trie``'s walk
-        # (boundary bytes split words); the result is one byte tuple
-        # per word slot (the WHOLE word's bytes, MPHF candidate key).
-        self.chunk_layer._ensure_trie()
-        trie = self.chunk_layer._trie
-        id_to_bytes = self.chunk_layer.id_to_bytes
-        vocab = self.chunk_layer.vocab
-
-        null_idx = codebook.wv.key_to_index.get("\x00", 0)
-        key_to_index = codebook.pretrain.key_to_index
-        token_to_index = codebook._token_to_index
-        chunk_key_to_latin1 = self._chunk_key_to_latin1
-        byte_mode = bool(getattr(codebook, 'byte_mode', False))
-
-        rows = byte_indices.tolist()
-        N_buf = byte_indices.shape[1]
-        maxL_tab = int(tab["maxL"])
-
-        # Per-word byte tuples + per-word routing tuples (b, slot).
-        # ``word_byte_seq`` accumulates contiguous non-boundary bytes
-        # for the in-progress word; flushed at every boundary byte.
-        per_word_bytes = []      # tuple of ints (the word's bytes)
-        per_word_b = []          # batch row
-        per_word_slot = []       # word slot within row
-
-        for b in range(batch):
-            row = rows[b]
-            word_idx = 0
-            word_byte_seq = []
-            i = 0
-            while i < N_buf:
-                bval = row[i]
-                if bval == 0:
-                    break
-                if bval in boundary:
-                    if word_byte_seq and word_idx < nIdeas:
-                        per_word_bytes.append(tuple(word_byte_seq))
-                        per_word_b.append(b)
-                        per_word_slot.append(word_idx)
-                        word_idx += 1
-                    word_byte_seq = []
-                else:
-                    word_byte_seq.append(bval)
-                i += 1
-            # Trailing word (row ended without a final boundary byte).
-            if word_byte_seq and word_idx < nIdeas:
-                per_word_bytes.append(tuple(word_byte_seq))
-                per_word_b.append(b)
-                per_word_slot.append(word_idx)
-
-        N_words = len(per_word_bytes)
-
-        # ---- Phase 2: batch MPHF lookup over all words at once.
-        # Build the [1, N_words, W] null-terminated byte-slot tensor
-        # the same way ``InputSpace.subspace.what.W`` lays out tokens
-        # (each row is the word's utf-8 bytes followed by 0). W is
-        # ``maxL_tab + 1`` so any in-vocab key fits and is properly
-        # terminated. Words longer than ``maxL_tab`` will overflow the
-        # frozen lexicon length range -> guaranteed MPHF miss -> OOV
-        # routes to BPE-trie fallback, the documented behavior.
-        if N_words > 0:
-            W = max(maxL_tab + 1, 1)
-            slot_buf = torch.zeros(
-                (1, N_words, W), dtype=torch.int64, device=dev)
-            # Host-side fill (one-shot, off the GPU critical path; this
-            # is the cold-path word-segmentation cost mirroring the
-            # trie's ``rows = byte_indices.tolist()``).
-            for k, bt in enumerate(per_word_bytes):
-                L = min(len(bt), W - 1)
-                if L:
-                    slot_buf[0, k, :L] = torch.tensor(
-                        [int(x) & 0xFF for x in bt[:L]],
-                        dtype=torch.int64, device=dev)
-            mphf_row, verified = self._mphf_gpu_layer.mphf_index(
-                slot_buf, tab, return_verified=True)
-            mphf_row = mphf_row[0]            # [N_words]
-            verified = verified[0]            # [N_words]
-            verified_list = verified.tolist()
-            mphf_row_list = mphf_row.tolist()
-        else:
-            verified_list = []
-            mphf_row_list = []
-
-        # ---- Phase 3: per-word routing. MPHF hits emit a single
-        # codebook-row sub-token entry; OOVs route through the BPE
-        # trie walk over their byte span (mirrors
-        # ``_embed_bpe_trie``'s inner loop, scoped to one word).
-        def _resolve(byte_tuple):
-            """Sub-token byte tuple -> codebook int index, or None.
-            Mirrors ``_embed_bpe_trie._resolve``.
-            """
-            latin1 = chunk_key_to_latin1(byte_tuple)
-            if not latin1:
-                return None
-            if latin1 not in key_to_index:
-                if byte_mode:
-                    return None
-                assert not chunk_frozen, (
-                    f"_embed_mphf OOV-fallback: key {latin1!r} missing "
-                    f"from frozen codebook.pretrain (word_learning<=0). "
-                    f".kv load mismatch -- BPE section and lexicon "
-                    f"embeddings disagree.")
-                codebook.insert(latin1)
-            return token_to_index(latin1)
-
-        flat_subtoken_idx = []
-        flat_word_seg = []
-        per_word_first = []
-        per_word_b_out = []
-        per_word_slot_out = []
-        word_id = 0
-
-        for k in range(N_words):
-            b = per_word_b[k]
-            slot = per_word_slot[k]
-            word_bytes = per_word_bytes[k]
-            if verified_list[k]:
-                # MPHF hit: single sub-token entry == the MPHF row.
-                cb_idx = int(mphf_row_list[k])
-                flat_subtoken_idx.append(cb_idx)
-                flat_word_seg.append(word_id)
-                per_word_first.append(cb_idx)
-                per_word_b_out.append(b)
-                per_word_slot_out.append(slot)
-                word_id += 1
-            else:
-                # OOV: per-word BPE-trie sub-token walk. Identical to
-                # ``_embed_bpe_trie``'s inner loop but scoped to this
-                # word's byte span (no boundary checks needed -- the
-                # span is by definition between boundaries).
-                cur_subs = []
-                Lw = len(word_bytes)
-                ii = 0
-                while ii < Lw:
-                    node = trie
-                    matched_id = None
-                    matched_len = 0
-                    jj = ii
-                    while jj < Lw:
-                        child = node[0].get(word_bytes[jj])
-                        if child is None:
-                            break
-                        node = child
-                        jj += 1
-                        if node[1] is not None:
-                            matched_id = node[1]
-                            matched_len = jj - ii
-                    if matched_id is None:
-                        matched_id = vocab.get(
-                            (word_bytes[ii],), word_bytes[ii])
-                        matched_len = 1
-                    matched_key = id_to_bytes.get(
-                        matched_id, (word_bytes[ii],))
-                    resolved = _resolve(matched_key)
-                    if resolved is not None:
-                        cur_subs.append(resolved)
-                    ii += matched_len
-                if cur_subs:
-                    per_word_first.append(cur_subs[0])
-                    per_word_b_out.append(b)
-                    per_word_slot_out.append(slot)
-                    for cb_idx in cur_subs:
-                        flat_subtoken_idx.append(cb_idx)
-                        flat_word_seg.append(word_id)
-                    word_id += 1
-
-        return self._bpe_emit(
-            upstream_vspace, codebook, batch, nIdeas, dev, null_idx,
-            flat_subtoken_idx, flat_word_seg, per_word_first,
-            per_word_b_out, per_word_slot_out, word_id)
-
     def embed_stem(self, upstream_vspace):
         """Eager, model-orchestrated stem embed (2026-06-07 eager-embed-stage).
 
-        Runs the chunking dispatch on the LEXED bytes BEFORE the compiled body
-        so PS's host-side tokenization (regex / BPE trie / radix promote) stays
-        OUT of the fullgraph trace, and the embedded event is ready for
-        ``InputSpace.finalize_stem``. Same gate + dispatch as ``forward``'s
-        inline embed (analyse/bpe/radix self-lex the surface; lexicon via
-        ``_embed_lexicon``); writes the embedded event + ``_embedded_input`` +
-        ``_bpe_word_mask`` on THIS PartSpace. Returns the embedded
-        subspace (``self.subspace``) or ``None`` when there is nothing to embed
-        (already embedded / empty / non-text codebook).
+        Runs the meronomy fold over lexed bytes before the compiled body.
+        Host-side tokenization and store promotion stay outside fullgraph
+        capture. The embedded event and input stash are ready for
+        InputSpace.finalize_stem. Return the subspace, or None for already
+        embedded, empty or non-text input.
         """
         if upstream_vspace is None:
             return None
@@ -13853,21 +12167,12 @@ class PartSpace(Space):
         if not (isinstance(self.subspace.what, Embedding)
                 or getattr(self, "percept_store", None) is not None):
             return None
-        if self._legacy_synthesis_mode is not None:
-            from Legacy import embed_part_stem
-            return embed_part_stem(
-                self, upstream_vspace, self._legacy_synthesis_mode)
         # Canonical synthesis=meronomy: the fold ladder (doc/plans/
         # 2026-09-10-meronomy-fold-ladder.md, Phase 1).  On the word-major
         # serial path the units are the staged wholes and the atoms are
-        # bytes; no trie lookup, no promotion.  The non-word-major path is
-        # still radix-backed (pending).
+        # bytes. Both serial bindings use that unit-based stem; a whole-slab
+        # reading keeps its native percept-store emission.
         return self._embed_ladder(upstream_vspace)
-
-
-
-
-
 
 
     def forward(self, in_sub, cs_out=None):
@@ -13998,13 +12303,7 @@ class PartSpace(Space):
         if not vspace.stem_embedded and (
                 isinstance(self.subspace.what, Embedding)
                 or getattr(self, 'percept_store', None) is not None):
-            if self._legacy_synthesis_mode is not None:
-                from Legacy import embed_part_stem
-                vspace = embed_part_stem(
-                    self, vspace, self._legacy_synthesis_mode)
-            else:
-                # The only live branch: canonical mereological synthesis.
-                vspace = self._embed_radix(vspace)
+            vspace = self._embed_ladder(vspace)
         if getattr(vspace, '_demuxed', False) and vspace._index is not None:
             self.subspace._byte_indices = vspace._index[:, :, 0].long()
         # Reading percepts does not apply a learned conceptual fold.
@@ -14030,56 +12329,6 @@ class PartSpace(Space):
         x = self._sparsity(x)
         vspace = self.forwardEnd(x, returnVectors=True)
         vspace.normalize("percepts", target="event", normalize=True)
-
-        # In BPE mode, re-apply the word-boundary mask so padding slots
-        # (beyond the actual word count) stay zero after the VQ codebook
-        # quantizes them to the nearest prototype.
-        #
-        # Mask source-of-truth picking:
-        #   * ``_bpe_word_mask_flat`` ([B*K, N]) is the windowed-and-
-        #     flattened mask installed by InputSpace.forward when peer
-        #     is in BPE mode. Matches the [B*K, N, D] event after
-        #     FlattenKWrapper. Use it whenever it's present.
-        #   * ``_bpe_word_mask`` ([B, N]) is the unwindowed view from
-        #     ``_embed_bpe`` itself. Only correct when there's no AR
-        #     windowing (K=1, B*K==B); used as fallback.
-        # ``bpe`` and ``none`` (byte-direct) both install
-        # ``_bpe_word_mask`` (one is real-vs-padding for BPE chunks,
-        # the other is byte != 0); the post-VQ reapply is the same
-        # under either mode.
-        if self.synthesis_mode in ("bpe", "none", "mphf"):
-            mask = getattr(self, "_bpe_word_mask_flat", None)
-            if mask is None:
-                mask = getattr(self, "_bpe_word_mask", None)
-            if mask is not None:
-                ev = vspace.materialize(mode="event")
-                if ev is not None:
-                    # ``ev`` may be [B*K, N, D] (post-FlattenKWrapper),
-                    # [B, N, D] (cached event in non-AR), or
-                    # [B*K*N, D] / [B*N, D] (further flattened by
-                    # forwardEnd). Match shapes to broadcast on the
-                    # trailing axis.
-                    if ev.dim() == 3 and ev.shape[:2] == mask.shape:
-                        # Spec-aligned: store the word-active mask on
-                        # ``.activation`` instead of zero-multiplying
-                        # the event. ``materialize`` applies the gate
-                        # (`event * activation_presence`) on read, so
-                        # masked-out positions zero out in the
-                        # reconstructed event without requiring a
-                        # per-batch setW.
-                        vspace.set_activation(
-                            mask.to(dtype=ev.dtype))
-                    elif ev.dim() == 2 and ev.shape[0] == mask.numel():
-                        # 2-D shape — caller has flattened; for non-
-                        # codebook slots this writes to ``event.W``
-                        # directly. For codebook-bearing slots, the
-                        # strict setW raises and the caller would have
-                        # to migrate to the selection-based contract.
-                        vspace.event.setW(
-                            ev * mask.reshape(-1).unsqueeze(-1))
-                    # else: shape mismatch we don't recognise -- skip
-                    # the masking rather than crash; downstream zero-
-                    # padding tolerance will absorb the unmasked tail.
 
         # Prime the warm-path cache for subsequent serial_mode calls.
         # Must detach: clone() preserves autograd graph, which would hold
@@ -14440,11 +12689,11 @@ class PartSpace(Space):
             return emb.train_step(words, method=method)
         return None
 
-    def sbow_loss(self, words):
+    def sbow_loss(self, words, *, errors=None):
         """Return SBOW loss tensor for joint optimization (no backward/step)."""
         emb = self.subspace.vocabulary
         if isinstance(emb, Embedding) and words:
-            return emb.sbow_loss(words)
+            return emb.sbow_loss(words, errors=errors)
         return None
 
     def _snapshot_embeddings(self):
@@ -15109,6 +13358,7 @@ class ConceptualSpace(Space):
         self._stm_predicted_idea = None
         self._stm_predicted_slab = None
         self._intra_loss_accum = None
+        self._intra_errors = Error()
         self._intra_loss_weight_accum = None
         self._intra_loss_count = 0
         # Optional, evaluation-only capture.  ``None`` is the zero-overhead
@@ -15200,6 +13450,11 @@ class ConceptualSpace(Space):
                 self.inputShape[0], self.nVectors, int(self.outputShape[1]),
                 customVQ=getattr(self, "customVQ", True),
                 monotonic=True, category=False, STE=False, invertible=False)
+            # Concept codes have one writer: reconstruction's optimizer.
+            # Keep existing checkpoint buffers on mixing dictionaries, but
+            # neither update EMA statistics nor copy them back into W.
+            if getattr(_sim_cb, 'vq', None) is not None:
+                _sim_cb.vq.ema_update = False
             torch.set_rng_state(_rng_state)
         else:
             _W = _sim_cb.getW()
@@ -15460,7 +13715,6 @@ class ConceptualSpace(Space):
         return out, depth - binary.long(), out_orders, out_grammar, out_rows, out_activations
 
 
-
     def _stm_set_all_slots(self, slab):
         """STM primitive (parallel mode): write all N positions of
         ``slab`` ``[B, N, D]`` directly into STM as the slot stack.
@@ -15645,12 +13899,6 @@ class ConceptualSpace(Space):
         # without the host sync.
         if B > 0 and int(stm._max_depth_host) < cap:
             stm._max_depth_host = int(stm._max_depth_host) + 1
-        # Slot-kind provenance (word-bearing-fold filtering, open-fronts
-        # Task B): this bookkeeping push is never a WORD. No-op unless
-        # recording is enabled; host list, eager-only.
-        if not torch.compiler.is_compiling():
-            stm.note_push_all("other")
-
     # -- Task 3: explicit predict-then-perceive helpers ----------------
     def _stm_shift_for_predict(self):
         """STM primitive: rotate slots so the free (newest) slot is free,
@@ -15846,7 +14094,10 @@ class ConceptualSpace(Space):
             return
         if float(self.intra_loss_weight) <= 0.0:
             return
+        target = target.detach()
         squared = (prediction - target).square()
+        self._intra_errors.squared('intra', prediction, target, mask=row_gate,
+                                   category='expectation')
         if row_gate is None:
             step_loss = squared.sum()
             step_weight = squared.new_tensor(float(squared.numel()))
@@ -15904,6 +14155,8 @@ class ConceptualSpace(Space):
         ``BasicModel.runBatch`` consumes it once, post-body / pre-
         backward, mirroring the ARMA term.
         """
+        self._consumed_intra_errors = self._intra_errors
+        self._intra_errors = Error()
         if self._intra_loss_accum is None:
             self._intra_loss_weight_accum = None
             self._intra_loss_count = 0
@@ -16005,7 +14258,7 @@ class ConceptualSpace(Space):
         keep = slots < context_len
 
         layer = self.intraSentenceLayer
-        lifted = layer.pi.forward(buf)
+        lifted = layer.pi.forward(buf.detach())
         folded = (
             lifted * keep.view(1, cap, 1).to(dtype=lifted.dtype)
         ).sum(dim=1)
@@ -16132,6 +14385,9 @@ class ConceptualSpace(Space):
     def Start(self):
         super().Start()
         self._clear_percept_field()
+        # This eager boundary also serves callers of the fullgraph forward
+        # that do not consume training losses between successive reads.
+        self._intra_errors = Error()
 
     def End(self):
         super().End()
@@ -16368,22 +14624,11 @@ class ConceptualSpace(Space):
             for m in members:
                 self.add_part(A, ("sym", int(m)))      # a concept over concepts
             self._populate_concept_weights(A)
-            # The phrase's own row (contract 7): allocated in the concept
-            # dictionary and initialised from the additive composition of
-            # its members' rows; the reduce step snaps a matching chunk to
-            # it and the losses train it thereafter.
+            # Admission assigns identity and parts, not a second code writer.
+            # The reserved dictionary row remains reconstruction-owned.
             order = int(self._concept_source_order(A))
             row = self._csw_concept_row(order, A)
             if row is not None:
-                member_rows = [self._csw_row_of(int(m)) for m in members]
-                member_rows = [r for r in member_rows if r is not None]
-                # Sparse edge values describe relations, not dictionary atoms.
-                W = self.similarity_codebook.getW()
-                if torch.is_tensor(W) and member_rows:
-                    with torch.no_grad():
-                        comp = W[member_rows].sum(dim=0)
-                        comp = comp / comp.norm().clamp_min(1e-6)
-                        W.data[int(row)].copy_(comp)
                 self.__dict__.setdefault("_chunk_rows", {})[members] = int(row)
             admitted[members] = int(A)
             hits.pop(members, None)
@@ -16422,7 +14667,6 @@ class ConceptualSpace(Space):
                 self.promotion_pass()
             self._prepare_part_learning()
             self._maybe_rebuild_optimizer_for_csw()
-            self._refresh_feature_codes()
         super().Reset(batch=batch, hard=hard)
         self._clear_percept_field(batch=batch)
         # Clear the predict-then-perceive held predictions and the
@@ -16433,6 +14677,7 @@ class ConceptualSpace(Space):
         self._stm_predicted_idea = None
         self._stm_predicted_slab = None
         self._intra_loss_accum = None
+        self._intra_errors = Error()
         self._intra_loss_weight_accum = None
         self._intra_loss_count = 0
         if not hard:
@@ -17186,7 +15431,6 @@ class ConceptualSpace(Space):
         return ConceptualSpace.synthesize_higher_order(self, part_codes)
 
 
-
     def singleton_concept(self, sym):
         """The SINGLETON (unit-set) of a symbol -- a whole containing exactly
         ONE symbolic part (Alec 2026-07-02; the Lewis singleton, embraced):
@@ -17253,51 +15497,27 @@ class ConceptualSpace(Space):
         return self._order_caps_cache[1]
 
     def _priming_edges(self):
-        """Undirected ``(src, dst, |w|)`` view of the shared concept store
-        for priming diffusion: each (concept row, constituent row) edge
-        conducts both ways; the trailing EVERYTHING bias column is not a
-        row and drops. Rebuilt per event from the LIVE edge values (they
-        train); the host walk is bounded by the store cap below."""
-        if not self._sparse_active():
+        """Undirected concept/constituent edges, on device, without a cap."""
+        allocator = getattr(self, '_concept_allocator', None)
+        if allocator is None:
             return None
-        alloc = getattr(self, "_concept_allocator", None)
-        if alloc is None:
-            return None
-        layers = [matrix for store in alloc._layers.values() for matrix in store.part_matrices()]
-        nnz = sum(int(ly.nnz) for ly in layers)
-        if nnz == 0:
-            return None
-        if nnz > 4096:
-            # Fail-loud (warn-once): an oversized store must announce that
-            # diffusion is skipped, never silently stop propagating.
-            if not getattr(self, "_priming_edges_capped_warned", False):
-                object.__setattr__(self, "_priming_edges_capped_warned", True)
-                warnings.warn(
-                    f"priming diffusion skipped: concept store nnz {nnz} "
-                    f"exceeds the 4096 host-walk cap", RuntimeWarning)
-            return None
-        src, dst, w = [], [], []
-        for ly in layers:
-            vals = getattr(ly, "values", None)
-            if vals is None or ly.nnz == 0:
-                continue
-            bias = int(ly.nOutput)
-            v = vals.detach().abs().cpu()
-            for pos, (r, c) in enumerate(zip(ly._rows, ly._cols)):
-                c %= bias + 1
-                if c == bias:
+        sources, destinations, weights = [], [], []
+        for store in allocator._layers.values():
+            for layer in store.part_matrices():
+                values = getattr(layer, 'values', None)
+                if values is None or not layer.nnz:
                     continue
-                wt = float(v[pos])
-                if wt <= 0.0:
-                    continue
-                src += [c, r]
-                dst += [r, c]
-                w += [wt, wt]
-        if not src:
+                rows, columns = layer._indices(values.device)
+                columns = columns.remainder(int(layer.nOutput) + 1)
+                magnitude = values.detach().abs()
+                valid = (columns != int(layer.nOutput)) & (magnitude > 0)
+                row, column, weight = rows[valid], columns[valid], magnitude[valid]
+                sources.extend((row, column))
+                destinations.extend((column, row))
+                weights.extend((weight, weight))
+        if not sources:
             return None
-        return (torch.tensor(src, dtype=torch.long),
-                torch.tensor(dst, dtype=torch.long),
-                torch.tensor(w, dtype=torch.float32))
+        return torch.cat(sources), torch.cat(destinations), torch.cat(weights)
 
     def order_slice(self, order):
         """The ``(start, end)`` row range of ramsified ``order`` in the stacked
@@ -17650,68 +15870,6 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_order0_raw', raw[:n0].detach())
         return working[:n0]
 
-    @torch.no_grad()
-    def _refresh_feature_codes(self):
-        """Derive distributed order-0 codes from the signed feature definition.
-
-        Codes serve retrieval and tied reconstruction. This boundary write
-        never supplies a membership or changes the retained reverse carrier.
-        """
-        model = getattr(self, '_model', None)
-        alloc = getattr(self, '_concept_allocator', None)
-        if model is None or alloc is None or not self._sparse_active():
-            return
-        matrix = alloc.layer(0).features
-        if matrix.values is None:
-            return
-        dictionary = self.similarity_codebook.getW()
-        rows, cols = matrix._indices(dictionary.device)
-        width = dictionary.shape[1]
-        codes = dictionary.new_zeros(matrix.nnz, width)
-        for tower, space in enumerate((model.perceptualSpace, model.wholeSpaces[0])):
-            select = ((cols // 2) % 2 == tower).nonzero().flatten()
-            if not len(select):
-                continue
-            # Grouped PS literals use synthetic feature keys. Resolve their
-            # native members before indexing a physical perceptual codebook.
-            native_rows = [alloc.layer(0).feature_groups.get(
-                (matrix._rows[edge], matrix._cols[edge]),
-                (matrix._cols[edge] // 4,))[0] if tower == 0 else matrix._cols[edge] // 4
-                for edge in select.tolist()]
-            source = space.subspace.what.getW().index_select(
-                0, torch.tensor(native_rows, device=dictionary.device, dtype=torch.long))
-            if tower == 0:
-                source = source.clone()
-                for local, edge in enumerate(select.tolist()):
-                    group = alloc.layer(0).feature_groups.get((matrix._rows[edge], matrix._cols[edge]))
-                    if group:
-                        indices = torch.tensor([group], device=source.device)
-                        source[local] = space.synthesize_word_parts(
-                            indices, torch.ones_like(indices, dtype=torch.bool))[0, 0, :source.shape[-1]]
-            source = F.pad(source[:, :width], (0, max(0, width - source.shape[1])))
-            codes.index_copy_(0, select, source.to(codes))
-        weights = matrix.values.to(codes) * torch.where(cols % 2 == 0, 1., -1.)
-        values = dictionary.new_zeros(matrix.nOutput, width).index_add_(0, rows, codes * weights[:, None])
-        defined = self._concept_part_rows(matrix, dictionary.device)[:len(values)]
-        store = alloc.layer(0)
-        if store.values is not None:
-            targets, sources = store._indices(dictionary.device)
-            source_rows = sources % (store.nOutput + 1)
-            order0 = torch.tensor([self._order0_inventory_row(r) for r in targets.tolist()],
-                                  device=targets.device, dtype=torch.bool)
-            chosen = (order0 & (source_rows < len(values))).nonzero().flatten()
-            alt_weights = store.values[chosen].to(values) * torch.where(
-                sources[chosen] <= store.nOutput, 1., -1.)
-            base = F.normalize(values, dim=-1, eps=1e-8)
-            values = values.index_add(0, targets[chosen],
-                                     base[source_rows[chosen]] * alt_weights[:, None])
-            alternative_mass = values.new_zeros(len(values)).index_add_(
-                0, targets[chosen], alt_weights.abs())
-            defined |= alternative_mass > 0
-        frozen = self._frozen_rows() if getattr(self, '_frozen_concepts', None) else set()
-        if frozen:
-            defined[list(r for r in frozen if r < len(defined))] = False
-        dictionary[:len(values)][defined] = F.normalize(values[defined], dim=-1, eps=1e-8)
 
     def concept_weights(self, row, *, conjunctive=False, negated=False):
         """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
@@ -19206,19 +17364,8 @@ class ConceptualSpace(Space):
                     alloc.add(cid, 'whole' if (col // 2) % 2 else 'part', col // 4)
             alloc.placement[cid] = order
             alloc.raised.add(cid)
-            # The distributed code is the normalized evidence-weighted part
-            # code. The row itself is the stable one-hot identity.
-            cb = getattr(self, 'similarity_codebook', None)
-            W = cb.getW() if cb is not None else None
-            if W is not None:
-                parts = [(col % (ly.nOutput + 1), (1 if col <= ly.nOutput else -1) * float(m.values[pos]))
-                         for m in ly.part_matrices() for (r, col), pos in m._index.items()
-                         if r == row and col % (ly.nOutput + 1) < ly.nOutput]
-                if parts:
-                    code = sum(weight * W[col] for col, weight in parts)
-                    # Codebook updates occur at the host boundary; forward
-                    # reads clone its atoms before any pending backward.
-                    W[row].copy_(F.normalize(code, dim=0, eps=1e-8))
+            # Promotion names the existing row and records its parts. Its code
+            # remains the reconstruction-owned parameter (§20.1).
             discovered.append(cid)
         if discovered:
             # Pruning replaces the shared Parameters; re-arm barriers on
@@ -19228,7 +17375,6 @@ class ConceptualSpace(Space):
             self._maybe_rebuild_optimizer_for_csw()
         self.interpret.admit_discovered()
         return discovered
-
 
 
     @property
@@ -19279,67 +17425,9 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_words_concept_id', wid)
         self.add_part(wid, ("sym", int(A)))
         reg[str(key)] = int(pid)
-        # WORDS codebook face (Alec 2026-07-13: the order-capped SUMMARY
-        # ROW, not per-member edges): the well-known 'words' atom (WS row
-        # 0) carries the running mean of the member word-wholes' rows at
-        # the abstraction-order cap — one row, no order-cap fight.
-        if ws is not None and whole_pos is not None:
-            self._update_words_summary_row(ws, int(whole_pos), len(reg))
         return True
 
-    def _update_words_summary_row(self, ws, whole_pos, n_members):
-        """STASH a WORDS summary-row update (the well-known 'words' atom,
-        WS row 0 by convention): the registration seam runs at the
-        sentence-boundary Reset, BETWEEN a forward and its backward — an
-        in-place codebook write there bumps the Parameter version and
-        breaks the pending backward. The write is deferred to the next
-        eager STEM (``apply_pending_words_summary``, the adopt-on-sight /
-        one-step-stale discipline)."""
-        pend = getattr(ws, '_pending_words_summary', None)
-        if pend is None:
-            pend = []
-            object.__setattr__(ws, '_pending_words_summary', pend)
-        pend.append((int(whole_pos), int(n_members)))
 
-    @staticmethod
-    @torch.no_grad()
-    def apply_pending_words_summary(ws):
-        """Drain the stashed WORDS summary updates on ``ws`` — the
-        running mean of member word-whole rows into the 'words' atom row,
-        fold record stamped FULL (abstraction order at the cap). Runs in
-        the eager stem (pre-graph), so the Parameter write can never
-        invalidate a pending backward. Best-effort per entry."""
-        pend = getattr(ws, '_pending_words_summary', None)
-        if not pend:
-            return
-        row0 = (getattr(ws, 'well_known_atoms', None) or {}).get('words')
-        p2r = getattr(ws, '_ws_pos_to_row', None)
-        cb = getattr(getattr(ws, 'subspace', None), 'what', None)
-        W = cb.getW() if cb is not None and hasattr(cb, 'getW') else None
-        if row0 is None or not isinstance(p2r, dict) or W is None \
-                or not torch.is_tensor(W) or int(row0) >= int(W.shape[0]):
-            del pend[:]
-            return
-        wrote = False
-        for whole_pos, n_members in pend:
-            wrow = p2r.get(int(whole_pos))
-            if wrow is None or int(wrow) >= int(W.shape[0]):
-                continue
-            n = max(1, int(n_members))
-            vec = W[int(wrow)].detach()
-            W.data[int(row0)] = (W.data[int(row0)] * (n - 1) + vec) / n
-            wrote = True
-        del pend[:]
-        if not wrote:
-            return
-        vq = getattr(cb, 'vq', None)
-        if vq is not None and hasattr(vq, '_b_norms_sq'):
-            vq._b_norms_sq.copy_((vq.codebook.detach() ** 2).sum(dim=-1))
-        # Order cap: a FULL fold sequence derives abstraction_order ==
-        # max_order (the summary is maximally abstract by construction).
-        rams = getattr(cb, 'ramsification', None)
-        if rams is not None and int(row0) < int(rams.shape[0]):
-            rams[int(row0)][:] = cb.FOLD_SIGMA
 
     def recognized_word_rows(self):
         """PS ``.what`` rows (percept ids) of the WORDS-registered words —
@@ -19443,9 +17531,8 @@ class ConceptualSpace(Space):
         percept -> its object-concept ``B`` -> that concept's
         ``similarity_codebook`` row, and return ``([B, W] rows, [B] bool
         mask)``. The forward folds OBJECT concepts (words are the
-        decode-side translation). Rows are RE-NORMALIZED (the codebook
-        maintains near-unit-norm but ``getW()`` does not guarantee it on
-        read — the signed hypersphere). Untied percepts give a zero row
+        decode-side translation). Return the parameter unchanged, including
+        its learned magnitude (§20.1). Untied percepts give a zero row
         and ``mask=False`` (the caller keeps the computed idea there).
         Host-side resolve; the gather goes through ``lookup_rows`` so an
         indexed-only ConceptualSpace retains sparse row gradients even when
@@ -19472,7 +17559,6 @@ class ConceptualSpace(Space):
             pos_idx = torch.tensor(
                 positions, dtype=torch.long, device=W.device)
             gathered = cb.lookup_rows(row_idx)
-            gathered = F.normalize(gathered, dim=-1, eps=1e-8)
             # Functional index_copy preserves the lookup's autograd edge. In
             # sparse mode that edge terminates at F.embedding(sparse=True), so
             # combining this read with the normal fold decoder cannot densify
@@ -19480,80 +17566,44 @@ class ConceptualSpace(Space):
             out = out.index_copy(0, pos_idx, gathered)
         return out, mask
 
-    def _priming_bridge_put(self, A, C, word_parts, word_whole, accrue=False):
-        """Record (or accrue onto) the word triple's surface anchors:
-        ``{cid: (frozenset(part positions), whole position | None)}`` for
-        A and its META C -- the mint-time bridge ``project_priming_to_
-        towers`` resolves through the relation store's pos->row tables."""
-        br = getattr(self, "_priming_bridge", None)
-        if br is None:
-            br = {}
-            object.__setattr__(self, "_priming_bridge", br)
-        parts = frozenset(int(p) for p in word_parts)
-        if word_whole is None:
-            whole = None
-        elif isinstance(word_whole, (tuple, list, set, frozenset)):
-            whole = tuple(int(w) for w in word_whole)
-        else:
-            whole = int(word_whole)
-        if accrue and int(A) in br:
-            old_parts, old_whole = br[int(A)]
-            parts = parts | old_parts
-            whole = old_whole if whole is None else whole
-        br[int(A)] = (parts, whole)
-        if C is not None:
-            br[int(C)] = (parts, whole)
-
     @torch.no_grad()
     def project_priming_to_towers(self, ps_space, ws_space, gain=1.0):
-        """Project conceptual priming onto native percept and property rows.
-
-        Bridges hold inventory row indices. Each destination receives one
-        decay event and the signed projection; out-of-range rows are dropped.
-        """
-        b = self.priming_weights()
-        br = getattr(self, "_priming_bridge", None)
-        if b is None or not br:
+        """Project each stream's concept energy onto its native tower rows."""
+        surface = self.priming_weights()
+        if surface is None:
             return
-        ps_rows, ps_heat, ws_rows, ws_heat = [], [], [], []
-        # Bridges address the native percept and property inventories.
-        for cid, (parts, whole) in br.items():
-            row = self._csw_row_of(cid)
-            if row is None or row >= int(b.shape[0]):
+        # DEF carries the native surface references. Resolve them here rather
+        # than maintaining a second word/META identity map.
+        bridge = {}
+        for word in self.definitions.word_ids:
+            description = self.definitions.description(word)
+            if description is None:
                 continue
-            e = float(b[row]) - 1.0
-            if e == 0.0:
+            parts = tuple(dict.fromkeys(p for group in description['parts'] for p in group))
+            for obj in self.definitions.objects(word):
+                bridge[obj] = (parts, description['wholes'])
+        sources = [[], []]
+        destinations = [[], []]
+        for identity, (parts, whole) in bridge.items():
+            row = self._csw_row_of(identity)
+            if row is None or row >= surface.shape[1]:
                 continue
-            if whole is None:
-                whole_refs = []
-            elif isinstance(whole, tuple):
-                whole_refs = list(whole)
-            else:
-                whole_refs = [whole]
-            ps_rows.extend(int(p) for p in parts)
-            ps_heat.extend([e] * len(parts))
-            ws_rows.extend(int(w) for w in whole_refs)
-            ws_heat.extend([e] * len(whole_refs))
-        for space, rows, heat in ((ps_space, ps_rows, ps_heat),
-                                  (ws_space, ws_rows, ws_heat)):
-            if space is None or not rows:
+            whole = () if whole is None else whole if isinstance(whole, tuple) else (whole,)
+            for index, targets in enumerate((parts, whole)):
+                sources[index].extend([row] * len(targets))
+                destinations[index].extend(int(target) for target in targets)
+        for index, space in enumerate((ps_space, ws_space)):
+            if space is None or not sources[index] or space._priming_dim() <= 0:
                 continue
             V = space._priming_dim()
-            if V <= 0:
-                continue
-            idx = torch.tensor(rows, dtype=torch.long)
-            val = torch.tensor(heat, dtype=torch.float32)
-            keep = (idx >= 0) & (idx < V)
-            if not bool(keep.all()):
-                idx, val = idx[keep], val[keep]
-            if not int(idx.numel()):
-                continue
-            surf = space._priming_surface(V, device=idx.device)
-            idx = idx.to(surf.device)
-            d = float(getattr(space, "_priming_decay", 0.9))
-            surf.mul_(d).add_(1.0 - d)
-            surf.index_add_(0, idx, float(gain) * val.to(surf.dtype))
-            surf.clamp_(min=0.0)
+            src = torch.tensor(sources[index], device=surface.device, dtype=torch.long)
+            dst = torch.tensor(destinations[index], device=surface.device, dtype=torch.long)
+            valid = (dst >= 0) & (dst < V)
+            target = space._priming_surface(V, device=surface.device, batch=surface.shape[0])
+            decay = float(getattr(space, '_priming_decay', .9))
+            target.mul_(decay).add_(1-decay)
+            target.index_add_(1, dst[valid], float(gain) * (surface[:, src[valid]]-1))
+            target.clamp_(min=0.)
 
     def taxonomy_children(self, pos):
         """Native sigma members; no WholeSpace positions or relation trust."""
@@ -19621,12 +17671,6 @@ class ConceptualSpace(Space):
                 "NaN/Inf. Numerical divergence must surface, not be "
                 "silently scored / nan_to_num'd away.")
         return v
-
-
-
-
-
-
 
 
     def _ltm_store_for_reasoning(self):
@@ -19724,7 +17768,6 @@ class ConceptualSpace(Space):
         return results[:int(beam)]
 
 
-
     def _incoming_trust_multiplier(self):
         """Model-level trust in incoming descriptions/testimony."""
         try:
@@ -19734,7 +17777,6 @@ class ConceptualSpace(Space):
         if not math.isfinite(trust):
             trust = 1.0
         return max(0.0, min(1.0, trust))
-
 
 
     def _conform_idea_vec(self, vec, n):
@@ -19947,8 +17989,6 @@ class ConceptualSpace(Space):
         negative = max(float(store.c_minus[idx]), w if supporting < relevant else 0.)
         store.set_evidence(idx, positive, negative)
         return positive - negative
-
-
 
 
     # ------------------------------------------------------------------
@@ -20982,30 +19022,6 @@ class ConceptualSpace(Space):
         ws_content, _, _ = self._bind_demux(WS_sub, D)
         ws_content = self._bind_regroup(ws_content, nv)
         WS_t = self._bind_fit(ws_content, D, cs_content)
-        # Experimental overlapping `.where` lattice: PS and WS candidates
-        # retain separate fixed-slot masks through the callosum.  This only
-        # removes pad candidates; settled and unresolved candidates coexist
-        # and therefore remain available to later orders/the FF pyramid.
-        tiling = getattr(self, "_where_tiling_obs", None)
-        if isinstance(tiling, dict):
-            def _mask_candidates(x, key):
-                mask = tiling.get(key)
-                if not torch.is_tensor(mask) or x is None or x.dim() != 3:
-                    return x
-                mask = mask.to(device=x.device, dtype=torch.bool)
-                if mask.dim() == 1:
-                    mask = mask.unsqueeze(0)
-                if int(mask.shape[0]) != int(x.shape[0]):
-                    return x
-                if int(mask.shape[1]) < int(x.shape[1]):
-                    mask = F.pad(mask, (0, int(x.shape[1])
-                                        - int(mask.shape[1])), value=False)
-                elif int(mask.shape[1]) > int(x.shape[1]):
-                    mask = mask[:, :int(x.shape[1])]
-                return x * mask.unsqueeze(-1).to(x.dtype)
-
-            PS_t = _mask_candidates(PS_t, "part_valid")
-            WS_t = _mask_candidates(WS_t, "whole_valid")
         # Slice B: the THIRD (symbol) peer leg -- present whenever the combine
         # is 3-stream. An absent/empty SS_sub yields a ZERO symbol leg (via
         # _bind_fit's None->zeros), so a 3-stream combine ALWAYS receives three
@@ -21041,9 +19057,6 @@ class ConceptualSpace(Space):
         else:
             advanced_ev = glued
         CS_sub.set_event(advanced_ev)
-        if isinstance(tiling, dict):
-            object.__setattr__(CS_sub, "_where_tiling", tiling)
-            object.__setattr__(self.subspace, "_where_tiling", tiling)
         # The carrier rides ON the SubSpace(s): the handed-in CS_sub (the
         # data that flows downstream) AND this stage's own subspace when
         # they differ (CS.forward returns a per-batch sub distinct from
@@ -21913,7 +19926,6 @@ class ConceptualSpace(Space):
         return out * mask
 
 
-
 # Host-eager analysis-cut character TYPE, as a 256-entry byte LUT so the span
 # staging is a vectorised gather instead of a per-element Python scan. A whole
 # is a maximal constant-TYPE run (doc/plans/2026-07-10-wholes-are-types-
@@ -22204,7 +20216,7 @@ def _divide_spans_into_attested(byte_vals, spans, percept_store,
     the ``[B, N]`` CPU byte grid the spans index; ``spans`` is the
     zero-padded ``[B, K, 2]`` from :func:`_type_run_spans`. Returns
     ``[B, K', 2]`` (``spans`` itself when nothing divides). No-op without
-    a trie-backed store (e.g. lexicon-mode PS has no RadixLayer).
+    a trie-backed store (standalone callers may have no percept store).
     """
     trie = getattr(percept_store, "radix_trie", None)
     get_id = getattr(percept_store, "get_id", None)
@@ -22346,24 +20358,13 @@ class WholeSpace(Space):
                 f"{sorted(_VALID_ATTENTION_MODES)} (plan 2026-06-06-symbolic-heat-retrieval).")
         self.attention_mode = _attn
         nSymbols = spaceShape[0]
-        _a = None
-        for _key in ("analysis", "analyzer", "lexer"):
-            try:
-                _a = TheXMLConfig.space(section, _key)
-            except (KeyError, TypeError, ValueError):
-                _a = None
-            if _a:
-                break
-        if _key != "analysis" and _a not in (
-                "byte", "word", "grammatical", "raw", "sentence", "meronomy"):
-            _a = None  # non-analysis lexer spellings keep the byte default
-        self.analysis_mode = str(_a or "byte")
-        if self.analysis_mode not in (
-                "byte", "word", "grammatical", "raw", "sentence", "meronomy"):
-            raise ValueError(
-                f"WholeSpace.analysis must be "
-                f"byte|word|raw|sentence|grammatical|meronomy, "
-                f"got {self.analysis_mode!r}")
+        try:
+            analysis = TheXMLConfig.space(section, "analysis")
+        except KeyError:
+            analysis = None
+        self.analysis_mode = str(analysis or "meronomy").strip().lower()
+        if self.analysis_mode != "meronomy":
+            raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
         try:
             _dww = TheXMLConfig.space(section, "divideWithinWhole")
         except KeyError:
@@ -22425,16 +20426,7 @@ class WholeSpace(Space):
         self._staged_word_property_spans = None
         self.params = []
         self.layers = nn.ModuleList()
-        self.overlap_where_tiling = bool(TheXMLConfig.get(
-            "architecture.overlapWhereTiling", default=False))
-        self.where_tiling = None
-        self._where_tiling_schedule = None
-        self._where_tiling_obs = None
         self._staged_analysis_kinds = None
-        if self.overlap_where_tiling:
-            self.where_tiling = WhereTilingLayer()
-            self.layers.append(self.where_tiling)
-
 
         self.activeSigma = None
 
@@ -22864,11 +20856,6 @@ class WholeSpace(Space):
 
     def _build_type_subspace(self, tags=None):
         """Restore optional teaching tags onto the property inventory."""
-        if getattr(self, "analysis_mode", "byte") not in (
-                "word", "grammatical", "meronomy"):
-            self.type_subspace = None
-            self._type_lut_cache = None
-            return
         tc = getattr(getattr(self, "subspace", None), "what", None)
         if not isinstance(tc, Codebook):
             raise RuntimeError(
@@ -23150,10 +21137,6 @@ class WholeSpace(Space):
         split into a letter-run + a digit-run (``abc123`` -> two spans);
         (2) a multi-char punctuation run is ONE span, no longer one span
         per punct char (``...`` -> one span)."""
-        mode = getattr(self, "analysis_mode", "byte")
-        if mode != "meronomy":
-            from Legacy import stage_analysis_spans_legacy
-            return stage_analysis_spans_legacy(self, IS_concepts, mode)
         if IS_concepts is None:
             object.__setattr__(self, "_staged_property_signatures", None)
             object.__setattr__(self, "_staged_unit_spans", None)
@@ -23247,96 +21230,8 @@ class WholeSpace(Space):
                 t = _divide_spans_into_attested(idx, t, _ps, seen)
         return t.to(IS_concepts.device)
 
-    def stage_overlapping_spans(self, IS_concepts, base_spans=None):
-        """Stage the experimental multi-part/multi-whole WS lattice.
 
-        The legacy analysis cut returns one flat typed tiling.  The overlap
-        path retains three simultaneous scales, deduplicated per row:
 
-        ``kind=1`` typed run, ``kind=2`` separator-bounded word,
-        ``kind=3`` separator run, ``kind=4`` enclosing sentence.
-
-        Word/separator tiles are placed first so the fixed WS event budget sees
-        a complete surface tiling before optional typed refinements and the
-        sentence parent.  The full metadata lattice is not truncated here.
-        Host-eager by construction (called from ``_lex_embed_stem``).
-        """
-        if not self.overlap_where_tiling or IS_concepts is None:
-            self._staged_analysis_kinds = None
-            return base_spans
-        import Meronomy                         # local: avoid import cycle
-        u = IS_concepts
-        if u.dim() == 3:
-            u = u[:, 0, :]
-        rows = u.detach().to("cpu").long().tolist()
-        base_rows = (base_spans.detach().to("cpu").long().tolist()
-                     if torch.is_tensor(base_spans) else [[] for _ in rows])
-        out_rows, kind_rows = [], []
-        for b, vals in enumerate(rows):
-            nonzero = [i for i, x in enumerate(vals) if int(x) != 0]
-            n = (max(nonzero) + 1) if nonzero else 0
-            surface = bytes(int(x) & 0xFF for x in vals[:n])
-            words = set(Meronomy.word_spans(surface))
-            spans, kinds, seen = [], [], set()
-
-            def add(span, kind):
-                s, e = int(span[0]), int(span[1])
-                if e <= s or (s, e) in seen:
-                    return
-                seen.add((s, e))
-                spans.append((s, e))
-                kinds.append(int(kind))
-
-            for span in Meronomy.word_tiling(surface):
-                add(span, 2 if tuple(span) in words else 3)
-            if b < len(base_rows):
-                for span in base_rows[b]:
-                    add(span, 1)
-            if n > 0:
-                add((0, n), 4)
-            out_rows.append(spans)
-            kind_rows.append(kinds)
-        K = max((len(x) for x in out_rows), default=0)
-        if K == 0:
-            self._staged_analysis_kinds = None
-            return torch.zeros(
-                len(rows), 0, 2, dtype=torch.long, device=IS_concepts.device)
-        spans_t = torch.zeros(len(rows), K, 2, dtype=torch.long)
-        kinds_t = torch.zeros(len(rows), K, dtype=torch.long)
-        for b, spans in enumerate(out_rows):
-            if spans:
-                spans_t[b, :len(spans)] = torch.tensor(spans, dtype=torch.long)
-                kinds_t[b, :len(spans)] = torch.tensor(
-                    kind_rows[b], dtype=torch.long)
-        self._staged_analysis_kinds = kinds_t.to(IS_concepts.device)
-        return spans_t.to(IS_concepts.device)
-
-    def stage_where_tiling(self, part_spans, passes):
-        """Build the eager fixed-pass `.where` refinement schedule."""
-        if (not self.overlap_where_tiling or self.where_tiling is None
-                or part_spans is None
-                or getattr(self, "_staged_analysis_spans", None) is None):
-            self._where_tiling_schedule = None
-            self._where_tiling_obs = None
-            return None
-        schedule = self.where_tiling.build_schedule(
-            part_spans.to(torch.float32),
-            self._staged_analysis_spans.to(torch.float32),
-            max(1, int(passes)))
-        kinds = getattr(self, "_staged_analysis_kinds", None)
-        for obs in schedule:
-            if torch.is_tensor(kinds):
-                obs["whole_kinds"] = kinds
-        self._where_tiling_schedule = schedule
-        self._where_tiling_obs = schedule[0] if schedule else None
-        return schedule
-
-    def where_tiling_for_pass(self, pass_idx):
-        """Observation that routes a later pump pass (pass 0 is wide)."""
-        schedule = getattr(self, "_where_tiling_schedule", None)
-        if not schedule or int(pass_idx) <= 0:
-            return None
-        return schedule[min(int(pass_idx) - 1, len(schedule) - 1)]
 
     def property_spans(self, IS_concepts, class_ids):
         """Host-eager CHAR-CLASS property tiling → ``[B, K, 2]`` spans of the

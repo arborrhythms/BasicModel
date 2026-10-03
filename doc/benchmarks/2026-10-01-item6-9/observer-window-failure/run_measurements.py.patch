@@ -1,0 +1,11 @@
+--- a/run_measurements.py
++++ b/run_measurements.py
+@@ -17,7 +17,7 @@
+ out = HERE / 'measurements'
+ out.mkdir(exist_ok=True)
+ source = bounded.source_snapshot(ROOT)
+-paths = [HERE / name for name in ('probe_run.py', 'probe_variants.py', 'deriv69.py', 'measure_mm_grammar.py')]
++paths = [HERE / name for name in ('probe_run.py', 'probe_variants.py', 'probe_observation.py', 'deriv69.py', 'measure_mm_grammar.py')]
+ paths += sorted((HERE / 'probe-patches').rglob('*'))
+ harness = {str(p.relative_to(HERE)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in paths if p.is_file()}

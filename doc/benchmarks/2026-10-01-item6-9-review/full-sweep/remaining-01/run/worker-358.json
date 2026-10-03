@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_init_scale.py::test_init_scale_zero_is_none_byte_identical"
+  ],
+  "completed": [
+    "test/test_init_scale.py::test_init_scale_zero_is_none_byte_identical"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_init_scale.py::test_init_scale_zero_is_none_byte_identical",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002222332997916965,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

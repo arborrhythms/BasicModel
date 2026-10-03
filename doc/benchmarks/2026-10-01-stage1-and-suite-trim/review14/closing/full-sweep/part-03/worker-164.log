@@ -1,0 +1,27 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_________________ TestUntiedWordFlow.test_insert_grows_ps_only _________________
+test/test_tying_storage_shared.py:61: in test_insert_grows_ps_only
+    self.assertIsInstance(emb, Embedding)
+E   AssertionError: RadixLayer(
+E     (byte_fallback): BytesFallbackEncoder()
+E   ) is not an instance of <class 'Spaces.Embedding'>
+___ TestUntiedWordFlow.test_inserted_row_reads_back_through_local_parameter ____
+test/test_tying_storage_shared.py:86: in test_inserted_row_reads_back_through_local_parameter
+    wv = emb.wv
+         ^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'wv'
+_____________ TestUntiedWordFlow.test_key_to_index_stays_ps_local ______________
+test/test_tying_storage_shared.py:100: in test_key_to_index_stays_ps_local
+    wv = emb.wv
+         ^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'wv'
+=========================== short test summary info ============================
+FAILED test/test_tying_storage_shared.py::TestUntiedWordFlow::test_insert_grows_ps_only
+FAILED test/test_tying_storage_shared.py::TestUntiedWordFlow::test_inserted_row_reads_back_through_local_parameter
+FAILED test/test_tying_storage_shared.py::TestUntiedWordFlow::test_key_to_index_stays_ps_local
+3 failed in 2.19s

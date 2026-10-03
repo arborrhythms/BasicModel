@@ -1,0 +1,111 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_xor_loopback: PartSpace + ConceptualSpace + WholeSpace
+       scalar-codebook loopback on the XOR dataset. This is the surviving
+       scalar replacement for the retired bivector smoke config. -->
+  <architecture>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <symbolicOrder>1</symbolicOrder>
+    <!-- Pure forward-only smoke: zero out truth weights and learning so
+         the scalar loopback path is the only thing exercised. -->
+    <truthBiasScale>0.0</truthBiasScale>
+    <LuminosityWeight>0.0</LuminosityWeight>
+    <UniversalityWeight>0.0</UniversalityWeight>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <batchSize>4</batchSize>
+      <learningRate>0.0</learningRate>
+      <reconstructionScale>0.0</reconstructionScale>
+      <autoload>false</autoload>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nVectors>8</nVectors>
+    <!-- "4+4+4": nDim is the EVENT width (4 content + 4 .where + 4 .when). -->
+    <nDim>12</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>12</nOutputDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8</nInput>
+    <nInputDim>12</nInputDim>
+    <nVectors>256</nVectors>
+	    <!-- nDim is the codebook prototype width. Post-bivector-
+	         retirement (2026-05-20) nDim was raised from 2 to 4 to
+	         match InputSpace.nDim=4 — the bivector regime previously
+	         promoted nDim=2 to a [B, N, 2] output, but the scalar
+	         codebook now flows the codebook width through unchanged.
+	         "4+4+4": nDim is the EVENT width (4 content + 4 .where + 4 .when). -->
+    <nDim>12</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>12</nOutputDim>
+    <invertible>true</invertible>
+    <nonlinear>false</nonlinear>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>12</nInputDim>
+    <nVectors>8</nVectors>
+	    <!-- nDim is the codebook prototype content width. The right-half
+	         loopback widening was retired in favour of per-order input
+	         sourcing on ConceptualSpace.forward. Raised 2→4 in lockstep
+	         with PartSpace post-bivector-retirement.
+	         "4+4+4": nDim is the EVENT width (4 content + 4 .where + 4 .when). -->
+    <nDim>12</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>12</nOutputDim>
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+    <nonlinear>false</nonlinear>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <nInput>8</nInput>
+    <nInputDim>12</nInputDim>
+    <!-- Rows 0..7 are reserved well-known atoms; leave dynamic capacity
+         for the runtime autobind exercised by this fixture. -->
+    <nVectors>64</nVectors>
+    <!-- 2026-06-06 uniform-band migration: nDim is the EVENT width
+         (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
+         tier, so nDim was bumped 4 -> 8 to preserve nWhat=4. -->
+    <nDim>12</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>12</nOutputDim>
+	    <!-- Smoke config: zero out the codebook regularizers. -->
+    <l1Lambda>0.0</l1Lambda>
+    <commitmentBeta>0.0</commitmentBeta>
+    <nonlinear>false</nonlinear>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <!-- C2 (handoff migration): OS.nInputDim 4->8 to match the uniform-band
+         widened SS event (SS slab nOutput*nOutputDim = 8*8 = 64); the band
+         slots ride along as inert padding into the (0,0)-band OutputSpace. -->
+    <nInputDim>12</nInputDim>
+    <nVectors>1</nVectors>
+    <nOutput>1</nOutput>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <start>S</start>
+      <grammar>
+        <S>S = not(S)</S>
+        <S>S = intersection(S, S)</S>
+        <S>S = union(S, S)</S>
+      </grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

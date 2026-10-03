@@ -1,0 +1,38 @@
+FF.FF...                                                                 [100%]
+=================================== FAILURES ===================================
+_ TestOutputSpaceTextReconstruction.test_vectors_constructor_enables_reconstruction _
+test/test_basicmodel.py:1432: in test_vectors_constructor_enables_reconstruction
+    self.assertTrue(os_.text_mode)
+E   AssertionError: False is not true
+________ TestInputSpaceTextRoundTrip.test_reconstruct_data_joins_words _________
+test/test_basicmodel.py:1601: in test_reconstruct_data_joins_words
+    latent = psp._embed(inp.forward(inputTensor)[0])
+             ^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'PartSpace' object has no attribute '_embed'
+_________________ TestLexerConfig.test_embedding_can_tokenize __________________
+test/test_basicmodel.py:1630: in test_embedding_can_tokenize
+    tokens = psp.vocabulary._token_stream("test input")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute '_token_stream'
+_________ TestLexerConfig.test_embedding_creates_reversible_dictionary _________
+test/test_basicmodel.py:1639: in test_embedding_creates_reversible_dictionary
+    self.assertIsInstance(psp.vocabulary, Models.Embedding)
+E   AssertionError: RadixLayer(
+E     (byte_fallback): BytesFallbackEncoder()
+E   ) is not an instance of <class 'Spaces.Embedding'>
+=============================== warnings summary ===============================
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1739: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_vectors_constructor_enables_reconstruction
+FAILED test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reconstruct_data_joins_words
+FAILED test/test_basicmodel.py::TestLexerConfig::test_embedding_can_tokenize
+FAILED test/test_basicmodel.py::TestLexerConfig::test_embedding_creates_reversible_dictionary
+4 failed, 4 passed, 1 warning in 2.35s

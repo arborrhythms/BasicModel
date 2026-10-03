@@ -1,0 +1,2 @@
+{"seed": null, "config": "data/MM_xor.xml", "budget": 200, "threshold": 0.2, "serial": false, "useGrammar": "all", "best_loss": Infinity}
+{"seed": null, "config": "data/MM_xor.xml", "budget": 200, "threshold": 0.2, "serial": false, "useGrammar": "all", "best_loss": 0.2230532318353653, "epochs_completed": 200, "elapsed_seconds": 8.162409999989904, "passed": false}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_truth_luminosity_codes.py::test_mereology_delegator_routes_here"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-578.recycle.json"
+}

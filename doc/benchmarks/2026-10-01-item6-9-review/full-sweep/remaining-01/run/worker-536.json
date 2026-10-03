@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_subspace.py::test_update_one_field_does_not_desync_others"
+  ],
+  "completed": [
+    "test/test_idea_subspace.py::test_update_one_field_does_not_desync_others"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_subspace.py::test_update_one_field_does_not_desync_others",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006399590020009782,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

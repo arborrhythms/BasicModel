@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped_timing.py",
+    "--child",
+    "--source",
+    "/Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price",
+    "--config",
+    "data/matrix/MM_20M_grammar_reading.xml",
+    "--arm",
+    "before",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped-timing-matrix/MM_20M_grammar_reading-before.json"
+  ],
+  "pid": 12434,
+  "exit_code": 137,
+  "reason": "memory",
+  "peak_memory_bytes": 9030933728,
+  "elapsed_seconds": 13.44484120800189,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped-timing-matrix/MM_20M_grammar_reading-before.log"
+}

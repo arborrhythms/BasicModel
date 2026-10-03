@@ -1,0 +1,34 @@
+F....FFF                                                                 [100%]
+=================================== FAILURES ===================================
+_______ test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical ________
+test/test_meronomy_ladder.py:36: in test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical
+    assert Legacy.LEGACY_WHOLE_ANALYSIS_MODES == {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'Legacy' has no attribute 'LEGACY_WHOLE_ANALYSIS_MODES'
+_______________ test_undivided_legacy_modes_stage_no_spans[byte] _______________
+test/test_meronomy_ladder.py:57: in test_undivided_legacy_modes_stage_no_spans
+    assert WholeSpace.stage_analysis_spans(fake, _bytes("abc def")) is None
+E   AssertionError: assert tensor([[[0, 3],\n         [4, 7]]]) is None
+E    +  where tensor([[[0, 3],\n         [4, 7]]]) = <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0>(namespace(analysis_mode='byte', subspace=namespace(what=namespace(primitive_properties=PrimitiveProperties())), well_k...]]]), tensor([[[0, 3],\n         [4, 7]]])), _staged_unit_parent=tensor([[0, 1]]), _staged_unit_clause=tensor([[0, 0]])), tensor([[ 97,  98,  99,  32, 100, 101, 102]]))
+E    +    where <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0> = WholeSpace.stage_analysis_spans
+E    +    and   tensor([[ 97,  98,  99,  32, 100, 101, 102]]) = _bytes('abc def')
+_______________ test_undivided_legacy_modes_stage_no_spans[raw] ________________
+test/test_meronomy_ladder.py:57: in test_undivided_legacy_modes_stage_no_spans
+    assert WholeSpace.stage_analysis_spans(fake, _bytes("abc def")) is None
+E   AssertionError: assert tensor([[[0, 3],\n         [4, 7]]]) is None
+E    +  where tensor([[[0, 3],\n         [4, 7]]]) = <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0>(namespace(analysis_mode='raw', subspace=namespace(what=namespace(primitive_properties=PrimitiveProperties())), well_kn...]]]), tensor([[[0, 3],\n         [4, 7]]])), _staged_unit_parent=tensor([[0, 1]]), _staged_unit_clause=tensor([[0, 0]])), tensor([[ 97,  98,  99,  32, 100, 101, 102]]))
+E    +    where <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0> = WholeSpace.stage_analysis_spans
+E    +    and   tensor([[ 97,  98,  99,  32, 100, 101, 102]]) = _bytes('abc def')
+_____________ test_undivided_legacy_modes_stage_no_spans[sentence] _____________
+test/test_meronomy_ladder.py:57: in test_undivided_legacy_modes_stage_no_spans
+    assert WholeSpace.stage_analysis_spans(fake, _bytes("abc def")) is None
+E   AssertionError: assert tensor([[[0, 3],\n         [4, 7]]]) is None
+E    +  where tensor([[[0, 3],\n         [4, 7]]]) = <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0>(namespace(analysis_mode='sentence', subspace=namespace(what=namespace(primitive_properties=PrimitiveProperties())), we...]]]), tensor([[[0, 3],\n         [4, 7]]])), _staged_unit_parent=tensor([[0, 1]]), _staged_unit_clause=tensor([[0, 0]])), tensor([[ 97,  98,  99,  32, 100, 101, 102]]))
+E    +    where <function WholeSpace.stage_analysis_spans at 0x13d6f9bc0> = WholeSpace.stage_analysis_spans
+E    +    and   tensor([[ 97,  98,  99,  32, 100, 101, 102]]) = _bytes('abc def')
+=========================== short test summary info ============================
+FAILED test/test_meronomy_ladder.py::test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical
+FAILED test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[byte]
+FAILED test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[raw]
+FAILED test/test_meronomy_ladder.py::test_undivided_legacy_modes_stage_no_spans[sentence]
+4 failed, 4 passed in 2.21s

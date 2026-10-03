@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_ltm_chain_grows.py::TestLtmFailLoud::test_nan_payload_raises"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-223.recycle.json"
+}

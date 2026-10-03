@@ -1,0 +1,99 @@
+--- 
++++ 
+@@ -1,92 +1,4 @@
+-    def _sentence_answer_error(self, state, sid, active, observation, *, registry=None):
+-        """A supplied answer trains only this trial's reader of the understanding.
+-
+-        The target is loss-side metadata: it never enters composition. Both
+-        trials read it after composing, before either optimizer update. The
+-        understanding is detached at its reader; reconstruction owns its graph.
+-        """
+-        self._sentence_answer_cost = None
+-        destination = registry
+-        # Keep the supplied answer distinct from generation lessons. Only
+-        # reconstruction and this answer enter the comparison between trials.
+-        registry = Error(row_mask=active)
+-        target = getattr(self, '_sentence_supplied_answers', None)
+-        if (not getattr(self, '_sentence_training', False)
+-                or not torch.is_tensor(target) or not target.numel()
+-                or not self.inputSpace.data.has_supervised_outputs):
+-            return None
+-        _stm, lang, _feedback = state
+-        root = lang[9][:, sid]
+-        slots = lang[13][:, sid].reshape(root.shape[0], 3, root.shape[-1])
+-        depth = lang[14][:, sid]
+-        if getattr(self, 'answer_synthesis', False):
+-            data = self.inputSpace.data
+-            questions = self._sentence_answer_questions
+-            desired = tuple(data.what(question) for question in questions)
+-            values = [answer.what if answer.available and question.relation is WhatRelation.SUPERVISED
+-                      else None for question, answer in zip(questions, desired)]
+-            if not any(value is not None for value in values):
+-                return None
+-            # Realize this trial's completed field without a query or a write.
+-            # Generation is the reading map in these configurations. Its
+-            # normal batch-end call still takes the default state cut.
+-            # Match _commit_sentence's completed point: an open clause may
+-            # still describe two pre-fusion roles, which are not an end state.
+-            meanings = [
+-                replace(ConceptualMeaning.from_description(clause.point),
+-                        mode=meaning.mode, polarity=meaning.polarity, sentence_kind='idea')
+-                if clause is not None and clause.relation is None else meaning
+-                for meaning, clause in zip(observation['meanings'], observation['clauses'])]
+-            fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
+-            idea = torch.stack([root[b].new_zeros(3, root.shape[-1])
+-                                if value is None else value.roles
+-                                for b, value in enumerate(meanings)])
+-            context, _ = self._what_grammar_context(questions, device=root.device, dtype=root.dtype)
+-            held = AnswerDerivation(answer_symbol=None, sentence_states=fields,
+-                conceptual_answer=idea, questions=questions, conditioning_context=context,
+-                answer_meanings=tuple(() if value is None else (value,) for value in meanings))
+-            understanding = Understanding(conceptual_state=idea, sentence_states=fields,
+-                sentence_records=(observation['record'],))
+-            construction = self.reverseOutput(understanding, held)
+-            pred = construction.actual
+-            # Supplied answers retain Data.what's authority, including empty
+-            # rows and text targets. Desired values only score the fixed output.
+-            if any(isinstance(value, str) for value in values):
+-                filler = next(value for value in values if isinstance(value, str))
+-                mask = active & torch.tensor([isinstance(value, str) for value in values], device=root.device)
+-                target_surface = self._embed_answer_texts(
+-                    [value if isinstance(value, str) else filler for value in values]).detach()
+-                surface = self._answer_surface_from_percepts(construction.percepts)
+-                error = torch.stack([self._reverse_event_loss(surface[b:b+1], target_surface[b:b+1])
+-                                     for b in range(root.shape[0])])
+-                for b in range(root.shape[0]):
+-                    if bool(mask[b]):
+-                        local = Error()
+-                        self._reverse_event_loss(surface[b:b+1], target_surface[b:b+1],
+-                            registry=local, name='answer', objective='output')
+-                        for name, rec in local._terms.items():
+-                            numerator, baseline, count, mean_count = local._statistics(rec)
+-                            registry.error(name, numerator/mean_count, baseline/mean_count,
+-                                row=b, entry_weight=count, weight=rec['weight'], objective='output')
+-                self._sentence_answer_raw_cost = torch.where(mask, error, torch.zeros_like(error))
+-                self._sentence_answer_cost = registry.total(objective='output')
+-                if destination is not None:
+-                    destination.merge(registry)
+-                return self._sentence_answer_cost
+-            template = next(value for value in values if value is not None)
+-            target = self.outputSpace.prepOutput([template if value is None else value for value in values])
+-            active = active & torch.tensor([value is not None for value in values], device=root.device)
+-        else:
+-            answer = self._forward_head(None, sentence_state=(root, slots, depth),
+-                                        understanding=observation['record'])
+-            pred = self.normalizer.denormalize(answer.materialize(), which='output')
+-        pred = self._align_output_pred(pred, target)
+-        if pred is None:
+-            raise RuntimeError('sentence answer and supplied target do not align')
+-        error = (pred - target.to(pred)).square().reshape(root.shape[0], -1).mean(-1)
+-        self._sentence_answer_raw_cost = torch.where(active, error, torch.zeros_like(error))
+-        self.loss.register(registry, 'answer', pred, target.to(pred), mask=active, category='prediction', objective='output')
+-        self._sentence_answer_cost = registry.total(objective='output')
+-        if destination is not None:
+-            destination.merge(registry)
+-        return self._sentence_answer_cost
++    def no_trial_answer(self,*args,**kwargs):
++        self._sentence_answer_cost=None
++        self._sentence_answer_raw_cost=None
++        return None

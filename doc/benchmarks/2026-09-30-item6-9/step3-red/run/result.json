@@ -1,0 +1,160 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/worker-000.json"
+      ],
+      "pid": 42924,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 559662400,
+      "elapsed_seconds": 4.484226000029594,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 2.1041966669727117,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py:38: in test_grammar_resolves_each_word_to_its_full_object_code\n    assert len(seen) == 8, f'every real word must resolve once; observed {len(seen)} object leaves'\nE   AssertionError: every real word must resolve once; observed 0 object leaves\nE   assert 0 == 8\nE    +  where 0 = len([])",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/worker-001.json"
+      ],
+      "pid": 42925,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 560170328,
+      "elapsed_seconds": 5.458180125104263,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 2.082107750000432,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py:38: in test_grammar_resolves_each_word_to_its_full_object_code\n    assert len(seen) == 8, f'every real word must resolve once; observed {len(seen)} object leaves'\nE   AssertionError: every real word must resolve once; observed 0 object leaves\nE   assert 0 == 8\nE    +  where 0 = len([])",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/worker-002.json"
+      ],
+      "pid": 42926,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 998180616,
+      "elapsed_seconds": 29.14015974989161,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 26.35064020799473,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run",
+  "elapsed_seconds": 31.343597249826416,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1654870048,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/collect.json"
+    ],
+    "pid": 42909,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179995464,
+    "elapsed_seconds": 1.8330418330151588,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step3-red/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

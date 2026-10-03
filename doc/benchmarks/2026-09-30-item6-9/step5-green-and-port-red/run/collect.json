@@ -1,0 +1,18 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

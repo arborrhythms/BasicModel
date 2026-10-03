@@ -1524,7 +1524,7 @@ class PretrainModel:
 
     # -- single-sentence update ------------------------------------------------
 
-    def _neg_sampling_loss(self, queries, target_idx):
+    def _neg_sampling_loss(self, queries, target_idx, *, errors=None):
         """Negative sampling loss: -log sigma(q*w^+) - Sigma log sigma(-q*w_k^-).
 
         Args:
@@ -1546,6 +1546,9 @@ class PretrainModel:
         neg_scores = _wrapped_mse_score(
             queries.unsqueeze(1), neg_vecs)                          # [N, K]
 
+        if errors is not None:
+            errors.binary('positive', pos_scores, torch.ones_like(pos_scores), category='embedding')
+            errors.binary('negative', neg_scores, torch.zeros_like(neg_scores), category='embedding')
         return -F.logsigmoid(pos_scores).mean() - F.logsigmoid(-neg_scores).mean()
 
     def _post_step(self):
@@ -1632,7 +1635,7 @@ class PretrainModel:
 
         return loss.item()
 
-    def sbow_loss(self, words):
+    def sbow_loss(self, words, *, errors=None):
         """Return SBOW loss as a differentiable tensor (no backward, no step).
 
         For joint optimization: the caller accumulates this loss with the
@@ -1655,9 +1658,9 @@ class PretrainModel:
         total = vecs.sum(dim=0)                           # [dim]
         centroids = (total.unsqueeze(0) - vecs) / (N - 1) # [N, dim]
 
-        return self._neg_sampling_loss(centroids, idx)
+        return self._neg_sampling_loss(centroids, idx, errors=errors)
 
-    def sbow_loss_indices(self, idx_list):
+    def sbow_loss_indices(self, idx_list, *, errors=None):
         """SBOW loss (differentiable) over explicit codebook row indices.
 
         Same objective as :meth:`sbow_loss` -- leave-one-out centroid with
@@ -1684,14 +1687,29 @@ class PretrainModel:
             # collapse work SBOW exists to do (a centroid of one still has an
             # antipode).
             centroids = vecs
-        return self._neg_sampling_loss(centroids, idx)
+        return self._neg_sampling_loss(centroids, idx, errors=errors)
 
     # -- export ----------------------------------------------------------------
 
 
 
+def conceptual_antipode_loss_codes(leaf, codes, selected, valid, *, beta=10.0):
+    """One selected identity aligns; every other valid identity repels.
+
+    These are binary logistic errors on cosine, exactly SBOW's negative
+    form for the competitors. There is no co-occurrence centroid or norm
+    update. Both operands stay live; reconstruction is their sole writer.
+    The caller registers this mean with the uninformed baseline log(2).
+    """
+    cosine = F.cosine_similarity(leaf[:, None], codes, dim=-1)
+    columns = torch.arange(codes.shape[1], device=codes.device)
+    signs = torch.where(columns[None] == selected[:, None], -1., 1.)
+    terms = F.softplus(beta * signs * cosine)
+    return (terms * valid).sum(-1) / valid.sum(-1).clamp_min(1)
+
+
 def conceptual_sbow_loss_codes(window, pool=None, *, sigma=None, neg_k=None,
-                               scale=1.0, gaussian=False, beta=10.0, eps=1e-8):
+                               scale=1.0, gaussian=False, beta=10.0, eps=1e-8, errors=None):
     """Plain-unit-ball SBOW over continuous concept codes (differentiable, joint).
 
     ``window`` is a ``[N, D]`` or ``[B, N, D]`` tensor of per-position concept
@@ -1762,34 +1780,13 @@ def conceptual_sbow_loss_codes(window, pool=None, *, sigma=None, neg_k=None,
     # every code is trained each round (present -> pode, absent -> pushed).
     out_sim = (_unit(window).unsqueeze(2) * _unit(out)).sum(-1)        # [B,N,K] code . negative
 
+    if errors is not None:
+        errors.binary('positive', beta*in_sim, torch.ones_like(in_sim), weight=scale, category='embedding')
+        errors.binary('negative', beta*out_sim, torch.zeros_like(out_sim), weight=scale, category='embedding')
     return scale * (-F.logsigmoid(beta * in_sim).mean()
                     - F.logsigmoid(-beta * out_sim).mean())            # push code AWAY from negatives
 
 
-class _CBOWModule(nn.Module):
-    """CBOW forward pass as an nn.Module for torch.compile.
-
-    Wraps the embed-lookup -> masked-mean -> linear step in a Module
-    so torch.compile can fuse it. Used by the legacy CBOW path; the
-    canonical embedding pipeline now uses SBOW.
-    """
-
-    def __init__(self, vocab_size, vector_size):
-        """Build an embedding table and a vocab-projection linear head."""
-        super().__init__()
-        self.embeddings = nn.Embedding(vocab_size, vector_size)
-        self.linear = nn.Linear(vector_size, vocab_size)
-
-    def forward(self, ctx_padded, ctx_mask):
-        """Masked-mean of context embeddings, then project to vocab logits.
-
-        ``ctx_padded`` is ``[B, ctx_len]`` long; ``ctx_mask`` is the
-        matching ``[B, ctx_len]`` float mask of valid positions.
-        """
-        ctx_embeds = self.embeddings(ctx_padded)
-        masked = ctx_embeds * ctx_mask.unsqueeze(-1)
-        ctx_mean = masked.sum(dim=1) / ctx_mask.sum(dim=1, keepdim=True)
-        return self.linear(ctx_mean)
 
 
 class _SBOWEmbedding(nn.Module):

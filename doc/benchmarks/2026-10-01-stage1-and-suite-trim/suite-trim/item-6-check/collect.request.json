@@ -1,0 +1,25 @@
+{
+  "selectors": [
+    "test/test_discourse_space.py",
+    "test/test_ops_lift_lower.py",
+    "test/test_stm_reverse_roundtrip_lift_lower.py",
+    "test/test_lexicon_unit_ball.py",
+    "test/test_when_range_encoding.py",
+    "test/test_modality_widths.py",
+    "test/test_ir_only_refactor.py",
+    "test/test_relative_rule_detection_collapsed.py",
+    "test/test_space_carrier_bridge.py",
+    "test/test_word_buffer_flush.py",
+    "test/test_thought_legacy_boundaries.py",
+    "test/test_thought_checkpoint_credit.py",
+    "test/test_thought_history_boundaries.py",
+    "test/test_item7_end_state_storage.py",
+    "test/test_what_episode_memory.py::test_slot_mode_detaches_at_append",
+    "test/test_what_episode_memory.py::test_symbol_space_owns_memory_lifecycle",
+    "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

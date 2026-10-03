@@ -1,0 +1,94 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "completed": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-10/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-10/run/worker-000.json"
+      ],
+      "pid": 28022,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1160481120,
+      "elapsed_seconds": 189.83651975000976,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-10/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 183.94719362500473,
+          "message": "test/test_explicit_dimensions.py:240: in test_xor_class_accuracy\n    self.assertLess(\nE   AssertionError: 0.07438569515943527 not less than 0.05 : XOR_grammar requires MSE <0.05, got 0.07438569515943527: [0.09279146790504456, 0.545139729976654, 0.8658291101455688, 0.25304707884788513]",
+          "stdout": ".0263, reconstruction=0.4323\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.250s, 100.00%)\r\nTraining throughput: 1 batches in 0.250s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0507, reconstruction=0.4321\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.248s, 100.00%)\r\nTraining throughput: 1 batches in 0.248s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0326, reconstruction=0.4319\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.246s, 100.00%)\r\nTraining throughput: 1 batches in 0.246s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0531, reconstruction=0.8052\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.252s, 100.00%)\r\nTraining throughput: 1 batches in 0.251s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0240, reconstruction=0.8048\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.248s, 100.00%)\r\nTraining throughput: 1 batches in 0.248s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0444, reconstruction=0.8043\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.250s, 100.00%)\r\nTraining throughput: 1 batches in 0.250s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0286, reconstruction=0.8038\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.251s, 100.00%)\r\nTraining throughput: 1 batches in 0.251s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0330, reconstruction=0.8031\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.250s, 100.00%)\r\nTraining throughput: 1 batches in 0.249s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0518, reconstruction=0.8025\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.253s, 100.00%)\r\nTraining throughput: 1 batches in 0.252s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0586, reconstruction=0.8019\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.251s, 100.00%)\r\nTraining throughput: 1 batches in 0.250s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0280, reconstruction=0.4297\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.251s, 100.00%)\r\nTraining throughput: 1 batches in 0.251s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0198, reconstruction=0.8006\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.250s, 100.00%)\r\nTraining throughput: 1 batches in 0.250s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0209, reconstruction=0.4289\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.252s, 100.00%)\r\nTraining throughput: 1 batches in 0.251s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0240, reconstruction=0.7990\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.256s, 100.00%)\r\nTraining throughput: 1 batches in 0.255s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0268, reconstruction=0.4284\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.251s, 100.00%)\r\nTraining throughput: 1 batches in 0.251s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0086, reconstruction=0.7977\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.253s, 100.00%)\r\nTraining throughput: 1 batches in 0.252s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0141, reconstruction=0.7972\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.252s, 100.00%)\r\nTraining throughput: 1 batches in 0.252s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0162, reconstruction=0.7966\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=29.816s, 100.00%)\r\nTraining throughput: 1 batches in 29.762s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='loving ' label=0.0000 predicted=0.0928 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='hello ' label=1.0000 predicted=0.5451 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='loving ' label=1.0000 predicted=0.8658 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='world ' label=0.0000 predicted=0.2530 MISMATCH\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-10/run",
+  "elapsed_seconds": 192.2078977499914,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1160481120,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-10/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-10/run/collect.json"
+    ],
+    "pid": 28015,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180634464,
+    "elapsed_seconds": 1.952627874998143,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-10/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

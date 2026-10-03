@@ -298,31 +298,6 @@ class TestLiftLowerNoSubstrateBorrow(unittest.TestCase):
             out = layer.forward(a, b)
         self.assertTrue(torch.isfinite(out).all())
 
-    def test_lift_lower_classes_no_substrate_borrow_in_source(self):
-        """grep gate: ``PartSpace.sigma`` / ``ConceptualSpace.pi``
-        do not appear in LiftLayer / LowerLayer source.
-
-        (Stage 4 acceptance criterion in the master plan.)
-        """
-        import inspect
-        from Layers import LiftLayer as _Lift
-        from Layers import LowerLayer as _Lower
-        for cls in (_Lift, _Lower):
-            try:
-                src = inspect.getsource(cls)
-            except (OSError, TypeError):
-                continue
-            # The retired pattern: substrate borrow from the named
-            # Space attributes. Stage 4 forbids these references
-            # inside the layer class bodies.
-            self.assertNotIn(
-                "PartSpace.sigma", src,
-                f"{cls.__name__} must not borrow PartSpace.sigma "
-                f"after Stage 4 (substrate retirement).")
-            self.assertNotIn(
-                "ConceptualSpace.pi", src,
-                f"{cls.__name__} must not borrow ConceptualSpace.pi "
-                f"after Stage 4 (substrate retirement).")
 
 
 class TestLiftLowerHasInternalSubstrate(unittest.TestCase):

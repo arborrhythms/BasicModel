@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_closing_does_not_spend_rounds_repeating_not_at_one_slot _________
+test/test_inverse_unary_exclusion.py:26: in test_closing_does_not_spend_rounds_repeating_not_at_one_slot
+    assert result['used'].tolist() == [2]  # not, then STOP
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert [6] == [2]
+E     
+E     At index 0 diff: 6 != 2
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED test/test_inverse_unary_exclusion.py::test_closing_does_not_spend_rounds_repeating_not_at_one_slot
+1 failed in 2.41s

@@ -52,12 +52,3 @@ def test_untied_vectors_compiles_fullgraph():
     wv = WordVectors(torch.randn(4, 8), ["a", "b", "c", "d"])
     out = _compiled_read(wv)
     assert out.dim() == 0
-
-
-def test_tie_api_is_retired():
-    """``tie_to_codebook`` is gone; the getter stays permanently None."""
-    wv = WordVectors(torch.randn(4, 8), ["a", "b", "c", "d"])
-    assert not hasattr(wv, "tie_to_codebook"), (
-        "WordVectors.tie_to_codebook was retired (Step 3 of the "
-        "2026-06-10 symbolic-iteration plan)")
-    assert wv._tied_param_getter is None

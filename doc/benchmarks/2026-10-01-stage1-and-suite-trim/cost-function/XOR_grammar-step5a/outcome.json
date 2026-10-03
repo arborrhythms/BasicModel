@@ -1,0 +1,281 @@
+{
+  "training_batches": 400,
+  "evaluation_batches": 1,
+  "receipt_added_endpoint": false,
+  "last_training_trials": {
+    "exploit": {
+      "pair": 399,
+      "trial": "exploit",
+      "train": true,
+      "scope": "batch",
+      "batch": 399,
+      "sid": 0,
+      "active": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "raw": {
+        "reconstruction": [
+          2.9619712829589844,
+          2.6209704875946045,
+          0.00010005877265939489,
+          0.00017894915072247386
+        ],
+        "expectation_inter": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "expectation_contrastive": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "supplied_answer": [
+          0.04489380493760109,
+          0.154963418841362,
+          0.02231508679687977,
+          0.02967933565378189
+        ],
+        "grammar_lesson": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "weighted": {
+        "reconstruction": [
+          0.29619714617729187,
+          0.2620970606803894,
+          1.000587781163631e-05,
+          1.7894915799843147e-05
+        ],
+        "expectation": [
+          0.00035947561264038086,
+          0.00035947561264038086,
+          0.00035947561264038086,
+          0.00035947561264038086
+        ],
+        "supplied_answer": [
+          0.04489380493760109,
+          0.154963418841362,
+          0.02231508679687977,
+          0.02967933565378189
+        ],
+        "total": [
+          0.34145042300224304,
+          0.417419970035553,
+          0.022684568539261818,
+          0.030056705698370934
+        ],
+        "legacy_intra": [
+          0.00035947561264038086,
+          0.00035947561264038086,
+          0.00035947561264038086,
+          0.00035947561264038086
+        ]
+      },
+      "evaluation_supplied_answer": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "grammar_terms": {},
+      "weights": {
+        "reconstruction": 0.1,
+        "expectation_inter": 0.1,
+        "expectation_contrastive": 0.0,
+        "supplied_answer": 1.0,
+        "grammar_lesson": 1.0
+      },
+      "reconstruction_enabled": true
+    },
+    "explore": {
+      "pair": 399,
+      "trial": "explore",
+      "train": true,
+      "scope": "batch",
+      "batch": 399,
+      "sid": 0,
+      "active": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "raw": {
+        "reconstruction": [
+          0.00013730091450270265,
+          2.6209704875946045,
+          4.131977558135986,
+          0.00017894915072247386
+        ],
+        "expectation_inter": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "expectation_contrastive": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "supplied_answer": [
+          0.3306533694267273,
+          0.22274146974086761,
+          0.34460344910621643,
+          0.9256637692451477
+        ],
+        "grammar_lesson": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "weighted": {
+        "reconstruction": [
+          1.3730091268371325e-05,
+          0.2620970606803894,
+          0.41319775581359863,
+          1.7894915799843147e-05
+        ],
+        "expectation": [
+          0.000443875789642334,
+          0.000443875789642334,
+          0.000443875789642334,
+          0.000443875789642334
+        ],
+        "supplied_answer": [
+          0.3306533694267273,
+          0.22274146974086761,
+          0.34460344910621643,
+          0.9256637692451477
+        ],
+        "total": [
+          0.33111098408699036,
+          0.48528242111206055,
+          0.758245050907135,
+          0.9261255264282227
+        ],
+        "legacy_intra": [
+          0.000443875789642334,
+          0.000443875789642334,
+          0.000443875789642334,
+          0.000443875789642334
+        ]
+      },
+      "evaluation_supplied_answer": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "grammar_terms": {},
+      "weights": {
+        "reconstruction": 0.1,
+        "expectation_inter": 0.1,
+        "expectation_contrastive": 0.0,
+        "supplied_answer": 1.0,
+        "grammar_lesson": 1.0
+      },
+      "reconstruction_enabled": true
+    }
+  },
+  "last_batch": {
+    "raw": {
+      "lossOut": 0.04504910111427307,
+      "lossIn": 1.3971285820007324,
+      "lossRev": 0.0,
+      "sbow": null,
+      "grammar_lesson": null,
+      "output_policy_loss": null,
+      "csbow": null,
+      "defsp": null,
+      "arma_loss": null,
+      "intra_loss": null,
+      "inter_loss": null,
+      "inter_contrastive": null,
+      "aux_total": null,
+      "expectation_policy_loss": null,
+      "selected_pol_loss": null,
+      "ld_loss": null,
+      "gate_l1": null,
+      "readout_l1": null,
+      "totalLoss": 0.18025705218315125
+    },
+    "weights": {
+      "lossOut": 0.9,
+      "lossIn": 0.1,
+      "lossRev": 0.1,
+      "sbow": 0.05,
+      "grammar_lesson": 1.0,
+      "output_policy_loss": 0.0,
+      "csbow": 0.0,
+      "defsp": 1.0,
+      "arma_loss": 0.0,
+      "intra_loss": 0.1,
+      "inter_loss": 0.1,
+      "inter_contrastive": 0.0,
+      "aux_total": 1.0,
+      "expectation_policy_loss": 0.0,
+      "selected_pol_loss": 0.0,
+      "ld_loss": 0.0,
+      "gate_l1": 1.0,
+      "readout_l1": 1.0
+    },
+    "train": false,
+    "split": "test"
+  },
+  "grammar_reconstructions": [
+    {
+      "texts": [
+        "world there",
+        "there there",
+        "loving world",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  ],
+  "predictions": [
+    0.20396706461906433,
+    0.5948320627212524,
+    0.8501715660095215,
+    0.17091301083564758
+  ],
+  "targets": [
+    [
+      0.0
+    ],
+    [
+      1.0
+    ],
+    [
+      1.0
+    ],
+    [
+      0.0
+    ]
+  ],
+  "inputs": [
+    "hello world",
+    "hello there",
+    "loving world",
+    "loving there"
+  ],
+  "seconds": 76.86771512499399
+}

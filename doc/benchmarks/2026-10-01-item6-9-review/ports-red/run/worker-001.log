@@ -1,0 +1,228 @@
+FFFFFFFFFFFFFFFF                                                         [100%]
+=================================== FAILURES ===================================
+_____ test_explicit_boundary_retains_factored_roles_and_skips_masked_rows ______
+test/test_compiled_expectation_boundary.py:79: in test_explicit_boundary_retains_factored_roles_and_skips_masked_rows
+    commit_reading(fixture.language, fixture.registry, entry, None,
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1] _
+test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts
+    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3] _
+test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts
+    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1] _
+test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts
+    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3] _
+test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts
+    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_______ test_packed_ltm_ignores_masked_slots_even_with_retained_storage ________
+test/test_expectation_defaults.py:257: in test_packed_ltm_ignores_masked_slots_even_with_retained_storage
+    commit_reading(f.language, f.registry, entry, store, discourse=discourse,
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+______ test_closing_discards_operations_without_changing_other_live_rows _______
+test/test_item7_end_state_storage.py:122: in test_closing_discards_operations_without_changing_other_live_rows
+    _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+________ test_packed_prediction_teardown_records_each_observation_once _________
+test/test_joint_objectives.py:66: in test_packed_prediction_teardown_records_each_observation_once
+    owner = present()
+            ^^^^^^^^^
+test/test_joint_objectives.py:64: in present
+    return commit_reading(fixture.language, fixture.registry, fixture.program('cat'),
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+__________ test_10_packed_pending_and_eager_ends_write_identical_rows __________
+test/test_selected_nested_meaning.py:65: in test_10_packed_pending_and_eager_ends_write_identical_rows
+    stores = [_write_selected_observation(language, registry, entry, path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:122: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_nested_observation_writers_retain_children_without_certifying_them[batch_eval] _
+test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them
+    store = _write_selected_observation(language, registry, entry, path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:122: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_nested_observation_writers_retain_children_without_certifying_them[forward] _
+test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them
+    store = _write_selected_observation(language, registry, entry, path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:122: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_nested_observation_writers_retain_children_without_certifying_them[packed] _
+test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them
+    store = _write_selected_observation(language, registry, entry, path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:122: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward] _
+test/test_selected_relation_meaning.py:423: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed] _
+test/test_selected_relation_meaning.py:423: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+________ test_streaming_and_packed_boundary_use_same_full_roles[False] _________
+test/test_sentence_expectation.py:120: in test_streaming_and_packed_boundary_use_same_full_roles
+    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_________ test_streaming_and_packed_boundary_use_same_full_roles[True] _________
+test/test_sentence_expectation.py:120: in test_streaming_and_packed_boundary_use_same_full_roles
+    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:21004: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20891: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+=============================== warnings summary ===============================
+test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows
+FAILED test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]
+FAILED test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]
+FAILED test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]
+FAILED test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]
+FAILED test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage
+FAILED test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows
+FAILED test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once
+FAILED test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]
+16 failed, 1 warning in 6.46s

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/full-sweep/part-00/worker-573.recycle.json"
+}

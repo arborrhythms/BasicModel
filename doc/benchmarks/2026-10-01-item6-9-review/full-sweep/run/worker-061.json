@@ -1,0 +1,123 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_lexicon_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ws_analysis_knob_accepted",
+    "test/test_analyse_word_learning.py::test_learned_merges_converge_to_word_lexing",
+    "test/test_analyse_word_learning.py::test_cold_is_byte_level_before_learning",
+    "test/test_analyse_word_learning.py::test_partial_learning_is_subword",
+    "test/test_analyse_word_learning.py::test_learning_respects_whitespace_boundaries",
+    "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+    "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers"
+  ],
+  "completed": [
+    "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_lexicon_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ws_analysis_knob_accepted",
+    "test/test_analyse_word_learning.py::test_learned_merges_converge_to_word_lexing",
+    "test/test_analyse_word_learning.py::test_cold_is_byte_level_before_learning",
+    "test/test_analyse_word_learning.py::test_partial_learning_is_subword",
+    "test/test_analyse_word_learning.py::test_learning_respects_whitespace_boundaries",
+    "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+    "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011395800174796022,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015818666000996018,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_lexicon_synthesis_owns_full_surface_lexing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06406104200141272,
+      "message": "",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014121791999059496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ws_analysis_knob_accepted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.036862583001493476,
+      "message": "",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_analyse_word_learning.py::test_learned_merges_converge_to_word_lexing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023391699869534932,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_word_learning.py::test_cold_is_byte_level_before_learning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.262499952455983e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_word_learning.py::test_partial_learning_is_subword",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010162499893340282,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_word_learning.py::test_learning_respects_whitespace_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010666700109140947,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03396245799740427,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008197082999686245,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

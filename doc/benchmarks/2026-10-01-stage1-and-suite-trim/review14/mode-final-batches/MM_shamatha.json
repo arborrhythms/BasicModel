@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_shamatha.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.645773708994966,
+  "batch": 64,
+  "scope": "understanding",
+  "reconstruct_in_loop": true,
+  "training_seconds": 0.5356202089897124,
+  "output_loss": 0.16582556068897247,
+  "reconstruction_loss": 0.0008568769553676248,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": 0,
+  "total_seconds": 2.1818354169954546
+}

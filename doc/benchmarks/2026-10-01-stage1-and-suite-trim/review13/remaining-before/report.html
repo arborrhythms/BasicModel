@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 9/9 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.04216408299544128</pre></td><td><pre>test/test_mixing_reconstruction_bank.py:26: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+    assert candidates == [word.encode(&#x27;utf-8&#x27;) for word in surface.split()], candidates
+E   AssertionError: [b&#x27;caf\xc3\x83\xc2\xa9&#x27;]
+E   assert [b&#x27;caf\xc3\x83\xc2\xa9&#x27;] == [b&#x27;caf\xc3\xa9&#x27;, b&#x27;ab&#x27;]
+E     
+E     At index 0 diff: b&#x27;caf\xc3\x83\xc2\xa9&#x27; != b&#x27;caf\xc3\xa9&#x27;
+E     Right contains one more item: b&#x27;ab&#x27;
+E     Use -v to get more diff</pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0009362499986309558</pre></td><td><pre>test/test_mixing_reconstruction_bank.py:49: in test_mixing_bank_uses_byte_preserving_word_texts
+    assert bytes(isp._ar_target_word_bytes[isp._ar_target_word_mask].tolist()) == observed
+E   AssertionError: assert b&#x27;caf\xc3\x83\xc2\xa9&#x27; == b&#x27;caf\xc3\xa9&#x27;
+E     
+E     At index 4 diff: b&#x27;\x83&#x27; != b&#x27;\xa9&#x27;
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_training_device.py::test_slow_selection_alone_keeps_the_calibrated_cpu_device</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00022600000374950469</pre></td><td><pre>test/test_training_device.py:16: in test_slow_selection_alone_keeps_the_calibrated_cpu_device
+    assert runner.worker_environment(tmp_path)[&#x27;BASICMODEL_DEVICE&#x27;] == &#x27;cpu&#x27;
+E   AssertionError: assert &#x27;gpu&#x27; == &#x27;cpu&#x27;
+E     
+E     - cpu
+E     + gpu</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_training_device.py::test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>4.561966416003997</pre></td><td><pre>test/test_training_device.py:55: in test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu
+    assert result[&#x27;exit_code&#x27;] == 0, result[&#x27;reason&#x27;]
+E   AssertionError: test_failure
+E   assert 1 == 0</pre></td><td><pre>[collect] 3 selectors; limit 60s, 1.0 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 2 selectors; limit 60s, 1.0 GiB
+[worker-000] exit 1; 2.0s; peak 0.18 GiB
+[worker-001] 1 selectors; limit 60s, 1.0 GiB
+[worker-001] exit 0; 1.3s; peak 0.04 GiB
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_retired_guard_covers_both_grammars</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0008076669982983731</pre></td><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:10: in test_retired_guard_covers_both_grammars
+    assert &#x27;transitional_pos.grammar&#x27; in source
+E   assert &#x27;transitional_pos.grammar&#x27; in &#x27;&quot;&quot;&quot;One table of retired interfaces; behavioral checks stay in their own files.&quot;&quot;&quot;\nimport importlib\nimport inspect\n... for name in (\&#x27;grammar2.cfg\&#x27;, \&#x27;grammar_legacy.cfg\&#x27;):\n        assert not (ROOT / \&#x27;data\&#x27; / name).exists(), name\n&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_orphaned_prototype_interfaces_are_retired</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00011050000466639176</pre></td><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:15: in test_orphaned_prototype_interfaces_are_retired
+    assert not hasattr(Language, &#x27;IdeaSubSpace&#x27;)
+E   AssertionError: assert not True
+E    +  where True = hasattr(&lt;module &#x27;Language&#x27; from &#x27;/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py&#x27;&gt;, &#x27;IdeaSubSpace&#x27;)</pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_compiled_k2_case_keeps_inductor</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0017570420022821054</pre></td><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:25: in test_compiled_k2_case_keeps_inductor
+    assert &#x27;&quot;TheCompileBackend&quot;, &quot;inductor&quot;&#x27; in source
+E   assert &#x27;&quot;TheCompileBackend&quot;, &quot;inductor&quot;&#x27; in &#x27;def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(\n        tmp_path, monkeypatch):\n    &quot;&quot;&quot;T...bool((lookup_rows[:, words:capacity] == -1).all())\n    assert bool((lookup_rows[:, capacity + words:] == -1).all())\n&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_shared_ladder_minimum_count_is_restored</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0015878330013947561</pre></td><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:31: in test_shared_ladder_minimum_count_is_restored
+    assert &#x27;cs.utility_min_count =&#x27; not in source
+E   assert &#x27;cs.utility_min_count =&#x27; not in &#x27;def test_ut...h features\n&#x27;
+E     
+E     &#x27;cs.utility_min_count =&#x27; is contained here:
+E       ined.
+E           cs.utility_min_count = 3
+E           assert all(cs.category_utility(c) is None for c in cu[&quot;n_c&quot;])
+E           cs.utility_min_count = 1
+E           defined = [cs.category_utility(c) for c in cu[&quot;n_c&quot;]]
+E           assert any(v is not None for v in defined)       # units with features</pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_unused_mixing_bank_does_not_stage</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00015716600319137797</pre></td><td><pre>doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:46: in test_unused_mixing_bank_does_not_stage
+    assert touched == []
+E   AssertionError: assert [&#x27;_word_activ...object_atoms&#x27;] == []
+E     
+E     Left contains 3 more items, first extra item: &#x27;_word_active_mask&#x27;
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr></table></body></html>

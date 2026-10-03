@@ -1,0 +1,103 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]"
+  ],
+  "completed": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/historical-links-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/historical-links-before/worker-000.json"
+      ],
+      "pid": 91834,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 426919232,
+      "elapsed_seconds": 3.745912500002305,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/historical-links-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]"
+      ],
+      "completed": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0014182910017552786,
+          "message": "test/test_doc_links.py:51: in test_relative_links_resolve\n    assert not missing, f\"{path.relative_to(_ROOT)}: unresolved {missing}\"\nE   AssertionError: doc/benchmarks/2026-09-27-item7/README.md: unresolved ['../../../test/test_item7_storage.py', '../../../test/test_item7_acceptance.py', '../../../test/test_item7_storage.py', '../../../test/test_item7_clause_program.py', '../../../test/test_item7_provenance.py', '../../../test/test_item7_clause_state.py', '../../../test/test_item7_taxonomy.py', '../../../test/test_item7_expectation.py', '../../../test/test_item7_storage.py', '../../../test/test_item7_taxonomy.py', '../../../test/test_item7_references.py', '../../../test/test_item7_context.py']\nE   assert not ['../../../test/test_item7_storage.py', '../../../test/test_item7_acceptance.py', '../../../test/test_item7_storage.py...st_item7_clause_program.py', '../../../test/test_item7_provenance.py', '../../../test/test_item7_clause_state.py', ...]",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0008569579949835315,
+          "message": "test/test_doc_links.py:51: in test_relative_links_resolve\n    assert not missing, f\"{path.relative_to(_ROOT)}: unresolved {missing}\"\nE   AssertionError: doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md: unresolved ['../../../test/test_item7_definitions.py', '../../../test/test_item7_word_admission.py', '../../../test/test_item7_definitions.py', '../../../test/test_item7_definitions.py', '../../../test/test_item7_word_admission.py', '../../../test/test_item7_definitions.py', '../../../test/test_item7_definition_integrity.py', '../../../test/test_item7_definitions.py', '../../../test/test_item7_definitions.py', '../../../test/test_item7_definition_integrity.py', '../../../test/test_item7_word_admission.py', '../../../test/test_item7_definitions.py', '../../../test/test_item7_definitions.py', '../../../test/test_item7_definition_integrity.py', '../../../test/test_item7_word_admission.py', '../../../test/test_item7_definitions.py']\nE   assert not ['../../../test/test_item7_definitions.py', '../../../test/test_item7_word_admission.py', '../../../test/test_item7_de...st_item7_definitions.py', '../../../test/test_item7_word_admission.py', '../../../test/test_item7_definitions.py', ...]",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/historical-links-before",
+  "elapsed_seconds": 5.634454374994675,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 426919232,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/historical-links-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/historical-links-before/collect.json"
+    ],
+    "pid": 91797,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 48824920,
+    "elapsed_seconds": 1.4891109999953187,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/historical-links-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+        "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

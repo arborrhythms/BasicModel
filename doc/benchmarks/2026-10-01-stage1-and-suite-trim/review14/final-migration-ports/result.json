@@ -1,0 +1,537 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+    "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+    "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+    "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+    "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+    "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+    "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
+    "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+    "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+    "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+    "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+    "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+    "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+    "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+    "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
+    "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences"
+  ],
+  "completed": [
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+    "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+    "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+    "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+    "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+    "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+    "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+    "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+    "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+    "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+    "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+    "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+    "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+    "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
+    "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences",
+    "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-001.json"
+      ],
+      "pid": 62868,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5317268592,
+      "elapsed_seconds": 13.9918485829985,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+        "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras"
+      ],
+      "completed": [
+        "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+        "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.9342841250036145,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.284983916993951,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-002.json"
+      ],
+      "pid": 62886,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 538920352,
+      "elapsed_seconds": 4.26589516599779,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+        "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+        "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients"
+      ],
+      "completed": [
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+        "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+        "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04383329198753927,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00018145899230148643,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03351070800272282,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.15962391698849387,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.23350062500685453,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-003.json"
+      ],
+      "pid": 62897,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 580273616,
+      "elapsed_seconds": 4.560371958999895,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+        "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+        "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+        "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row"
+      ],
+      "completed": [
+        "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+        "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+        "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+        "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.22192179199191742,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.054891042003873736,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05285566700331401,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05741900000430178,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.053323291009292006,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05286891700234264,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.053319208993343636,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-000.json"
+      ],
+      "pid": 62867,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 715442192,
+      "elapsed_seconds": 24.029708457994275,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+      ],
+      "completed": [
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 19.95997445899411,
+          "message": "test/test_stm_recon_from_cleared_cache.py:375: in test_topk_recovered_words_overlap_input\n    assert overlap >= (1.0 - ATOL_RECON), (\nE   AssertionError: top-k recovered-word overlap with input = 0.500; expected >= 0.800 (atol=0.2). Reverse from the owned understanding is not reconstructing the per-position words.\nE   assert 0.5 >= (1.0 - 0.2)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-005.json"
+      ],
+      "pid": 62917,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 664897024,
+      "elapsed_seconds": 4.569800666009542,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+        "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+        "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+        "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+        "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+        "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+        "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+        "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder"
+      ],
+      "completed": [
+        "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+        "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+        "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+        "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+        "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+        "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+        "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+        "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005605409969575703,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003847920015687123,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005020829994464293,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010836749992449768,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00021674999152310193,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.7648442089994205,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005516670062206686,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001849500011303462,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-006.json"
+      ],
+      "pid": 62952,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 438650200,
+      "elapsed_seconds": 3.777622291992884,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences"
+      ],
+      "completed": [
+        "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0030666250095237046,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-004.json"
+      ],
+      "pid": 62913,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1548225128,
+      "elapsed_seconds": 41.53868841700023,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+      ],
+      "completed": [
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 36.732901124996715,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 17179869184,
+    "aggregate_memory_bytes": 17179869184,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports",
+  "elapsed_seconds": 68.66617650000262,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 5995158608,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/collect.json"
+    ],
+    "pid": 62852,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 439125216,
+    "elapsed_seconds": 3.751118875006796,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/final-migration-ports/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+        "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+        "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+        "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+        "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+        "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+        "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+        "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+        "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+        "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+        "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+        "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+        "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+        "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+        "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+        "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+        "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+        "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
+        "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+      ],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

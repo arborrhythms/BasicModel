@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-117.recycle.json"
+}

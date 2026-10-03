@@ -1,0 +1,120 @@
+Thread 0x0000000170e07000 (most recent call first):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 359 in wait
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 655 in wait
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/tqdm/_monitor.py", line 69 in run
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00000001f2deff80 (most recent call first):
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122 in __torch_function__
+  File "<eval_with_key>.327", line 1704 in forward
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548 in _fn
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21663 in stage_cs_lang
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1261 in compile_wrapper
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21143 in compose
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py", line 138 in sentence_pair
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/objective_conflicts_probe.py", line 494 in paired
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21181 in _run_sentence_word_bricks
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21978 in _run_tensor_peer_word_pipeline
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22439 in _forward_body_per_word
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 18019 in _forward_body
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 24257 in _forward_per_stage
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8786 in forward
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 154 in masked
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8974 in _execute_input_sentence
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 154 in masked
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10758 in what
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 9275 in _what_or_think
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/allocation-diagnostic/_run_batch_once.instrumented.py", line 370 in _run_batch_once
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14423 in _run_sentence_batch
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14242 in runBatch
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 16477 in runEpoch
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py", line 14 in run
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11067 in runTrial
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 3887 in run
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 25546 in _run_hydrated
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/objective_conflicts_probe.py", line 520 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 98 in _run_module_code
+  File "<frozen runpy>", line 287 in run_path
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/allocation_probe.py", line 22 in <module>
+Thread 0x0000000170e07000 (most recent call first):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 359 in wait
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 655 in wait
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/tqdm/_monitor.py", line 69 in run
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00000001f2deff80 (most recent call first):
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122 in __torch_function__
+  File "<eval_with_key>.327", line 5382 in forward
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548 in _fn
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21663 in stage_cs_lang
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1261 in compile_wrapper
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21143 in compose
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py", line 138 in sentence_pair
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/objective_conflicts_probe.py", line 494 in paired
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21181 in _run_sentence_word_bricks
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21978 in _run_tensor_peer_word_pipeline
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22439 in _forward_body_per_word
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 18019 in _forward_body
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 24257 in _forward_per_stage
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8786 in forward
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 154 in masked
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8974 in _execute_input_sentence
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 154 in masked
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10758 in what
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 9275 in _what_or_think
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/allocation-diagnostic/_run_batch_once.instrumented.py", line 370 in _run_batch_once
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14423 in _run_sentence_batch
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14242 in runBatch
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 16477 in runEpoch
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py", line 14 in run
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11067 in runTrial
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 3887 in run
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 25546 in _run_hydrated
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/objective_conflicts_probe.py", line 520 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 98 in _run_module_code
+  File "<frozen runpy>", line 287 in run_path
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/allocation_probe.py", line 22 in <module>
+Thread 0x0000000170e07000 (most recent call first):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 359 in wait
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 655 in wait
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/tqdm/_monitor.py", line 69 in run
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00000001f2deff80 (most recent call first):
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122 in __torch_function__
+  File "<eval_with_key>.327", line 9112 in forward
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1548 in _fn
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21663 in stage_cs_lang
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1261 in compile_wrapper
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21143 in compose
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py", line 138 in sentence_pair
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/objective_conflicts_probe.py", line 494 in paired
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21181 in _run_sentence_word_bricks
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 21978 in _run_tensor_peer_word_pipeline
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 22439 in _forward_body_per_word
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 18019 in _forward_body
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 24257 in _forward_per_stage
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8786 in forward
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 154 in masked
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 8974 in _execute_input_sentence
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 154 in masked
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 10758 in what
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 9275 in _what_or_think
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/allocation-diagnostic/_run_batch_once.instrumented.py", line 370 in _run_batch_once
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14423 in _run_sentence_batch
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 14242 in runBatch
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 16477 in runEpoch
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py", line 14 in run
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11067 in runTrial
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 3887 in run
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 25546 in _run_hydrated
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/objective_conflicts_probe.py", line 520 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 98 in _run_module_code
+  File "<frozen runpy>", line 287 in run_path
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/allocation_probe.py", line 22 in <module>

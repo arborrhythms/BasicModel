@@ -1,0 +1,2083 @@
+[
+  {
+    "config": "data/BasicModel.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": true,
+    "gains_reconstruction": false,
+    "batch": 28,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/BasicModel_answers_benchmark.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 28,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/BasicModel_answers_tied_benchmark.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": true,
+    "gains_reconstruction": false,
+    "batch": 28,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/BasicModel_expectation_benchmark.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 28,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/BasicModel_long_tied_benchmark.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": true,
+    "gains_reconstruction": false,
+    "batch": 28,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/BasicModel_output_tied_benchmark.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "tied_reconstruction_output_benchmark.grammar",
+    "scope": "understanding",
+    "old_tied": true,
+    "gains_reconstruction": false,
+    "batch": 28,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/HeadEmission.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "rule": [
+          "S = S VO",
+          "VO = V O"
+        ]
+      },
+      "generate": {
+        "rule": "S = C"
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 4,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/LM_5M.xml",
+    "data_type": "embedding",
+    "synthesis": "bpe",
+    "analysis": "byte",
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "symbols": {
+          "rule": [
+            {
+              "_": "S = NP",
+              "width": "1.."
+            },
+            {
+              "_": "S = lift(NP, VP)",
+              "width": "3.."
+            },
+            {
+              "_": "S = isEqual(NP, NP)",
+              "width": "3.."
+            },
+            {
+              "_": "S = isEqual(NP, AP)",
+              "width": "3.."
+            },
+            {
+              "_": "S = part(NP, NP)",
+              "width": "3.."
+            },
+            {
+              "_": "S = not(S)",
+              "width": "2.."
+            },
+            {
+              "_": "S = conjunction(S, S)",
+              "width": "3.."
+            },
+            {
+              "_": "S = disjunction(S, S)",
+              "width": "3.."
+            },
+            {
+              "_": "NP = N",
+              "width": "1..1"
+            },
+            {
+              "_": "NP = AP",
+              "width": "2.."
+            },
+            {
+              "_": "NP = conjunction(NP, NP)",
+              "width": "3.."
+            },
+            {
+              "_": "NP = disjunction(NP, NP)",
+              "width": "3.."
+            },
+            {
+              "_": "VP = V",
+              "width": "1..1"
+            },
+            {
+              "_": "VP = intersection(V, O)",
+              "width": "2.."
+            },
+            {
+              "_": "VP = lower(ADV, VP)",
+              "width": "2.."
+            },
+            {
+              "_": "VP = lower(ADJ, VP)",
+              "width": "2.."
+            },
+            {
+              "_": "O = NP",
+              "width": "1.."
+            },
+            {
+              "_": "AP = lower(ADJ, NP)",
+              "width": "2.."
+            },
+            {
+              "_": "AP = lower(ADJ, AP)",
+              "width": "2.."
+            },
+            {
+              "_": "AP = lower(DET, NP)",
+              "width": "2.."
+            },
+            {
+              "_": "PP = lift(P, NP)",
+              "width": "2.."
+            },
+            {
+              "_": "NP = lower(NP, PP)",
+              "width": "3.."
+            },
+            {
+              "_": "VP = lower(VP, PP)",
+              "width": "3.."
+            }
+          ]
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 128,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/LM_5M_IR.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "symbols": {
+          "rule": [
+            {
+              "_": "S = NP",
+              "width": "1.."
+            },
+            {
+              "_": "S = lift(NP, VP)",
+              "width": "3.."
+            },
+            {
+              "_": "S = isEqual(NP, NP)",
+              "width": "3.."
+            },
+            {
+              "_": "S = isEqual(NP, AP)",
+              "width": "3.."
+            },
+            {
+              "_": "S = part(NP, NP)",
+              "width": "3.."
+            },
+            {
+              "_": "S = not(S)",
+              "width": "2.."
+            },
+            {
+              "_": "S = conjunction(S, S)",
+              "width": "3.."
+            },
+            {
+              "_": "S = disjunction(S, S)",
+              "width": "3.."
+            },
+            {
+              "_": "NP = N",
+              "width": "1..1"
+            },
+            {
+              "_": "NP = AP",
+              "width": "2.."
+            },
+            {
+              "_": "NP = conjunction(NP, NP)",
+              "width": "3.."
+            },
+            {
+              "_": "NP = disjunction(NP, NP)",
+              "width": "3.."
+            },
+            {
+              "_": "VP = V",
+              "width": "1..1"
+            },
+            {
+              "_": "VP = intersection(V, O)",
+              "width": "2.."
+            },
+            {
+              "_": "VP = lower(ADV, VP)",
+              "width": "2.."
+            },
+            {
+              "_": "VP = lower(ADJ, VP)",
+              "width": "2.."
+            },
+            {
+              "_": "O = NP",
+              "width": "1.."
+            },
+            {
+              "_": "AP = lower(ADJ, NP)",
+              "width": "2.."
+            },
+            {
+              "_": "AP = lower(ADJ, AP)",
+              "width": "2.."
+            },
+            {
+              "_": "AP = lower(DET, NP)",
+              "width": "2.."
+            },
+            {
+              "_": "PP = lift(P, NP)",
+              "width": "2.."
+            },
+            {
+              "_": "NP = lower(NP, PP)",
+              "width": "3.."
+            },
+            {
+              "_": "VP = lower(VP, PP)",
+              "width": "3.."
+            }
+          ]
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 128,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_20M_fineweb.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 64,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/MM_20M_grammar.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 64,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/MM_20M_legacy.xml",
+    "data_type": "embedding",
+    "synthesis": "bpe",
+    "analysis": "byte",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 200,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_20M_xor.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "perception: no grammar",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 200,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_400M.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": "raw",
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_5M_AR.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "S": [
+        "S = intersection(S, S)",
+        "S = union(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 128,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_5M_IR.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "S": [
+        "S = intersection(S, S)",
+        "S = union(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 128,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_add.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "byte",
+    "effective_serial": false,
+    "grammar": "xor.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 32,
+    "epochs": 20,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_add_verb.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "word",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 30,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_boolean.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "P": "sigma(P)",
+      "C": [
+        "pi(C)",
+        "intersection(C, C)",
+        "P"
+      ],
+      "S": [
+        "sigma(S)",
+        "not(S)",
+        "union(C, C)",
+        "C"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 16,
+    "epochs": 200,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_bpe.xml",
+    "data_type": "embedding",
+    "synthesis": "bpe",
+    "analysis": "byte",
+    "effective_serial": true,
+    "grammar": {
+      "P": "sigma(P)",
+      "C": "pi(C)",
+      "S": [
+        "sigma(S)",
+        "not(S)",
+        "intersection(S, S)",
+        "union(S, S)",
+        "lower(S, S)",
+        "lift(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_decode.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "raw",
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_global.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "word",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_grammar.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": "default.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_grammar_wording.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": true,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 200,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_init_scale.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "S": [
+        "S = not(S)",
+        "S = intersection(S, S)",
+        "S = union(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_ladder.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "ladder.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 8,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/MM_ladder_idiom.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "ladder.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 8,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/MM_ladder_text.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "ladder.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 8,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/MM_ladder_textpacked.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "ladder.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 8,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/MM_ltm_consolidation_fixture.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "S": [
+        "S = not(S)",
+        "S = intersection(S, S)",
+        "S = union(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": "default.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "S": [
+        "S = not(S)",
+        "S = intersection(S, S)",
+        "S = union(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_masked_semantic.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "raw",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_math.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "byte",
+    "effective_serial": false,
+    "grammar": "xor.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 50,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_mereology.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "raw",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_mereology_serial.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "raw",
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_meronomy_smoke.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "word",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 2,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_nanochat_grammar_gate.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 4,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/MM_nanochat_grammar_pilot.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 4,
+    "epochs": 1,
+    "prior_price_selected": true
+  },
+  {
+    "config": "data/MM_overlap_tiling.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "raw",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_phrase_decode.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "word",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_qa.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "word",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_query_reasoning.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "word",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 6,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_reading.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "word",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_sequence_predict.xml",
+    "data_type": "embedding",
+    "synthesis": "bpe",
+    "analysis": "byte",
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "symbols": {
+          "rule": [
+            {
+              "_": "S = NP",
+              "width": "1.."
+            },
+            {
+              "_": "S = lift(NP, VP)",
+              "width": "3.."
+            },
+            {
+              "_": "NP = N",
+              "width": "1..1"
+            },
+            {
+              "_": "VP = V",
+              "width": "1..1"
+            },
+            {
+              "_": "VP = intersection(V, O)",
+              "width": "2.."
+            },
+            {
+              "_": "O = NP",
+              "width": "1.."
+            },
+            {
+              "_": "AP = lower(DET, NP)",
+              "width": "2.."
+            },
+            {
+              "_": "NP = AP",
+              "width": "2.."
+            }
+          ]
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 4,
+    "epochs": 2,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_shamatha.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "P": "sigma(P)",
+      "C": [
+        "pi(C)",
+        "intersection(C, C)",
+        "P"
+      ],
+      "S": [
+        "sigma(S)",
+        "disjunction(S, S)",
+        "not(S)",
+        "union(C, C)",
+        "C"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_sparse_concept.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "raw",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_symbol_tower.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "raw",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 300,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_symbolic_iter.xml",
+    "data_type": "embedding",
+    "synthesis": "bpe",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 4,
+    "epochs": 2,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_xor.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": "byte",
+    "effective_serial": false,
+    "grammar": "xor.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_xor_fixture.xml",
+    "data_type": "embedding",
+    "synthesis": "radix",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "S": [
+        "S = not(S)",
+        "S = intersection(S, S)",
+        "S = union(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_xor_loopback.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "S": [
+        "S = not(S)",
+        "S = intersection(S, S)",
+        "S = union(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 4,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_xor_step3.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "P": "sigma(P)",
+      "C": "pi(C)",
+      "S": [
+        "sigma(S)",
+        "not(S)",
+        "intersection(S, S)",
+        "union(S, S)",
+        "lower(S, S)",
+        "lift(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 200,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MM_xor_step4.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "P": "sigma(P)",
+      "C": "pi(C)",
+      "S": [
+        "sigma(S)",
+        "not(S)",
+        "intersection(S, S)",
+        "union(S, S)",
+        "lower(S, S)",
+        "lift(S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 200,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/MentalModel.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": "sentence",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 2,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/POS_smoke.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "symbols": {
+          "rule": [
+            "S = NP",
+            "S = lift(NP, VP)",
+            "S = isEqual(NP, NP)",
+            "S = isEqual(NP, AP)",
+            "S = part(NP, NP)",
+            "S = not(S)",
+            "S = conjunction(S, S)",
+            "S = disjunction(S, S)",
+            "NP = N",
+            "NP = AP",
+            "NP = conjunction(NP, NP)",
+            "NP = disjunction(NP, NP)",
+            "VP = V",
+            "VP = intersection(V, O)",
+            "VP = lower(ADV, VP)",
+            "VP = lower(ADJ, VP)",
+            "O = NP",
+            "AP = lower(ADJ, NP)",
+            "AP = lower(ADJ, AP)",
+            "AP = lower(DET, NP)"
+          ]
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 16,
+    "epochs": 80,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/RamsifiedModel.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": "sentence",
+    "effective_serial": true,
+    "grammar": {
+      "P": "sigma(P)",
+      "C": "pi(C)",
+      "S": [
+        "sigma(S)",
+        "true(S)",
+        "swap(S, S)",
+        "isEqual(S, S)",
+        "part(S, S)",
+        "non(S)",
+        "not(S)",
+        "intersection(S, S)",
+        "union(S, S)",
+        "lower(S, S)",
+        "lift(S, S)",
+        "lift(S, S, S)"
+      ]
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 2,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/XOR_exact.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "perception: no grammar",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 64,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/XOR_grammar.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "symbols": {
+          "rule": [
+            "S = not.forward(S)",
+            "S = conjunction.forward(S, S)",
+            "S = disjunction.forward(S, S)"
+          ]
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/XOR_pos.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 200,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/XOR_recon.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 400,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/XOR_spaces.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 200,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/ergodic-only.xml",
+    "data_type": "numeric",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "perception: numeric configuration",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 10,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/ergodic.xml",
+    "data_type": "numeric",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "perception: numeric configuration",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 10,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/idempotent.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 1,
+    "epochs": 0,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/matrix/MM_20M_grammar_reading.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 64,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/matrix/MM_20M_grammar_wordstore.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": true,
+    "grammar": "complete.grammar",
+    "scope": "understanding",
+    "old_tied": false,
+    "gains_reconstruction": true,
+    "batch": 64,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/matrix/MM_20M_xor_noraise.xml",
+    "data_type": "embedding",
+    "synthesis": "meronomy",
+    "analysis": "meronomy",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "perception: no grammar",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 12,
+    "epochs": 200,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/mnist.xml",
+    "data_type": "numeric",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "perception: numeric configuration",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 10,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/model.xml",
+    "data_type": "numeric",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": true,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "perception: numeric configuration",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 3,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/simple.xml",
+    "data_type": "numeric",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "perception: numeric configuration",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 10,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/stream_smoke.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": "sentence",
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 4,
+    "epochs": 1,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/tomatoes.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 100,
+    "prior_price_selected": false
+  },
+  {
+    "config": "data/xor.xml",
+    "data_type": "embedding",
+    "synthesis": "lexicon",
+    "analysis": null,
+    "effective_serial": false,
+    "grammar": {
+      "compose": {
+        "percepts": {
+          "rule": "P = sigma(P)"
+        },
+        "concepts": {
+          "rule": "C = pi(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma(S)"
+        }
+      },
+      "generate": {
+        "percepts": {
+          "rule": "P = sigma.reverse(P)"
+        },
+        "concepts": {
+          "rule": "C = pi.reverse(C)"
+        },
+        "symbols": {
+          "rule": "S = sigma.reverse(S)"
+        }
+      }
+    },
+    "scope": "exempt: old reading mode",
+    "old_tied": false,
+    "gains_reconstruction": false,
+    "batch": 64,
+    "epochs": 200,
+    "prior_price_selected": false
+  }
+]

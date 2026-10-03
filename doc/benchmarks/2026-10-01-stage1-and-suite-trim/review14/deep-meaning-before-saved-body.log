@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_meaning_probe.py", line 33, in <module>
+    check()
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_meaning_probe.py", line 21, in check
+    assert LanguageSpace.program_meaning(owner, entry, registry) is None
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<saved Language.py>", line 13769, in program_meaning
+  File "<saved Language.py>", line 13696, in semantic_tree
+  File "<saved Language.py>", line 13696, in semantic_tree
+  File "<saved Language.py>", line 13696, in semantic_tree
+  [Previous line repeated 994 more times]
+RecursionError: maximum recursion depth exceeded

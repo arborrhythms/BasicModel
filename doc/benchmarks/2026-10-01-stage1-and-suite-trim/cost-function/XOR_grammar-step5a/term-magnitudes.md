@@ -1,0 +1,59 @@
+# Every observed training cost term
+
+Raw and weighted units are separate; zeros remain. Missing terms have count 0. Per-trial distributions count active rows; batch distributions count batches.
+
+| Term | N | Min | p10 | Median | Mean | p90 | Max |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| band.None._run_batch_once.what.raw | 400 | 0.02619318 | 0.04144987 | 0.08402173 | 0.09867096 | 0.1938083 | 0.2591628 |
+| band.None._run_batch_once.what.weighted | 400 | 0.01833522 | 0.02901491 | 0.05881521 | 0.06906967 | 0.1356658 | 0.181414 |
+| batch.accounting_residual | 400 | -2.384186e-08 | -8.97795e-09 | 1.862645e-09 | 1.54681e-09 | 1.193956e-08 | 2.086163e-08 |
+| batch.raw.arma_loss | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.raw.aux_total | 0 | — | — | — | — | — | — |
+| batch.raw.csbow | 0 | — | — | — | — | — | — |
+| batch.raw.defsp | 0 | — | — | — | — | — | — |
+| batch.raw.expectation_policy_loss | 0 | — | — | — | — | — | — |
+| batch.raw.gate_l1 | 0 | — | — | — | — | — | — |
+| batch.raw.grammar_lesson | 0 | — | — | — | — | — | — |
+| batch.raw.inter_contrastive | 0 | — | — | — | — | — | — |
+| batch.raw.inter_loss | 0 | — | — | — | — | — | — |
+| batch.raw.intra_loss | 0 | — | — | — | — | — | — |
+| batch.raw.ld_loss | 0 | — | — | — | — | — | — |
+| batch.raw.lossIn | 400 | 0.001936156 | 0.5114734 | 1.271272 | 1.134465 | 1.418652 | 1.512304 |
+| batch.raw.lossOut | 400 | 0.01833522 | 0.02901491 | 0.05881521 | 0.06906967 | 0.1356658 | 0.181414 |
+| batch.raw.lossRev | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.raw.output_policy_loss | 0 | — | — | — | — | — | — |
+| batch.raw.readout_l1 | 0 | — | — | — | — | — | — |
+| batch.raw.sbow | 400 | 0.8851894 | 0.8935121 | 0.9087668 | 0.9435471 | 1.030199 | 1.492795 |
+| batch.raw.selected_pol_loss | 0 | — | — | — | — | — | — |
+| batch.raw.totalLoss | 400 | 0.1214244 | 0.1876732 | 0.219305 | 0.2227866 | 0.2603249 | 0.337607 |
+| batch.truth.balance_weight | 400 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 |
+| batch.truth.luminosity_weight | 400 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 |
+| batch.truth.truth_loss_weight | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.truth.universality_weight | 400 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 |
+| batch.weighted.arma_loss | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.weighted.lossIn | 400 | 0.0001936156 | 0.05114734 | 0.1271272 | 0.1134465 | 0.1418652 | 0.1512304 |
+| batch.weighted.lossOut | 400 | 0.0165017 | 0.02611342 | 0.05293369 | 0.0621627 | 0.1220992 | 0.1632726 |
+| batch.weighted.lossRev | 400 | 0 | 0 | 0 | 0 | 0 | 0 |
+| batch.weighted.sbow | 400 | 0.04425947 | 0.0446756 | 0.04543834 | 0.04717735 | 0.05150994 | 0.07463975 |
+| trial.exploit.raw.expectation_contrastive | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.exploit.raw.expectation_inter | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.exploit.raw.grammar_lesson | 0 | — | — | — | — | — | — |
+| trial.exploit.raw.legacy_intra | 1600 | 0.0003452972 | 0.0008429587 | 0.00193594 | 0.03249103 | 0.0185816 | 2.075758 |
+| trial.exploit.raw.reconstruction | 1600 | 8.383474e-05 | 0.000120047 | 0.08184519 | 1.248944 | 3.007402 | 3.766959 |
+| trial.exploit.raw.supplied_answer | 1600 | 0.01298898 | 0.03497464 | 0.08194891 | 0.09570102 | 0.2059574 | 0.3099257 |
+| trial.exploit.weighted.expectation | 1600 | 3.452972e-05 | 8.429587e-05 | 0.000193594 | 0.003249103 | 0.00185816 | 0.2075758 |
+| trial.exploit.weighted.legacy_intra | 1600 | 3.452972e-05 | 8.429587e-05 | 0.000193594 | 0.003249103 | 0.00185816 | 0.2075758 |
+| trial.exploit.weighted.reconstruction | 1600 | 8.383474e-06 | 1.20047e-05 | 0.008184519 | 0.1248944 | 0.3007402 | 0.3766959 |
+| trial.exploit.weighted.supplied_answer | 1600 | 0.01298898 | 0.03497464 | 0.08194891 | 0.09570102 | 0.2059574 | 0.3099257 |
+| trial.exploit.weighted.total | 1600 | 0.01554167 | 0.04085594 | 0.2584171 | 0.2238445 | 0.399787 | 0.716692 |
+| trial.explore.raw.expectation_contrastive | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.explore.raw.expectation_inter | 1600 | 0 | 0 | 0 | 0 | 0 | 0 |
+| trial.explore.raw.grammar_lesson | 0 | — | — | — | — | — | — |
+| trial.explore.raw.legacy_intra | 1600 | 0.0004643202 | 0.001276612 | 0.008625239 | 0.09819315 | 0.09262964 | 3.999028 |
+| trial.explore.raw.reconstruction | 1600 | 7.742969e-05 | 0.0001264379 | 1.959103 | 1.589238 | 3.390954 | 4.848389 |
+| trial.explore.raw.supplied_answer | 1600 | 0.003863653 | 0.0684554 | 0.3579294 | 0.3706032 | 0.6673596 | 0.942643 |
+| trial.explore.weighted.expectation | 1600 | 4.643202e-05 | 0.0001276612 | 0.0008625239 | 0.009819315 | 0.009262964 | 0.3999028 |
+| trial.explore.weighted.legacy_intra | 1600 | 4.643202e-05 | 0.0001276612 | 0.0008625239 | 0.009819315 | 0.009262964 | 0.3999028 |
+| trial.explore.weighted.reconstruction | 1600 | 7.742969e-06 | 1.264379e-05 | 0.1959103 | 0.1589238 | 0.3390954 | 0.4848389 |
+| trial.explore.weighted.supplied_answer | 1600 | 0.003863653 | 0.0684554 | 0.3579294 | 0.3706032 | 0.6673596 | 0.942643 |
+| trial.explore.weighted.total | 1600 | 0.008742765 | 0.2497583 | 0.52531 | 0.5393463 | 0.8438013 | 1.154691 |

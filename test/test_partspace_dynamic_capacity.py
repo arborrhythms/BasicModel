@@ -270,5 +270,5 @@ def test_checkpoint_restores_fixed_owner_and_optimizer_by_name(
         for parameter in group["params"]
     ) == 1
     assert restored_w in restored_optimizer.state
-    assert tuple(restored_optimizer.state[restored_w]["exp_avg"].shape) \
+    assert tuple(restored_optimizer.state[restored_w]["momentum_buffer"].shape) \
         == tuple(restored_w.shape)

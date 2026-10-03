@@ -1,0 +1,7 @@
+{
+  "file": "doc/Training.md",
+  "old": "The loss partition and parameter selection are in\n[Models.py](../bin/Models.py); the optimizer takes one ordinary summed-gradient\nstep. No projection, norm cap or reconstruction-tolerance rule remains.",
+  "contradiction": "This unqualified statement contradicts the supplied-trial answer projection described immediately above it and in objective-conflicts \u00a78.1.",
+  "new": "The loss partition and parameter selection are in\n[Models.py](../bin/Models.py). Batch-end JOINT uses the ordinary sum of its\nregistered gradients. The former global projection, norm cap and tolerance\nknobs remain retired; the supplied-trial projection above is the specific\nreconstruction-precedence rule now in force.",
+  "validation": "The contradictory sentence is absent; the replacement distinguishes batch-end JOINT from the supplied-trial projection. Production and tests are unchanged."
+}

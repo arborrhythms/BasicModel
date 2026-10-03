@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+    "child",
+    "reconstruction",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-07",
+    "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+  ],
+  "pid": 56288,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 731055592,
+  "elapsed_seconds": 80.15154350000012,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-07/run.log"
+}

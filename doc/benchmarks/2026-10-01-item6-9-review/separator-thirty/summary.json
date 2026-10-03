@@ -1,0 +1,1866 @@
+{
+  "rows": [
+    {
+      "kind": "sum",
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-02",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54223,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 714098152,
+        "elapsed_seconds": 71.5435718330009,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-02/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.5056681036949158,
+          0.5050159096717834,
+          0.5012562870979309,
+          0.5006040930747986
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500147819519043,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "world world",
+          "loving loving",
+          "world world",
+          "hello hello"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.0056681036949157715,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-03",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54224,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 711837208,
+        "elapsed_seconds": 72.60691041600148,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-03/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.4998222291469574,
+          0.5013634562492371,
+          0.5002961158752441,
+          0.5018373727798462
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.25000134110450745,
+        "correct": 3,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 2.9802322387695312e-08,
+        "max_deviation_from_half": 0.0018373727798461914,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-01",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54222,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 714261968,
+        "elapsed_seconds": 73.93703233300039,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-01/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.4994552433490753,
+          0.49998894333839417,
+          0.5010812282562256,
+          0.5016149282455444
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500010132789612,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.0016149282455444336,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-04",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54463,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 714524088,
+        "elapsed_seconds": 71.47655908399975,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-04/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.5017310976982117,
+          0.5018351078033447,
+          0.5018431544303894,
+          0.5019471645355225
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500033974647522,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.001947164535522461,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-05",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54464,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 713524688,
+        "elapsed_seconds": 72.50893637499757,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-05/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.49819979071617126,
+          0.49871355295181274,
+          0.49821773171424866,
+          0.49873149394989014
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500024437904358,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.0018002092838287354,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-06",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54472,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 706725328,
+        "elapsed_seconds": 72.2327484999987,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-06/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.49916741251945496,
+          0.49651864171028137,
+          0.5053077936172485,
+          0.5026589632034302
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.25001201033592224,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "hello hello",
+          "loving loving",
+          "loving loving",
+          "hello hello"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -5.960464477539063e-08,
+        "max_deviation_from_half": 0.005307793617248535,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-08",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54710,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 716490240,
+        "elapsed_seconds": 72.36054983299982,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-08/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.500503420829773,
+          0.49998849630355835,
+          0.5004304051399231,
+          0.4999155104160309
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.25000011920928955,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "hello hello",
+          "loving loving",
+          "hello hello",
+          "there there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 2.9802322387695312e-08,
+        "max_deviation_from_half": 0.0005034208297729492,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-09",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54711,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 714425832,
+        "elapsed_seconds": 73.42569274999914,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-09/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.5015289187431335,
+          0.5007259845733643,
+          0.5011732578277588,
+          0.5003702640533447
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.25000107288360596,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -5.960464477539063e-08,
+        "max_deviation_from_half": 0.001528918743133545,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-07",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54709,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 715048400,
+        "elapsed_seconds": 74.73999995899794,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-07/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.4979032278060913,
+          0.4986455738544464,
+          0.4985673725605011,
+          0.4993097186088562
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500022053718567,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "hello hello",
+          "hello hello",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.0020967721939086914,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-10",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54975,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 716097000,
+        "elapsed_seconds": 72.07516300000134,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-10/run.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.49910199642181396,
+          0.4993147850036621,
+          0.5018958449363708,
+          0.502108633518219
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.25000232458114624,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "loving loving",
+          "hello hello",
+          "hello hello",
+          "there there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.002108633518218994,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-01",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 54976,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 735905280,
+        "elapsed_seconds": 77.79907479200119,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-01/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.21057528257369995,
+          0.7130051851272583,
+          0.7762488722801208,
+          0.2644343674182892
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.06167451664805412,
+        "correct": 4,
+        "class_bar": false,
+        "read_backs": [
+          "hello hello",
+          "there hello",
+          "world hello",
+          "hello there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.01424440741539,
+        "max_deviation_from_half": 0.28942471742630005,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-02",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 54985,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 733988304,
+        "elapsed_seconds": 79.35632783399706,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-02/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.0030523836612701416,
+          0.9994431138038635,
+          0.9969947338104248,
+          -0.0010030269622802734
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 4.9162140385305975e-06,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world hello",
+          "hello hello",
+          "world world",
+          "there hello"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.9943884909152985,
+        "max_deviation_from_half": 0.5010030269622803,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-03",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55208,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 736069072,
+        "elapsed_seconds": 78.62016404199676,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-03/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.16631180047988892,
+          0.875940203666687,
+          0.7961052656173706,
+          0.09776157140731812
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.02354520931839943,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "there world",
+          "loving world",
+          "there loving"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.4079720973968506,
+        "max_deviation_from_half": 0.4022384285926819,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-04",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55226,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 729171408,
+        "elapsed_seconds": 79.13576916699822,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-04/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.3314974308013916,
+          0.8462671041488647,
+          0.8952962160110474,
+          0.07194823026657104
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.037415944039821625,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world hello",
+          "there there",
+          "loving world",
+          "there loving"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 3,
+        "reconstruction_bar": false,
+        "contrast": -1.3381176590919495,
+        "max_deviation_from_half": 0.42805176973342896,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-05",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55235,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 733873616,
+        "elapsed_seconds": 79.39525279100053,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-05/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.11504331231117249,
+          0.8249167203903198,
+          0.8286348581314087,
+          0.16774767637252808
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.02534860372543335,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "loving loving",
+          "world loving",
+          "loving loving"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.370760589838028,
+        "max_deviation_from_half": 0.3849566876888275,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-06",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55474,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 742622696,
+        "elapsed_seconds": 79.66740120800023,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-06/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.16297748684883118,
+          0.7229827642440796,
+          1.013204574584961,
+          0.1750522255897522
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.03352946415543556,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world there",
+          "there loving",
+          "world world",
+          "world there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -1.3981576263904572,
+        "max_deviation_from_half": 0.5132045745849609,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-07",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55494,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 742131248,
+        "elapsed_seconds": 78.37816466699951,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-07/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.14737021923065186,
+          0.8002792596817017,
+          0.836067795753479,
+          0.23494771122932434
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.03592013567686081,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "there there",
+          "hello there",
+          "loving there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.2540291249752045,
+        "max_deviation_from_half": 0.35262978076934814,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-08",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55505,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 731104744,
+        "elapsed_seconds": 78.90182062500025,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-08/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.13062256574630737,
+          0.960363507270813,
+          0.7163662314414978,
+          0.058072030544281006
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.025613445788621902,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "loving world",
+          "there there",
+          "loving world",
+          "loving there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.4880351424217224,
+        "max_deviation_from_half": 0.460363507270813,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-09",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55743,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 743867880,
+        "elapsed_seconds": 78.38506312499885,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-09/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.30658280849456787,
+          0.7162505388259888,
+          0.7663263082504272,
+          0.324435293674469
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.08359210193157196,
+        "correct": 4,
+        "class_bar": false,
+        "read_backs": [
+          "there world",
+          "loving world",
+          "world there",
+          "there there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -0.8515587449073792,
+        "max_deviation_from_half": 0.26632630825042725,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-10",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55760,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 746505776,
+        "elapsed_seconds": 79.4277484589984,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-10/run.log"
+      },
+      "measurement": {
+        "kind": "class",
+        "answers": [
+          0.17511123418807983,
+          0.7478435635566711,
+          0.9089317321777344,
+          0.29940110445022583
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.048045314848423004,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world hello",
+          "hello there",
+          "world hello",
+          "there hello"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.1822629570960999,
+        "max_deviation_from_half": 0.4089317321777344,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-01",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55796,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 735200744,
+        "elapsed_seconds": 79.67210949999935,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-01/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          0.3104901611804962,
+          0.7579663991928101,
+          0.7141639590263367,
+          0.3053867220878601
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.08248692750930786,
+        "correct": 4,
+        "class_bar": false,
+        "read_backs": [
+          "world loving",
+          "world loving",
+          "hello world",
+          "hello world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -0.8562534749507904,
+        "max_deviation_from_half": 0.25796639919281006,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-02",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56017,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 742933992,
+        "elapsed_seconds": 77.34409295899968,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-02/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          0.09098988771438599,
+          0.9513792395591736,
+          0.9137154817581177,
+          0.11293619871139526
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.007710685022175312,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "hello world",
+          "there hello",
+          "loving world",
+          "loving there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 4,
+        "reconstruction_bar": true,
+        "contrast": -1.66116863489151,
+        "max_deviation_from_half": 0.4513792395591736,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-03",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56035,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 736150992,
+        "elapsed_seconds": 78.38204662499993,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-03/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          0.09321516752243042,
+          0.9216312766075134,
+          0.9304361939430237,
+          0.09224075078964233
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.007044550962746143,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "hello hello",
+          "hello there",
+          "loving loving",
+          "there loving"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.6666115522384644,
+        "max_deviation_from_half": 0.4304361939430237,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-04",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56048,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 743638504,
+        "elapsed_seconds": 77.87694499999998,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-04/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          0.1752646267414093,
+          0.7510159611701965,
+          0.709013819694519,
+          0.2077474296092987
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.05513567104935646,
+        "correct": 4,
+        "class_bar": false,
+        "read_backs": [
+          "hello world",
+          "hello there",
+          "world loving",
+          "hello loving"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 3,
+        "reconstruction_bar": false,
+        "contrast": -1.0770177245140076,
+        "max_deviation_from_half": 0.3247353732585907,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-05",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56248,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 734168552,
+        "elapsed_seconds": 79.14800666699739,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-05/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          0.03944075107574463,
+          0.8401744365692139,
+          0.8841501474380493,
+          0.29698610305786133
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.03218042850494385,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world there",
+          "there there",
+          "world loving",
+          "loving there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.3878977298736572,
+        "max_deviation_from_half": 0.46055924892425537,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-06",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56275,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 736134608,
+        "elapsed_seconds": 79.38926129200263,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-06/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          -0.00013560056686401367,
+          1.0008306503295898,
+          0.9964287281036377,
+          -0.005150437355041504
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 9.997338565881364e-06,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world hello",
+          "there hello",
+          "world there",
+          "there there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -2.002545416355133,
+        "max_deviation_from_half": 0.5051504373550415,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-07",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56288,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 731055592,
+        "elapsed_seconds": 80.15154350000012,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-07/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          0.09591838717460632,
+          0.8793654441833496,
+          0.9010757207870483,
+          0.09979745745658875
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.010874644853174686,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "loving loving",
+          "loving there",
+          "hello hello",
+          "hello there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -1.5847253203392029,
+        "max_deviation_from_half": 0.4040816128253937,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-08",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56712,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 741803496,
+        "elapsed_seconds": 79.39953491600318,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-08/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          0.17498129606246948,
+          0.7304273843765259,
+          0.9456954002380371,
+          0.15640830993652344
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.03267509862780571,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "hello world",
+          "there hello",
+          "hello world",
+          "hello world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.34473317861557,
+        "max_deviation_from_half": 0.4456954002380371,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-09",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56735,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 733283792,
+        "elapsed_seconds": 78.37048904100084,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-09/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          0.13214784860610962,
+          0.8271164298057556,
+          0.9760499596595764,
+          0.28026968240737915
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.0316191203892231,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "world there",
+          "world loving",
+          "loving there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.3907488584518433,
+        "max_deviation_from_half": 0.4760499596595764,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-10",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56774,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 730056216,
+        "elapsed_seconds": 77.34067887499987,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-10/run.log"
+      },
+      "measurement": {
+        "kind": "reconstruction",
+        "answers": [
+          0.053205668926239014,
+          0.920964241027832,
+          0.875293493270874,
+          0.09545040130615234
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.008434996008872986,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world there",
+          "there there",
+          "loving world",
+          "loving there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.6476016640663147,
+        "max_deviation_from_half": 0.446794331073761,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    }
+  ],
+  "seconds": 774.2813171669986,
+  "source_matched": true
+}

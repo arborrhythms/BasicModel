@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_dimensional_governance.py::test_cs_ws_recurrent_input_mismatch_raises"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-296.recycle.json"
+}

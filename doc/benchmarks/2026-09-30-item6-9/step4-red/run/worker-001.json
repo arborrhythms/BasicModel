@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.5191791660618037,
+      "message": "doc/benchmarks/2026-09-30-item6-9/probe_step4.py:18: in test_not_keeps_the_explicit_pole_exchange\n    layer = NotLayer(representation='poles')\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: NotLayer.__init__() got an unexpected keyword argument 'representation'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

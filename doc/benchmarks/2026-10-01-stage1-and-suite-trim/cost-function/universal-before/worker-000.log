@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_default_xor_reconstructs_its_understanding ________________
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py:13: in test_default_xor_reconstructs_its_understanding
+    assert model.reconstruct_in_loop, 'serial reconstruction must not depend on an opt-in'
+E   AssertionError: serial reconstruction must not depend on an opt-in
+E   assert False
+E    +  where False = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...t(\n    (0-1): 2 x _BodyStage()\n  )\n  (where_encoding): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n).reconstruct_in_loop
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding
+1 failed, 3 warnings in 2.11s

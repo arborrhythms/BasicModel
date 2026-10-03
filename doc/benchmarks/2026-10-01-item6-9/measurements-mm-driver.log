@@ -1,0 +1,20 @@
+START mm-01
+START mm-02
+START mm-03
+{"kind": "mm", "trial": 2, "name": "mm-02", "mse": 1.9539925233402755e-14}
+START mm-04
+{"kind": "mm", "trial": 3, "name": "mm-03", "mse": 5.329070518200751e-15}
+START mm-05
+{"kind": "mm", "trial": 1, "name": "mm-01", "mse": 0.00013074059097561985}
+START mm-06
+{"kind": "mm", "trial": 4, "name": "mm-04", "mse": 5.684341886080802e-14}
+START mm-07
+{"kind": "mm", "trial": 6, "name": "mm-06", "mse": 7.105427357601002e-15}
+START mm-08
+{"kind": "mm", "trial": 5, "name": "mm-05", "mse": 0.25}
+START mm-09
+{"kind": "mm", "trial": 7, "name": "mm-07", "mse": 2.220446049250313e-16}
+START mm-10
+{"kind": "mm", "trial": 9, "name": "mm-09", "mse": 1.3144885180338406e-10}
+{"kind": "mm", "trial": 8, "name": "mm-08", "mse": 4.403011288900416e-09}
+{"kind": "mm", "trial": 10, "name": "mm-10", "mse": 0.10546042025089264}

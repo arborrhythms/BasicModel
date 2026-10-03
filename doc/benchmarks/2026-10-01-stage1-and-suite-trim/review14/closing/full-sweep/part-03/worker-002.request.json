@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-03/worker-002.recycle.json"
+}

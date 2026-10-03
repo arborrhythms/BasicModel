@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_chunk_static_analyse.py::test_analyse_cold_is_byte_level_within_words",
+    "test/test_chunk_static_analyse.py::test_analyse_learned_merges_recover_words",
+    "test/test_chunk_static_analyse.py::test_analyse_converges_to_lexicon",
+    "test/test_chunk_static_analyse.py::test_analyse_never_merges_across_whitespace",
+    "test/test_chunk_static_analyse.py::test_analyse_iterates_merges_to_multibyte_words",
+    "test/test_chunk_static_analyse.py::test_existing_modes_unchanged"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/part-00/worker-079.recycle.json"
+}

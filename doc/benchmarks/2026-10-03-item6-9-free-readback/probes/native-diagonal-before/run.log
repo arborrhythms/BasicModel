@@ -1,0 +1,336 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_ldu_diagonal_cond_backward_is_dense_and_exact ______________
+
+    def test_ldu_diagonal_cond_backward_is_dense_and_exact():
+        layer=InvertibleLinearLayer(4,4)
+        def forward(selected):
+            return torch.cond(selected,lambda:layer._D_embed(),lambda:torch.zeros((4,4)),())
+        compiled=torch.compile(forward,backend='aot_eager',fullgraph=True)
+        weights=torch.arange(16,dtype=torch.float32).reshape(4,4)
+>       (compiled(torch.tensor(True))*weights).sum().backward()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/native_stride_probe.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1278: in compile_wrapper
+    raise e.remove_dynamo_frames() from None  # see TORCHDYNAMO_VERBOSE=1
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:3260: in _call_user_compiler
+    raise BackendCompilerFailed(
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:3232: in _call_user_compiler
+    compiled_fn = compiler_fn(gm, example_inputs)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/repro/after_dynamo.py:163: in __call__
+    compiled_gm = compiler_fn(gm, example_inputs)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/__init__.py:3002: in __call__
+    return self.compiler_fn(model_, inputs_, **self.kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/backends/debugging.py:426: in aot_eager
+    return aot_autograd(
+.venv/lib/python3.12/site-packages/torch/_dynamo/backends/common.py:150: in __call__
+    cg = aot_module_simplified(
+.venv/lib/python3.12/site-packages/torch/_functorch/aot_autograd.py:1249: in aot_module_simplified
+    aot_graph_capture = aot_stage1_graph_capture(aot_state, functional_call)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_compile.py:249: in aot_stage1_graph_capture
+    ) = aot_dispatch_autograd_graph(
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture.py:532: in aot_dispatch_autograd_graph
+    fx_g, saved_updated_joint_inputs = _create_graph_and_save_traced_inputs(
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture.py:280: in _create_graph_and_save_traced_inputs
+    _create_graph(fn_to_trace, flat_args, flat_args_descs, aot_config=aot_config),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture.py:132: in _create_graph
+    fx_g = make_fx(
+.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:3422: in wrapped
+    return make_fx_tracer.trace(f, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:3298: in trace
+    return self._trace_inner(f, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:3248: in _trace_inner
+    t = dispatch_trace(
+.venv/lib/python3.12/site-packages/torch/_compile.py:54: in inner
+    return disable_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:1863: in dispatch_trace
+    graph = tracer.trace(root, concrete_args)  # type: ignore[arg-type]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/fx/_symbolic_trace.py:932: in trace
+    (self.create_arg(fn(*args)),),
+                     ^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/fx/_symbolic_trace.py:772: in flatten_fn
+    tree_out = root_fn(*tree_args)
+               ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:1952: in wrapped
+    out = f(*tensors)  # type:ignore[call-arg]
+          ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture.py:113: in inner_f
+    out, out_descs = call_and_expect_output_descs(f, args)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/utils.py:845: in call_and_expect_output_descs
+    outs_pair = fn(*args)
+                ^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:1233: in inner_fn
+    outs, outs_descs = call_and_expect_output_descs(fn, args)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/utils.py:845: in call_and_expect_output_descs
+    outs_pair = fn(*args)
+                ^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:1175: in joint_helper
+    return _functionalized_f_helper(primals, tangents)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:905: in _functionalized_f_helper
+    f_outs, f_outs_descs = call_and_expect_output_descs(fn, f_args)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/utils.py:845: in call_and_expect_output_descs
+    outs_pair = fn(*args)
+                ^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:497: in joint_helper
+    return inner_fn_with_anomaly(primals, tangents)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:489: in inner_fn_with_anomaly
+    return inner_fn(primals, tangents)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py:453: in inner_fn
+    backward_out = torch.autograd.grad(
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad
+    result_tuple = handle_torch_function(
+.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/fx/experimental/proxy_tensor.py:2014: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:594: in grad
+    result = _engine_run_backward(
+.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+.venv/lib/python3.12/site-packages/torch/autograd/function.py:366: in apply
+    return user_fn(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:365: in backward
+    grads = cond_op(
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:53: in __call__
+    return super().__call__(pred, true_fn, false_fn, operands)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:549: in __call__
+    return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:413: in dispatch
+    return kernel(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:341: in maybe_run_autograd
+    return self(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:53: in __call__
+    return super().__call__(pred, true_fn, false_fn, operands)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:549: in __call__
+    return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:431: in dispatch
+    result = handler(mode, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:198: in functionalize_dispatch_mode_fn
+    return fn(PythonFunctionalizeAPI(mode), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:740: in cond_func
+    cond_return = cond_op(
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:53: in __call__
+    return super().__call__(pred, true_fn, false_fn, operands)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:549: in __call__
+    return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:431: in dispatch
+    result = handler(mode, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:390: in inner
+    return trace_cond(mode, cond_op, pred, true_fn, false_fn, operands)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:295: in trace_cond
+    out = func_overload(pred, true_graph, false_graph, operands)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:53: in __call__
+    return super().__call__(pred, true_fn, false_fn, operands)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:549: in __call__
+    return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_ops.py:431: in dispatch
+    result = handler(mode, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:414: in cond_fake_tensor_mode
+    merged_outs.append(_merge_output(true_out, false_out, mode))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:700: in _merge_output
+    merged_stride: list[int | torch.SymInt] = _bound_stride(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a_ex_size = torch.Size([4]), b_ex_size = torch.Size([4]), a_ex_stride = (5,)
+b_ex_stride = (1,), merged_size = [4]
+
+    def _bound_stride(
+        a_ex_size: torch.Size,
+        b_ex_size: torch.Size,
+        a_ex_stride: tuple[int, ...],
+        b_ex_stride: tuple[int, ...],
+        merged_size: list[int | torch.SymInt],
+    ) -> list[int | torch.SymInt]:
+        from torch._inductor.ir import get_stride_order
+    
+        a_sorted_stride_idx = get_stride_order(a_ex_stride, mode.shape_env)
+        b_sorted_stride_idx = get_stride_order(b_ex_stride, mode.shape_env)
+    
+        a_stride_li: list[tuple[int | torch.SymInt, int] | None] = [None] * len(
+            a_ex_stride
+        )
+        b_stride_li: list[tuple[int | torch.SymInt, int] | None] = [None] * len(
+            b_ex_stride
+        )
+        for i, idx in enumerate(a_sorted_stride_idx):
+            a_stride_li[idx] = (a_ex_stride[i], -i)
+        for i, idx in enumerate(b_sorted_stride_idx):
+            b_stride_li[idx] = (b_ex_stride[i], -i)
+    
+        for a_pair, b_pair in zip(a_stride_li, b_stride_li):
+            if a_pair is None or b_pair is None:
+                raise AssertionError(
+                    f"expected a_pair and b_pair to be non-None, got a_pair={a_pair}, b_pair={b_pair}"
+                )
+            _, a_idx = a_pair
+            _, b_idx = b_pair
+    
+            if a_idx != b_idx:
+                raise RuntimeError(
+                    f"The sorted order of strides of the two branches' output doesn't match."
+                    f"this indicates the contiguousness of the two branches are different. "
+                    f"True branch has stride {a_ex_stride} but false branch has stride {b_ex_stride}."
+                    f"Consider using contiguous() to make the two branches have the same contiguousness."
+                )
+    
+        def _maybe_expr(s: int | torch.SymInt):
+            if isinstance(s, int):
+                return s
+            return s.node.expr
+    
+        a_stride_expr: dict[Any, int | torch.SymInt] = {}
+        b_stride_expr: dict[Any, int | torch.SymInt] = {}
+        merged_strides: list[int | torch.SymInt] = [None] * len(a_ex_stride)  # type: ignore[list-item]
+        for a_pair, b_pair in zip(a_stride_li, b_stride_li):
+            if a_pair is None or b_pair is None:
+                raise AssertionError(
+                    f"expected a_pair and b_pair to be non-None, got a_pair={a_pair}, b_pair={b_pair}"
+                )
+            a_val, neg_i = a_pair
+            b_val, _ = b_pair
+    
+            i = -neg_i
+            if a_val == 0:
+                if b_val != 0:
+                    raise AssertionError(
+                        f"expected b_val == 0 when a_val == 0, got a_val={a_val}, b_val={b_val}"
+                    )
+                merged_strides[i] = 0
+                continue
+    
+            if _maybe_expr(a_val) in a_stride_expr:
+                a_expr = a_stride_expr[_maybe_expr(a_val)]
+                if b_stride_expr[_maybe_expr(b_val)] != a_expr:
+                    raise AssertionError(
+                        f"a_stride_expr:{a_stride_expr}, b_stride_expr:{b_stride_expr}"
+                    )
+                merged_strides[i] = a_expr
+            else:
+                if a_val == 1:
+                    if b_val != 1:
+                        raise AssertionError(
+                            f"expected b_val == 1 when a_val == 1, got b_val={b_val}"
+                        )
+                    a_stride_expr[_maybe_expr(a_val)] = 1
+                    b_stride_expr[_maybe_expr(b_val)] = 1
+                    merged_strides[i] = 1
+                else:
+                    # If we cannot find the expr of a_val in a_stride_expr, it means
+                    # the strides is not a simple accumulative multiplication of sizes.
+                    # In this case, we cannot determine the expr of strides from the new
+                    # shapes so we error out and hint users to call contiguous().
+>                   raise RuntimeError(
+                        f"It seems one of cond's output stride is not a simple accumulative multiplication of sizes. "
+                        f"This could be because cond returns a slice of a tensor, which is not dense in memory. "
+                        f"True branch has size {a_ex_size}, stride {a_ex_stride} and false branch has size {b_ex_size} "
+                        f"stride {b_ex_stride}. Hint: can call t.contiguous(). "
+                    )
+E                   torch._dynamo.exc.BackendCompilerFailed: backend='aot_eager' raised:
+E                   RuntimeError: It seems one of cond's output stride is not a simple accumulative multiplication of sizes. This could be because cond returns a slice of a tensor, which is not dense in memory. True branch has size torch.Size([4]), stride (5,) and false branch has size torch.Size([4]) stride (1,). Hint: can call t.contiguous(). 
+E                   
+E                   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py:684: BackendCompilerFailed
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:proxy_tensor.py:3254 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-item6-9-free-readback/native_stride_probe.py::test_ldu_diagonal_cond_backward_is_dense_and_exact
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: UserWarning: Error detected in CondAutogradOpBackward. Traceback of forward call that caused the error:
+    File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/native_stride_probe.py", line 10, in forward
+      return torch.cond(selected,lambda:layer._D_embed(),lambda:torch.zeros((4,4)),())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+      return func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+   (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/python_anomaly_mode.cpp:135.)
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-03-item6-9-free-readback/native_stride_probe.py::test_ldu_diagonal_cond_backward_is_dense_and_exact
+1 failed, 1 warning in 1.46s

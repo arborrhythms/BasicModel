@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_compiled_expectation_boundary.py"
+  ],
+  "pid": 24816,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2806255312,
+  "elapsed_seconds": 511.45371916699514,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/compiled-expectation-small-after.log"
+}

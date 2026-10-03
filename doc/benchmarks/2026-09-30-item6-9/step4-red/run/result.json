@@ -1,0 +1,125 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_reflects_a_full_concept_code",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_reflects_a_full_concept_code",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run/worker-000.json"
+      ],
+      "pid": 52135,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 423707872,
+      "elapsed_seconds": 3.716109083034098,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_reflects_a_full_concept_code"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_reflects_a_full_concept_code"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_reflects_a_full_concept_code",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.5458669578656554,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step4.py:10: in test_not_reflects_a_full_concept_code\n    torch.testing.assert_close(reflected, -code, rtol=0, atol=0)\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 10 / 10 (100.0%)\nE   Greatest absolute difference: 2.0 at index (0, 9)\nE   Greatest relative difference: 2.0 at index (0, 2)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run/worker-001.json"
+      ],
+      "pid": 52136,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 423871712,
+      "elapsed_seconds": 4.693843417102471,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.5191791660618037,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step4.py:18: in test_not_keeps_the_explicit_pole_exchange\n    layer = NotLayer(representation='poles')\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: NotLayer.__init__() got an unexpected keyword argument 'representation'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run",
+  "elapsed_seconds": 6.855107125127688,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 847579584,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run/collect.json"
+    ],
+    "pid": 52111,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179569480,
+    "elapsed_seconds": 1.7737181670963764,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step4-red/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_reflects_a_full_concept_code",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

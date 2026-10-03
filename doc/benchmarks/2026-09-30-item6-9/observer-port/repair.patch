@@ -1,0 +1,12 @@
+--- a/doc/benchmarks/2026-09-30-item6-9/xor_observer.py
++++ b/doc/benchmarks/2026-09-30-item6-9/xor_observer.py
+@@ -45,7 +45,8 @@
+                         predictions=[float(x.reshape(-1)[0]) for x in data.reconstructed_output],
+                         targets=[float(x.reshape(-1)[0]) for x in data.test_output],
+                         inputs=[model._bytes_to_text(x).rstrip(chr(0)) for x in data.test_input],
+-                        reconstructions=list(data.reconstructed_input)))
++                        reconstructions=list(data.reconstructed_input),
++                        gate_reconstructions=list(model.perceptualSpace.reconstruct_data(text=True))))
+             return model
+         module._run_xor_grammar_in_process = observed_grammar
+     mse_forward = None

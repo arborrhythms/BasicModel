@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+    "--worker",
+    "data/MM_nanochat_grammar_pilot.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_nanochat_grammar_pilot.json"
+  ],
+  "pid": 89200,
+  "exit_code": 137,
+  "reason": "memory",
+  "peak_memory_bytes": 8915590344,
+  "elapsed_seconds": 11.903479833999882,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_nanochat_grammar_pilot.log"
+}

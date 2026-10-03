@@ -1,0 +1,292 @@
+[
+  {
+    "file": "bin/Language.py",
+    "added": 3,
+    "removed": 3
+  },
+  {
+    "file": "bin/Models.py",
+    "added": 102,
+    "removed": 468
+  },
+  {
+    "file": "bin/SentenceUnderstanding.py",
+    "added": 18,
+    "removed": 1
+  },
+  {
+    "file": "bin/Spaces.py",
+    "added": 29,
+    "removed": 345
+  },
+  {
+    "file": "bin/Understanding.py",
+    "added": 6,
+    "removed": 3
+  },
+  {
+    "file": "bin/recon_bench.py",
+    "added": 39,
+    "removed": 17
+  },
+  {
+    "file": "data/BasicModel.xml",
+    "added": 7,
+    "removed": 9
+  },
+  {
+    "file": "data/BasicModel_answers_tied_benchmark.xml",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "file": "data/MM_grammar_wording.xml",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "file": "data/MM_ladder.xml",
+    "added": 8,
+    "removed": 14
+  },
+  {
+    "file": "data/MM_ladder_idiom.xml",
+    "added": 8,
+    "removed": 14
+  },
+  {
+    "file": "data/model.xml",
+    "added": 3,
+    "removed": 2
+  },
+  {
+    "file": "test/configuration_fixtures.py",
+    "added": 29,
+    "removed": 1
+  },
+  {
+    "file": "test/objective_conflicts_probe.py",
+    "added": 67,
+    "removed": 5
+  },
+  {
+    "file": "test/test_accessible_mind.py",
+    "added": 2,
+    "removed": 2
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "added": 40,
+    "removed": 66
+  },
+  {
+    "file": "test/test_concept_code_ownership.py",
+    "added": 73,
+    "removed": 0
+  },
+  {
+    "file": "test/test_concept_memberships.py",
+    "added": 4,
+    "removed": 7
+  },
+  {
+    "file": "test/test_conceptual_recurrence.py",
+    "added": 13,
+    "removed": 7
+  },
+  {
+    "file": "test/test_conceptualize.py",
+    "added": 4,
+    "removed": 2
+  },
+  {
+    "file": "test/test_config_matrix.py",
+    "added": 10,
+    "removed": 2
+  },
+  {
+    "file": "test/test_contextual_concept_codebook.py",
+    "added": 43,
+    "removed": 138
+  },
+  {
+    "file": "test/test_dual_towers.py",
+    "added": 30,
+    "removed": 16
+  },
+  {
+    "file": "test/test_existence_metadata.py",
+    "added": 3,
+    "removed": 3
+  },
+  {
+    "file": "test/test_field_learning.py",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "file": "test/test_free_reconstruction.py",
+    "added": 63,
+    "removed": 0
+  },
+  {
+    "file": "test/test_frozen_concepts.py",
+    "added": 15,
+    "removed": 10
+  },
+  {
+    "file": "test/test_generation_catalog.py",
+    "added": 8,
+    "removed": 6
+  },
+  {
+    "file": "test/test_generation_lesson.py",
+    "added": 1,
+    "removed": 0
+  },
+  {
+    "file": "test/test_global_attention.py",
+    "added": 10,
+    "removed": 12
+  },
+  {
+    "file": "test/test_global_consume.py",
+    "added": 12,
+    "removed": 12
+  },
+  {
+    "file": "test/test_inter_sentence_prediction_shape.py",
+    "added": 6,
+    "removed": 4
+  },
+  {
+    "file": "test/test_masked_semantic.py",
+    "added": 8,
+    "removed": 10
+  },
+  {
+    "file": "test/test_objective_ownership.py",
+    "added": 17,
+    "removed": 0
+  },
+  {
+    "file": "test/test_output_path_supervised.py",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "file": "test/test_output_synthesis.py",
+    "added": 5,
+    "removed": 5
+  },
+  {
+    "file": "test/test_output_walk.py",
+    "added": 3,
+    "removed": 3
+  },
+  {
+    "file": "test/test_per_word_ss_padding_noop.py",
+    "added": 22,
+    "removed": 9
+  },
+  {
+    "file": "test/test_priming_energy.py",
+    "added": 7,
+    "removed": 8
+  },
+  {
+    "file": "test/test_primitive_properties.py",
+    "added": 4,
+    "removed": 2
+  },
+  {
+    "file": "test/test_reading_attention.py",
+    "added": 8,
+    "removed": 10
+  },
+  {
+    "file": "test/test_reconstruction_roundtrip.py",
+    "added": 18,
+    "removed": 43
+  },
+  {
+    "file": "test/test_relevance_bases.py",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "file": "test/test_row_local_concept_optimizer.py",
+    "added": 3,
+    "removed": 7
+  },
+  {
+    "file": "test/test_sentence_comparison.py",
+    "added": 4,
+    "removed": 1
+  },
+  {
+    "file": "test/test_sentence_compose.py",
+    "added": 6,
+    "removed": 0
+  },
+  {
+    "file": "test/test_sentence_expectation.py",
+    "added": 2,
+    "removed": 2
+  },
+  {
+    "file": "test/test_serial_object_meta.py",
+    "added": 64,
+    "removed": 97
+  },
+  {
+    "file": "test/test_sparse_concept_e2e.py",
+    "added": 5,
+    "removed": 35
+  },
+  {
+    "file": "test/test_surface_grammar.py",
+    "added": 4,
+    "removed": 2
+  },
+  {
+    "file": "test/test_taxonomy_boundary.py",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "file": "test/test_taxonomy_entry.py",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "file": "test/test_thought_model_fixture.py",
+    "added": 3,
+    "removed": 2
+  },
+  {
+    "file": "test/test_thought_operation_catalog.py",
+    "added": 1,
+    "removed": 1
+  },
+  {
+    "file": "test/test_training_diagnostic_contracts.py",
+    "added": 3,
+    "removed": 3
+  },
+  {
+    "file": "test/test_where_attention_handoff.py",
+    "added": 8,
+    "removed": 10
+  },
+  {
+    "file": "test/test_word_store.py",
+    "added": 34,
+    "removed": 170
+  },
+  {
+    "file": "test/test_context_rotation.py",
+    "added": 0,
+    "removed": 55
+  }
+]

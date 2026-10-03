@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_training_diagnostic_contracts.py::test_opposition_survives_integrated_checkpoint"
+  ],
+  "completed": [
+    "test/test_training_diagnostic_contracts.py::test_opposition_survives_integrated_checkpoint"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_training_diagnostic_contracts.py::test_opposition_survives_integrated_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016288917046040297,
+      "message": "",
+      "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9994/test_opposition_survives_integ0/diagnostics.ckpt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9994/test_opposition_survives_integ0/diagnostics.ckpt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9994/test_opposition_survives_integ0/diagnostics.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

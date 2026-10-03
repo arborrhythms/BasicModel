@@ -1,8 +1,9 @@
 # Item 6.8: one attention — brackets, narrowing, and expectation at every bracket
 
 **Status.** Decided in direction by Alec, 2026-09-27; plan by Claude.
-Codex implements landing 6.8-1 after item 7.5 and item 7 have landed and
-after the conference checkpoint is frozen; Claude reviews before commit.
+Codex implements landing 6.8-1 after items 7.5, 7 and 6.9 and the
+operators update; there is no conference freeze (Alec, 2026-10-03). Claude
+reviews before commit.
 Landing 6.8-2 (the dynamic stop) is recorded in
 [FutureWork](../FutureWork.md#the-dynamic-stop-glossing-above-words-descending-at-novelty-item-68-2)
 and is not scheduled. The todo entry is item 6.8.
@@ -348,11 +349,11 @@ follows:
 
 **6b, decided (Alec).** The narrowing budget is `attentionBudget`.
 
-**6c, decided (2026-09-27).** Before the conference freeze the NanoChat
-gate is scored by the existing `IntraSentenceLayer` held prediction, an
-untrained point predictor in idea space used only for evaluation, stated
-as such; the trained, distributional word-level expectation is part of
-6.8-1 after the conference and does not reintroduce the retired
+**6c, decided (2026-09-27; the conference freeze dropped 2026-10-03).**
+Until 6.8-1 lands, the NanoChat gate is scored by the existing
+`IntraSentenceLayer` held prediction, an untrained point predictor in idea
+space used only for evaluation, stated as such; the trained, distributional
+word-level expectation is part of 6.8-1 and does not reintroduce the retired
 within-sentence cursor loop (one expectation read per word inside the
 existing per-word step).
 
@@ -365,3 +366,111 @@ existing per-word step).
 - **6c.** For the conference checkpoint, is the word-level predictor pulled
   forward as evaluator only (recommended; no training-loop change before
   the freeze), or also trained at the word level before the freeze?
+
+## 7. What reading attention and global attention carry into 6.8 (Alec, 2026-10-02)
+
+Alec, on the configuration review: "Reading attention: if 6.8 replaces it,
+great, but let's make sure we aren't deleting useful functionality."
+"Global attention: same; let's make sure we are not dropping features with
+the 6.8 integration."
+
+Both modules stay until 6.8 lands, and they retire within it once every
+capability below has its home. They are `ReadingAttention` and
+`GlobalAttention` in `Spaces.py`, with the flags `readingAttention`,
+`globalAttention` and `globalAttentionConsume`. Their four configurations
+remain the reference until then: `MM_reading`, `MM_global`, `MM_qa` and
+`matrix/MM_20M_grammar_reading`. Before then, two things make them usable:
+
+- the 6.9 defect in the mixing leaf staging is fixed;
+- `MM_qa`'s TruthSet input is repaired.
+
+Their weekly tests crash on the first and the second keeps `MM_qa` from
+building.
+
+| Capability today | In this plan | To add |
+|---|---|---|
+| **Reading attention** | | |
+| A learned choice of where to read next, from the previous pass's concept and the STM symbols | The narrowing candidates (`divide`, `descend`, `gloss`) in the 7.5 chooser; 6.8-1 pins the stop at words | — |
+| **Priming steers reading.** A span scores high when its content lies near a prototype the intent has primed: `max over v of cos(key, row_v) · boost_v`, the codebook-retrieval prior | Not here | The priming surface enters the logits of the bracket candidates. This is the same surface that item 6.9's §15.3 uses for the answer's context. |
+| Supervision on the next word: cross-entropy on the next span | The word-level expectation predicts the next word as a distribution over the candidate bank (§3, item 3) | — |
+| Teacher forcing: the true next span in training, its own prediction at inference | Not stated | State it for the word-level expectation |
+| A shift bootstrap: at initialization it reads exactly one word per pass | 6.8-1's stop pinned at words | — |
+| The scope it writes drives the top-down mereology handoff (`_passback_scope_where`) | The bracket is the scope | The handoff reads the bracket table |
+| **Global attention** | | |
+| One registry of addressable spaces: the input window, STM, LTM and the part, whole and symbol codebooks (`_addressable_spaces`, which the reasoner also reads) | "A bracket may be over the input or over symbols" (§5); the spaces are not named | Name the spaces a bracket may cover, from the existing registry. Keep the registry. |
+| One choice across all the spaces, with a learned prior for each. Recall and reading are one mechanism; the type tag says which. | One attentional budget for both (§5); no choice across spaces | A space choice among the 7.5 candidates, under `attentionBudget` |
+| A typed `.where`: which space, and the interval within it | Brackets are intervals over the input | The bracket table carries a space tag |
+| **A learned read trained by the answer.** The read enters the answer through a gate initialized at zero, so retrieval that lowers the answer's error is rewarded. The keys are detached. | Thought's hard reads, which have no parameters. Since 6.9 §15.3, the primed symbols are also in the answer's context. | A learned reader of the primed symbols, owned by the answer. 6.9 §15.3 may already provide it if the answer reads the bank through this module's scorer and consume gate. |
+| Temperature on the explore pass, so that task error shapes where attention lands | 7.5's explore trial | — |
+
+## 8. Acceptance test carried from item 6.9: XOR of two words (Alec, 2026-10-02)
+
+Alec: "Yes, option B, we'll get it working in the next stage."
+
+MM_xor's `test_convergence` must pass, with its bar unchanged (loss below
+.20 within 200 epochs), while the words are read as words.
+
+Until the 6.9 migration, this test passed by a shortcut. The radix reading
+promoted chunks that cross the word boundary (`hello wo`, `hello th`,
+`loving w`, `loving t`), which gave one percept per sentence, so XOR was a
+lookup of four codes. Meronomy promotes words only. Now the test needs the
+open read to compose two words nonlinearly before the answer reads them.
+Measured in the 6.9 receipt of 2026-10-02 (6.9 plan §17), three things stand
+in the way:
+
+1. **No live recurrence.** Each parallel binding re-reads the original
+   percepts, and the WholeSpace carrier between bindings returns a neutral
+   field. So only the last of MM_xor's three bindings learns from the
+   answer.
+2. **A linear reading of words.** The numeric head reads the word slots
+   linearly, which gives a sum of per-word contributions. A sum cannot be
+   XOR, and its best is one half everywhere (6.9 plan §3.3).
+3. **The first word drops out.** In failed runs the first word's six content
+   numbers fall to zero.
+
+The field's `and`/`or`/`not` over the open bracket (§1) is the
+order-independent nonlinear operation this test needs. XOR_exact already
+shows it on primitive memberships.
+
+## 9. Carried from item 6.9 (Alec, 2026-10-03)
+
+Item 6.9 closed on 2026-10-03 as the baseline of grammatical learning
+([6.9 plan §25.3, §26](2026-09-29-item-6-9-xor-grammar.md#26-review-of-the-closing-round-claude-2026-10-03)).
+Two of Alec's closing comments are this item's work.
+
+**9.1 Exploit and explore for compose, think and generate.** "Compose,
+think, and generate all need exploit and explore trials." Item 7.5 gave
+compose a greedy derivation and an explore derivation that departs from it at
+one round, both costed under the same parameters, the explore kept only on
+strictly lower cost of the objective that owns the choice. 6.9's closing run
+showed why generate needs the same: its walk, a hard argmax trained through
+a straight-through surrogate, chose STOP at the first step in all 3,200
+decodes and never discovered that undoing the binary operation would yield
+the missing word, because the missing-word penalty does not depend on the
+transition not taken. So:
+
+- each of the three grammars' walks has an exploit path and one explore path;
+- both are costed under the same parameters before either trains;
+- the explore path is kept only on strictly lower cost of the walk's owner:
+  reconstruction for generate as the decoder, the answer for generate as
+  output (a choice, not a gradient, so ownership stands), the thought
+  controller's return for think;
+- the record keeps which path was kept, and the audit reports the fraction
+  of walks where explore won and the derivation stability per sentence, as
+  for compose.
+
+This is the §3 chooser extended, not a second policy: `divide`, `descend`
+and `gloss` already sit in that softmax, and the explore path is how any of
+the three grammars finds an action the greedy path never takes.
+
+**9.2 Codes need not converge all the way.** "Yes, but if they don't
+converge all the way, that's fine." The codes may drift partly together
+under reconstruction (6.9 §26.1: mean squared off-diagonal cosine .07 → .37
+in the closing run). The antipode term keeps them from collapsing; the gates
+read the answer and the read-back, not the geometry. Code geometry stays in
+the audit as a diagnostic, not as a bar.
+
+**Acceptance tests carried over** (with §8): MM_xor's word-level XOR; and
+6.9's two XOR_grammar gates, which may only improve against the closing
+record (the no-regression rule), with the decoder's inferred operations
+expected to match the compose derivations once it explores.

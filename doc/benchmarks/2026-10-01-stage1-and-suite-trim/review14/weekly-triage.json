@@ -1,0 +1,811 @@
+{
+  "source_record": "/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/record.json",
+  "source_matched": true,
+  "duration_seconds": 26868.838177,
+  "selected": 328,
+  "unique_case_counts": {
+    "passed": 198,
+    "failed": 98,
+    "skipped": 15,
+    "xfailed": 5,
+    "process_stopped_without_result": 12
+  },
+  "raw_record_counts": {
+    "passed": 198,
+    "failed": 98,
+    "skipped": 15,
+    "xfailed": 5,
+    "process_failed": 14
+  },
+  "guard_events": 14,
+  "guard_events_on_cases_already_reported": [
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+    "test/test_modality_configs.py::TestModalityConfigsBuildAndForward::test_all_live_configs_build_with_canonical_shapes"
+  ],
+  "triage": [
+    {
+      "nodeid": "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_enwiki",
+      "phase": "call",
+      "category": "external resource",
+      "cause": "The optional enwiki embedding resource is absent; no embedding is loaded.",
+      "message": "../../../../test/test_basicmodel.py:1829: in test_load_enwiki\n    self.assertIsNotNone(self.wv)\nE   AssertionError: unexpectedly None"
+    },
+    {
+      "nodeid": "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip",
+      "phase": "call",
+      "category": "unseeded quality; origin unresolved",
+      "cause": "Blind round-trip accuracy was .75, below 1.0. One unseeded observation does not establish a deterministic regression.",
+      "message": "../../../../test/test_blind_decode.py:203: in test_mm20m_xor_blind_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.75 == 1.0\nE    +  where 0.75 = RunRecord(config='data/MM_20M_xor.xml', seed=2134462570, epochs=160, wall_s_per_epoch=0.5280686391699373, output_loss=...5289428749965737, 0.5303601670020726, 0.5309760000018287, 0.5317085409988067, 0.5286542079993524, 0.5294322079935228]}).exact_match_rate"
+    },
+    {
+      "nodeid": "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The operation-choice probe calls the new sentence-local journal writer without its global-to-local index map.",
+      "message": "../../../../test/test_compile_static_loop.py:57: in test_per_word_body_callable_with_static_signature\n    cs, idea = m._per_word_body_step(w, 0, gate, out_slot)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20313: in _per_word_body_step\n    self._stm_word_rounds(commit_b_1, p)\nbin/Models.py:18946: in _stm_word_rounds\n    applied = self._stm_operation_step(\nbin/Models.py:18903: in _stm_operation_step\n    self._record_operation_choice(trace_slot, choice, state)\nbin/Models.py:18999: in _record_operation_choice\n    if mapping.numel():\n       ^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'numel'"
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The newly scoped reconstruction bank rejects a targetless sentence; the decided no-candidate rule is zero contribution plus a count.",
+      "message": "../../../../test/test_compiled_expectation_boundary.py:35: in test_unpacked_forward_observes_each_published_sentence_once\n    raw = _stage_fullgraph_tensor_peer(model, samples)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_compiled_word_chunk.py:410: in _stage_fullgraph_tensor_peer\n    model._staged_in_sub = model._lex_embed_stem(raw)\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13910: in _lex_embed_stem\n    self._validate_reconstruction_bank()\nbin/Models.py:12257: in _validate_reconstruction_bank\n    torch._assert_async(\n../../../../.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction"
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The newly scoped reconstruction bank rejects a targetless sentence; the decided no-candidate rule is zero contribution plus a count.",
+      "message": "../../../../test/test_compiled_expectation_boundary.py:35: in test_unpacked_forward_observes_each_published_sentence_once\n    raw = _stage_fullgraph_tensor_peer(model, samples)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_compiled_word_chunk.py:410: in _stage_fullgraph_tensor_peer\n    model._staged_in_sub = model._lex_embed_stem(raw)\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13910: in _lex_embed_stem\n    self._validate_reconstruction_bank()\nbin/Models.py:12257: in _validate_reconstruction_bank\n    torch._assert_async(\n../../../../.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "Assertions inspect the former whole-row operation trip/journal lifetime after sentence-local journal discard and closing rounds.",
+      "message": "../../../../test/test_compiled_word_chunk.py:514: in test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state\n    assert int(tensor_loop._tensor_peer_trip_count) == 4\nE   assert 16 == 4\nE    +  where 16 = int(tensor(16))\nE    +    where tensor(16) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-3): 4 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n)._tensor_peer_trip_count"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "Assertions inspect the former whole-row operation trip/journal lifetime after sentence-local journal discard and closing rounds.",
+      "message": "../../../../test/test_compiled_word_chunk.py:784: in test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths\n    assert bool(trace._choice_attempted[:, :12].any())\nE   assert False\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method any of Tensor object at 0x154c01630>()\nE    +      where <built-in method any of Tensor object at 0x154c01630> = tensor([[False, False, False, False, False, False, False, False, False, False,\\n         False, False],\\n        [False, False, False, False, False, False, False, False, False, False,\\n         False, False]]).any"
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The probe expects batch-end proximal registration at every optimizer step; 6.9 adds earlier per-sentence trial steps.",
+      "message": "../../../../test/test_concept_readout_l1.py:283: in test_real_runbatch_stages_l1_once_and_reports_it_separately\n    result, _ = model.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24422: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18119: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22605: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22143: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21310: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21308: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20767: in _sentence_train_step\n    optimizer.step()\n../../../../test/test_concept_readout_l1.py:275: in step\n    assert (layer.coefficients in leaf._l1_proximal) == (expected is not None)\nE   assert (Parameter containing:\\ntensor([[0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000],\\n        [0.500... 0.0000],\\n        [0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000]],\\n       requires_grad=True) in {}) == ((tensor([ 7,  8,  9, 10, 11]), tensor([[ True,  True,  True,  True,  True, False, False, False, False],\\n        [ True...False, False, False],\\n        [ True,  True,  True,  True,  True,  True,  True,  True, False]]), 0.002, tensor(0.0280)) is not None)\nE    +  where Parameter containing:\\ntensor([[0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000],\\n        [0.500... 0.0000],\\n        [0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000]],\\n       requires_grad=True) = IndexedSigmaConceptsFromPercepts().coefficients\nE    +  and   {} = _RowLocalAdam (\\nParameter Group 0\\n    betas: (0.9, 0.999)\\n    eps: 1e-08\\n    lr: 0.001\\n    maximize: False\\n    moment_dtype: torch.bfloat16\\n    weight_decay: 0.0\\n)._l1_proximal"
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The probe expects batch-end proximal registration at every optimizer step; 6.9 adds earlier per-sentence trial steps.",
+      "message": "../../../../test/test_concept_readout_l1.py:283: in test_real_runbatch_stages_l1_once_and_reports_it_separately\n    result, _ = model.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24422: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18119: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22605: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22143: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21310: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21308: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20767: in _sentence_train_step\n    optimizer.step()\n../../../../test/test_concept_readout_l1.py:275: in step\n    assert (layer.coefficients in leaf._l1_proximal) == (expected is not None)\nE   assert (Parameter containing:\\ntensor([[0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000],\\n        [0.500... 0.0000],\\n        [0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000]],\\n       requires_grad=True) in {}) == ((tensor([ 7,  8,  9, 10, 11]), tensor([[ True,  True,  True,  True,  True, False, False, False, False],\\n        [ True...False, False, False],\\n        [ True,  True,  True,  True,  True,  True,  True,  True, False]]), 0.002, tensor(0.0280)) is not None)\nE    +  where Parameter containing:\\ntensor([[0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000],\\n        [0.500... 0.0000],\\n        [0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000]],\\n       requires_grad=True) = IndexedSigmaConceptsFromPercepts().coefficients\nE    +  and   {} = _RowLocalAdam (\\nParameter Group 0\\n    betas: (0.9, 0.999)\\n    eps: 1e-08\\n    lr: 0.001\\n    maximize: False\\n    moment_dtype: torch.bfloat16\\n    weight_decay: 0.0\\n)._l1_proximal"
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_no_recompile_fullgraph",
+      "phase": "call",
+      "category": "weekly snapshot harness",
+      "cause": "This subprocess test constructs a repository-relative .venv path, absent from the frozen source copy. Other workers use the live venv explicitly.",
+      "message": "../../../../test/test_conceptual_recurrence.py:305: in test_no_recompile_fullgraph\n    out = subprocess.run(\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py:548: in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py:1026: in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py:1955: in _execute_child\n    raise child_exception_type(errno_num, err_msg, err_filename)\nE   FileNotFoundError: [Errno 2] No such file or directory: '/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/.venv/bin/python'"
+    },
+    {
+      "nodeid": "test/test_conceptualize.py::test_conceptualize_dispatch",
+      "phase": "call",
+      "category": "long-standing shape-contract drift (inferred)",
+      "cause": "The test demands a three-axis shape from the conceptualize dispatch, which returns a two-axis shape. No 6.9 edit to that dispatch establishes a recent cause.",
+      "message": "../../../../test/test_conceptualize.py:46: in test_conceptualize_dispatch\n    assert c1 is not None and len(c1) == 3\nE   assert ((2, 3) is not None and 2 == 3)\nE    +  where 2 = len((2, 3))"
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_config_matrix.py:58: in test_config_builds_runs_and_reconstructs\n    rec = run_config(cfg, epochs=1, seed=0, out_dir=str(tmp_path),\nbin/recon_bench.py:213: in run_config\n    _epoch_loop()\nbin/recon_bench.py:197: in _epoch_loop\n    out_loss, rec_loss, _, _ = model.runEpoch(\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_symbol_tower_parallel_forward_smoke",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_cs_to_ss_forward.py:65: in test_symbol_tower_parallel_forward_smoke\n    m.forward(x)        # exercises forward_concept_to_symbol in the bind\n    ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_stage0_consumes_unity",
+      "phase": "call",
+      "category": "long-standing reading-contract drift (inferred)",
+      "cause": "The assertions expect the former carrier/word-mean/quantizer route; published HEAD already labels this route property-neutral and has no analysis_store.",
+      "message": "../../../../test/test_dual_input_contract.py:126: in test_ws_stage0_consumes_unity\n    assert float(ev1.abs().max()) > 0, \"evidence must be non-trivial symbols\"\nE   AssertionError: evidence must be non-trivial symbols\nE   assert 0.0 > 0\nE    +  where 0.0 = float(tensor(0., grad_fn=<MaxBackward1>))\nE    +    where tensor(0., grad_fn=<MaxBackward1>) = <built-in method max of Tensor object at 0x141856e90>()\nE    +      where <built-in method max of Tensor object at 0x141856e90> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<AbsBackward0>).max\nE    +        where tensor([[[0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<AbsBackward0>) = <built-in method abs of Tensor object at 0x141855900>()\nE    +          where <built-in method abs of Tensor object at 0x141855900> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<MulBackward0>).abs"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_routing_law_typed",
+      "phase": "call",
+      "category": "long-standing reading-contract drift (inferred)",
+      "cause": "The assertions expect the former carrier/word-mean/quantizer route; published HEAD already labels this route property-neutral and has no analysis_store.",
+      "message": "../../../../test/test_dual_input_contract.py:149: in test_ws_routing_law_typed\n    assert getattr(ws, \"_ws_routed_source\", None) == \"carrier\"\nE   AssertionError: assert 'property-neutral' == 'carrier'\nE     \nE     - carrier\nE     + property-neutral"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_model_forward_passes_unity_at_stage0",
+      "phase": "call",
+      "category": "long-standing reading-contract drift (inferred)",
+      "cause": "The assertions expect the former carrier/word-mean/quantizer route; published HEAD already labels this route property-neutral and has no analysis_store.",
+      "message": "../../../../test/test_dual_input_contract.py:190: in test_model_forward_passes_unity_at_stage0\n    assert all(src == \"carrier\" for (_u, src) in later), (\nE   AssertionError: t>0 non-parallel stages are carrier-driven\nE   assert False\nE    +  where False = all(<generator object test_model_forward_passes_unity_at_stage0.<locals>.<genexpr> at 0x1217ba9b0>)"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_word_analysis_boundaries_shape_evidence",
+      "phase": "call",
+      "category": "long-standing reading-contract drift (inferred)",
+      "cause": "The assertions expect the former carrier/word-mean/quantizer route; published HEAD already labels this route property-neutral and has no analysis_store.",
+      "message": "../../../../test/test_dual_input_contract.py:253: in test_word_analysis_boundaries_shape_evidence\n    assert abs(float(z_pre[0, 0, 0]) - exp0) < 1e-5, (\nE   AssertionError: part-0 mean: expected 0.673109, got 0.000000\nE   assert 0.6731091177830563 < 1e-05\nE    +  where 0.6731091177830563 = abs((0.0 - 0.6731091177830563))\nE    +    where 0.0 = float(tensor(0.))"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_parallel_ws_quantize_fires",
+      "phase": "call",
+      "category": "long-standing retired API",
+      "cause": "Published HEAD already has no producer for this named WholeSpace attribute/method; see weekly-head-static-evidence.json.",
+      "message": "../../../../test/test_dual_input_contract.py:277: in test_parallel_ws_quantize_fires\n    basis = ws.analysis_store\n            ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_vq_asymmetric_flags",
+      "phase": "call",
+      "category": "long-standing retired API",
+      "cause": "Published HEAD already has no producer for this named WholeSpace attribute/method; see weekly-head-static-evidence.json.",
+      "message": "../../../../test/test_dual_input_contract.py:314: in test_ws_vq_asymmetric_flags\n    (\"analysis\", ws.analysis_store)):\n                 ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_codebook_recon_gradient",
+      "phase": "call",
+      "category": "long-standing retired API",
+      "cause": "Published HEAD already has no producer for this named WholeSpace attribute/method; see weekly-head-static-evidence.json.",
+      "message": "../../../../test/test_dual_input_contract.py:362: in test_ws_codebook_recon_gradient\n    vq = ws.analysis_store.vq\n         ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_recon_term_reaches_pipeline_errors",
+      "phase": "call",
+      "category": "long-standing reading-contract drift (inferred)",
+      "cause": "The assertions expect the former carrier/word-mean/quantizer route; published HEAD already labels this route property-neutral and has no analysis_store.",
+      "message": "../../../../test/test_dual_input_contract.py:403: in test_ws_recon_term_reaches_pipeline_errors\n    assert \"ws_codebook_recon\" in terms, (\nE   AssertionError: the recon term must reach the pipeline error container; got terms=[]\nE   assert 'ws_codebook_recon' in {}"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_descriptor_roles_lf_coarse_tagging",
+      "phase": "call",
+      "category": "long-standing retired API",
+      "cause": "Published HEAD already has no producer for this named WholeSpace attribute/method; see weekly-head-static-evidence.json.",
+      "message": "../../../../test/test_dual_input_contract.py:418: in test_descriptor_roles_lf_coarse_tagging\n    basis = ws.analysis_store\n            ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_semantic_arrangement_mechanism",
+      "phase": "call",
+      "category": "long-standing retired API",
+      "cause": "Published HEAD already has no producer for this named WholeSpace attribute/method; see weekly-head-static-evidence.json.",
+      "message": "../../../../test/test_dual_input_contract.py:445: in test_semantic_arrangement_mechanism\n    vq = ws.analysis_store.vq\n         ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_dual_towers.py:143: in test_ws_routes_universe_on_parallel_path\n    m = _run_one_epoch(\"data/MM_sparse_concept.xml\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_dual_towers.py:136: in _run_one_epoch\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_dual_towers.py:180: in test_written_order0_words_are_present_after_one_smoke_epoch\n    m = _run_one_epoch(\"data/MM_sparse_concept.xml\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_dual_towers.py:136: in _run_one_epoch\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_replaces_wave",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_dual_towers.py:219: in test_pyramid_replaces_wave\n    m = _run_one_epoch(\"data/MM_sparse_concept.xml\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_dual_towers.py:136: in _run_one_epoch\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_dual_towers.py:238: in test_pyramid_taper_topk_selection\n    m = _run_one_epoch(\"data/MM_sparse_concept.xml\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_dual_towers.py:136: in _run_one_epoch\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_dual_towers.py:268: in test_pyramid_grads_reach_every_rung\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream",
+      "phase": "call",
+      "category": "recent 6.9 (inferred)",
+      "cause": "The assertion observes a row/document STM counter after sentence commits rather than the former per-word/packed-forward lifetime.",
+      "message": "../../../../test/test_expectation_review.py:124: in test_real_packed_bricks_share_one_document_stream\n    assert sum(pairs) == 3, pairs\nE   AssertionError: [0, 0, 0, 0]\nE   assert 0 == 3\nE    +  where 0 = sum([0, 0, 0, 0])"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "phase": "call",
+      "category": "known red gate",
+      "cause": "Two of four word multisets recovered. The reconstruction gate was already red in the reviewed receipt.",
+      "message": "../../../../test/test_explicit_dimensions.py:300: in test_piecewise_overall_at_least_50_pct\n    self.assertEqual(perfect, 4,\nE   AssertionError: 2 != 4 : XOR_grammar reconstruction: 2/4 word multisets recovered; [('hello world', 'loving world'), ('hello there', 'there world'), ('loving world', 'world loving'), ('loving there', 'loving there')]"
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_frozen_concepts.py:132: in test_reading_wiring_desires_staged_wholes\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_global_attention.py:191: in test_forward_parks_typed_obs_over_spaces\n    out1 = m.forward(x)[2]\n           ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_global_attention.py:213: in test_addressable_spaces_gathers_input_stm_codebook\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_global_attention.py:238: in test_ltm_space_appears_when_store_present_but_excludes_estimates\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_global_consume.py:122: in test_qa_config_builds_with_consumer_and_ltm\n    out = m.forward(x)[2]\n          ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_zero_gate_matches_consume_off",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_global_consume.py:135: in test_zero_gate_matches_consume_off\n    out_off_flag = (lambda: (setattr(m, \"global_attention_consume\", False),\n../../../../test/test_global_consume.py:136: in <lambda>\n    m.forward(x)[2].clone())[1])()\n    ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_global_consume.py:150: in test_gate_feeds_the_read_into_the_answer\n    base = m.forward(x)[2].clone()\n           ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_global_consume.py:170: in test_nonzero_gate_does_not_corrupt_the_reverse\n    head_off = m.forward(x)[2].clone()\n               ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_answer_loss_trains_retrieval",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_global_consume.py:190: in test_answer_loss_trains_retrieval\n    out = m.forward(x)\n          ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_global_consume.py:211: in test_ltm_truthset_read_is_fed_to_the_answer\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_idea_decode.py::test_gate_skips_generate_rebuild_when_on",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_idea_decode.py:81: in test_gate_skips_generate_rebuild_when_on\n    m.forward(x)  # populate the C-space_role STM so the snapshot is non-None\n    ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_idea_decode_d3.py:99: in test_reverse_off_path_unchanged\n    m = _forward(_build(\"MM_mereology.xml\"))\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_idea_decode_d3.py:41: in _forward\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_per_word_enabled_predicate_tracks_use_grammar",
+      "phase": "call",
+      "category": "long-standing fixture drift",
+      "cause": "The helper selects MM_20M_legacy, whose retained default grammar is substrate-only, but the test asserts that the configuration has a nontrivial grammar.",
+      "message": "../../../../test/test_input_word_cursor.py:329: in test_per_word_enabled_predicate_tracks_use_grammar\n    assert ug_g != \"none\", f\"MM_20M must be grammar-enabled, got {ug_g!r}\"\nE   AssertionError: MM_20M must be grammar-enabled, got 'none'\nE   assert 'none' != 'none'"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher[False]",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "A backward probe sees loss=None at a trial step where the new projected-gradient path has already supplied gradients.",
+      "message": "../../../../test/test_joint_objectives.py:159: in test_real_packed_runbatch_trains_prediction_and_representation_with_teacher\n    result, _ = m.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24422: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18119: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22605: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22143: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21310: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21308: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20754: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\n../../../../test/test_joint_objectives.py:124: in backward_probe\n    assert loss is not None and loss.requires_grad, {\nE   AssertionError: {'context': [0, 0], 'roots': tensor([[[-0.0160, -0.0396,  0.0101,  ..., -0.0410, -0.0680, -0.0261],\nE              [ 0.0000,...  ...,  0.0000,  0.0000,  0.0000]]],\nE            grad_fn=<CompiledFunctionBackward>), 'packed': True, 'counts': (2, 1), ...}\nE   assert (None is not None)"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher[True]",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "A backward probe sees loss=None at a trial step where the new projected-gradient path has already supplied gradients.",
+      "message": "../../../../test/test_joint_objectives.py:159: in test_real_packed_runbatch_trains_prediction_and_representation_with_teacher\n    result, _ = m.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24422: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18119: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22605: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22143: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21310: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21308: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20754: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\n../../../../test/test_joint_objectives.py:124: in backward_probe\n    assert loss is not None and loss.requires_grad, {\nE   AssertionError: {'context': [0, 0], 'roots': tensor([[[-0.0160, -0.0396,  0.0101,  ..., -0.0410, -0.0680, -0.0261],\nE              [ 0.0000,...,  0.0000,  ...,  0.0000,  0.0000,  0.0000]]],\nE            grad_fn=<WhereBackward0>), 'packed': True, 'counts': (2, 1), ...}\nE   assert (None is not None)"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_config_is_masked_parallel_semantic",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_masked_semantic.py:115: in test_config_is_masked_parallel_semantic\n    m = _cached(\"base\")[\"model\"]\n        ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_masked_ir_training_engages",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_masked_semantic.py:131: in test_masked_ir_training_engages\n    rec = _cached(\"base\")\n          ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_concept_attention_live_not_dark",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_masked_semantic.py:152: in test_concept_attention_live_not_dark\n    m = _cached(\"base\")[\"model\"]\n        ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_masked_prediction_uses_concept_attention",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_masked_semantic.py:165: in test_masked_prediction_uses_concept_attention\n    base, con = _cached(\"base\"), _cached(\"concept\")\n                ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_reconstruction_uses_category_evidence",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_masked_semantic.py:175: in test_reconstruction_uses_category_evidence\n    base, mint = _cached(\"base\"), _cached(\"mint\")\n                 ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_seeded_rerun_is_deterministic",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_masked_semantic.py:183: in test_seeded_rerun_is_deterministic\n    a, b = _cached(\"base\"), _cached(\"base2\")\n           ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_mlx_export.py::test_mlx_lower_writes_pte",
+      "phase": "call",
+      "category": "stale expected failure",
+      "cause": "The strict xfail unexpectedly passed (XPASS); no export implementation failure was reported. The environment was not rebuilt.",
+      "message": "[XPASS(strict)] MM_20M sO=3: executorch mishandles a torch.export-dedup'd constant shared across the 3 delegated combine subgraphs (upstream)"
+    },
+    {
+      "nodeid": "test/test_mlx_export.py::test_pte_runtime_parity",
+      "phase": "call",
+      "category": "stale expected failure",
+      "cause": "The strict xfail unexpectedly passed (XPASS); no export implementation failure was reported. The environment was not rebuilt.",
+      "message": "[XPASS(strict)] MM_20M sO=3: executorch mishandles a torch.export-dedup'd constant shared across the 3 delegated combine subgraphs (upstream)"
+    },
+    {
+      "nodeid": "test/test_modality_configs.py::TestModalityConfigsBuildAndForward::test_all_live_configs_build_with_canonical_shapes",
+      "phase": "call",
+      "category": "long-standing shape-contract drift",
+      "cause": "The assertion still permits only 0/2 temporal coordinates, while the landed canonical ladder uses four.",
+      "message": "../../../../test/test_modality_configs.py:136: in test_all_live_configs_build_with_canonical_shapes\n    _assert_space_role_shapes(self, model, name)\n../../../../test/test_modality_configs.py:112: in _assert_space_role_shapes\n    tc.assertIn(nWhen, (0, 2), f\"{name}:{n} nWhen not in (0,2)\")\nE   AssertionError: 4 not found in (0, 2) : MM_20M_fineweb.xml:inputSpace.subspace nWhen not in (0,2)"
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_serial_answer_path_varies_with_the_input",
+      "phase": "call",
+      "category": "quality; origin unresolved",
+      "cause": "Output range .0108612 is below .1; the evidence does not separate initialization variance from a recent training change.",
+      "message": "../../../../test/test_output_path_supervised.py:128: in test_serial_answer_path_varies_with_the_input\n    assert actual > 0.1, actual                            # and the emitted answer\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: 0.010861232876777649\nE   assert 0.010861232876777649 > 0.1"
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]",
+      "phase": "call",
+      "category": "recent 6.9 (inferred)",
+      "cause": "The batch-backward observer never populates its parameter snapshot after trial-local training; the test fails on the absent snapshot, before its parameter comparison.",
+      "message": "../../../../test/test_output_path_supervised.py:327: in test_available_input_targets_do_not_train_answer_modules_after_adam\n    got = _answer_training_probe(m, opt, questions)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_output_path_supervised.py:253: in _answer_training_probe\n    zip(observed[\"params\"], observed[\"before\"])]\n        ^^^^^^^^^^^^^^^^^^\nE   KeyError: 'params'"
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]",
+      "phase": "call",
+      "category": "recent 6.9 (inferred)",
+      "cause": "The batch-backward observer never populates its parameter snapshot after trial-local training; the test fails on the absent snapshot, before its parameter comparison.",
+      "message": "../../../../test/test_output_path_supervised.py:327: in test_available_input_targets_do_not_train_answer_modules_after_adam\n    got = _answer_training_probe(m, opt, questions)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_output_path_supervised.py:253: in _answer_training_probe\n    zip(observed[\"params\"], observed[\"before\"])]\n        ^^^^^^^^^^^^^^^^^^\nE   KeyError: 'params'"
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The operation-choice probe calls the new sentence-local journal writer without its global-to-local index map.",
+      "message": "../../../../test/test_per_word_capture_gate.py:142: in test_per_word_step_runs_eagerly_end_to_end\n    CS_sub, idea_bd = m._per_word_body_step(w, 0, _gate_for(isp, w), out_slot)\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20313: in _per_word_body_step\n    self._stm_word_rounds(commit_b_1, p)\nbin/Models.py:18946: in _stm_word_rounds\n    applied = self._stm_operation_step(\nbin/Models.py:18903: in _stm_operation_step\n    self._record_operation_choice(trace_slot, choice, state)\nbin/Models.py:18999: in _record_operation_choice\n    if mapping.numel():\n       ^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'numel'"
+    },
+    {
+      "nodeid": "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+      "phase": "call",
+      "category": "recent 6.9 (inferred)",
+      "cause": "The assertion observes a row/document STM counter after sentence commits rather than the former per-word/packed-forward lifetime.",
+      "message": "../../../../test/test_per_word_ss_padding_noop.py:58: in test_stm_depth_tracks_valid_len_not_N\n    assert depth_after - depth_before == L, (\nE   AssertionError: STM mirror advanced by 1, expected 8 (real-positions count)\nE   assert (1 - 0) == 8"
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes",
+      "phase": "call",
+      "category": "recent trim fixture change",
+      "cause": "The shared fixture replaces torch.while_loop with a Python bool loop; the test then asks the reconstruction body to compile fullgraph.",
+      "message": "ord_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21310: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:139: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21287: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20847: in _sentence_path_cost\n    reconstruction = self._compiled_reconstruct()(\n../../../../test/test_prepared_answer_boundary.py:224: in reconstruct\n    return compiled(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)\nE   \nE   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.\nE   Caused by: while bool(condition(*values)):  # tmp/slow-tests/20261002T012227Z-32db47/source/test/reading_fixtures.py:225 in eager_while (_dynamo/variables/tensor.py:2849 in evaluate_expr)\nE   For more information, run with TORCH_LOGS=\"dynamic\"\nE   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL=\"u0\"\nE   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing\nE   \nE   User Stack (most recent call last):\nE     (snipped, see stack below for prefix)\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 12708, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/test/reading_fixtures.py\", line 225, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1\nE   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 12708, in _reconstruct_sentences\nE       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(\nE                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/test/reading_fixtures.py\", line 225, in eager_while\nE       while bool(condition(*values)):\nE             ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_priming_energy.py:124: in test_cs_to_ps_projection_live\n    m = _projected_model()\n        ^^^^^^^^^^^^^^^^^^\n../../../../test/test_priming_energy.py:116: in _projected_model\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_priming_energy.py:141: in test_cs_to_ws_projection_live\n    m = _projected_model()\n        ^^^^^^^^^^^^^^^^^^\n../../../../test/test_priming_energy.py:116: in _projected_model\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_priming_energy.py:159: in test_projection_bounded_across_epochs\n    m6 = _projected_model(epochs=6)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_priming_energy.py:116: in _projected_model\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_priming_energy.py:173: in test_one_canonical_surface_per_tower\n    m = _projected_model(epochs=1)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_priming_energy.py:116: in _projected_model\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_priming_energy.py:195: in test_reading_heat_from_canonical_on_multistage\n    m = _projected_model(epochs=1)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_priming_energy.py:116: in _projected_model\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_priming_energy.py:222: in test_priming_rows_carry_abstraction_order\n    m = _projected_model(epochs=1)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_priming_energy.py:116: in _projected_model\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_reading_attention.py:305: in test_forward_is_finite_and_deterministic\n    out1 = m.forward(x)[2]\n           ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_reading_attention.py:316: in test_train_forward_then_backward_is_finite\n    out = m.forward(x)\n          ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_reading_attention.py:326: in test_producer_writes_teacher_scope_and_registers_loss\n    m.forward(x)                      # warm the CS carriers / STM\n    ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_reading_attention.py:355: in test_registered_loss_backprops_to_producer\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_reading_attention.py:377: in test_producer_scope_clears_past_last_word\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_reconstruction_roundtrip.py:662: in test_codebook_mask_path_inert_under_no_grad\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_relevance_bases.py:86: in test_unconditional_integration_end_to_end\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_primed_reading_scope",
+      "phase": "call",
+      "category": "reading scope; origin unresolved",
+      "cause": "The expected priming tensor is None; a precise onset is not established without another diagnostic.",
+      "message": "../../../../test/test_relevance_bases.py:124: in test_primed_reading_scope\n    assert torch.is_tensor(scope)\nE   assert False\nE    +  where False = <function is_tensor at 0x10c829300>(None)\nE    +    where <function is_tensor at 0x10c829300> = torch.is_tensor"
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The cached normalized reconstruction cost is compared with the old eager raw/aggregate cost contract; exact source of the numerical mismatch remains unverified.",
+      "message": "../../../../test/test_reverse_traversal.py:334: in test_packed_rows_reconstruct_each_sentence_separately\n    assert torch.allclose(m._recon_sentence_costs, eager_costs, atol=1e-4)\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10ee9d3a0>(tensor([[0.8304, 0.8084, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]), tensor([[2.8178, 3.8002, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]), atol=0.0001)\nE    +    where <built-in method allclose of type object at 0x10ee9d3a0> = torch.allclose\nE    +    and   tensor([[0.8304, 0.8084, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n  (_staged_in_sub): SubSpace()\\n)._recon_sentence_costs"
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The cached normalized reconstruction cost is compared with the old eager raw/aggregate cost contract; exact source of the numerical mismatch remains unverified.",
+      "message": "../../../../test/test_reverse_traversal.py:355: in test_traversal_compiles_into_the_one_sentence_graph\n    assert torch.allclose(m._recon_cost, eager_cost, atol=1e-4)\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10e47d3a0>(tensor([0.8492, 1.7226]), tensor([0.0002, 0.0002]), atol=0.0001)\nE    +    where <built-in method allclose of type object at 0x10e47d3a0> = torch.allclose\nE    +    and   tensor([0.8492, 1.7226]) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n  (_staged_in_sub): SubSpace()\\n)._recon_cost"
+    },
+    {
+      "nodeid": "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The operation-choice probe calls the new sentence-local journal writer without its global-to-local index map.",
+      "message": "../../../../test/test_rule_gate_isolates_side_effects.py:56: in test_false_gate_contribution_is_zero\n    m._per_word_body_step(w, 0, gate_false, out_slot)\nbin/Models.py:20313: in _per_word_body_step\n    self._stm_word_rounds(commit_b_1, p)\nbin/Models.py:18946: in _stm_word_rounds\n    applied = self._stm_operation_step(\nbin/Models.py:18903: in _stm_operation_step\n    self._record_operation_choice(trace_slot, choice, state)\nbin/Models.py:18999: in _record_operation_choice\n    if mapping.numel():\n       ^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'numel'"
+    },
+    {
+      "nodeid": "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The operation-choice probe calls the new sentence-local journal writer without its global-to-local index map.",
+      "message": "../../../../test/test_rule_gate_isolates_side_effects.py:83: in test_false_gate_preserves_stm_buffer\n    m._per_word_body_step(w, 0, gate_false, out_slot)\nbin/Models.py:20313: in _per_word_body_step\n    self._stm_word_rounds(commit_b_1, p)\nbin/Models.py:18946: in _stm_word_rounds\n    applied = self._stm_operation_step(\nbin/Models.py:18903: in _stm_operation_step\n    self._record_operation_choice(trace_slot, choice, state)\nbin/Models.py:18999: in _record_operation_choice\n    if mapping.numel():\n       ^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'numel'"
+    },
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_serial_object_meta.py:288: in test_serial_object_meta_off_does_not_build_word_index\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_sparse_concept_e2e.py:165: in test_sparse_concept_forward_smoke\n    out = m.forward(x)                                 # runs the parallel loop\n          ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_sparse_concept_e2e.py:239: in test_conceptual_sbow_situates_live_sparse_codes\n    m.forward(x)                                          # parks the slab\n    ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_sparse_concept_e2e.py:287: in test_demux_feedback_is_views_of_the_mixed_carrier\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_sparse_concept_e2e.py:324: in test_two_phase_forward_cutover_stamps_terminal_activations\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_stream_smoke.py::test_stream_smoke_runs_one_epoch",
+      "phase": "call",
+      "category": "capacity; origin unresolved",
+      "cause": "The old embedding loader tries to insert beyond its configured 256-row capacity. No guard or configuration was raised.",
+      "message": "last):\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 25822, in <module>\nE         results = ModelFactory.run(xml)\nE                   ^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 25604, in run\nE         return ModelFactory._run_hydrated(config_path, arch, dat, trn)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 25662, in _run_hydrated\nE         m, _ = BaseModel.from_config(config_path, data=TheData)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 1824, in from_config\nE         cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\nE               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 7127, in create_from_config\nE         return super().create_from_config(config_path, model_type=model_type, data=data)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 1924, in create_from_config\nE         self.create(\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 7147, in create\nE         return self._create_per_stage(\nE                ^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 17000, in _create_per_stage\nE         self.perceptualSpace = self._make_perceptual_space(\nE                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Models.py\", line 7164, in _make_perceptual_space\nE         return PartSpace(inputShape, spaceShape, outputShape)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Spaces.py\", line 11130, in __init__\nE         super().__init__(inputShape, spaceShape, outputShape)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Spaces.py\", line 8427, in __init__\nE         what=self._build_what_basis(),\nE              ^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Spaces.py\", line 11537, in _build_what_basis\nE         basis.create(\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Spaces.py\", line 5406, in create\nE         self.insert(token_text)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/bin/Spaces.py\", line 5539, in insert\nE         assert current_size < cap, (\nE                ^^^^^^^^^^^^^^^^^^\nE     AssertionError: Embedding.insert: lexicon is full (256 >= capacity=256); the where-space slice allocated for this Embedding only covers ``lexicon_capacity`` prototypes. Raise <nVectors> on the owning Space's XML (or the Embedding._LEXICON_DEFAULT_CAPACITY default) and reload.\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/.ven...types. Raise <nVectors> on the owning Space\\'s XML (or the Embedding._LEXICON_DEFAULT_CAPACITY default) and reload.\\n').returncode"
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_one_symbol_apoha_emission",
+      "phase": "call",
+      "category": "long-standing retired reading path (inferred)",
+      "cause": "The fixture expects the old CS-leg quantizer/virgin-symbol reconstruction path; its associated methods are already absent at HEAD.",
+      "message": "../../../../test/test_symbolic_iteration.py:132: in test_csleg_one_symbol_apoha_emission\n    codes = _plant_rows(ws, rows=[20, 21])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_symbolic_iteration.py:93: in _plant_rows\n    c = torch.zeros(vq.codebook.shape[-1],\n                    ^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'codebook'"
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_virgin_fallback_stays_continuous",
+      "phase": "call",
+      "category": "long-standing retired API",
+      "cause": "Published HEAD already has no producer for this named WholeSpace attribute/method; see weekly-head-static-evidence.json.",
+      "message": "../../../../test/test_symbolic_iteration.py:173: in test_csleg_virgin_fallback_stays_continuous\n    ws.stage_symbolic_virgin_rows()\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'stage_symbolic_virgin_rows'"
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_adoption_writes_tags_and_is_idempotent",
+      "phase": "call",
+      "category": "long-standing retired reading path (inferred)",
+      "cause": "The fixture expects the old CS-leg quantizer/virgin-symbol reconstruction path; its associated methods are already absent at HEAD.",
+      "message": "../../../../test/test_symbolic_iteration.py:209: in test_csleg_adoption_writes_tags_and_is_idempotent\n    evidence = vq.codebook[target][:W].clone() + 0.01\n               ^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'codebook'"
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_recon_gather_lands_on_winner_rows",
+      "phase": "call",
+      "category": "long-standing retired reading path (inferred)",
+      "cause": "The fixture expects the old CS-leg quantizer/virgin-symbol reconstruction path; its associated methods are already absent at HEAD.",
+      "message": "../../../../test/test_symbolic_iteration.py:241: in test_csleg_recon_gather_lands_on_winner_rows\n    codes = _plant_rows(ws, rows=[40, 41])\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_symbolic_iteration.py:93: in _plant_rows\n    c = torch.zeros(vq.codebook.shape[-1],\n                    ^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'codebook'"
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_csleg_naming_indices_thread_full_frame",
+      "phase": "call",
+      "category": "long-standing retired API",
+      "cause": "Published HEAD already has no producer for this named WholeSpace attribute/method; see weekly-head-static-evidence.json.",
+      "message": "../../../../test/test_symbolic_iteration.py:275: in test_csleg_naming_indices_thread_full_frame\n    ws.stage_symbolic_virgin_rows()\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'stage_symbolic_virgin_rows'"
+    },
+    {
+      "nodeid": "test/test_symbolic_iteration.py::test_forward_body_lifts_csleg_recon",
+      "phase": "call",
+      "category": "long-standing retired reading path (inferred)",
+      "cause": "The fixture expects the old CS-leg quantizer/virgin-symbol reconstruction path; its associated methods are already absent at HEAD.",
+      "message": "../../../../test/test_symbolic_iteration.py:357: in test_forward_body_lifts_csleg_recon\n    assert \"ws_codebook_recon\" in terms, (\nE   AssertionError: the CS-leg recon term must reach the pipeline error container; got terms=[]\nE   assert 'ws_codebook_recon' in {}"
+    },
+    {
+      "nodeid": "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step",
+      "phase": "call",
+      "category": "gradient reach; origin unresolved",
+      "cause": "The compile-count test also expects a nonzero gradient; the observed used gradients are zero. No repair or repeat was performed.",
+      "message": "../../../../test/test_tied_reconstruction_compile.py:178: in test_separate_reconstruction_does_not_retrace_backward_every_step\n    assert any(g.abs().sum() > 0 for g in used)\nE   assert False\nE    +  where False = any(<generator object test_separate_reconstruction_does_not_retrace_backward_every_step.<locals>.<genexpr> at 0x146f8f920>)"
+    },
+    {
+      "nodeid": "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_where_attention_handoff.py:50: in test_mereology_raise_enables_conceptual_refinement\n    out1 = m.forward(x)[2]\n           ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_where_tiling.py::test_model_callosum_carries_tiling_to_final_cs",
+      "phase": "call",
+      "category": "recent 6.9",
+      "cause": "The new mixing grammar-leaf staging calls len on a missing word_texts row. The method is absent from published HEAD.",
+      "message": "../../../../test/test_where_tiling.py:133: in test_model_callosum_carries_tiling_to_final_cs\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()"
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_words_summary_row_running_mean",
+      "phase": "call",
+      "category": "long-standing retired API",
+      "cause": "Published HEAD already has no producer for this named WholeSpace attribute/method; see weekly-head-static-evidence.json.",
+      "message": "../../../../test/test_word_store.py:356: in test_words_summary_row_running_mean\n    p2r = ws._ws_pos_to_row\n          ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute '_ws_pos_to_row'"
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+      "phase": "call",
+      "category": "retired storage contract; origin unresolved",
+      "cause": "The case reads former word-whole registry/trace/leaf-distill or reverse-index state. Some producers predate 6.9 retirement; this run alone does not date the specific mismatch.",
+      "message": "../../../../test/test_word_store.py:404: in test_ws_word_whole_registry_resolves_to_rows\n    assert reg, \"the autobind must have bound word-wholes on this config\"\nE   AssertionError: the autobind must have bound word-wholes on this config\nE   assert None"
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_forward_records_kind_tagged_trace",
+      "phase": "call",
+      "category": "retired storage contract; origin unresolved",
+      "cause": "The case reads former word-whole registry/trace/leaf-distill or reverse-index state. Some producers predate 6.9 retirement; this run alone does not date the specific mismatch.",
+      "message": "../../../../test/test_word_store.py:435: in test_forward_records_kind_tagged_trace\n    assert trace, \"the sweep must have traced folds\"\nE   AssertionError: the sweep must have traced folds\nE   assert ()"
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+      "phase": "call",
+      "category": "retired storage contract; origin unresolved",
+      "cause": "The case reads former word-whole registry/trace/leaf-distill or reverse-index state. Some producers predate 6.9 retirement; this run alone does not date the specific mismatch.",
+      "message": "../../../../test/test_word_store.py:755: in test_leaf_distill_trains_root_toward_leaves\n    assert terms.get(\"leaf_distill\", 0.0) > 0.0\nE   AssertionError: assert 0.0 > 0.0\nE    +  where 0.0 = <built-in method get of dict object at 0x120b4e340>('leaf_distill', 0.0)\nE    +    where <built-in method get of dict object at 0x120b4e340> = {}.get"
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+      "phase": "call",
+      "category": "retired storage contract; origin unresolved",
+      "cause": "The case reads former word-whole registry/trace/leaf-distill or reverse-index state. Some producers predate 6.9 retirement; this run alone does not date the specific mismatch.",
+      "message": "../../../../test/test_word_store.py:778: in test_percept_concept_reverse_index_and_row\n    assert cs.concept_of_percept(3) == A\nE   assert None == 1\nE    +  where None = concept_of_percept(3)\nE    +    where concept_of_percept = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).concept_of_percept"
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "timeout guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "timeout guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_mm_boolean.py::TestMMBoolean::test_explicit_test_sentences",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "timeout guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_modality_configs.py::TestModalityConfigsBuildAndForward::test_all_live_configs_build_with_canonical_shapes",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_d3_reconstruction",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "phase": "process",
+      "category": "resource stop; origin unresolved",
+      "cause": "memory guard stopped the worker; no matched historical resource profile establishes when this began.",
+      "message": ""
+    }
+  ]
+}

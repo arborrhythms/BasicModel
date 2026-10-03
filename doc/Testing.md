@@ -14,7 +14,8 @@ DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_rep
 ```
 
 `make test` uses the same runner. `make test_all` additionally enables the existing
-`RUN_SLOW=1` tests, assigning marked slow cases to an available GPU and ordinary cases to CPU.
+`RUN_SLOW=1` tests. Slow selection never changes the device: cases default to CPU,
+and only an explicit `device` marker or `BASICMODEL_DEVICE` requests another device.
 `make testp` is deliberately a direct `pytest-xdist` iteration command (`TEST_JOBS=auto`
 by default), not a bounded receipt. `make preflight` and `make preflight_full` use the
 receipt runner. Select affected tests for short development cycles; the complete default
@@ -166,21 +167,25 @@ never an automatic slow mark.
 - `--batch-size 1` reduces accumulation within a batch when diagnosing a memory
   failure. Reducing batch size does not omit any selected cases.
 
+Tests that read one trained model use a module-scoped fixture and
+`@pytest.mark.shared_training("name")`. The bounded runner keeps the selected
+members of that group in one worker, including the weekly run at batch size
+one. Recycling waits until the group's final selected test; the memory and
+time ceilings remain unchanged. Selecting one test alone does not add its
+partners. `TestXorGrammarLearnsXor` and `TestXorGrammarReconstruction` use this
+contract: ten unseeded trainings report both unchanged bars and joint success,
+and the first training supplies both rows of the named XOR table.
+
 ## GPU training tests
 
-Significant training belongs in the explicit slow run and uses the available
-accelerator. With `RUN_SLOW=1` and no explicit device, marked `slow` cases run
-on the available GPU and ordinary cases run on CPU. The pool permits ordinary
-CPU workers alongside it but admits only one accelerator worker at a time, so
-MPS/CUDA training never contends with a second shared-device test. On this
-machine the GPU resolves to the Apple M4 Max's MPS device.
-A GPU request fails explicitly when no accelerator is available. The quick
-regression gate defaults to CPU. Older manual slow gates without a `slow`
-marker still need the marker audit listed in the checkpoint; request MPS
-explicitly for their significant training until that audit is complete.
-An explicit `BASICMODEL_DEVICE=mps` or `cuda:0` is preserved. For a compatibility
-test that requires CPU, select that test and request CPU explicitly; report it
-separately from GPU training evidence.
+Slow selection and device dispatch are independent. A test marked only `slow`
+keeps the CPU calibration, including XOR proofs and exact/blind MM round trips.
+`@pytest.mark.device("gpu")` explicitly requests the available accelerator;
+`device("mps")`, `device("cuda")` and `device("cpu")` select one directly.
+A caller's explicit `BASICMODEL_DEVICE` applies to its whole targeted run.
+Only one accelerator worker runs at a time. A requested unavailable accelerator
+fails rather than falling back. MPS-only and CUDA-only test bodies retain their
+availability checks; the weekly run enables the MPS gates on this machine.
 
 ```sh
 RUN_SLOW=1 BASICMODEL_DEVICE=mps .venv/bin/python test/test_report.py test/test_inter_contrastive_predict.py
@@ -2601,3 +2606,160 @@ none of its runtime changes is included in this landing.
 Implementation `9810fc7` contains all 712 validated source files and
 four supporting fixtures; every committed blob matches the landing manifest.
 The final documentation check passes all 169 links, including todo.md.
+
+## Item 6.9 stop after step 5 (September 30)
+
+The [uncommitted work receipt](benchmarks/2026-09-30-item6-9/README.md)
+starts from published `d679df2b`. It implements plan §4 steps 1–5 in order:
+the class gate reads the four saved answers at the settled bar; numeric
+serial answers read the detached concluded state; grammar word leaves use
+the full object code in every binding; code negation reflects the full
+code while explicit poles exchange; both sentence trials are scored before
+either trains. Each backward owns its perception pullback and prediction
+graph. Saved failing probes and complete old/new port bodies accompany each
+repair. All 35 final affected checks pass.
+
+The mandatory assessment meets the class bar in **0/10 unseeded runs** at
+the unchanged 400 epochs, MSE **.2044415629–.5855241919**. The current
+reconstruction gate fails 10/10. The
+[twenty-run table](benchmarks/2026-09-30-item6-9/grammar-ten/table.md)
+contains all four answers and four reconstructions for every run. Per the
+plan and Alec's instruction, implementation stops before steps 6–8;
+grammar reconstruction, immediate-inverse exclusion and the sum-only
+negative control are not implemented or claimed.
+
+All six checkpoints (before changes and after each implemented step)
+retain full HEAD/candidate XOR tables, 49 named attempts per tree including
+slow proofs and fifteen independent exact round trips. The final table has
+**44 passed / 5 failed** on HEAD and **43 passed / 6 failed** on the
+candidate: both grammar gates are red, and exact round trips are **12/15
+and 11/15**. The historical accepted candidate's 12/15 remains intact.
+All ten 900-update MM_grammar runs complete per tree; final median ending
+MSE is **.1139670797 / .0686401706** (HEAD/candidate). Starting identical
+trees measured **.0647774097 / .0008435599**, showing substantial unseeded
+variation. No no-regression claim is made.
+
+The [native timing table](benchmarks/2026-09-30-item6-9/native-comparison.md)
+records final reconstruction MSE before/during/after training
+**.1149501931 / .1138415950 / .1189210640**, warmed throughput
+**.491403460 sentences/s**, and **5.349 GiB** peak worker memory.
+Against the immediately preceding pair, warm batch time is **1.4410×**
+and whole-run peak memory **1.0111×**, with all late graph captures kept.
+These are different unseeded initializations and concurrent workloads,
+not paired causal measurements. The historical parity fixture fails to
+load on both HEAD and candidate because its `propertyBasis` element was
+retired; no configuration is changed to bypass it. The depth-three check
+skips without the mature FineWeb checkpoint, leaving the historical red
+campaign and its assertion intact.
+
+The [final source-matched full sweep](benchmarks/2026-09-30-item6-9/full-sweep/summary.json)
+completes all **5,161 cases exactly once: 4,832 passed, six failed,
+322 skipped, one expected failure**, in 5,985.72 seconds. There are no
+missing cases, resource stops or compile cache retries. Peak worker and
+aggregate memory are **5.002 / 17.909 GiB**, under the unchanged 8/24 GiB
+guards. All 12 added regression cases and 27 added documentation cases
+pass; no previous selector was removed.
+
+The six unresolved failures cover two real full-graph numeric-head paths,
+one unaligned object-reference assertion, definition identity, and two
+truth-ingestion evidence assertions. The full-graph head reads concluded
+state through an attribute unavailable during tracing instead of receiving
+the explicit sentence products. These failures and their unchanged
+assertions are retained for review after the mandatory stop. The earlier
+receipt's six fixture failures were already ported in accepted item 7;
+their passes are not attributed to this candidate.
+
+The frozen 717-file source and supporting inputs still match. No seed,
+optimizer, epoch budget or other configuration was changed. Historical
+XOR/MM and red depth-three records are unchanged. The candidate stops for
+Claude's review without a commit.
+
+## Item 6.9 repairs and isolated measurements (October 1)
+
+Alec and Claude's October 1 instructions replace repeated HEAD/candidate
+measurements with one candidate attempt per named case, including one
+MM_20M_xor exact round trip. The accepted item-7 record remains the baseline:
+XOR **44/49**, exact **12/15**, MM_grammar median ending MSE **.1066**.
+The [follow-up receipt](benchmarks/2026-10-01-item6-9/README.md) retains the
+six saved failures, complete old/new repair bodies and Claude's original
+derivation probe. No test body or assertion changes in this follow-up.
+
+The compiled answer head now receives the concluded state explicitly.
+The mixing binding stages object leaves for grammar without publishing
+word-symbol rows, IDs or evidence; this also repairs the definition identity
+alias and both stored-truth evidence failures. All **12 affected checks
+pass**, including all six previously failing cases and the object-leaf and
+answer-gradient boundary checks. The candidate XOR table is **33/35**;
+both grammar gates remain red and the single exact round trip passes.
+All named slow proofs are included. This sample does not replace the
+historical exact-round-trip rate.
+
+The three requested probe patches are installed only in measurement
+processes; the candidate remains at step 5 with its answer gradient cut.
+At 400 epochs with all four classes correct and MSE below .05, ten fresh
+unseeded runs meet the bar in **0/10** for detached answer comparison,
+**0/10** with four explore trials, and **9/10** with the answer gradient
+reaching codes and chooser. Median MSE is **.2382143314**, **.2939883538**
+and **.0010992477** respectively. Every trial is costed before training any
+trial, under identical parameters. The four-explore probe trains all five
+trials, so its additional optimizer steps accompany its wider search.
+All thirty completed results, including the gradient variant's failed run,
+are retained in the [per-run report](benchmarks/2026-10-01-item6-9/variant-results.md).
+
+The [final MM_grammar table](benchmarks/2026-10-01-item6-9/final-mm-table.md)
+contains ten unseeded 900-update runs. Median ending MSE is
+**6.575284761e-11**, with range **2.220446049e-16–.25**; all outcomes are
+retained. The helper matches accepted item 7 byte for byte and uses the
+same `eager` compilation setting. The environment was not rebuilt:
+before/after `pip freeze` matches exactly. The source audit matches all
+717 files across the repaired tests, XOR table and measurements, and
+preserves the historical XOR/MM and red depth-three records.
+
+Two harness issues are disclosed in the receipt: a two-slot derivation
+observer needed the full STM, and the initial MM dispatch inherited the
+variant compilation setting. Their six incomplete attempts are preserved
+with failing probes and repairs. No completed statistical failure was
+retried. The measurement patches and candidate source are unchanged by
+these harness repairs. Part 4 has not started; no new full sweep or commit
+is made before review.
+
+
+## October 1 suite trim: weekly slow coverage
+
+`make test_slow_weekly` uses the existing virtual environment and does not depend
+on the venv rebuild stamp. It selects central `slow` markers, historical
+`RUN_SLOW` decorators/body gates, and the three `RUN_MPS_SLOW` cases. The older
+switches retain their original gating behavior; the common marker now exposes
+them to selection. CUDA-only cases keep their availability skips.
+
+This machine's weekly target uses the suite's CPU fixture contract; the three
+MPS-specific tests explicitly switch to MPS. Ordinary cases have an **8 GiB
+per-worker ceiling**. The production objective measurement in
+`test_objective_conflicts_slow.py`, at its unchanged batch of 28, has a
+**24 GiB per-worker ceiling**. The October 2 ownership contract replaces the
+former two-arm test with one ownership measurement; historical weekly records
+retain the original arms. Both tiers run one worker at a time under a
+**24 GiB aggregate reservation** and the existing **30-minute worker deadline**.
+The ordinary full sweep's 8 GiB worker ceiling is unchanged.
+
+The same weekly target also runs `python bin/Legacy.py` and the three
+`bin/etc` inline unittest suites once, under the ordinary 8 GiB worker ceiling.
+Their individual test counts and failures join the weekly record. The Makefile's
+`SigmaPi`, `SymPercept` and `SPNN` demonstration targets pass `--demo`.
+
+The weekly target freezes source and fixtures into its receipt's `source/`
+directory before collection (a plain file copy, not another Git worktree).
+Workers read that copy, so subsequent cost-function edits cannot change the
+measurement. Its manifest identifies the exact uncommitted candidate tested.
+Each run writes its detailed bounded receipts beneath `tmp/slow-tests/`, plus a
+small `record.json` and `latest.json`: UTC date, commit, case counts, outcomes,
+failures, duration, peaks, ceilings and source-match status. A full sweep's
+summary warns when that record is missing, older than seven days, incomplete,
+or failed. A subset run cannot stand in for the weekly record. A guard-stopped case remains a failed attempt; the weekly dispatcher continues only cases that have not started, without retrying failures or raising their ceilings. The record distinguishes attempted cases from cases with a completed pytest report. A complete attempt record can therefore still contain process failures. The frozen source shares the unchanged `.venv` runtime through a link so subprocess tests resolve the same interpreter; source and fixture files remain independent copies.
+
+A Sunday 03:00 local launchd schedule is proposed in the October 1 receipt;
+it has not been installed. The receipt preserves every removed or relocated
+test's disposition, full old/new bodies and the 25-case performance profiles.
+Compiler tests retain capture; ordinary ownership and gradient tests can use
+`eager_reading`, which executes the same loop bodies with ordinary autograd.
+Setting `MODEL_COMPILE=eager` alone still captures higher-order loop graphs.

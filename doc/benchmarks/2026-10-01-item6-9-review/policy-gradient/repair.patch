@@ -1,0 +1,78 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -13515,6 +13515,14 @@
+         R1 = int(unary_map.numel()) if torch.is_tensor(unary_map) else 0
+         stop_index = R2 + R1
+         policy_on = language.generate_policy is not None
++        trial_answer = (getattr(self, "_sentence_training", False)
++                        and getattr(self, "_sentence_trial", None) in ("exploit", "explore"))
++        # Detach before the loop captures its inputs. Discarding its credit
++        # output alone leaves zero gradients on lifted policy parameters,
++        # which can still move Adam's momentum during a sentence update.
++        frozen_policy = ((language.generate_policy.weight.detach(),
++                          language.generate_policy.bias.detach())
++                         if trial_answer and policy_on else None)
+         # Draw outside the loop body so the compiled loop consumes one
+         # fixed-shape random slab, with one independent draw per row/trip.
+         draws = torch.rand(B, T, device=event.device) if sample_actions else None
+@@ -13537,8 +13545,10 @@
+             is_rule = has_top & (kind == 2) & (known_b | known_u)
+             if sample_actions:
+                 is_rule = torch.zeros_like(is_rule)
+-            logits = language.generate_policy_logits(
+-                top_vec.detach() if sample_actions else top_vec)
++            logits = (F.linear(top_vec.detach()[:, :language._generate_policy_width],
++                               *frozen_policy) if frozen_policy is not None else
++                      language.generate_policy_logits(
++                          top_vec.detach() if sample_actions else top_vec))
+             unstamped = has_top & ~is_rule
+             choice = language.choose_generate(logits)
+             if sample_actions:
+@@ -13546,8 +13556,9 @@
+                     1, t.clamp(0, T - 1).reshape(1, 1).expand(B, 1))
+                 cdf = logits.detach().softmax(dim=-1).cumsum(dim=-1)
+                 choice = (draw >= cdf).to(torch.long).sum(dim=-1).clamp_max(stop_index)
+-                credit = credit + language.generate_policy_credit(
+-                    logits, choice, unstamped)
++                if not trial_answer:
++                    credit = credit + language.generate_policy_credit(
++                        logits, choice, unstamped)
+             if not policy_on:
+                 unstamped = torch.zeros_like(unstamped)
+             pol_b = torch.logical_and(unstamped, choice < R2)
+--- a/test/test_trial_policy_ownership.py
++++ b/test/test_trial_policy_ownership.py
+@@ -4,19 +4,21 @@
+ 
+ 
+ @pytest.mark.parametrize('trial', ['exploit', 'explore'])
+-def test_trial_generation_leaves_policy_credit_at_batch_end(monkeypatch, trial):
++@pytest.mark.parametrize('compiled', [False, True])
++def test_trial_generation_leaves_policy_credit_at_batch_end(monkeypatch, trial, compiled):
+     import util
+     from Meaning import ConceptualMeaning
+     from Output import AnswerDerivation
+     from Understanding import Understanding, SentenceEndState
+     from What import What
+     from test_output_walk import _model
+-    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
++    monkeypatch.setattr(util, 'TheCompileBackend', 'eager' if compiled else 'none')
+     def eager_while(condition, body, values):
+         while bool(condition(*values)):
+             values = body(*values)
+         return values
+-    monkeypatch.setattr(torch, 'while_loop', eager_while)
++    if not compiled:
++        monkeypatch.setattr(torch, 'while_loop', eager_while)
+     model = _model()
+     model.train()
+     width = model.conceptualSpace.stm.concept_dim
+@@ -38,7 +40,7 @@
+         params = tuple(model.languageSpace.generate_policy.parameters())
+         gradients = torch.autograd.grad(result.actual.square().mean(), (point, *params), allow_unused=True)
+         assert gradients[0] is not None and bool(gradients[0].abs().sum() > 0)
+-        assert all(g is None or not bool(g.abs().any()) for g in gradients[1:])
++        assert all(g is None for g in gradients[1:])
+         model._sentence_trial = None
+         model.reverseOutput(understanding, held)
+         assert torch.is_tensor(model._output_policy_cost)

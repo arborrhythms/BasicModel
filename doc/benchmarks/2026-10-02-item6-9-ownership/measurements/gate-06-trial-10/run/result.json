@@ -1,0 +1,94 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+  ],
+  "completed": [
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-10/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-10/run/worker-000.json"
+      ],
+      "pid": 30245,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1145751880,
+      "elapsed_seconds": 193.48212120799872,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-10/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "completed": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 187.72898612500285,
+          "message": "test/test_explicit_dimensions.py:265: in test_piecewise_overall_at_least_50_pct\n    self.assertEqual(perfect, 4,\nE   AssertionError: 1 != 4 : XOR_grammar reconstruction: 1/4 word multisets recovered; [('hello world', 'hello hello'), ('hello there', 'hello hello'), ('loving world', 'loving world'), ('loving there', 'loving hello')]",
+          "stdout": ".0928, reconstruction=1.0435\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.257s, 100.00%)\r\nTraining throughput: 1 batches in 0.257s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0989, reconstruction=1.0501\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.257s, 100.00%)\r\nTraining throughput: 1 batches in 0.256s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1478, reconstruction=1.0572\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.259s, 100.00%)\r\nTraining throughput: 1 batches in 0.258s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1101, reconstruction=1.0647\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.257s, 100.00%)\r\nTraining throughput: 1 batches in 0.256s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0594, reconstruction=0.6741\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.259s, 100.00%)\r\nTraining throughput: 1 batches in 0.259s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1007, reconstruction=1.0776\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.256s, 100.00%)\r\nTraining throughput: 1 batches in 0.256s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1253, reconstruction=1.0809\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.254s, 100.00%)\r\nTraining throughput: 1 batches in 0.254s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1651, reconstruction=1.0800\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.257s, 100.00%)\r\nTraining throughput: 1 batches in 0.257s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0779, reconstruction=1.0783\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.257s, 100.00%)\r\nTraining throughput: 1 batches in 0.256s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1212, reconstruction=1.0757\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.255s, 100.00%)\r\nTraining throughput: 1 batches in 0.254s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1529, reconstruction=1.0696\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.253s, 100.00%)\r\nTraining throughput: 1 batches in 0.252s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1352, reconstruction=1.0613\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.250s, 100.00%)\r\nTraining throughput: 1 batches in 0.250s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0991, reconstruction=1.0516\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.253s, 100.00%)\r\nTraining throughput: 1 batches in 0.252s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0637, reconstruction=0.5967\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.254s, 100.00%)\r\nTraining throughput: 1 batches in 0.253s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0573, reconstruction=0.2030\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.259s, 100.00%)\r\nTraining throughput: 1 batches in 0.259s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1064, reconstruction=1.0211\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.253s, 100.00%)\r\nTraining throughput: 1 batches in 0.253s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0666, reconstruction=0.6244\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.260s, 100.00%)\r\nTraining throughput: 1 batches in 0.259s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.1363, reconstruction=0.5922\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=29.614s, 100.00%)\r\nTraining throughput: 1 batches in 29.557s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='hello ' label=0.0000 predicted=0.3977 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='hello ' label=1.0000 predicted=0.6268 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='loving ' label=1.0000 predicted=0.6200 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='loving ' label=0.0000 predicted=0.6390 MISMATCH\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 2100,
+    "batch_size": 32,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-10/run",
+  "elapsed_seconds": 195.84940408400143,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1145751880,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-10/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-10/run/collect.json"
+    ],
+    "pid": 30238,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181977952,
+    "elapsed_seconds": 1.9515006250003353,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-10/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

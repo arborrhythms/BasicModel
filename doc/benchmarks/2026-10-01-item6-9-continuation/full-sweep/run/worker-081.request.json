@@ -1,0 +1,17 @@
+{
+  "selectors": [
+    "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_lexicon_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ws_analysis_knob_accepted",
+    "test/test_analyse_word_learning.py::test_learned_merges_converge_to_word_lexing",
+    "test/test_analyse_word_learning.py::test_cold_is_byte_level_before_learning",
+    "test/test_analyse_word_learning.py::test_partial_learning_is_subword",
+    "test/test_analyse_word_learning.py::test_learning_respects_whitespace_boundaries",
+    "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+    "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-081.recycle.json"
+}

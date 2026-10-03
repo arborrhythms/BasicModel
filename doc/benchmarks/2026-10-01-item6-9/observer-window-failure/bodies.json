@@ -1,0 +1,8 @@
+[
+  {
+    "file": "probe_run.py",
+    "symbol": "selection",
+    "old_body": "def selection(self, x, **kw):\n    hard, path, routing = selection_original(self, x, **kw)\n    STATE['calls'].append(dict(\n        x=x.detach().double().clone(),\n        depth=None if kw.get('depth') is None else kw['depth'].detach().reshape(-1).tolist(),\n        kind=routing['kind'].reshape(-1).tolist(), op=routing['op'].reshape(-1).tolist(),\n        pos=routing['position'].reshape(-1).tolist(),\n        valid=routing['valid'].reshape(-1).tolist() if 'valid' in routing else None,\n        names=(list(self.op_names or []), list(self.unary_names or []))))\n    return hard, path, routing\n",
+    "new_body": "def selection(self, state, row_gate, **kw):\n    result = selection_original(self, state, row_gate, **kw)\n    choice = result[0] if isinstance(result, tuple) else result\n    layer = self.language_layer.operation_layer\n    STATE['calls'].append(full_choice(state, choice,\n        (list(layer.op_names or []), list(layer.unary_names or []))))\n    return result\n"
+  }
+]

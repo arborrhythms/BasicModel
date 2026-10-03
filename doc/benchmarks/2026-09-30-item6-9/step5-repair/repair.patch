@@ -1,0 +1,83 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -20884,8 +20884,10 @@
+             self._open_sentence_slot = sid
+             before = self._snapshot_sentence_state((stm, lang, feedback))
+             observations, predictions = [], []
++            pending_steps = []
+             def compose(cached, exploit):
+                 self._sentence_trial = 'exploit' if exploit is None else 'explore'
++                self._sentence_pullback = None
+                 if self._sentence_training and torch.is_grad_enabled():
+                     cached, self._sentence_pullback = fork_perception(cached)
+                 if exploit is not None:
+@@ -20913,7 +20915,10 @@
+                     current_lang, current_stm, current_feedback = compose_word(
+                         payload, index, None, current_lang, current_stm)
+                     latches = [latches[1], current_feedback]
+-                return current_stm, current_lang, current_feedback
++                path = (current_stm, current_lang, current_feedback)
++                if self._sentence_training and torch.is_grad_enabled():
++                    pending_steps.append((self._sentence_trial, self._sentence_pullback, path))
++                return path
+             def score(path, alternative):
+                 if alternative:
+                     owners, _, _ = self._compose_round_owners(path[1][18])
+@@ -20936,11 +20941,20 @@
+                 observations.append(observation)
+                 predictions.append(pending)
+                 return cost, (path, reconstruction)
++            def train_trial(loss):
++                # Both graphs now exist. Restore this trial's perception
++                # pullback and scratch bindings before its own backward.
++                trial, pullback, path = pending_steps.pop(0)
++                self._sentence_trial, self._sentence_pullback = trial, pullback
++                self._restore_sentence_state(path)
++                self._sentence_train_step(loss)
+             try:
+                 (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+-                    self._sentence_train_step, active=present,
++                    train_trial, active=present,
+                     training=self._sentence_training and torch.is_grad_enabled())
+             finally:
++                pending_steps.clear()
++                self._sentence_pullback = None
+                 self._compose_exploit_actions = self._compose_forced_slots = None
+                 self._compose_prefix_slots = None
+             self._sentence_trial = None
+--- a/bin/SentenceCompose.py
++++ b/bin/SentenceCompose.py
+@@ -23,8 +23,8 @@
+ def saved_sentence_values(parameters=(), buffers=()):
+     """Keep one immutable saved value per tensor view and parameter version.
+ 
+-    Both paths backpropagate through the same perception after an optimizer
+-    update. Autograd must read its original parameters and buffers. A shared weight may be
++    Both derivations are scored before either optimizer update. Their
++    backwards and shared perception must read the original parameters and buffers. A shared weight may be
+     saved hundreds of times by the word/operator rounds; copying every save
+     would multiply dictionary memory by the number of uses.
+     """
+@@ -127,7 +127,7 @@
+ 
+ 
+ def sentence_pair(cache, compose, score, step, *, active, training=True):
+-    """Derive, train, then select one path independently in each row.
++    """Score both paths, train each, then select independently in each row.
+ 
+     ``cache`` is the sentence's one perception. ``compose`` gets the exploit
+     path on its second call so it can replay its prefix and exclude one choice.
+@@ -142,12 +142,12 @@
+     saved_a = cost_a.detach().clone()
+     if not training:
+         return state_a, saved_a[:, None], torch.zeros_like(active)
+-    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+     explore = compose(cache, exploit)
+     cost_b, state_b = score(explore, True)
+     if cost_b.shape != active.shape:
+         raise ValueError('sentence comparison requires one cost per row')
+     saved_b = cost_b.detach().clone()
++    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+     step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+     wins = active & (saved_b < saved_a)
+     return select_rows(state_a, state_b, wins), torch.stack((saved_a, saved_b), -1), wins

@@ -1,0 +1,1563 @@
+[
+  {
+    "config": "data/BasicModel.xml",
+    "serial": true,
+    "old_tied": true,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 2000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "FineWeb-Edu 100B shuffle",
+      "maxSentenceWords": 256
+    },
+    "batch": 28,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/BasicModel_answers_benchmark.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "math",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "Stage-0 addition throughput",
+      "mathRange": 16,
+      "mathStage": 0,
+      "mathSeed": 42,
+      "mathProblems": 64,
+      "mathOperators": "add"
+    },
+    "batch": 28,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/BasicModel_answers_tied_benchmark.xml",
+    "serial": true,
+    "old_tied": true,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "math",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "Stage-0 addition throughput",
+      "mathRange": 16,
+      "mathStage": 0,
+      "mathSeed": 42,
+      "mathProblems": 64,
+      "mathOperators": "add"
+    },
+    "batch": 28,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/BasicModel_expectation_benchmark.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 2000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "FineWeb-Edu 100B shuffle",
+      "maxSentenceWords": 64
+    },
+    "batch": 28,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/BasicModel_long_tied_benchmark.xml",
+    "serial": true,
+    "old_tied": true,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "inline",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "Controlled sixteen-word binary-label throughput",
+      "input": [
+        {
+          "_": "one two three four five six seven eight one two three four five six seven eight|two three four five six seven eight one two three four five six seven eight one|three four five six seven eight one two three four five six seven eight one two|four five six seven eight one two three four five six seven eight one two three|five six seven eight one two three four five six seven eight one two three four|six seven eight one two three four five six seven eight one two three four five|seven eight one two three four five six seven eight one two three four five six|eight one two three four five six seven eight one two three four five six seven|one two three four five six seven eight one two three four five six seven eight|two three four five six seven eight one two three four five six seven eight one|three four five six seven eight one two three four five six seven eight one two|four five six seven eight one two three four five six seven eight one two three|five six seven eight one two three four five six seven eight one two three four|six seven eight one two three four five six seven eight one two three four five|seven eight one two three four five six seven eight one two three four five six|eight one two three four five six seven eight one two three four five six seven|one two three four five six seven eight one two three four five six seven eight|two three four five six seven eight one two three four five six seven eight one|three four five six seven eight one two three four five six seven eight one two|four five six seven eight one two three four five six seven eight one two three|five six seven eight one two three four five six seven eight one two three four|six seven eight one two three four five six seven eight one two three four five|seven eight one two three four five six seven eight one two three four five six|eight one two three four five six seven eight one two three four five six seven",
+          "use": "train"
+        },
+        {
+          "_": "four five six seven eight one two three four five six seven eight one two three|five six seven eight one two three four five six seven eight one two three four|six seven eight one two three four five six seven eight one two three four five|seven eight one two three four five six seven eight one two three four five six|eight one two three four five six seven eight one two three four five six seven|one two three four five six seven eight one two three four five six seven eight|two three four five six seven eight one two three four five six seven eight one|three four five six seven eight one two three four five six seven eight one two",
+          "use": "validation"
+        },
+        {
+          "_": "six seven eight one two three four five six seven eight one two three four five|seven eight one two three four five six seven eight one two three four five six|eight one two three four five six seven eight one two three four five six seven|one two three four five six seven eight one two three four five six seven eight|two three four five six seven eight one two three four five six seven eight one|three four five six seven eight one two three four five six seven eight one two|four five six seven eight one two three four five six seven eight one two three|five six seven eight one two three four five six seven eight one two three four",
+          "use": "test"
+        }
+      ],
+      "output": [
+        {
+          "_": "0|1|0|1|0|1|0|1|0|1|0|1|0|1|0|1|0|1|0|1|0|1|0|1",
+          "use": "train"
+        },
+        {
+          "_": "0|1|0|1|0|1|0|1",
+          "use": "validation"
+        },
+        {
+          "_": "0|1|0|1|0|1|0|1",
+          "use": "test"
+        }
+      ]
+    },
+    "batch": 28,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/BasicModel_output_tied_benchmark.xml",
+    "serial": true,
+    "old_tied": true,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "math",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "Stage-0 addition throughput",
+      "mathRange": 16,
+      "mathStage": 0,
+      "mathSeed": 42,
+      "mathProblems": 64,
+      "mathOperators": "add"
+    },
+    "batch": 28,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/HeadEmission.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "inline",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "input": [
+        {
+          "_": "the teacher helped the student|the cat chased the mouse|the bird sang a song|the child kicked the ball|the farmer fed the dog",
+          "use": "train"
+        },
+        {
+          "_": "the teacher helped the student",
+          "use": "test"
+        }
+      ],
+      "output": [
+        {
+          "_": "0|0|0|0|0",
+          "use": "train"
+        },
+        {
+          "_": 0,
+          "use": "test"
+        }
+      ]
+    },
+    "batch": 4,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/LM_5M.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 1e-05,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 128,
+    "synthesis": null,
+    "analysis": "byte"
+  },
+  {
+    "config": "data/LM_5M_IR.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 1e-05,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 128,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_20M_fineweb.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_20M_grammar.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_20M_legacy.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "byte"
+  },
+  {
+    "config": "data/MM_20M_xor.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_400M.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 1e-05,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "raw"
+  },
+  {
+    "config": "data/MM_5M_AR.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 1e-05,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 128,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_5M_IR.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 1e-05,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 128,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_add.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "math",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "mathStage": 0,
+      "mathOperators": "add",
+      "mathRange": 32,
+      "mathSeed": 0,
+      "mathProblems": 4096
+    },
+    "batch": 32,
+    "synthesis": null,
+    "analysis": "byte"
+  },
+  {
+    "config": "data/MM_add_verb.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "math",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "mathStage": 0,
+      "mathRange": 16,
+      "mathProblems": 2048,
+      "mathSeed": 0
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "word"
+  },
+  {
+    "config": "data/MM_boolean.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "inline",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "input": [
+        {
+          "_": "A B C|B A|A B 0|0 A B|B A C|not C A B|A 0 B|B 0 A|0 A 0 B|A 0 0 B|B 0 A 0|0 C|C 0|not A C|not A B C|not A 0 C|not B C|non-B C|0 0 C|C 0 0|not A 0 C|not B 0 C|0|0 0|A|B|A 0|0 B|A C|non-A|non-B|non-C|not B|not B A|non-A B|non-B A|not C|non-A C|non-A 0 C|not B 0 A|non-A 0|non-A non-B|not A non-B|0 0 0",
+          "use": "train"
+        },
+        {
+          "_": "A B 0 C|B 0|0 A|non-A 0 C|not B 0 A|A 0 0|0 0 C|not A B|0 A B 0|not B A 0|not A 0 C|non-B 0 C",
+          "use": "validation"
+        },
+        {
+          "_": "A B|C|not A",
+          "use": "test"
+        }
+      ],
+      "output": [
+        {
+          "_": "1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0",
+          "use": "train"
+        },
+        {
+          "_": "1|0|0|0|0|0|1|0|1|0|1|1",
+          "use": "validation"
+        },
+        {
+          "_": "1|1|0",
+          "use": "test"
+        }
+      ]
+    },
+    "batch": 16,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_bpe.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "byte"
+  },
+  {
+    "config": "data/MM_decode.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "raw"
+  },
+  {
+    "config": "data/MM_global.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "word"
+  },
+  {
+    "config": "data/MM_grammar.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_grammar_wording.xml",
+    "serial": true,
+    "old_tied": true,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "grammar",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 2000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "contextWhole": "Annotated grammar wording curriculum",
+      "maxSentenceWords": 256,
+      "grammarLessons": "grammar_wording.json"
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_init_scale.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_ladder.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "math",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "mathStage": 0,
+      "mathRange": 16,
+      "mathOperators": "succ",
+      "mathProblems": 256,
+      "mathSeed": 0
+    },
+    "batch": 8,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_ladder_idiom.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "inline",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "input": [
+        {
+          "_": "kick the bucket|he will kick the bucket|they kick the bucket soon|we saw him kick the bucket|she may kick the bucket|to kick the bucket is sad|old men kick the bucket|kick the bucket at last|kick the ball|he will kick the ball|they kick the ball soon|we saw him kick the ball|she may kick the ball|to kick the ball is fun|old men kick the ball|kick the ball at last",
+          "use": "train"
+        },
+        {
+          "_": "kick the bucket|he will kick the bucket|they kick the bucket soon|we saw him kick the bucket|she may kick the bucket|to kick the bucket is sad|old men kick the bucket|kick the bucket at last|kick the ball|he will kick the ball|they kick the ball soon|we saw him kick the ball|she may kick the ball|to kick the ball is fun|old men kick the ball|kick the ball at last",
+          "use": "test"
+        }
+      ],
+      "output": [
+        {
+          "_": "1|1|1|1|1|1|1|1|0|0|0|0|0|0|0|0",
+          "use": "train"
+        },
+        {
+          "_": "1|1|1|1|1|1|1|1|0|0|0|0|0|0|0|0",
+          "use": "test"
+        }
+      ]
+    },
+    "batch": 8,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_ladder_text.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 400,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 8,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_ladder_textpacked.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 400,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "maxSentenceWords": 40
+    },
+    "batch": 8,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_ltm_consolidation_fixture.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_masked_semantic.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "raw"
+  },
+  {
+    "config": "data/MM_math.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "math",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "mathRange": 16,
+      "mathDepths": "1,2",
+      "mathTestDepths": 3,
+      "mathDistractors": 1,
+      "mathStage": 1,
+      "mathSeed": 0,
+      "mathProblems": 64
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "byte"
+  },
+  {
+    "config": "data/MM_mereology.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "raw"
+  },
+  {
+    "config": "data/MM_mereology_serial.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "raw"
+  },
+  {
+    "config": "data/MM_meronomy_smoke.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "phrases",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "word"
+  },
+  {
+    "config": "data/MM_nanochat_grammar_gate.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 200,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 4,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_nanochat_grammar_pilot.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 2000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 4,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/MM_overlap_tiling.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "raw"
+  },
+  {
+    "config": "data/MM_phrase_decode.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "phrases",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "word"
+  },
+  {
+    "config": "data/MM_qa.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "word"
+  },
+  {
+    "config": "data/MM_query_reasoning.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "queries",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 6,
+    "synthesis": null,
+    "analysis": "word"
+  },
+  {
+    "config": "data/MM_reading.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "word"
+  },
+  {
+    "config": "data/MM_sequence_predict.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "sequences",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 4,
+    "synthesis": null,
+    "analysis": "byte"
+  },
+  {
+    "config": "data/MM_shamatha.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_sparse_concept.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "raw"
+  },
+  {
+    "config": "data/MM_symbol_tower.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 12,
+    "synthesis": null,
+    "analysis": "raw"
+  },
+  {
+    "config": "data/MM_symbolic_iter.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 4,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_xor.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "byte"
+  },
+  {
+    "config": "data/MM_xor_fixture.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_xor_loopback.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 4,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_xor_step3.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MM_xor_step4.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/MentalModel.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 1e-05,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "sentence"
+  },
+  {
+    "config": "data/POS_smoke.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "inline",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "input": [
+        {
+          "_": "cats chase mice|dogs eat bones|birds catch worms|boys kick balls|cats are happy|dogs are big|birds are red|big cats sleep|red birds fly|small dogs bark|cats and dogs|boys and girls|happy cats sing|tall men walk|young girls smile|old dogs sleep",
+          "use": "train"
+        },
+        {
+          "_": "cats chase mice|cats are happy|big cats sleep|cats and dogs",
+          "use": "test"
+        }
+      ],
+      "output": [
+        {
+          "_": "0|0|0|0|1|1|1|0|0|0|0|0|0|0|0|0",
+          "use": "train"
+        },
+        {
+          "_": "0|1|0|0",
+          "use": "test"
+        }
+      ]
+    },
+    "batch": 16,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/RamsifiedModel.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "data/fineweb",
+      "minFrequency": 1e-05,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "sentence"
+  },
+  {
+    "config": "data/XOR_exact.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "inline",
+      "conceptLessons": "xor_concept_lessons.json",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "input": [
+        {
+          "_": "00|01|10|11",
+          "use": "train"
+        },
+        {
+          "_": "00|01|10|11",
+          "use": "validation"
+        },
+        {
+          "_": "00|01|10|11",
+          "use": "test"
+        }
+      ],
+      "output": [
+        {
+          "_": "0|1|1|0",
+          "use": "train"
+        },
+        {
+          "_": "0|1|1|0",
+          "use": "validation"
+        },
+        {
+          "_": "0|1|1|0",
+          "use": "test"
+        }
+      ]
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": "meronomy"
+  },
+  {
+    "config": "data/XOR_grammar.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/XOR_pos.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/XOR_recon.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/XOR_spaces.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "inline",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": "",
+      "input": [
+        {
+          "_": "zero xor zero|zero xor one|one xor zero|one xor one",
+          "use": "train"
+        },
+        {
+          "_": "zero xor zero|zero xor one|one xor zero|one xor one",
+          "use": "test"
+        }
+      ],
+      "output": [
+        {
+          "_": "0|1|1|0",
+          "use": "train"
+        },
+        {
+          "_": "0|1|1|0",
+          "use": "test"
+        }
+      ]
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/ergodic-only.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "numeric",
+      "dataset": "mnist",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/ergodic.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "numeric",
+      "dataset": "mnist",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/idempotent.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "inline",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 1,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/mnist.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "numeric",
+      "dataset": "mnist",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": 0,
+      "classificationMax": 9
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/model.xml",
+    "serial": true,
+    "old_tied": false,
+    "data": {
+      "dataType": "numeric",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/simple.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "numeric",
+      "dataset": "mnist",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/stream_smoke.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "text",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 200,
+      "shardDir": "data/fineweb",
+      "minFrequency": 1e-05,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 4,
+    "synthesis": null,
+    "analysis": "sentence"
+  },
+  {
+    "config": "data/tomatoes.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "tomatoes",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  },
+  {
+    "config": "data/xor.xml",
+    "serial": false,
+    "old_tied": false,
+    "data": {
+      "dataType": "embedding",
+      "dataset": "xor",
+      "conceptLessons": "",
+      "numShards": 1,
+      "maxDocs": 10000,
+      "shardDir": "",
+      "minFrequency": 0.0,
+      "classificationMin": "",
+      "classificationMax": ""
+    },
+    "batch": 64,
+    "synthesis": null,
+    "analysis": null
+  }
+]

@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_real_packed_ends_train_before_the_next_sentence[True] __________
+test/test_sentence_compose.py:79: in test_real_packed_ends_train_before_the_next_sentence
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+test/test_compiled_word_chunk.py:396: in _tiny_canonical_model
+    model, _ = Models.BasicModel.from_config(
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7111: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1838: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:25340: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - serialObjectMeta field/workspace mismatch: PartSpace.nOutput=8 and ConceptualSpace.nOutput=8 must both equal stmCapacity=3. The independent outer sentence limit belongs in <serialWordCapacity>.
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]
+1 failed in 3.39s

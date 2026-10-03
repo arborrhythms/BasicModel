@@ -1,0 +1,37 @@
+{
+  "scope": "Deterministic arithmetic only, no model, training or random draw. Two orthogonal candidates, differing target byte, plus the existing uniform null. This is a contract counterexample, not recovery of the failed run's unsaved geometry.",
+  "observations": [
+    {
+      "activation": 1.0,
+      "score": "retired absolute cosine",
+      "own_score": 1.0,
+      "own_assignment": 0.9999092083843409,
+      "true_byte_probability": 0.9999093857117153,
+      "true_byte_error": 9.06183940073656e-05
+    },
+    {
+      "activation": 1.0,
+      "score": "activation times cosine",
+      "own_score": 1.0,
+      "own_assignment": 0.9999092083843409,
+      "true_byte_probability": 0.9999093857117153,
+      "true_byte_error": 9.06183940073656e-05
+    },
+    {
+      "activation": 0.4,
+      "score": "retired absolute cosine",
+      "own_score": 1.0,
+      "own_assignment": 0.9999092083843409,
+      "true_byte_probability": 0.9999093857117153,
+      "true_byte_error": 9.06183940073656e-05
+    },
+    {
+      "activation": 0.4,
+      "score": "activation times cosine",
+      "own_score": 0.4,
+      "own_assignment": 0.9646631559719039,
+      "true_byte_probability": 0.9647321732453963,
+      "true_byte_error": 0.035904756843038704
+    }
+  ]
+}

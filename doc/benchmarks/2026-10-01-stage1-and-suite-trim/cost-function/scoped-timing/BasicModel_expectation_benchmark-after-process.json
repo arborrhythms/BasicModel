@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped_timing.py",
+    "--child",
+    "--source",
+    "/Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price",
+    "--config",
+    "data/BasicModel_expectation_benchmark.xml",
+    "--arm",
+    "after",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped-timing/BasicModel_expectation_benchmark-after.json"
+  ],
+  "pid": 11490,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1739524328,
+  "elapsed_seconds": 6.1874752919975435,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped-timing/BasicModel_expectation_benchmark-after.log"
+}

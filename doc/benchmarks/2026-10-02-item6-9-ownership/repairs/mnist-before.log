@@ -1,0 +1,79 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_mnist_loader_names_an_unfetched_lfs_pointer _______________
+test/test_mnist.py:12: in test_mnist_loader_names_an_unfetched_lfs_pointer
+    data.TheData.loadMNist()
+bin/data.py:1167: in loadMNist
+    df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_test.csv'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py:872: in read_csv
+    return _read(filepath_or_buffer, kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py:300: in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py:1643: in __init__
+    self._engine = self._make_engine(f, self.engine)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pandas/io/parsers/readers.py:1907: in _make_engine
+    self.handles = get_handle(
+.venv/lib/python3.12/site-packages/pandas/io/common.py:930: in get_handle
+    handle = open(
+E   FileNotFoundError: [Errno 2] No such file or directory: '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-809/test_mnist_loader_names_an_unf0/mnist_test.csv'
+_____________ test_real_mnist_subset_trains_one_short_batch[False] _____________
+test/test_mnist.py:30: in test_real_mnist_subset_trains_one_short_batch
+    model,_=Models.BaseModel.from_config(str(path),data=data.TheData)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1826: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6927: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1926: in create_from_config
+    self.create(
+bin/Models.py:6947: in create
+    return self._create_per_stage(
+bin/Models.py:16784: in _create_per_stage
+    self.inputSpace = self._make_input_space(
+bin/Models.py:6955: in _make_input_space
+    return InputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9538: in __init__
+    self.embedding_source = data.train_input if data.train_input else None
+                                                ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: Boolean value of Tensor with more than one value is ambiguous
+_____________ test_real_mnist_subset_trains_one_short_batch[True] ______________
+test/test_mnist.py:30: in test_real_mnist_subset_trains_one_short_batch
+    model,_=Models.BaseModel.from_config(str(path),data=data.TheData)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1826: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6927: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1926: in create_from_config
+    self.create(
+bin/Models.py:6947: in create
+    return self._create_per_stage(
+bin/Models.py:16784: in _create_per_stage
+    self.inputSpace = self._make_input_space(
+bin/Models.py:6955: in _make_input_space
+    return InputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9538: in __init__
+    self.embedding_source = data.train_input if data.train_input else None
+                                                ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: Boolean value of Tensor with more than one value is ambiguous
+=========================== short test summary info ============================
+FAILED test/test_mnist.py::test_mnist_loader_names_an_unfetched_lfs_pointer
+FAILED test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]
+FAILED test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]
+3 failed in 3.36s

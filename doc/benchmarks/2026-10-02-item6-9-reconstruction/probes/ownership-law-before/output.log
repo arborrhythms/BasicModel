@@ -1,0 +1,128 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+______ test_canonical_dictionary_has_one_distributional_owner[BasicModel] ______
+
+name = 'BasicModel'
+
+    @pytest.mark.parametrize("name", CANONICAL_CONFIGS)
+    def test_canonical_dictionary_has_one_distributional_owner(name):
+        root = ET.parse(ROOT / "data" / (name + ".xml")).getroot()
+>       assert float(root.findtext("./architecture/training/conceptualContextLearningRate")) == 0
+E       AssertionError: assert 0.01 == 0
+E        +  where 0.01 = float('0.01')
+E        +    where '0.01' = <built-in method findtext of xml.etree.ElementTree.Element object at 0x127c96b10>('./architecture/training/conceptualContextLearningRate')
+E        +      where <built-in method findtext of xml.etree.ElementTree.Element object at 0x127c96b10> = <Element 'model' at 0x127c96b10>.findtext
+
+test/test_training_diagnostic_contracts.py:20: AssertionError
+_ test_canonical_dictionary_has_one_distributional_owner[BasicModel_answers_tied_benchmark] _
+
+name = 'BasicModel_answers_tied_benchmark'
+
+    @pytest.mark.parametrize("name", CANONICAL_CONFIGS)
+    def test_canonical_dictionary_has_one_distributional_owner(name):
+        root = ET.parse(ROOT / "data" / (name + ".xml")).getroot()
+>       assert float(root.findtext("./architecture/training/conceptualContextLearningRate")) == 0
+E       AssertionError: assert 0.01 == 0
+E        +  where 0.01 = float('0.01')
+E        +    where '0.01' = <built-in method findtext of xml.etree.ElementTree.Element object at 0x127ccbb00>('./architecture/training/conceptualContextLearningRate')
+E        +      where <built-in method findtext of xml.etree.ElementTree.Element object at 0x127ccbb00> = <Element 'model' at 0x127ccbb00>.findtext
+
+test/test_training_diagnostic_contracts.py:20: AssertionError
+__ test_canonical_dictionary_has_one_distributional_owner[MM_grammar_wording] __
+
+name = 'MM_grammar_wording'
+
+    @pytest.mark.parametrize("name", CANONICAL_CONFIGS)
+    def test_canonical_dictionary_has_one_distributional_owner(name):
+        root = ET.parse(ROOT / "data" / (name + ".xml")).getroot()
+>       assert float(root.findtext("./architecture/training/conceptualContextLearningRate")) == 0
+E       AssertionError: assert 0.01 == 0
+E        +  where 0.01 = float('0.01')
+E        +    where '0.01' = <built-in method findtext of xml.etree.ElementTree.Element object at 0x127cd2ac0>('./architecture/training/conceptualContextLearningRate')
+E        +      where <built-in method findtext of xml.etree.ElementTree.Element object at 0x127cd2ac0> = <Element 'model' at 0x127cd2ac0>.findtext
+
+test/test_training_diagnostic_contracts.py:20: AssertionError
+______ test_canonical_dictionary_has_one_distributional_owner[MM_ladder] _______
+
+name = 'MM_ladder'
+
+    @pytest.mark.parametrize("name", CANONICAL_CONFIGS)
+    def test_canonical_dictionary_has_one_distributional_owner(name):
+        root = ET.parse(ROOT / "data" / (name + ".xml")).getroot()
+>       assert float(root.findtext("./architecture/training/conceptualContextLearningRate")) == 0
+E       AssertionError: assert 0.01 == 0
+E        +  where 0.01 = float('0.01')
+E        +    where '0.01' = <built-in method findtext of xml.etree.ElementTree.Element object at 0x127ce4f90>('./architecture/training/conceptualContextLearningRate')
+E        +      where <built-in method findtext of xml.etree.ElementTree.Element object at 0x127ce4f90> = <Element 'model' at 0x127ce4f90>.findtext
+
+test/test_training_diagnostic_contracts.py:20: AssertionError
+___ test_canonical_dictionary_has_one_distributional_owner[MM_ladder_idiom] ____
+
+name = 'MM_ladder_idiom'
+
+    @pytest.mark.parametrize("name", CANONICAL_CONFIGS)
+    def test_canonical_dictionary_has_one_distributional_owner(name):
+        root = ET.parse(ROOT / "data" / (name + ".xml")).getroot()
+>       assert float(root.findtext("./architecture/training/conceptualContextLearningRate")) == 0
+E       AssertionError: assert 0.01 == 0
+E        +  where 0.01 = float('0.01')
+E        +    where '0.01' = <built-in method findtext of xml.etree.ElementTree.Element object at 0x127ce4ef0>('./architecture/training/conceptualContextLearningRate')
+E        +      where <built-in method findtext of xml.etree.ElementTree.Element object at 0x127ce4ef0> = <Element 'model' at 0x127ce4ef0>.findtext
+
+test/test_training_diagnostic_contracts.py:20: AssertionError
+________ test_named_concept_evidence_has_the_answer_as_its_only_writer _________
+
+    def test_named_concept_evidence_has_the_answer_as_its_only_writer():
+        from pathlib import Path
+        from recon_bench import _build_model
+        import Models
+        model, _, _, _ = _build_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_exact.xml'))
+        try:
+            optimizer=model.getOptimizer(lr=.01)
+            groups=model.objective_parameter_groups(optimizer)
+>           coefficients=model.conceptualSpaces[0]._concept_allocator.layer(0).values
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_objective_ownership.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = '_concept_allocator'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_training_diagnostic_contracts.py::test_canonical_dictionary_has_one_distributional_owner[BasicModel]
+FAILED test/test_training_diagnostic_contracts.py::test_canonical_dictionary_has_one_distributional_owner[BasicModel_answers_tied_benchmark]
+FAILED test/test_training_diagnostic_contracts.py::test_canonical_dictionary_has_one_distributional_owner[MM_grammar_wording]
+FAILED test/test_training_diagnostic_contracts.py::test_canonical_dictionary_has_one_distributional_owner[MM_ladder]
+FAILED test/test_training_diagnostic_contracts.py::test_canonical_dictionary_has_one_distributional_owner[MM_ladder_idiom]
+FAILED test/test_objective_ownership.py::test_named_concept_evidence_has_the_answer_as_its_only_writer
+6 failed in 2.18s

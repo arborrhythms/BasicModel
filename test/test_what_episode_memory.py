@@ -26,35 +26,12 @@ from What import LTMSlot, What, WhatSlotOperation  # noqa: E402
 
 def test_slot_mode_detaches_at_append():
     memory = WhatInteractionMemory(batch=1, capacity=8, detach_mode="slot")
-    memory.begin_what_episode(0)
     x = torch.ones(3, requires_grad=True) * 2.0
     stored = memory.append_what_slot(LTMSlot(input=x, output=x + 1), b=0)
     assert not stored.input.requires_grad and not stored.output.requires_grad
     assert memory.end_what_episode(0) == 0
 
 
-def test_episode_mode_keeps_values_live_until_end():
-    memory = WhatInteractionMemory(batch=2, capacity=8, detach_mode="episode")
-    x = torch.ones(3, requires_grad=True) * 2.0
-    # Outside an episode, episode mode still detaches (durable memory).
-    outside = memory.append_what_slot(LTMSlot(input=x, output=x), b=1)
-    assert not outside.input.requires_grad
-    memory.begin_what_episode(0)
-    assert memory.in_episode(0) and not memory.in_episode(1)
-    opened = memory.append_what_slot(LTMSlot(input=x), b=0)
-    closed = memory.append_what_slot(LTMSlot(output=x * 3, closure_pressure=0.5), b=0)
-    assert opened.input.requires_grad and closed.output.requires_grad
-    # A loss formed from the stored slot reaches the leaf through memory.
-    loss = memory.get_what_slots(b=0)[1].output.sum()
-    (g,) = torch.autograd.grad(loss, x, retain_graph=True)
-    assert torch.all(g == 3.0)
-    assert memory.what_at_parity(b=0)
-    assert memory.end_what_episode(0) == 2
-    after = memory.get_what_slots(b=0)
-    assert [s.operation for s in after] == [WhatSlotOperation.OPEN, WhatSlotOperation.CLOSE]
-    assert not after[0].input.requires_grad and not after[1].output.requires_grad
-    assert torch.equal(after[1].output, (x * 3).detach())
-    assert not memory.in_episode(0)
 
 
 def test_context_exposes_open_question_and_latest_output():
@@ -89,12 +66,15 @@ def test_symbol_space_owns_memory_lifecycle(memory_config):
     model = _build(memory_config)
     memory = model._what_memory()
     assert memory is model.symbolSpace.what_memory
-    memory.begin_what_episode(0)
-    x = torch.ones(2, requires_grad=True)
-    stored = memory.append_what_slot(LTMSlot(input=x, output=x))
-    assert stored.input.requires_grad
-    assert memory.end_what_episode(0) == 1
-    assert not memory.get_what_slots()[0].input.requires_grad
+    from Meaning import ConceptualMeaning
+    x = torch.ones(3, 2, requires_grad=True)
+    meaning = ConceptualMeaning(x, torch.ones(3, dtype=torch.bool), mode="interrogative")
+    memory.begin_thought_episode(meaning, work_budget=2)
+    stored = memory.thought_history()[0]
+    assert stored.meaning.roles.requires_grad
+    memory.finish_thought(meaning)
+    assert memory.end_what_episode(0) == 2  # begin plus the explicit finish
+    assert not memory.thought_history()[0].meaning.roles.requires_grad
     model.symbolSpace.ensure_microbatch(3, 1)
     assert memory.batch == 3 and memory.get_what_slots(b=2) == []
     memory.append_what_slot(LTMSlot(input="q"), b=2)

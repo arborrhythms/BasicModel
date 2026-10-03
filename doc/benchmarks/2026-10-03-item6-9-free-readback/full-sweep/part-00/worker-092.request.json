@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_compiled_operator_diagonal.py::test_ldu_diagonal_cond_backward_is_dense_and_exact",
+    "test/test_compiled_operator_diagonal.py::test_functional_ldu_cond_backward_is_dense_and_exact",
+    "test/test_compiled_operator_diagonal.py::test_free_candidate_search_compiles_backward_through_native_operators"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-092.recycle.json"
+}

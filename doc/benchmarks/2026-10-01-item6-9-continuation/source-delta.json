@@ -1,0 +1,20 @@
+{
+  "starting_files": 717,
+  "final_files": 720,
+  "changed": [
+    "bin/Language.py",
+    "bin/Models.py",
+    "bin/Spaces.py",
+    "test/test_explicit_dimensions.py",
+    "test/test_prepared_answer_boundary.py",
+    "test/test_reverse_traversal.py",
+    "test/test_understanding_readout.py"
+  ],
+  "added": [
+    "test/test_grammar_reconstruction_gate.py",
+    "test/test_inverse_unary_exclusion.py",
+    "test/test_supplied_answer_training.py"
+  ],
+  "removed": [],
+  "configuration_and_guard_changes": []
+}

@@ -1,0 +1,15 @@
+[
+  {
+    "reason": "memory",
+    "exit_code": 137,
+    "peak_gib": 8.000999577343464,
+    "worker_seconds": 1754.2652537920076,
+    "active_case": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "completed": [
+      "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+      "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+      "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture"
+    ],
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-575.log"
+  }
+]

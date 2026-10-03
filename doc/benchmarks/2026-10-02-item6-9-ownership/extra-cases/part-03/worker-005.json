@@ -1,0 +1,59 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph"
+  ],
+  "completed": [
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph"
+  ],
+  "slow_selected": [
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4383002920076251,
+      "message": "",
+      "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.28701749999891035,
+      "message": "",
+      "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.521700290992158,
+      "message": "",
+      "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 16.006589917000383,
+      "message": "",
+      "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,3242 @@
+{
+  "groups": {
+    "class": {
+      "attempts": 10,
+      "measured": 10,
+      "passes": 9
+    },
+    "reconstruction": {
+      "attempts": 10,
+      "measured": 10,
+      "passes": 0
+    },
+    "sum": {
+      "attempts": 10,
+      "measured": 10,
+      "passes": 0
+    }
+  },
+  "gate_rows": [
+    {
+      "group": "class",
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-01",
+          "--gate",
+          "5"
+        ],
+        "pid": 14079,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 776243288,
+        "elapsed_seconds": 76.4272199160041,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-01/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.16263365745544434,
+          0.8587226867675781,
+          0.8413895964622498,
+          0.25548601150512695
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.03420983698917812,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "hello hello",
+          "there hello",
+          "there world",
+          "there there"
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.2819926142692566
+      }
+    },
+    {
+      "group": "class",
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-02",
+          "--gate",
+          "5"
+        ],
+        "pid": 14342,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 775817256,
+        "elapsed_seconds": 77.48079829200287,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-02/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.0169239342212677,
+          0.7747708559036255,
+          0.963724672794342,
+          0.19969365000724792
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.023052010029251502,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world there",
+          "there there",
+          "world loving",
+          "loving there"
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.521877944469452
+      }
+    },
+    {
+      "group": "class",
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-03",
+          "--gate",
+          "5"
+        ],
+        "pid": 14612,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 774752344,
+        "elapsed_seconds": 76.50332904199604,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-03/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.19291359186172485,
+          0.6965196132659912,
+          0.7719203233718872,
+          0.1333138346672058
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.04977722911541882,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world hello",
+          "hello hello",
+          "world loving",
+          "loving hello"
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.1422125101089478
+      }
+    },
+    {
+      "group": "class",
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-04",
+          "--gate",
+          "5"
+        ],
+        "pid": 14867,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 779323480,
+        "elapsed_seconds": 77.55300829200132,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-04/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.17299029231071472,
+          0.9806475043296814,
+          0.8933250904083252,
+          0.00962647795677185
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.010443091434165108,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "there loving",
+          "world there",
+          "there world"
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -1.69135582447052
+      }
+    },
+    {
+      "group": "class",
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-05",
+          "--gate",
+          "5"
+        ],
+        "pid": 15130,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 784369728,
+        "elapsed_seconds": 78.047877332996,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-05/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.1727691888809204,
+          0.9070038795471191,
+          0.8121417164802551,
+          0.0661817193031311
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.01954205642569029,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "hello world",
+          "there hello",
+          "world world",
+          "there there"
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.4801946878433228
+      }
+    },
+    {
+      "group": "class",
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-06",
+          "--gate",
+          "5"
+        ],
+        "pid": 15390,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 781633552,
+        "elapsed_seconds": 78.08987016700121,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-06/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.2802141308784485,
+          0.7257556915283203,
+          0.7006045579910278,
+          0.09933289885520935
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.06330863884095028,
+        "correct": 4,
+        "class_bar": false,
+        "read_backs": [
+          "world world",
+          "hello world",
+          "world hello",
+          "hello there"
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -1.0468132197856903
+      }
+    },
+    {
+      "group": "class",
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-07",
+          "--gate",
+          "5"
+        ],
+        "pid": 15618,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 778782808,
+        "elapsed_seconds": 79.31767366699933,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-07/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.09647908806800842,
+          0.9271156787872314,
+          0.8930530548095703,
+          0.11812898516654968
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.010003111233781059,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "there world",
+          "loving world",
+          "loving there"
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.6055606603622437
+      }
+    },
+    {
+      "group": "class",
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-08",
+          "--gate",
+          "5"
+        ],
+        "pid": 15932,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 775342144,
+        "elapsed_seconds": 79.10766612500447,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-08/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.08418351411819458,
+          0.7756286859512329,
+          0.8578413724899292,
+          0.12030702829360962
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.023028051762411295,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "there loving",
+          "world world",
+          "hello there"
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -1.428979516029358
+      }
+    },
+    {
+      "group": "class",
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-09",
+          "--gate",
+          "5"
+        ],
+        "pid": 16189,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 777488424,
+        "elapsed_seconds": 78.09360958299658,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-09/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.09239393472671509,
+          0.7244996428489685,
+          0.9914708733558655,
+          0.13441354036331177
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.02564420794973543,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world hello",
+          "there hello",
+          "world world",
+          "world there"
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.4891630411148071
+      }
+    },
+    {
+      "group": "class",
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-10",
+          "--gate",
+          "5"
+        ],
+        "pid": 16429,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 784517184,
+        "elapsed_seconds": 77.58484095899621,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-10/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.17422062158584595,
+          0.8298451900482178,
+          0.8142068386077881,
+          0.24519145488739014
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.03848585817634831,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "there world",
+          "loving world",
+          "there loving"
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.2246399521827698
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-01",
+          "--gate",
+          "6"
+        ],
+        "pid": 16671,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 773834816,
+        "elapsed_seconds": 78.10030195800209,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-01/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.22477108240127563,
+          0.8041149973869324,
+          0.7823762893676758,
+          0.22320955991744995
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.046518890200121454,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "there hello",
+          "world hello",
+          "hello world"
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.1385106444358826
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-02",
+          "--gate",
+          "6"
+        ],
+        "pid": 16909,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 771688488,
+        "elapsed_seconds": 77.55895299999975,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-02/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.07399314641952515,
+          0.9191887974739075,
+          0.9468696713447571,
+          0.06783115863800049
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.0048573335189905364,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "there world",
+          "loving world",
+          "loving there"
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.724234163761139
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-03",
+          "--gate",
+          "6"
+        ],
+        "pid": 17165,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 780077048,
+        "elapsed_seconds": 78.13532183299685,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-03/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.17993712425231934,
+          0.7669506669044495,
+          0.855652391910553,
+          0.13104337453842163
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.03117448957800928,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "hello loving",
+          "there hello",
+          "there hello",
+          "there world"
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.3116225600242615
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-04",
+          "--gate",
+          "6"
+        ],
+        "pid": 17413,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 786073640,
+        "elapsed_seconds": 80.2542713340008,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-04/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.08800172805786133,
+          0.8975980281829834,
+          0.982785165309906,
+          0.25041383504867554
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.020308476822593846,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world hello",
+          "world there",
+          "world hello",
+          "there there"
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.5419676303863525
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-05",
+          "--gate",
+          "6"
+        ],
+        "pid": 17601,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 776931392,
+        "elapsed_seconds": 85.70715495799959,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-05/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.3706095516681671,
+          0.8445708751678467,
+          0.8224382996559143,
+          0.17967453598976135
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.056330187236496965,
+        "correct": 4,
+        "class_bar": false,
+        "read_backs": [
+          "world loving",
+          "loving there",
+          "world world",
+          "there loving"
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.1167250871658325
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-06",
+          "--gate",
+          "6"
+        ],
+        "pid": 17697,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 781961304,
+        "elapsed_seconds": 85.71548754100513,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-06/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.22370070219039917,
+          0.8556408882141113,
+          0.851736843585968,
+          0.10989248752593994
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.026234969920144735,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world world",
+          "there world",
+          "there world",
+          "loving there"
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.3737845420837402
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-07",
+          "--gate",
+          "6"
+        ],
+        "pid": 17895,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 791840832,
+        "elapsed_seconds": 84.11121187500248,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-07/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.28598839044570923,
+          0.9835482835769653,
+          0.8841651678085327,
+          0.05411940813064575
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.024601659282057042,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world hello",
+          "there hello",
+          "there world",
+          "there there"
+        ],
+        "reconstructed": 2,
+        "reconstruction_bar": false,
+        "contrast": -1.527605652809143
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-08",
+          "--gate",
+          "6"
+        ],
+        "pid": 18000,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 783026264,
+        "elapsed_seconds": 85.17484749999858,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-08/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.16291546821594238,
+          0.8466649055480957,
+          0.8994799852371216,
+          0.1188371479511261
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.01856991051892032,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world loving",
+          "there loving",
+          "hello world",
+          "there hello"
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -1.4643922746181488
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-09",
+          "--gate",
+          "6"
+        ],
+        "pid": 18190,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 784123968,
+        "elapsed_seconds": 85.17397241700382,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-09/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.10461053252220154,
+          0.8836542367935181,
+          0.9721202850341797,
+          0.2446470856666565
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.021277293790610274,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "world hello",
+          "world there",
+          "world there",
+          "there there"
+        ],
+        "reconstructed": 1,
+        "reconstruction_bar": false,
+        "contrast": -1.5065169036388397
+      }
+    },
+    {
+      "group": "reconstruction",
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-10",
+          "--gate",
+          "6"
+        ],
+        "pid": 18285,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 778881088,
+        "elapsed_seconds": 85.71831504200236,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-10/driver.log"
+      },
+      "measurement": {
+        "answers": [
+          0.11232364177703857,
+          0.9684373736381531,
+          0.897071361541748,
+          0.068412184715271
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.007221832879324985,
+        "correct": 4,
+        "class_bar": true,
+        "read_backs": [
+          "loving loving",
+          "loving there",
+          "there hello",
+          "hello there"
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -1.6847729086875916
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-01"
+        ],
+        "pid": 18480,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 721782248,
+        "elapsed_seconds": 71.58096804199886,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-01/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.5018043518066406,
+          0.5007592439651489,
+          0.503240168094635,
+          0.5021950602531433
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.25000476837158203,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "loving loving",
+          "loving loving",
+          "hello hello",
+          "hello hello"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.0032401680946350098,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-02"
+        ],
+        "pid": 18586,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 717833704,
+        "elapsed_seconds": 72.70107708300202,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-02/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.5009768605232239,
+          0.5007210373878479,
+          0.5010005235671997,
+          0.5007447004318237
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500007748603821,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.001000523567199707,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-03"
+        ],
+        "pid": 18723,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 721110528,
+        "elapsed_seconds": 72.17786820799665,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-03/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.4996161162853241,
+          0.5009937286376953,
+          0.500004231929779,
+          0.5013818740844727
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500007748603821,
+        "correct": 3,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 2.9802322387695312e-08,
+        "max_deviation_from_half": 0.0013818740844726562,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-04"
+        ],
+        "pid": 18818,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 720881152,
+        "elapsed_seconds": 72.73003279200202,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-04/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.49920889735221863,
+          0.5004169344902039,
+          0.4971407353878021,
+          0.49834874272346497
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.250002920627594,
+        "correct": 3,
+        "class_bar": false,
+        "read_backs": [
+          "world world",
+          "loving loving",
+          "loving loving",
+          "hello hello"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": -2.9802322387695312e-08,
+        "max_deviation_from_half": 0.002859264612197876,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-05"
+        ],
+        "pid": 18961,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 720307688,
+        "elapsed_seconds": 72.75546924999799,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-05/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.5022979974746704,
+          0.4994361400604248,
+          0.5014249682426453,
+          0.49856311082839966
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500024139881134,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "loving loving",
+          "there there",
+          "hello hello",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.00229799747467041,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-06"
+        ],
+        "pid": 19088,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 721012176,
+        "elapsed_seconds": 72.78519566700561,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-06/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.50115567445755,
+          0.5007604956626892,
+          0.50108402967453,
+          0.5006888508796692
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.25000089406967163,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "world world",
+          "hello hello",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.0011556744575500488,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-07"
+        ],
+        "pid": 19235,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 722650576,
+        "elapsed_seconds": 72.24934720800229,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-07/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.49773290753364563,
+          0.4974687993526459,
+          0.49825239181518555,
+          0.4979883134365082
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500046491622925,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "there there",
+          "world world"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 2.9802322387695312e-08,
+        "max_deviation_from_half": 0.002531200647354126,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-08"
+        ],
+        "pid": 19348,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 721143272,
+        "elapsed_seconds": 72.72923045799689,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-08/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.49868300557136536,
+          0.4990615248680115,
+          0.4986202120780945,
+          0.498998761177063
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.25000137090682983,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "world world",
+          "there there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 2.9802322387695312e-08,
+        "max_deviation_from_half": 0.0013797879219055176,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-09"
+        ],
+        "pid": 19520,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 721126912,
+        "elapsed_seconds": 73.24639733300137,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-09/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.5000869035720825,
+          0.5030580163002014,
+          0.5003420114517212,
+          0.5033131241798401
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.2500051259994507,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "loving loving",
+          "there there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 0.0,
+        "max_deviation_from_half": 0.003313124179840088,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    },
+    {
+      "group": "sum",
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-10"
+        ],
+        "pid": 19609,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 721716664,
+        "elapsed_seconds": 71.60024345800048,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/sum-10/driver.log"
+      },
+      "measurement": {
+        "kind": "sum",
+        "answers": [
+          0.4992765188217163,
+          0.499559223651886,
+          0.4987151324748993,
+          0.49899786710739136
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "inputs": [
+          "hello world",
+          "hello there",
+          "loving world",
+          "loving there"
+        ],
+        "mse": 0.25000083446502686,
+        "correct": 2,
+        "class_bar": false,
+        "read_backs": [
+          "there there",
+          "world world",
+          "loving loving",
+          "there there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "reconstruction_bar": false,
+        "contrast": 2.9802322387695312e-08,
+        "max_deviation_from_half": 0.001284867525100708,
+        "half_at_float32_precision": false,
+        "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged"
+      }
+    }
+  ],
+  "table": [
+    {
+      "gate": 0,
+      "selected": [
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+        "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]"
+      ],
+      "counts": {
+        "passed": 6
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.267810040997574,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.385079416002554,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.23744608299603,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.340536625000823,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.135605208000925,
+          "message": "",
+          "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+        },
+        {
+          "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.208808124996722,
+          "message": "",
+          "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+        }
+      ],
+      "observations": [],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-00",
+          "--gate",
+          "0"
+        ],
+        "pid": 19743,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 481036088,
+        "elapsed_seconds": 35.69028054199589,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-00/driver.log"
+      }
+    },
+    {
+      "gate": 1,
+      "selected": [
+        "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+        "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+        "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+        "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+        "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+        "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+        "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+        "test/test_concept_output.py::test_property_reverse_attributes_only_written_members"
+      ],
+      "counts": {
+        "passed": 10
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.023976042000867892,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.05049579199840082,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03166266599873779,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03089929099951405,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_serial_grammar_never_executes_field_sigma_pi_or_not",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 41.03030474999832,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.336491292000574,
+          "message": "",
+          "stdout": "{'trial': 0, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.968178415998409,
+          "message": "",
+          "stdout": "{'trial': 1, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.1087338750003255,
+          "message": "",
+          "stdout": "{'trial': 2, 'initial_mse': 0.5, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'reconstructed': ['00', '01', '10', '11']}\n"
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04945754100481281,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_concept_output.py::test_property_reverse_attributes_only_written_members",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0007683330040890723,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "observations": [],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-01",
+          "--gate",
+          "1"
+        ],
+        "pid": 19865,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1230997952,
+        "elapsed_seconds": 64.94220341699838,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-01/driver.log"
+      }
+    },
+    {
+      "gate": 2,
+      "selected": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+      ],
+      "counts": {
+        "passed": 7
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011207083000044804,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.17047845799970673,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03814874999807216,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00011820800136774778,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.03954616699775215,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.7398872089979704,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00012008399789920077,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+          "kind": "mm",
+          "calls": 21,
+          "best": 0.18111470341682434,
+          "last": 0.18111470341682434,
+          "predictions": [
+            0.41503703594207764,
+            0.5699862241744995,
+            0.5561373233795166,
+            0.41264647245407104
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "gate": 2
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+          "kind": "mm",
+          "calls": 1,
+          "best": 0.2500436305999756,
+          "last": 0.2500436305999756,
+          "predictions": [
+            0.5005073547363281,
+            0.5003418922424316,
+            0.5004242062568665,
+            0.5004324913024902
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "gate": 2
+        },
+        {
+          "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+          "kind": "mm",
+          "calls": 11,
+          "best": 0.19774053990840912,
+          "last": 0.19774053990840912,
+          "predictions": [
+            0.5152296423912048,
+            0.48623716831207275,
+            0.6360854506492615,
+            0.3593251705169678
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "gate": 2
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-02",
+          "--gate",
+          "2"
+        ],
+        "pid": 19893,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 606963656,
+        "elapsed_seconds": 11.875808958000562,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-02/driver.log"
+      }
+    },
+    {
+      "gate": 3,
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 35.11798658299813,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+          "kind": "cli",
+          "config": "data/XOR_exact.xml",
+          "returncode": 0,
+          "stdout": "Device: cpu\nfullgraph relaxed: host-island config (full-router grammar, symbolTower forward_symbol, or sparse indexed codebook is a tolerated graph break)\nDebug checks: OFF\nModel compiled (eager, mode=max-autotune, fullgraph=False)\n\n\n==== BasicModel ====\n\nTrial [1/1]\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\nEpoch [1/64]\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\nTraining throughput: 1 batches in 13.186s; word units 100.0% of 4 words.\nTrain Loss: output=0.3500, reconstruction=0.0000\nEpoch [2/64]\nbatch = 0 (\u0394=6.524s, 100.00%)\n  [compile] dynamo +116 frame events (total 423; ok=205, total=218)\nTraining throughput: 1 batches in 6.521s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [3/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [4/64]\nbatch = 0 (\u0394=0.162s, 100.00%)\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [5/64]\nbatch = 0 (\u0394=0.162s, 100.00%)\nTraining throughput: 1 batches in 0.162s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [6/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [7/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [8/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [9/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [10/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [11/64]\nbatch = 0 (\u0394=0.162s, 100.00%)\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [12/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [13/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [14/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [15/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [16/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [17/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [18/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [19/64]\nbatch = 0 (\u0394=0.157s, 100.00%)\nTraining throughput: 1 batches in 0.156s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [20/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [21/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [22/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [23/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [24/64]\nbatch = 0 (\u0394=0.157s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [25/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [26/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [27/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [28/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [29/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [30/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [31/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [32/64]\nbatch = 0 (\u0394=0.161s, 100.00%)\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [33/64]\nbatch = 0 (\u0394=0.161s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [34/64]\nbatch = 0 (\u0394=0.161s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [35/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [36/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [37/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [38/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [39/64]\nbatch = 0 (\u0394=0.163s, 100.00%)\nTraining throughput: 1 batches in 0.164s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [40/64]\nbatch = 0 (\u0394=0.165s, 100.00%)\nTraining throughput: 1 batches in 0.164s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [41/64]\nbatch = 0 (\u0394=0.165s, 100.00%)\nTraining throughput: 1 batches in 0.164s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [42/64]\nbatch = 0 (\u0394=0.166s, 100.00%)\nTraining throughput: 1 batches in 0.165s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [43/64]\nbatch = 0 (\u0394=0.162s, 100.00%)\nTraining throughput: 1 batches in 0.162s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [44/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [45/64]\nbatch = 0 (\u0394=0.326s, 100.00%)\nTraining throughput: 1 batches in 0.326s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [46/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [47/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [48/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [49/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [50/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [51/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [52/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [53/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [54/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [55/64]\nbatch = 0 (\u0394=0.157s, 100.00%)\nTraining throughput: 1 batches in 0.156s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [56/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [57/64]\nbatch = 0 (\u0394=0.157s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [58/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [59/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [60/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [61/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [62/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [63/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [64/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nFinal Stats:\n=== Selected operation grammar ===\n  compose space_role='subsymbolic':\n    row[0] = ['0:P -> sigma(P)']\n  compose space_role='CS':\n    row[0] = ['1:C -> pi(C)']\n  compose space_role='SS':\n    row[0] = ['2:S -> sigma(S)']\n  generate space_role='CS':\n    row[0] = ['4:C -> pi.reverse(C)']\n  generate space_role='SS':\n    row[0] = ['5:S -> sigma.reverse(S)']\n  generate space_role='subsymbolic':\n    row[0] = ['3:P -> sigma.reverse(P)']\nbatch = 0 (\u0394=0.131s, 100.00%)\nTraining throughput: 1 batches in 0.119s; word units 100.0% of 4 words.\n=== Input Reconstruction (test) ===\n  row[0] input='00' -> reconstructed='00' label=0.0000 predicted=0.0000 OK\n  row[1] input='01' -> reconstructed='01' label=1.0000 predicted=1.0000 OK\n  row[2] input='10' -> reconstructed='10' label=1.0000 predicted=1.0000 OK\n  row[3] input='11' -> reconstructed='11' label=0.0000 predicted=0.0000 OK\n",
+          "stderr": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7681: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary\n  warnings.warn(f\"{site} [config {cfg}]: {detail}\", RuntimeWarning)\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)\n  return func(*args, **kwargs)\nW1001 20:23:11.723000 19976 torch/_dynamo/backends/debugging.py:57] [5/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:12.108000 19976 torch/_dynamo/backends/debugging.py:57] [9/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:12.164000 19976 torch/_dynamo/backends/debugging.py:57] [10/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:12.249000 19976 torch/_dynamo/backends/debugging.py:57] [11/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:12.292000 19976 torch/_dynamo/backends/debugging.py:57] [12/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:12.623000 19976 torch/_dynamo/backends/debugging.py:57] [14/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:12.922000 19976 torch/_dynamo/backends/debugging.py:57] [15/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:13.153000 19976 torch/_dynamo/backends/debugging.py:57] [18/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:13.280000 19976 torch/_dynamo/backends/debugging.py:57] [20/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0] Graph break from `Tensor.item()`, consider setting:\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0]     torch._dynamo.config.capture_scalar_outputs = True\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0] or:\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0]     env TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0] to include these operations in the captured graph.\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0] Graph break: from user code at:\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0]   File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 18894, in torch_dynamo_resume_in__ensure_concept_pool_at_18886\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0]     missing = self.concept_pool_size - int(ly.provisional[start:min(end, ly.nOutput)].sum())\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0]                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0]   File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0]     return func(*args, **kwargs)\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0]            ^^^^^^^^^^^^^^^^^^^^^\nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW1001 20:23:13.374000 19976 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW1001 20:23:13.705000 19976 torch/_dynamo/backends/debugging.py:57] [28/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:14.343000 19976 torch/_dynamo/backends/debugging.py:57] [29/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:14.704000 19976 torch/_dynamo/backends/debugging.py:57] [30/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:14.838000 19976 torch/_dynamo/backends/debugging.py:57] [31/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.077000 19976 torch/_dynamo/backends/debugging.py:57] [32/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.143000 19976 torch/_dynamo/backends/debugging.py:57] [33/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.241000 19976 torch/_dynamo/backends/debugging.py:57] [42/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.426000 19976 torch/_dynamo/backends/debugging.py:57] [43/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.496000 19976 torch/_dynamo/backends/debugging.py:57] [44/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.532000 19976 torch/_dynamo/backends/debugging.py:57] [45/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.591000 19976 torch/_dynamo/backends/debugging.py:57] [46/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.649000 19976 torch/_dynamo/backends/debugging.py:57] [47/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.696000 19976 torch/_dynamo/backends/debugging.py:57] [48/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.754000 19976 torch/_dynamo/backends/debugging.py:57] [49/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.947000 19976 torch/_dynamo/backends/debugging.py:57] [50/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:15.980000 19976 torch/_dynamo/backends/debugging.py:57] [44/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.155000 19976 torch/_dynamo/backends/debugging.py:57] [53/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.257000 19976 torch/_dynamo/backends/debugging.py:57] [54/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.338000 19976 torch/_dynamo/backends/debugging.py:57] [56/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.587000 19976 torch/_dynamo/backends/debugging.py:57] [44/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.610000 19976 torch/_dynamo/backends/debugging.py:57] [45/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.666000 19976 torch/_dynamo/backends/debugging.py:57] [46/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.723000 19976 torch/_dynamo/backends/debugging.py:57] [47/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.848000 19976 torch/_dynamo/backends/debugging.py:57] [50/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.890000 19976 torch/_dynamo/backends/debugging.py:57] [44/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.947000 19976 torch/_dynamo/backends/debugging.py:57] [46/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:16.987000 19976 torch/_dynamo/backends/debugging.py:57] [44/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.041000 19976 torch/_dynamo/backends/debugging.py:57] [46/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.152000 19976 torch/_dynamo/backends/debugging.py:57] [50/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.210000 19976 torch/_dynamo/backends/debugging.py:57] [46/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.274000 19976 torch/_dynamo/backends/debugging.py:57] [43/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.343000 19976 torch/_dynamo/backends/debugging.py:57] [44/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.468000 19976 torch/_dynamo/backends/debugging.py:57] [53/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.564000 19976 torch/_dynamo/backends/debugging.py:57] [54/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.625000 19976 torch/_dynamo/backends/debugging.py:57] [44/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.690000 19976 torch/_dynamo/backends/debugging.py:57] [43/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:17.953000 19976 torch/_dynamo/backends/debugging.py:57] [53/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.050000 19976 torch/_dynamo/backends/debugging.py:57] [54/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.113000 19976 torch/_dynamo/backends/debugging.py:57] [44/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.180000 19976 torch/_dynamo/backends/debugging.py:57] [43/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.315000 19976 torch/_dynamo/backends/debugging.py:57] [53/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.412000 19976 torch/_dynamo/backends/debugging.py:57] [54/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.475000 19976 torch/_dynamo/backends/debugging.py:57] [44/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.520000 19976 torch/_dynamo/backends/debugging.py:57] [57/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.706000 19976 torch/_dynamo/backends/debugging.py:57] [15/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.795000 19976 torch/_dynamo/backends/debugging.py:57] [58/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:18.841000 19976 torch/_dynamo/backends/debugging.py:57] [59/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.047000 19976 torch/_dynamo/backends/debugging.py:57] [62/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.117000 19976 torch/_dynamo/backends/debugging.py:57] [63/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.145000 19976 torch/_dynamo/backends/debugging.py:57] [64/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.171000 19976 torch/_dynamo/backends/debugging.py:57] [65/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.200000 19976 torch/_dynamo/backends/debugging.py:57] [66/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.250000 19976 torch/_dynamo/backends/debugging.py:57] [63/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.277000 19976 torch/_dynamo/backends/debugging.py:57] [66/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.436000 19976 torch/_dynamo/backends/debugging.py:57] [67/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.449000 19976 torch/_dynamo/backends/debugging.py:57] [63/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.470000 19976 torch/_dynamo/backends/debugging.py:57] [67/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.546000 19976 torch/_dynamo/backends/debugging.py:57] [63/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.626000 19976 torch/_dynamo/backends/debugging.py:57] [63/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.708000 19976 torch/_dynamo/backends/debugging.py:57] [63/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.728000 19976 torch/_dynamo/backends/debugging.py:57] [68/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.788000 19976 torch/_dynamo/backends/debugging.py:57] [71/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:19.818000 19976 torch/_dynamo/backends/debugging.py:57] [72/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:20.259000 19976 torch/_dynamo/backends/debugging.py:57] [73/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:20.485000 19976 torch/_dynamo/backends/debugging.py:57] [18/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:20.843000 19976 torch/_dynamo/backends/debugging.py:57] [20/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:20.910000 19976 torch/_dynamo/backends/debugging.py:57] [9/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:20.961000 19976 torch/_dynamo/backends/debugging.py:57] [77/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.049000 19976 torch/_dynamo/backends/debugging.py:57] [79/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.155000 19976 torch/_dynamo/backends/debugging.py:57] [82/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.234000 19976 torch/_dynamo/backends/debugging.py:57] [83/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.267000 19976 torch/_dynamo/backends/debugging.py:57] [45/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.324000 19976 torch/_dynamo/backends/debugging.py:57] [46/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.412000 19976 torch/_dynamo/backends/debugging.py:57] [47/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.679000 19976 torch/_dynamo/backends/debugging.py:57] [50/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.775000 19976 torch/_dynamo/backends/debugging.py:57] [46/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.794000 19976 torch/_dynamo/backends/debugging.py:57] [85/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.810000 19976 torch/_dynamo/backends/debugging.py:57] [86/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.821000 19976 torch/_dynamo/backends/debugging.py:57] [42/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.831000 19976 torch/_dynamo/backends/debugging.py:57] [87/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.854000 19976 torch/_dynamo/backends/debugging.py:57] [88/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.888000 19976 torch/_dynamo/backends/debugging.py:57] [89/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:21.925000 19976 torch/_dynamo/backends/debugging.py:57] [90/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:22.018000 19976 torch/_dynamo/backends/debugging.py:57] [92/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:22.068000 19976 torch/_dynamo/backends/debugging.py:57] [93/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:22.780000 19976 torch/_dynamo/backends/debugging.py:57] [94/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:22.858000 19976 torch/_dynamo/backends/debugging.py:57] [95/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:22.879000 19976 torch/_dynamo/backends/debugging.py:57] [9/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:22.953000 19976 torch/_dynamo/backends/debugging.py:57] [9/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\n/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7681: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 16, 16)\n  warnings.warn(f\"{site} [config {cfg}]: {detail}\", RuntimeWarning)\nW1001 20:23:23.170000 19976 torch/_dynamo/backends/debugging.py:57] [15/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:23.487000 19976 torch/_dynamo/backends/debugging.py:57] [28/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:23.986000 19976 torch/_dynamo/backends/debugging.py:57] [29/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:24.283000 19976 torch/_dynamo/backends/debugging.py:57] [32/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:24.335000 19976 torch/_dynamo/backends/debugging.py:57] [33/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:24.555000 19976 torch/_dynamo/backends/debugging.py:57] [43/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:24.639000 19976 torch/_dynamo/backends/debugging.py:57] [44/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:24.700000 19976 torch/_dynamo/backends/debugging.py:57] [46/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:24.764000 19976 torch/_dynamo/backends/debugging.py:57] [47/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:24.806000 19976 torch/_dynamo/backends/debugging.py:57] [48/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:24.857000 19976 torch/_dynamo/backends/debugging.py:57] [49/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.063000 19976 torch/_dynamo/backends/debugging.py:57] [50/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.104000 19976 torch/_dynamo/backends/debugging.py:57] [44/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.251000 19976 torch/_dynamo/backends/debugging.py:57] [53/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.351000 19976 torch/_dynamo/backends/debugging.py:57] [54/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.425000 19976 torch/_dynamo/backends/debugging.py:57] [44/11_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.481000 19976 torch/_dynamo/backends/debugging.py:57] [47/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.545000 19976 torch/_dynamo/backends/debugging.py:57] [43/5] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.699000 19976 torch/_dynamo/backends/debugging.py:57] [53/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.795000 19976 torch/_dynamo/backends/debugging.py:57] [54/5] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.868000 19976 torch/_dynamo/backends/debugging.py:57] [44/12_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:25.934000 19976 torch/_dynamo/backends/debugging.py:57] [43/6] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:26.088000 19976 torch/_dynamo/backends/debugging.py:57] [53/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:26.185000 19976 torch/_dynamo/backends/debugging.py:57] [54/6] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:26.258000 19976 torch/_dynamo/backends/debugging.py:57] [44/13_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:26.325000 19976 torch/_dynamo/backends/debugging.py:57] [43/7] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:26.644000 19976 torch/_dynamo/backends/debugging.py:57] [53/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:26.742000 19976 torch/_dynamo/backends/debugging.py:57] [54/7] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:26.818000 19976 torch/_dynamo/backends/debugging.py:57] [44/14_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:26.952000 19976 torch/_dynamo/backends/debugging.py:57] [63/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:26.981000 19976 torch/_dynamo/backends/debugging.py:57] [64/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.003000 19976 torch/_dynamo/backends/debugging.py:57] [65/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.082000 19976 torch/_dynamo/backends/debugging.py:57] [63/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.189000 19976 torch/_dynamo/backends/debugging.py:57] [63/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.214000 19976 torch/_dynamo/backends/debugging.py:57] [64/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.234000 19976 torch/_dynamo/backends/debugging.py:57] [65/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.264000 19976 torch/_dynamo/backends/debugging.py:57] [66/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.297000 19976 torch/_dynamo/backends/debugging.py:57] [66/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.400000 19976 torch/_dynamo/backends/debugging.py:57] [63/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.511000 19976 torch/_dynamo/backends/debugging.py:57] [63/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.542000 19976 torch/_dynamo/backends/debugging.py:57] [71/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.580000 19976 torch/_dynamo/backends/debugging.py:57] [72/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:27.971000 19976 torch/_dynamo/backends/debugging.py:57] [73/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:28.119000 19976 torch/_dynamo/backends/debugging.py:57] [47/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:28.135000 19976 torch/_dynamo/backends/debugging.py:57] [42/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:28.286000 19976 torch/_dynamo/backends/debugging.py:57] [53/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:28.382000 19976 torch/_dynamo/backends/debugging.py:57] [54/8] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:28.425000 19976 torch/_dynamo/backends/debugging.py:57] [97/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:28.561000 19976 torch/_dynamo/backends/debugging.py:57] [53/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:28.838000 19976 torch/_dynamo/backends/debugging.py:57] [54/9] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:28.886000 19976 torch/_dynamo/backends/debugging.py:57] [97/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:29.026000 19976 torch/_dynamo/backends/debugging.py:57] [53/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:29.127000 19976 torch/_dynamo/backends/debugging.py:57] [54/10] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:29.177000 19976 torch/_dynamo/backends/debugging.py:57] [97/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:29.318000 19976 torch/_dynamo/backends/debugging.py:57] [53/11_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:29.418000 19976 torch/_dynamo/backends/debugging.py:57] [54/11] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:29.471000 19976 torch/_dynamo/backends/debugging.py:57] [97/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\n",
+          "mse": [
+            0.0,
+            4
+          ],
+          "reconstructed": [
+            4,
+            4
+          ],
+          "gate": 3
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-03",
+          "--gate",
+          "3"
+        ],
+        "pid": 19960,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1197313768,
+        "elapsed_seconds": 42.89700937499583,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-03/driver.log"
+      }
+    },
+    {
+      "gate": 4,
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 34.241195541995694,
+          "message": "",
+          "stdout": "XOR_exact reconstruction count: 4/4\n\n"
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+          "kind": "cli",
+          "config": "data/XOR_exact.xml",
+          "returncode": 0,
+          "stdout": "Device: cpu\nfullgraph relaxed: host-island config (full-router grammar, symbolTower forward_symbol, or sparse indexed codebook is a tolerated graph break)\nDebug checks: OFF\nModel compiled (eager, mode=max-autotune, fullgraph=False)\n\n\n==== BasicModel ====\n\nTrial [1/1]\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\nEpoch [1/64]\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\nTraining throughput: 1 batches in 12.808s; word units 100.0% of 4 words.\nTrain Loss: output=0.3500, reconstruction=0.0000\nEpoch [2/64]\nbatch = 0 (\u0394=6.500s, 100.00%)\n  [compile] dynamo +116 frame events (total 423; ok=205, total=218)\nTraining throughput: 1 batches in 6.497s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [3/64]\nbatch = 0 (\u0394=0.157s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [4/64]\nbatch = 0 (\u0394=0.157s, 100.00%)\nTraining throughput: 1 batches in 0.156s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [5/64]\nbatch = 0 (\u0394=0.167s, 100.00%)\nTraining throughput: 1 batches in 0.170s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [6/64]\nbatch = 0 (\u0394=0.173s, 100.00%)\nTraining throughput: 1 batches in 0.169s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [7/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [8/64]\nbatch = 0 (\u0394=0.151s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [9/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [10/64]\nbatch = 0 (\u0394=0.170s, 100.00%)\nTraining throughput: 1 batches in 0.173s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [11/64]\nbatch = 0 (\u0394=0.165s, 100.00%)\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [12/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [13/64]\nbatch = 0 (\u0394=0.164s, 100.00%)\nTraining throughput: 1 batches in 0.166s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [14/64]\nbatch = 0 (\u0394=0.180s, 100.00%)\nTraining throughput: 1 batches in 0.181s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [15/64]\nbatch = 0 (\u0394=0.167s, 100.00%)\nTraining throughput: 1 batches in 0.163s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [16/64]\nbatch = 0 (\u0394=0.157s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [17/64]\nbatch = 0 (\u0394=0.167s, 100.00%)\nTraining throughput: 1 batches in 0.166s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [18/64]\nbatch = 0 (\u0394=0.163s, 100.00%)\nTraining throughput: 1 batches in 0.162s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [19/64]\nbatch = 0 (\u0394=0.162s, 100.00%)\nTraining throughput: 1 batches in 0.162s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [20/64]\nbatch = 0 (\u0394=0.164s, 100.00%)\nTraining throughput: 1 batches in 0.161s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [21/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [22/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.155s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [23/64]\nbatch = 0 (\u0394=0.142s, 100.00%)\nTraining throughput: 1 batches in 0.141s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [24/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.147s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [25/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.143s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [26/64]\nbatch = 0 (\u0394=0.143s, 100.00%)\nTraining throughput: 1 batches in 0.143s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [27/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [28/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.142s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [29/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [30/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [31/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.143s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [32/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [33/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.143s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [34/64]\nbatch = 0 (\u0394=0.142s, 100.00%)\nTraining throughput: 1 batches in 0.142s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [35/64]\nbatch = 0 (\u0394=0.149s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [36/64]\nbatch = 0 (\u0394=0.141s, 100.00%)\nTraining throughput: 1 batches in 0.141s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [37/64]\nbatch = 0 (\u0394=0.145s, 100.00%)\nTraining throughput: 1 batches in 0.144s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [38/64]\nbatch = 0 (\u0394=0.146s, 100.00%)\nTraining throughput: 1 batches in 0.145s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [39/64]\nbatch = 0 (\u0394=0.156s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [40/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [41/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [42/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [43/64]\nbatch = 0 (\u0394=0.151s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [44/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [45/64]\nbatch = 0 (\u0394=0.327s, 100.00%)\nTraining throughput: 1 batches in 0.324s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [46/64]\nbatch = 0 (\u0394=0.143s, 100.00%)\nTraining throughput: 1 batches in 0.143s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [47/64]\nbatch = 0 (\u0394=0.143s, 100.00%)\nTraining throughput: 1 batches in 0.143s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [48/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.146s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [49/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.143s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [50/64]\nbatch = 0 (\u0394=0.142s, 100.00%)\nTraining throughput: 1 batches in 0.142s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [51/64]\nbatch = 0 (\u0394=0.147s, 100.00%)\nTraining throughput: 1 batches in 0.148s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [52/64]\nbatch = 0 (\u0394=0.144s, 100.00%)\nTraining throughput: 1 batches in 0.142s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [53/64]\nbatch = 0 (\u0394=0.156s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [54/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [55/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [56/64]\nbatch = 0 (\u0394=0.158s, 100.00%)\nTraining throughput: 1 batches in 0.157s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [57/64]\nbatch = 0 (\u0394=0.153s, 100.00%)\nTraining throughput: 1 batches in 0.151s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [58/64]\nbatch = 0 (\u0394=0.157s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [59/64]\nbatch = 0 (\u0394=0.161s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [60/64]\nbatch = 0 (\u0394=0.148s, 100.00%)\nTraining throughput: 1 batches in 0.149s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [61/64]\nbatch = 0 (\u0394=0.160s, 100.00%)\nTraining throughput: 1 batches in 0.160s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [62/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [63/64]\nbatch = 0 (\u0394=0.159s, 100.00%)\nTraining throughput: 1 batches in 0.158s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nEpoch [64/64]\nbatch = 0 (\u0394=0.154s, 100.00%)\nTraining throughput: 1 batches in 0.153s; word units 100.0% of 4 words.\nTrain Loss: output=0.0000, reconstruction=0.0000\nFinal Stats:\n=== Selected operation grammar ===\n  compose space_role='subsymbolic':\n    row[0] = ['0:P -> sigma(P)']\n  compose space_role='CS':\n    row[0] = ['1:C -> pi(C)']\n  compose space_role='SS':\n    row[0] = ['2:S -> sigma(S)']\n  generate space_role='subsymbolic':\n    row[0] = ['3:P -> sigma.reverse(P)']\n  generate space_role='CS':\n    row[0] = ['4:C -> pi.reverse(C)']\n  generate space_role='SS':\n    row[0] = ['5:S -> sigma.reverse(S)']\nbatch = 0 (\u0394=0.127s, 100.00%)\nTraining throughput: 1 batches in 0.117s; word units 100.0% of 4 words.\n=== Input Reconstruction (test) ===\n  row[0] input='00' -> reconstructed='00' label=0.0000 predicted=0.0000 OK\n  row[1] input='01' -> reconstructed='01' label=1.0000 predicted=1.0000 OK\n  row[2] input='10' -> reconstructed='10' label=1.0000 predicted=1.0000 OK\n  row[3] input='11' -> reconstructed='11' label=0.0000 predicted=0.0000 OK\n",
+          "stderr": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7681: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary\n  warnings.warn(f\"{site} [config {cfg}]: {detail}\", RuntimeWarning)\n/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)\n  return func(*args, **kwargs)\nW1001 20:23:54.309000 20119 torch/_dynamo/backends/debugging.py:57] [5/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:54.695000 20119 torch/_dynamo/backends/debugging.py:57] [9/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:54.751000 20119 torch/_dynamo/backends/debugging.py:57] [10/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:54.836000 20119 torch/_dynamo/backends/debugging.py:57] [11/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:54.879000 20119 torch/_dynamo/backends/debugging.py:57] [12/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:55.224000 20119 torch/_dynamo/backends/debugging.py:57] [14/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:55.520000 20119 torch/_dynamo/backends/debugging.py:57] [15/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:55.749000 20119 torch/_dynamo/backends/debugging.py:57] [18/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:55.870000 20119 torch/_dynamo/backends/debugging.py:57] [20/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0] Graph break from `Tensor.item()`, consider setting:\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0]     torch._dynamo.config.capture_scalar_outputs = True\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0] or:\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0]     env TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0] to include these operations in the captured graph.\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0] Graph break: from user code at:\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0]   File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 18894, in torch_dynamo_resume_in__ensure_concept_pool_at_18886\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0]     missing = self.concept_pool_size - int(ly.provisional[start:min(end, ly.nOutput)].sum())\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0]                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0]   File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0]     return func(*args, **kwargs)\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0]            ^^^^^^^^^^^^^^^^^^^^^\nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW1001 20:23:55.959000 20119 torch/_dynamo/variables/tensor.py:1841] [24/0] \nW1001 20:23:56.285000 20119 torch/_dynamo/backends/debugging.py:57] [28/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:56.941000 20119 torch/_dynamo/backends/debugging.py:57] [29/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:57.297000 20119 torch/_dynamo/backends/debugging.py:57] [30/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:57.429000 20119 torch/_dynamo/backends/debugging.py:57] [31/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:57.665000 20119 torch/_dynamo/backends/debugging.py:57] [32/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:57.742000 20119 torch/_dynamo/backends/debugging.py:57] [33/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:57.854000 20119 torch/_dynamo/backends/debugging.py:57] [42/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.035000 20119 torch/_dynamo/backends/debugging.py:57] [43/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.105000 20119 torch/_dynamo/backends/debugging.py:57] [44/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.140000 20119 torch/_dynamo/backends/debugging.py:57] [45/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.199000 20119 torch/_dynamo/backends/debugging.py:57] [46/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.259000 20119 torch/_dynamo/backends/debugging.py:57] [47/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.306000 20119 torch/_dynamo/backends/debugging.py:57] [48/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.363000 20119 torch/_dynamo/backends/debugging.py:57] [49/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.568000 20119 torch/_dynamo/backends/debugging.py:57] [50/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.604000 20119 torch/_dynamo/backends/debugging.py:57] [44/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.781000 20119 torch/_dynamo/backends/debugging.py:57] [53/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.882000 20119 torch/_dynamo/backends/debugging.py:57] [54/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:58.959000 20119 torch/_dynamo/backends/debugging.py:57] [56/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.247000 20119 torch/_dynamo/backends/debugging.py:57] [44/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.273000 20119 torch/_dynamo/backends/debugging.py:57] [45/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.328000 20119 torch/_dynamo/backends/debugging.py:57] [46/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.383000 20119 torch/_dynamo/backends/debugging.py:57] [47/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.508000 20119 torch/_dynamo/backends/debugging.py:57] [50/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.550000 20119 torch/_dynamo/backends/debugging.py:57] [44/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.618000 20119 torch/_dynamo/backends/debugging.py:57] [46/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.665000 20119 torch/_dynamo/backends/debugging.py:57] [44/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.722000 20119 torch/_dynamo/backends/debugging.py:57] [46/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.830000 20119 torch/_dynamo/backends/debugging.py:57] [50/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.890000 20119 torch/_dynamo/backends/debugging.py:57] [46/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:23:59.956000 20119 torch/_dynamo/backends/debugging.py:57] [43/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.026000 20119 torch/_dynamo/backends/debugging.py:57] [44/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.152000 20119 torch/_dynamo/backends/debugging.py:57] [53/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.241000 20119 torch/_dynamo/backends/debugging.py:57] [54/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.299000 20119 torch/_dynamo/backends/debugging.py:57] [44/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.359000 20119 torch/_dynamo/backends/debugging.py:57] [43/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.594000 20119 torch/_dynamo/backends/debugging.py:57] [53/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.681000 20119 torch/_dynamo/backends/debugging.py:57] [54/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.740000 20119 torch/_dynamo/backends/debugging.py:57] [44/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.799000 20119 torch/_dynamo/backends/debugging.py:57] [43/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:00.918000 20119 torch/_dynamo/backends/debugging.py:57] [53/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.005000 20119 torch/_dynamo/backends/debugging.py:57] [54/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.065000 20119 torch/_dynamo/backends/debugging.py:57] [44/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.104000 20119 torch/_dynamo/backends/debugging.py:57] [57/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.271000 20119 torch/_dynamo/backends/debugging.py:57] [15/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.349000 20119 torch/_dynamo/backends/debugging.py:57] [58/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.391000 20119 torch/_dynamo/backends/debugging.py:57] [59/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.585000 20119 torch/_dynamo/backends/debugging.py:57] [62/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.649000 20119 torch/_dynamo/backends/debugging.py:57] [63/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.673000 20119 torch/_dynamo/backends/debugging.py:57] [64/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.695000 20119 torch/_dynamo/backends/debugging.py:57] [65/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.721000 20119 torch/_dynamo/backends/debugging.py:57] [66/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.767000 20119 torch/_dynamo/backends/debugging.py:57] [63/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.790000 20119 torch/_dynamo/backends/debugging.py:57] [66/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.931000 20119 torch/_dynamo/backends/debugging.py:57] [67/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.941000 20119 torch/_dynamo/backends/debugging.py:57] [63/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:01.958000 20119 torch/_dynamo/backends/debugging.py:57] [67/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:02.024000 20119 torch/_dynamo/backends/debugging.py:57] [63/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:02.098000 20119 torch/_dynamo/backends/debugging.py:57] [63/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:02.171000 20119 torch/_dynamo/backends/debugging.py:57] [63/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:02.189000 20119 torch/_dynamo/backends/debugging.py:57] [68/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:02.242000 20119 torch/_dynamo/backends/debugging.py:57] [71/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:02.270000 20119 torch/_dynamo/backends/debugging.py:57] [72/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:02.665000 20119 torch/_dynamo/backends/debugging.py:57] [73/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:02.881000 20119 torch/_dynamo/backends/debugging.py:57] [18/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:03.218000 20119 torch/_dynamo/backends/debugging.py:57] [20/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:03.282000 20119 torch/_dynamo/backends/debugging.py:57] [9/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:03.330000 20119 torch/_dynamo/backends/debugging.py:57] [77/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:03.408000 20119 torch/_dynamo/backends/debugging.py:57] [79/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:03.507000 20119 torch/_dynamo/backends/debugging.py:57] [82/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:03.585000 20119 torch/_dynamo/backends/debugging.py:57] [83/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:03.619000 20119 torch/_dynamo/backends/debugging.py:57] [45/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:03.675000 20119 torch/_dynamo/backends/debugging.py:57] [46/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:03.757000 20119 torch/_dynamo/backends/debugging.py:57] [47/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.007000 20119 torch/_dynamo/backends/debugging.py:57] [50/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.091000 20119 torch/_dynamo/backends/debugging.py:57] [46/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.107000 20119 torch/_dynamo/backends/debugging.py:57] [85/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.121000 20119 torch/_dynamo/backends/debugging.py:57] [86/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.132000 20119 torch/_dynamo/backends/debugging.py:57] [42/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.141000 20119 torch/_dynamo/backends/debugging.py:57] [87/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.162000 20119 torch/_dynamo/backends/debugging.py:57] [88/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.194000 20119 torch/_dynamo/backends/debugging.py:57] [89/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.230000 20119 torch/_dynamo/backends/debugging.py:57] [90/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.314000 20119 torch/_dynamo/backends/debugging.py:57] [92/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:04.358000 20119 torch/_dynamo/backends/debugging.py:57] [93/0_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:05.020000 20119 torch/_dynamo/backends/debugging.py:57] [94/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:05.098000 20119 torch/_dynamo/backends/debugging.py:57] [95/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:05.120000 20119 torch/_dynamo/backends/debugging.py:57] [9/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:05.196000 20119 torch/_dynamo/backends/debugging.py:57] [9/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\n/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7681: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 16, 16)\n  warnings.warn(f\"{site} [config {cfg}]: {detail}\", RuntimeWarning)\nW1001 20:24:05.407000 20119 torch/_dynamo/backends/debugging.py:57] [15/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:05.732000 20119 torch/_dynamo/backends/debugging.py:57] [28/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:06.247000 20119 torch/_dynamo/backends/debugging.py:57] [29/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:06.541000 20119 torch/_dynamo/backends/debugging.py:57] [32/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:06.593000 20119 torch/_dynamo/backends/debugging.py:57] [33/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:06.813000 20119 torch/_dynamo/backends/debugging.py:57] [43/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:06.886000 20119 torch/_dynamo/backends/debugging.py:57] [44/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:06.943000 20119 torch/_dynamo/backends/debugging.py:57] [46/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.003000 20119 torch/_dynamo/backends/debugging.py:57] [47/3_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.044000 20119 torch/_dynamo/backends/debugging.py:57] [48/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.094000 20119 torch/_dynamo/backends/debugging.py:57] [49/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.287000 20119 torch/_dynamo/backends/debugging.py:57] [50/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.330000 20119 torch/_dynamo/backends/debugging.py:57] [44/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.479000 20119 torch/_dynamo/backends/debugging.py:57] [53/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.577000 20119 torch/_dynamo/backends/debugging.py:57] [54/4] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.642000 20119 torch/_dynamo/backends/debugging.py:57] [44/11_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.695000 20119 torch/_dynamo/backends/debugging.py:57] [47/4_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.759000 20119 torch/_dynamo/backends/debugging.py:57] [43/5] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:07.912000 20119 torch/_dynamo/backends/debugging.py:57] [53/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.003000 20119 torch/_dynamo/backends/debugging.py:57] [54/5] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.075000 20119 torch/_dynamo/backends/debugging.py:57] [44/12_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.143000 20119 torch/_dynamo/backends/debugging.py:57] [43/6] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.294000 20119 torch/_dynamo/backends/debugging.py:57] [53/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.382000 20119 torch/_dynamo/backends/debugging.py:57] [54/6] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.455000 20119 torch/_dynamo/backends/debugging.py:57] [44/13_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.527000 20119 torch/_dynamo/backends/debugging.py:57] [43/7] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.826000 20119 torch/_dynamo/backends/debugging.py:57] [53/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.923000 20119 torch/_dynamo/backends/debugging.py:57] [54/7] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:08.999000 20119 torch/_dynamo/backends/debugging.py:57] [44/14_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.123000 20119 torch/_dynamo/backends/debugging.py:57] [63/6_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.153000 20119 torch/_dynamo/backends/debugging.py:57] [64/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.174000 20119 torch/_dynamo/backends/debugging.py:57] [65/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.252000 20119 torch/_dynamo/backends/debugging.py:57] [63/7_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.357000 20119 torch/_dynamo/backends/debugging.py:57] [63/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.381000 20119 torch/_dynamo/backends/debugging.py:57] [64/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.402000 20119 torch/_dynamo/backends/debugging.py:57] [65/2_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.432000 20119 torch/_dynamo/backends/debugging.py:57] [66/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.464000 20119 torch/_dynamo/backends/debugging.py:57] [66/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.568000 20119 torch/_dynamo/backends/debugging.py:57] [63/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.694000 20119 torch/_dynamo/backends/debugging.py:57] [63/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.734000 20119 torch/_dynamo/backends/debugging.py:57] [71/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:09.778000 20119 torch/_dynamo/backends/debugging.py:57] [72/1_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:10.163000 20119 torch/_dynamo/backends/debugging.py:57] [73/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:10.306000 20119 torch/_dynamo/backends/debugging.py:57] [47/5_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:10.321000 20119 torch/_dynamo/backends/debugging.py:57] [42/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:10.475000 20119 torch/_dynamo/backends/debugging.py:57] [53/8_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:10.569000 20119 torch/_dynamo/backends/debugging.py:57] [54/8] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:10.612000 20119 torch/_dynamo/backends/debugging.py:57] [97/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:10.746000 20119 torch/_dynamo/backends/debugging.py:57] [53/9_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:11.075000 20119 torch/_dynamo/backends/debugging.py:57] [54/9] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:11.120000 20119 torch/_dynamo/backends/debugging.py:57] [97/1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:11.257000 20119 torch/_dynamo/backends/debugging.py:57] [53/10_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:11.356000 20119 torch/_dynamo/backends/debugging.py:57] [54/10] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:11.406000 20119 torch/_dynamo/backends/debugging.py:57] [97/2] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:11.540000 20119 torch/_dynamo/backends/debugging.py:57] [53/11_1] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:11.637000 20119 torch/_dynamo/backends/debugging.py:57] [54/11] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\nW1001 20:24:11.691000 20119 torch/_dynamo/backends/debugging.py:57] [97/3] eager backend ignoring extra kwargs {'mode': 'max-autotune'}\n",
+          "mse": [
+            0.0,
+            4
+          ],
+          "reconstructed": [
+            4,
+            4
+          ],
+          "gate": 4
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-04",
+          "--gate",
+          "4"
+        ],
+        "pid": 20098,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1197248160,
+        "elapsed_seconds": 41.667516999994405,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-04/driver.log"
+      }
+    },
+    {
+      "gate": 5,
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 68.96825420799723,
+          "message": "",
+          "stdout": "400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.0360, reconstruction=0.6905\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0294, reconstruction=0.6225\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0350, reconstruction=0.6892\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0344, reconstruction=0.6838\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0336, reconstruction=0.6785\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0329, reconstruction=0.6734\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0317, reconstruction=0.6714\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.0299, reconstruction=0.6739\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0282, reconstruction=0.6137\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0282, reconstruction=0.6792\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0280, reconstruction=0.6790\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0283, reconstruction=0.6785\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0285, reconstruction=0.6797\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.162s, 100.00%)\r\nTrain Loss: output=0.0281, reconstruction=0.6118\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0284, reconstruction=0.6860\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0280, reconstruction=0.6870\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.0281, reconstruction=0.6883\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.0274, reconstruction=0.6849\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0265, reconstruction=0.6796\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0254, reconstruction=0.6770\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0242, reconstruction=0.6767\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0240, reconstruction=0.6809\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.0240, reconstruction=0.6901\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0244, reconstruction=0.6989\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0244, reconstruction=0.7077\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.152s, 100.00%)\r\nTrain Loss: output=0.0242, reconstruction=0.7177\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0235, reconstruction=0.7249\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0231, reconstruction=0.7261\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.0232, reconstruction=0.7208\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0234, reconstruction=0.7128\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0239, reconstruction=0.7040\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0242, reconstruction=0.6898\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.0244, reconstruction=0.6784\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0241, reconstruction=0.6744\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0239, reconstruction=0.6726\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0240, reconstruction=0.6719\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=5.866s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='p hello' label=0.0000 predicted=0.1626 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.8587 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.8414 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.2555 MISMATCH\r\n"
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            0.16263365745544434,
+            0.8587226867675781,
+            0.8413895964622498,
+            0.25548601150512695
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            "p hello"
+          ],
+          "gate_reconstructions": [
+            "hello hello",
+            "there hello",
+            "there world",
+            "there there"
+          ],
+          "grammar_reconstruction_unavailable": [
+            false,
+            false,
+            false,
+            false
+          ],
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-01",
+          "--gate",
+          "5"
+        ],
+        "pid": 14079,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 776243288,
+        "elapsed_seconds": 76.4272199160041,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-05-trial-01/driver.log"
+      }
+    },
+    {
+      "gate": 6,
+      "selected": [
+        "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+      ],
+      "counts": {
+        "failed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 70.64308979100315,
+          "message": "test/test_explicit_dimensions.py:300: in test_piecewise_overall_at_least_50_pct\n    self.assertEqual(perfect, 4,\nE   AssertionError: 1 != 4 : XOR_grammar reconstruction: 1/4 word multisets recovered; [('hello world', 'world world'), ('hello there', 'there hello'), ('loving world', 'world hello'), ('loving there', 'hello world')]",
+          "stdout": "]\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nTrain Loss: output=0.0400, reconstruction=0.4770\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0412, reconstruction=0.4792\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0337, reconstruction=0.4394\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.164s, 100.00%)\r\nTrain Loss: output=0.0344, reconstruction=0.4393\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0432, reconstruction=0.4791\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0424, reconstruction=0.4748\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0407, reconstruction=0.4752\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nTrain Loss: output=0.0388, reconstruction=0.4766\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.0370, reconstruction=0.4748\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nTrain Loss: output=0.0362, reconstruction=0.4722\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.162s, 100.00%)\r\nTrain Loss: output=0.0361, reconstruction=0.4676\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nTrain Loss: output=0.0362, reconstruction=0.4629\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0365, reconstruction=0.4625\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.0367, reconstruction=0.4645\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0369, reconstruction=0.4678\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0374, reconstruction=0.4734\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0381, reconstruction=0.4764\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.163s, 100.00%)\r\nTrain Loss: output=0.0383, reconstruction=0.4737\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0384, reconstruction=0.4711\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.0348, reconstruction=0.4281\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.154s, 100.00%)\r\nTrain Loss: output=0.0381, reconstruction=0.4742\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0381, reconstruction=0.4789\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0379, reconstruction=0.4809\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.162s, 100.00%)\r\nTrain Loss: output=0.0377, reconstruction=0.4813\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.165s, 100.00%)\r\nTrain Loss: output=0.0326, reconstruction=0.4335\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.160s, 100.00%)\r\nTrain Loss: output=0.0378, reconstruction=0.4809\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.156s, 100.00%)\r\nTrain Loss: output=0.0378, reconstruction=0.4829\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0377, reconstruction=0.4857\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0370, reconstruction=0.4878\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0362, reconstruction=0.4898\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.155s, 100.00%)\r\nTrain Loss: output=0.0358, reconstruction=0.4909\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.165s, 100.00%)\r\nTrain Loss: output=0.0351, reconstruction=0.4907\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0345, reconstruction=0.4916\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.162s, 100.00%)\r\nTrain Loss: output=0.0337, reconstruction=0.4935\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0331, reconstruction=0.4965\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.159s, 100.00%)\r\nTrain Loss: output=0.0329, reconstruction=0.4977\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=5.911s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='there \\x15' label=0.0000 predicted=0.2248 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.8041 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.7824 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.2232 MISMATCH\r\n"
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            0.22477108240127563,
+            0.8041149973869324,
+            0.7823762893676758,
+            0.22320955991744995
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            "there \u0015"
+          ],
+          "gate_reconstructions": [
+            "world world",
+            "there hello",
+            "world hello",
+            "hello world"
+          ],
+          "grammar_reconstruction_unavailable": [
+            false,
+            false,
+            false,
+            false
+          ],
+          "gate": 6
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-01",
+          "--gate",
+          "6"
+        ],
+        "pid": 16671,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 773834816,
+        "elapsed_seconds": 78.10030195800209,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-06-trial-01/driver.log"
+      }
+    },
+    {
+      "gate": 8,
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.834944374997576,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.094s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.664s, 100.00%)\r\nrunEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.505s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 1,
+          "seed": 0,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17499390244483948,
+          "recon_loss": 0.00013660475087817758,
+          "gate": 8
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-08",
+          "--gate",
+          "8"
+        ],
+        "pid": 20118,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4900770784,
+        "elapsed_seconds": 14.593669333000435,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-08/driver.log"
+      }
+    },
+    {
+      "gate": 9,
+      "selected": [
+        "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.768799042001774,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.079s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.673s, 100.00%)\r\nrunEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.513s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+          "kind": "reconstruction",
+          "config": "data/matrix/MM_20M_xor_noraise.xml",
+          "epochs": 1,
+          "seed": 0,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17499567568302155,
+          "recon_loss": 0.00013989095168653876,
+          "gate": 9
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-09",
+          "--gate",
+          "9"
+        ],
+        "pid": 20210,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4892333000,
+        "elapsed_seconds": 14.687757667001279,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-09/driver.log"
+      }
+    },
+    {
+      "gate": 10,
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.522673667001072,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 1.010s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.654s, 100.00%)\r\nTraining throughput: 1 batches in 0.505s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 1,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17500266432762146,
+          "recon_loss": 0.00014569947961717844,
+          "gate": 10
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-10",
+          "--gate",
+          "10"
+        ],
+        "pid": 20382,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4891792376,
+        "elapsed_seconds": 14.5961407079958,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-10/driver.log"
+      }
+    },
+    {
+      "gate": 11,
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.090623249998316,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "observations": [],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-11",
+          "--gate",
+          "11"
+        ],
+        "pid": 20464,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4554527448,
+        "elapsed_seconds": 14.010735875002865,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-11/driver.log"
+      }
+    },
+    {
+      "gate": 12,
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 7.65762220799661,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 1.060s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.654s, 100.00%)\r\nTraining throughput: 1 batches in 0.595s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.588s, 100.00%)\r\nTraining throughput: 1 batches in 0.588s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.600s, 100.00%)\r\nTraining throughput: 1 batches in 0.509s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "observations": [],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-12",
+          "--gate",
+          "12"
+        ],
+        "pid": 20515,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5000958992,
+        "elapsed_seconds": 15.610441124998033,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-12/driver.log"
+      }
+    },
+    {
+      "gate": 13,
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 7.78529254100431,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 1.051s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.644s, 100.00%)\r\nTraining throughput: 1 batches in 0.586s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.591s, 100.00%)\r\nTraining throughput: 1 batches in 0.589s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.594s, 100.00%)\r\nTraining throughput: 1 batches in 0.502s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 3,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17607682943344116,
+          "recon_loss": 0.0002876139187719673,
+          "gate": 13
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-13",
+          "--gate",
+          "13"
+        ],
+        "pid": 20538,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5002220632,
+        "elapsed_seconds": 15.610961375001352,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-13/driver.log"
+      }
+    },
+    {
+      "gate": 14,
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "counts": {
+        "passed": 1
+      },
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 100.27806783300184,
+          "message": "",
+          "stdout": " in 0.588s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.584s, 100.00%)\r\nTraining throughput: 1 batches in 0.583s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.587s, 100.00%)\r\nTraining throughput: 1 batches in 0.587s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.586s, 100.00%)\r\nTraining throughput: 1 batches in 0.585s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.587s, 100.00%)\r\nTraining throughput: 1 batches in 0.587s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.588s, 100.00%)\r\nTraining throughput: 1 batches in 0.587s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.586s, 100.00%)\r\nTraining throughput: 1 batches in 0.586s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.588s, 100.00%)\r\nTraining throughput: 1 batches in 0.587s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.587s, 100.00%)\r\nTraining throughput: 1 batches in 0.586s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.588s, 100.00%)\r\nTraining throughput: 1 batches in 0.588s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.587s, 100.00%)\r\nTraining throughput: 1 batches in 0.585s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.585s, 100.00%)\r\nTraining throughput: 1 batches in 0.585s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.588s, 100.00%)\r\nTraining throughput: 1 batches in 0.589s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.588s, 100.00%)\r\nTraining throughput: 1 batches in 0.585s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.588s, 100.00%)\r\nTraining throughput: 1 batches in 0.588s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.589s, 100.00%)\r\nTraining throughput: 1 batches in 0.588s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.587s, 100.00%)\r\nTraining throughput: 1 batches in 0.587s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.589s, 100.00%)\r\nTraining throughput: 1 batches in 0.589s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.591s, 100.00%)\r\nTraining throughput: 1 batches in 0.589s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.587s, 100.00%)\r\nTraining throughput: 1 batches in 0.588s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.588s, 100.00%)\r\nTraining throughput: 1 batches in 0.586s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.588s, 100.00%)\r\nTraining throughput: 1 batches in 0.587s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.586s, 100.00%)\r\nTraining throughput: 1 batches in 0.586s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.589s, 100.00%)\r\nTraining throughput: 1 batches in 0.588s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.587s, 100.00%)\r\nTraining throughput: 1 batches in 0.586s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.583s, 100.00%)\r\nTraining throughput: 1 batches in 0.583s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.590s, 100.00%)\r\nTraining throughput: 1 batches in 0.589s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.586s, 100.00%)\r\nTraining throughput: 1 batches in 0.585s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.587s, 100.00%)\r\nTraining throughput: 1 batches in 0.587s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.587s, 100.00%)\r\nTraining throughput: 1 batches in 0.586s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.597s, 100.00%)\r\nTraining throughput: 1 batches in 0.505s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "observations": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "kind": "reconstruction",
+          "config": "data/MM_20M_xor.xml",
+          "epochs": 160,
+          "seed": null,
+          "exact_match_rate": 1.0,
+          "where_recovery": 1.0,
+          "output_loss": 0.17502284049987793,
+          "recon_loss": 0.0020147839095443487,
+          "gate": 14
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-14",
+          "--gate",
+          "14"
+        ],
+        "pid": 20566,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4893250624,
+        "elapsed_seconds": 108.2164693750019,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/gate-14/driver.log"
+      }
+    }
+  ],
+  "table_counts": {
+    "passed": 33,
+    "failed": 1
+  },
+  "mm_rows": [
+    {
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-01"
+        ],
+        "pid": 20589,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 574113112,
+        "elapsed_seconds": 142.49899437500426,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-01/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 5.5067062021407764e-14,
+        "ending_training_predictions": [
+          3.5762786865234375e-07,
+          1.0,
+          0.9999997019767761,
+          5.960464477539063e-08
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 138.69283183399966,
+        "after_900_updates_mse": 5.5067062021407764e-14,
+        "after_900_updates_predictions": [
+          3.5762786865234375e-07,
+          1.0,
+          0.9999997019767761,
+          5.960464477539063e-08
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    },
+    {
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-02"
+        ],
+        "pid": 20907,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 573064608,
+        "elapsed_seconds": 135.29247949999262,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-02/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 0.25,
+        "ending_training_predictions": [
+          0.49999991059303284,
+          0.49999991059303284,
+          0.4999999701976776,
+          0.4999999701976776
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 131.1705787499959,
+        "after_900_updates_mse": 0.25,
+        "after_900_updates_predictions": [
+          0.4999999403953552,
+          0.4999999403953552,
+          0.49999988079071045,
+          0.49999988079071045
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    },
+    {
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-03"
+        ],
+        "pid": 21027,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 574932384,
+        "elapsed_seconds": 135.84250412500114,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-03/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 0.125,
+        "ending_training_predictions": [
+          0.5,
+          0.5,
+          0.9999997019767761,
+          2.980232238769531e-07
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 131.48355329200422,
+        "after_900_updates_mse": 0.125,
+        "after_900_updates_predictions": [
+          0.5,
+          0.5,
+          0.9999997019767761,
+          2.980232238769531e-07
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    },
+    {
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-04"
+        ],
+        "pid": 21316,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 581289376,
+        "elapsed_seconds": 136.98168449998775,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-04/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 5.329070518200751e-15,
+        "ending_training_predictions": [
+          0.0,
+          0.9999999403953552,
+          0.9999999403953552,
+          1.1920928955078125e-07
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 132.67279654199956,
+        "after_900_updates_mse": 6.217248937900877e-15,
+        "after_900_updates_predictions": [
+          5.960464477539063e-08,
+          0.9999999403953552,
+          0.9999999403953552,
+          1.1920928955078125e-07
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    },
+    {
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-05"
+        ],
+        "pid": 21436,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 572441944,
+        "elapsed_seconds": 134.27037979199667,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-05/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 4.0234482412415673e-13,
+        "ending_training_predictions": [
+          8.344650268554688e-07,
+          0.9999996423721313,
+          0.9999993443489075,
+          5.960464477539062e-07
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 130.2689071670029,
+        "after_900_updates_mse": 4.0234482412415673e-13,
+        "after_900_updates_predictions": [
+          8.344650268554688e-07,
+          0.9999996423721313,
+          0.9999993443489075,
+          5.960464477539062e-07
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    },
+    {
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-06"
+        ],
+        "pid": 21722,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 586007992,
+        "elapsed_seconds": 146.22819045800134,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-06/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 0.25,
+        "ending_training_predictions": [
+          0.5000000596046448,
+          0.49999988079071045,
+          0.5,
+          0.49999985098838806
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 142.26513324999542,
+        "after_900_updates_mse": 0.25,
+        "after_900_updates_predictions": [
+          0.5000000596046448,
+          0.4999999701976776,
+          0.5,
+          0.4999999403953552
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    },
+    {
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-07"
+        ],
+        "pid": 21852,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 595871088,
+        "elapsed_seconds": 144.5967097919929,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-07/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 0.125,
+        "ending_training_predictions": [
+          0.5,
+          0.5,
+          1.0,
+          0.0
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 140.72192570799962,
+        "after_900_updates_mse": 0.125,
+        "after_900_updates_predictions": [
+          0.5,
+          0.5,
+          1.0,
+          0.0
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    },
+    {
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-08"
+        ],
+        "pid": 22173,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 556860808,
+        "elapsed_seconds": 134.192829874999,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-08/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 5.773159728050814e-15,
+        "ending_training_predictions": [
+          8.940696716308594e-08,
+          1.0000001192092896,
+          1.0,
+          2.9802322387695312e-08
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 129.85777362500085,
+        "after_900_updates_mse": 7.993605777301127e-15,
+        "after_900_updates_predictions": [
+          -1.1920928955078125e-07,
+          0.9999998807907104,
+          1.0,
+          -5.960464477539063e-08
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    },
+    {
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-09"
+        ],
+        "pid": 22286,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 578192752,
+        "elapsed_seconds": 137.99685716700333,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-09/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 0.125,
+        "ending_training_predictions": [
+          0.0,
+          1.0,
+          0.5,
+          0.5
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 134.1303402499907,
+        "after_900_updates_mse": 0.125,
+        "after_900_updates_predictions": [
+          0.0,
+          1.0,
+          0.5,
+          0.5
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    },
+    {
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-10"
+        ],
+        "pid": 22577,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 611730872,
+        "elapsed_seconds": 130.95921616698615,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/measurements/mm-10/driver.log"
+      },
+      "measurement": {
+        "epochs": 900,
+        "seed": null,
+        "configuration": "data/MM_grammar.xml",
+        "completed_epochs": 900,
+        "ending_training_mse": 8.317346811281823e-12,
+        "ending_training_predictions": [
+          8.046627044677734e-07,
+          0.9999990463256836,
+          0.9999961853027344,
+          4.1425228118896484e-06
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "elapsed_seconds": 127.15788491700368,
+        "after_900_updates_mse": 7.886136188517412e-12,
+        "after_900_updates_predictions": [
+          8.344650268554688e-07,
+          0.9999991059303284,
+          0.9999962449073792,
+          3.993511199951172e-06
+        ],
+        "store_owner_present": true,
+        "store_rows": 1024,
+        "definition_rows": 4
+      }
+    }
+  ],
+  "mm_completed": 10,
+  "mm_median": 0.06250000000415867,
+  "source_matched": true,
+  "seconds": 2628.3050414579993,
+  "baseline": {
+    "table": "44/49",
+    "exact_roundtrip": "12/15",
+    "mm_median": 0.1066
+  },
+  "removed_table_entry": "SPNN XOR smoke test moved inline by explicit trim item 3",
+  "table_denominator": "49 - 14 repeated exact trials - 1 SPNN smoke case = 34 named cases"
+}

@@ -103,7 +103,7 @@ def test_canonical_configuration_enables_only_the_selected_prediction_objective(
     assert float(training.findtext("interContrastiveWeight")) == 0
 
 
-def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path, monkeypatch):
+def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path, monkeypatch, eager_reading):
     from test_meronomy_ladder import _build_ladder_variant
     monkeypatch.setenv("MODEL_COMPILE", "none")
     model = _build_ladder_variant(tmp_path, "runtime_expectation", [
@@ -140,7 +140,7 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
         torch._dynamo.reset()
 
 
-def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_path, monkeypatch):
+def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_path, monkeypatch, eager_reading):
     from test_meronomy_ladder import _build_ladder_variant
     monkeypatch.setenv("MODEL_COMPILE", "none")
     estimates = []
@@ -172,6 +172,7 @@ def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_pa
     torch.testing.assert_close(estimates[0], estimates[1])
 
 
+@pytest.mark.usefixtures('eager_reading')
 @pytest.mark.slow
 def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning(tmp_path, monkeypatch):
     from test_meronomy_ladder import _build_ladder_variant
@@ -212,6 +213,7 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
         torch._dynamo.reset()
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_expectation_off_keeps_every_packed_observation_in_ltm(tmp_path, monkeypatch):
     from test_meronomy_ladder import _build_ladder_variant
     monkeypatch.setenv("MODEL_COMPILE", "none")
@@ -245,7 +247,7 @@ def test_packed_ltm_ignores_masked_slots_even_with_retained_storage(monkeypatch)
     from types import SimpleNamespace
     from Layers import InterSentenceLayer
     from Models import BasicModel
-    from test_item7_acceptance import SentenceFixture
+    from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     entry = f.program('cat')
     discourse = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,

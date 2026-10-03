@@ -1,0 +1,98 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reading_attention.py::test_next_word_ce_matches_neg_log_alpha",
+    "test/test_reading_attention.py::test_eval_has_no_ce_loss",
+    "test/test_reading_attention.py::test_no_spans_is_noop",
+    "test/test_reading_attention.py::test_gradient_stops_at_primed_symbols",
+    "test/test_reading_attention.py::test_loss_trains_attention_toward_target",
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+    "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic"
+  ],
+  "completed": [
+    "test/test_reading_attention.py::test_next_word_ce_matches_neg_log_alpha",
+    "test/test_reading_attention.py::test_eval_has_no_ce_loss",
+    "test/test_reading_attention.py::test_no_spans_is_noop",
+    "test/test_reading_attention.py::test_gradient_stops_at_primed_symbols",
+    "test/test_reading_attention.py::test_loss_trains_attention_toward_target",
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+    "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic"
+  ],
+  "slow_selected": [
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+    "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reading_attention.py::test_next_word_ce_matches_neg_log_alpha",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002846458985004574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_eval_has_no_ce_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010252910142298788,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_no_spans_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024166700313799083,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_gradient_stops_at_primed_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016547500010346994,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_loss_trains_attention_toward_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012469332985347137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013354199472814798,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 276, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010966698755510151,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 286, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010016700252890587,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 295, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

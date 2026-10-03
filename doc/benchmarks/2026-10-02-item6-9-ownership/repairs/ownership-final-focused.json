@@ -1,0 +1,19 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_objective_ownership.py",
+    "test/test_sentence_priming.py",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+    "test/test_doc_links.py",
+    "test/test_retired_names.py"
+  ],
+  "pid": 24375,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 3476787472,
+  "elapsed_seconds": 30.081679333001375,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/ownership-final-focused.log"
+}

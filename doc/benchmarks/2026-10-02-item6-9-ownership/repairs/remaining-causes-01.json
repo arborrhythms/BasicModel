@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-02-item6-9-ownership/probe_remaining_causes.py"
+  ],
+  "pid": 19456,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1837598328,
+  "elapsed_seconds": 15.796971832998679,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/remaining-causes-01.log"
+}

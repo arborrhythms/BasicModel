@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions1-False]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step1-green/run/worker-001.recycle.json"
+}

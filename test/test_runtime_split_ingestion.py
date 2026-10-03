@@ -22,6 +22,8 @@ exercises the §6c prelude recording path that crashed.
 
 from __future__ import annotations
 
+import pytest
+
 import os
 import sys
 import unittest
@@ -66,6 +68,7 @@ def _model():
 
 
 class TestRuntimeSplitIngestion(unittest.TestCase):
+    @pytest.mark.usefixtures('eager_reading')
     def test_runepoch_runtime_split_no_raise(self):
         # Bug 1: this raised "runBatch: no batch_override supplied".
         m, Models = _model()
@@ -97,6 +100,7 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
         torch.testing.assert_close(store.c_plus[rows], torch.zeros(2))
         torch.testing.assert_close(store.c_minus[rows], torch.zeros(2))
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_store_truths_idempotent_clear_then_record(self):
         # Mechanism only: replacement clears user provenance and records the
         # new supplied trust. Neither row claims learned evidence.

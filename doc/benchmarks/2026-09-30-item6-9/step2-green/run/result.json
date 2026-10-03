@@ -1,0 +1,160 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/worker-000.json"
+      ],
+      "pid": 42813,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 500041072,
+      "elapsed_seconds": 4.272261084057391,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.919319166103378,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/worker-001.json"
+      ],
+      "pid": 42814,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 500237680,
+      "elapsed_seconds": 5.241700250189751,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.893051166087389,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/worker-002.json"
+      ],
+      "pid": 42815,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 498304296,
+      "elapsed_seconds": 6.220107415923849,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.8920173330698162,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run",
+  "elapsed_seconds": 8.432948583038524,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1498583048,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/collect.json"
+    ],
+    "pid": 42801,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179733320,
+    "elapsed_seconds": 1.778663834091276,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-green/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

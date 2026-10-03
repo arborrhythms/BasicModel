@@ -1,0 +1,1849 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ TestXorGrammarReconstruction.test_piecewise_overall_at_least_50_pct ______
+test/test_explicit_dimensions.py:300: in test_piecewise_overall_at_least_50_pct
+    self.assertEqual(perfect, 4,
+E   AssertionError: 0 != 4 : XOR_grammar reconstruction: 0/4 word multisets recovered; [('hello world', 'world world hello'), ('hello there', 'there there hello'), ('loving world', 'loving loving there'), ('loving there', 'there there loving')]
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Train Loss: output=0.1713, reconstruction=0.2577
+Epoch [2/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1270, reconstruction=1.0235
+Epoch [3/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1254, reconstruction=0.9609
+Epoch [4/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.1670, reconstruction=0.2412
+Epoch [5/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1752, reconstruction=0.3375
+Epoch [6/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0962, reconstruction=0.8972
+Epoch [7/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.3228
+Epoch [8/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1593, reconstruction=0.2294
+Epoch [9/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1692, reconstruction=0.2962
+Epoch [10/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.1556, reconstruction=0.2336
+Epoch [11/400]
+batch = 0 (Δ=0.159s, 100.00%)
+Train Loss: output=0.1528, reconstruction=0.2056
+Epoch [12/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1508, reconstruction=0.2221
+Epoch [13/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1549, reconstruction=0.2046
+Epoch [14/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1624, reconstruction=0.2829
+Epoch [15/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.1552, reconstruction=0.2206
+Epoch [16/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1547, reconstruction=0.2239
+Epoch [17/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1539, reconstruction=0.2271
+Epoch [18/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1559, reconstruction=0.2577
+Epoch [19/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1688, reconstruction=0.2656
+Epoch [20/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1525, reconstruction=0.2251
+Epoch [21/400]
+batch = 0 (Δ=0.170s, 100.00%)
+Train Loss: output=0.1742, reconstruction=0.2749
+Epoch [22/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1326, reconstruction=0.1959
+Epoch [23/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1331, reconstruction=0.2028
+Epoch [24/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1479, reconstruction=0.2107
+Epoch [25/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.1498, reconstruction=0.2178
+Epoch [26/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.1446, reconstruction=0.1976
+Epoch [27/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.1243, reconstruction=0.1931
+Epoch [28/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1414, reconstruction=0.2424
+Epoch [29/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1449, reconstruction=0.2154
+Epoch [30/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.1745, reconstruction=0.2574
+Epoch [31/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1735, reconstruction=0.2570
+Epoch [32/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1723, reconstruction=0.2564
+Epoch [33/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1264, reconstruction=0.1943
+Epoch [34/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1648, reconstruction=0.2775
+Epoch [35/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1472, reconstruction=0.2297
+Epoch [36/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1581, reconstruction=0.2654
+Epoch [37/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1294, reconstruction=0.2033
+Epoch [38/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1501, reconstruction=0.2398
+Epoch [39/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1691, reconstruction=0.2600
+Epoch [40/400]
+batch = 0 (Δ=0.239s, 100.00%)
+Train Loss: output=0.1239, reconstruction=0.2096
+Epoch [41/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1477, reconstruction=0.2461
+Epoch [42/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1412, reconstruction=0.2314
+Epoch [43/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1687, reconstruction=0.2599
+Epoch [44/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.1444, reconstruction=0.2430
+Epoch [45/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.1194, reconstruction=0.2048
+Epoch [46/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1413, reconstruction=0.2280
+Epoch [47/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.1412, reconstruction=0.2268
+Epoch [48/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1608, reconstruction=0.2766
+Epoch [49/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1185, reconstruction=0.1972
+Epoch [50/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1403, reconstruction=0.2233
+Epoch [51/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1647, reconstruction=0.2354
+Epoch [52/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.1351, reconstruction=0.2160
+Epoch [53/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.1321, reconstruction=0.1958
+Epoch [54/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.1101, reconstruction=0.1732
+Epoch [55/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0974, reconstruction=0.2103
+Epoch [56/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1284, reconstruction=0.2260
+Epoch [57/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.1286, reconstruction=0.2305
+Epoch [58/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1390, reconstruction=0.2129
+Epoch [59/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.1268, reconstruction=0.2341
+Epoch [60/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1266, reconstruction=0.2508
+Epoch [61/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1504, reconstruction=0.2109
+Epoch [62/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0942, reconstruction=0.2730
+Epoch [63/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1026, reconstruction=0.2168
+Epoch [64/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.1297, reconstruction=0.2499
+Epoch [65/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.1090, reconstruction=0.2094
+Epoch [66/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1243, reconstruction=0.2439
+Epoch [67/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.1360, reconstruction=0.2065
+Epoch [68/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1555, reconstruction=0.2006
+Epoch [69/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1109, reconstruction=0.1713
+Epoch [70/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1359, reconstruction=0.2019
+Epoch [71/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.1297, reconstruction=0.2458
+Epoch [72/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1291, reconstruction=0.2037
+Epoch [73/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.1188, reconstruction=0.2223
+Epoch [74/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1032, reconstruction=0.2281
+Epoch [75/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.1345, reconstruction=0.2501
+Epoch [76/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1289, reconstruction=0.2003
+Epoch [77/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1181, reconstruction=0.1638
+Epoch [78/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1287, reconstruction=0.1977
+Epoch [79/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1319, reconstruction=0.2494
+Epoch [80/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.1257, reconstruction=0.1979
+Epoch [81/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.1232, reconstruction=0.1888
+Epoch [82/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1201, reconstruction=0.1909
+Epoch [83/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1296, reconstruction=0.1907
+Epoch [84/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1155, reconstruction=0.1887
+Epoch [85/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.1057, reconstruction=0.1659
+Epoch [86/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1020, reconstruction=0.2444
+Epoch [87/400]
+batch = 0 (Δ=0.244s, 100.00%)
+Train Loss: output=0.0979, reconstruction=0.1785
+Epoch [88/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1226, reconstruction=0.1736
+Epoch [89/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.1005, reconstruction=0.1727
+Epoch [90/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.1179, reconstruction=0.1783
+Epoch [91/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0646, reconstruction=0.1557
+Epoch [92/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0809, reconstruction=0.1762
+Epoch [93/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0572, reconstruction=0.1590
+Epoch [94/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0923, reconstruction=0.3099
+Epoch [95/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0620, reconstruction=0.2816
+Epoch [96/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0727, reconstruction=0.3050
+Epoch [97/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.1002, reconstruction=0.1800
+Epoch [98/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0665, reconstruction=0.1854
+Epoch [99/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0995, reconstruction=0.1812
+Epoch [100/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0659, reconstruction=0.1854
+Epoch [101/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0981, reconstruction=0.3231
+Epoch [102/400]
+batch = 0 (Δ=0.170s, 100.00%)
+Train Loss: output=0.0778, reconstruction=0.1778
+Epoch [103/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0729, reconstruction=0.3125
+Epoch [104/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0959, reconstruction=0.1914
+Epoch [105/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0904, reconstruction=0.3488
+Epoch [106/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0882, reconstruction=0.3574
+Epoch [107/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0935, reconstruction=0.2129
+Epoch [108/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0920, reconstruction=0.2137
+Epoch [109/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0811, reconstruction=0.4316
+Epoch [110/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0899, reconstruction=0.2150
+Epoch [111/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0769, reconstruction=0.1990
+Epoch [112/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0853, reconstruction=0.3884
+Epoch [113/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0841, reconstruction=0.3640
+Epoch [114/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0997, reconstruction=0.2627
+Epoch [115/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0895, reconstruction=0.3244
+Epoch [116/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0878, reconstruction=0.2855
+Epoch [117/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0939, reconstruction=0.2194
+Epoch [118/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0944, reconstruction=0.2680
+Epoch [119/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0868, reconstruction=0.2586
+Epoch [120/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0907, reconstruction=0.2440
+Epoch [121/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0883, reconstruction=0.2351
+Epoch [122/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0865, reconstruction=0.2268
+Epoch [123/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0834, reconstruction=0.2230
+Epoch [124/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0891, reconstruction=0.1769
+Epoch [125/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0824, reconstruction=0.2028
+Epoch [126/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0818, reconstruction=0.1993
+Epoch [127/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0667, reconstruction=0.1668
+Epoch [128/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0731, reconstruction=0.1362
+Epoch [129/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0900, reconstruction=0.1541
+Epoch [130/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0736, reconstruction=0.1766
+Epoch [131/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0734, reconstruction=0.1741
+Epoch [132/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0743, reconstruction=0.1631
+Epoch [133/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0764, reconstruction=0.1590
+Epoch [134/400]
+batch = 0 (Δ=0.246s, 100.00%)
+Train Loss: output=0.0747, reconstruction=0.1567
+Epoch [135/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0731, reconstruction=0.1553
+Epoch [136/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0715, reconstruction=0.1555
+Epoch [137/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0699, reconstruction=0.1559
+Epoch [138/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0564, reconstruction=0.1325
+Epoch [139/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0581, reconstruction=0.1522
+Epoch [140/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0637, reconstruction=0.1512
+Epoch [141/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0456, reconstruction=0.1459
+Epoch [142/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0592, reconstruction=0.1496
+Epoch [143/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0371, reconstruction=0.1289
+Epoch [144/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0466, reconstruction=0.1483
+Epoch [145/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0423, reconstruction=0.1289
+Epoch [146/400]
+batch = 0 (Δ=0.169s, 100.00%)
+Train Loss: output=0.0537, reconstruction=0.1370
+Epoch [147/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0474, reconstruction=0.1690
+Epoch [148/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0582, reconstruction=0.1655
+Epoch [149/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0576, reconstruction=0.1716
+Epoch [150/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0568, reconstruction=0.1773
+Epoch [151/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0554, reconstruction=0.1830
+Epoch [152/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0477, reconstruction=0.1929
+Epoch [153/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0483, reconstruction=0.1935
+Epoch [154/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0394, reconstruction=0.1672
+Epoch [155/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0331, reconstruction=0.1803
+Epoch [156/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0379, reconstruction=0.1617
+Epoch [157/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0412, reconstruction=0.1543
+Epoch [158/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0502, reconstruction=0.1747
+Epoch [159/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0544, reconstruction=0.1287
+Epoch [160/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0426, reconstruction=0.1429
+Epoch [161/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0624, reconstruction=0.1710
+Epoch [162/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0684, reconstruction=0.1441
+Epoch [163/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0518, reconstruction=0.1607
+Epoch [164/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0623, reconstruction=0.1368
+Epoch [165/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0564, reconstruction=0.1474
+Epoch [166/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0626, reconstruction=0.1278
+Epoch [167/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0480, reconstruction=0.1383
+Epoch [168/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0369, reconstruction=0.1147
+Epoch [169/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0371, reconstruction=0.1128
+Epoch [170/400]
+batch = 0 (Δ=0.159s, 100.00%)
+Train Loss: output=0.0473, reconstruction=0.1241
+Epoch [171/400]
+batch = 0 (Δ=0.169s, 100.00%)
+Train Loss: output=0.0383, reconstruction=0.1098
+Epoch [172/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0662, reconstruction=0.1166
+Epoch [173/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0168, reconstruction=0.0927
+Epoch [174/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0411, reconstruction=0.1111
+Epoch [175/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0274, reconstruction=0.0991
+Epoch [176/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0465, reconstruction=0.1081
+Epoch [177/400]
+batch = 0 (Δ=0.169s, 100.00%)
+Train Loss: output=0.0543, reconstruction=0.1198
+Epoch [178/400]
+batch = 0 (Δ=0.175s, 100.00%)
+Train Loss: output=0.0527, reconstruction=0.1207
+Epoch [179/400]
+batch = 0 (Δ=0.241s, 100.00%)
+Train Loss: output=0.0415, reconstruction=0.1127
+Epoch [180/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0223, reconstruction=0.1084
+Epoch [181/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0471, reconstruction=0.1236
+Epoch [182/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0360, reconstruction=0.1256
+Epoch [183/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0412, reconstruction=0.1290
+Epoch [184/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0375, reconstruction=0.1812
+Epoch [185/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0198, reconstruction=0.1192
+Epoch [186/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0244, reconstruction=0.1196
+Epoch [187/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0352, reconstruction=0.1380
+Epoch [188/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0278, reconstruction=0.1364
+Epoch [189/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0269, reconstruction=0.1870
+Epoch [190/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0159, reconstruction=0.1230
+Epoch [191/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0368, reconstruction=0.1374
+Epoch [192/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0237, reconstruction=0.1371
+Epoch [193/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0285, reconstruction=0.1402
+Epoch [194/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0280, reconstruction=0.1424
+Epoch [195/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0281, reconstruction=0.1441
+Epoch [196/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0349, reconstruction=0.1457
+Epoch [197/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0358, reconstruction=0.1460
+Epoch [198/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0194, reconstruction=0.1418
+Epoch [199/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0267, reconstruction=0.1509
+Epoch [200/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0220, reconstruction=0.1420
+Epoch [201/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0274, reconstruction=0.1546
+Epoch [202/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0174, reconstruction=0.1566
+Epoch [203/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0160, reconstruction=0.1441
+Epoch [204/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0192, reconstruction=0.2126
+Epoch [205/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0207, reconstruction=0.2297
+Epoch [206/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0226, reconstruction=0.1600
+Epoch [207/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0168, reconstruction=0.1627
+Epoch [208/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0222, reconstruction=0.1739
+Epoch [209/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0174, reconstruction=0.1601
+Epoch [210/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0217, reconstruction=0.1743
+Epoch [211/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0184, reconstruction=0.1592
+Epoch [212/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0246, reconstruction=0.1685
+Epoch [213/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0221, reconstruction=0.1595
+Epoch [214/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0191, reconstruction=0.1636
+Epoch [215/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0293, reconstruction=0.1798
+Epoch [216/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0260, reconstruction=0.1812
+Epoch [217/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0206, reconstruction=0.2585
+Epoch [218/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0247, reconstruction=0.1686
+Epoch [219/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0203, reconstruction=0.2645
+Epoch [220/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0279, reconstruction=0.1833
+Epoch [221/400]
+batch = 0 (Δ=0.170s, 100.00%)
+Train Loss: output=0.0306, reconstruction=0.2445
+Epoch [222/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0310, reconstruction=0.1860
+Epoch [223/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0231, reconstruction=0.1867
+Epoch [224/400]
+batch = 0 (Δ=0.238s, 100.00%)
+Train Loss: output=0.0250, reconstruction=0.1846
+Epoch [225/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0178, reconstruction=0.3211
+Epoch [226/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0280, reconstruction=0.1972
+Epoch [227/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0277, reconstruction=0.1998
+Epoch [228/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0550, reconstruction=0.2894
+Epoch [229/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0193, reconstruction=0.3849
+Epoch [230/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0488, reconstruction=0.2740
+Epoch [231/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0249, reconstruction=0.3554
+Epoch [232/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0507, reconstruction=0.2519
+Epoch [233/400]
+batch = 0 (Δ=0.171s, 100.00%)
+Train Loss: output=0.0522, reconstruction=0.2394
+Epoch [234/400]
+batch = 0 (Δ=0.173s, 100.00%)
+Train Loss: output=0.0553, reconstruction=0.2297
+Epoch [235/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0550, reconstruction=0.2216
+Epoch [236/400]
+batch = 0 (Δ=0.170s, 100.00%)
+Train Loss: output=0.0333, reconstruction=0.2675
+Epoch [237/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0480, reconstruction=0.2603
+Epoch [238/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0500, reconstruction=0.2514
+Epoch [239/400]
+batch = 0 (Δ=0.175s, 100.00%)
+Train Loss: output=0.0630, reconstruction=0.1997
+Epoch [240/400]
+batch = 0 (Δ=0.176s, 100.00%)
+Train Loss: output=0.0604, reconstruction=0.1953
+Epoch [241/400]
+batch = 0 (Δ=0.169s, 100.00%)
+Train Loss: output=0.0564, reconstruction=0.2262
+Epoch [242/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0649, reconstruction=0.1874
+Epoch [243/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0490, reconstruction=0.2244
+Epoch [244/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0630, reconstruction=0.1862
+Epoch [245/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0516, reconstruction=0.1682
+Epoch [246/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0624, reconstruction=0.1882
+Epoch [247/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0547, reconstruction=0.2053
+Epoch [248/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0428, reconstruction=0.1704
+Epoch [249/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0566, reconstruction=0.1945
+Epoch [250/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0547, reconstruction=0.1891
+Epoch [251/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0429, reconstruction=0.1662
+Epoch [252/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0452, reconstruction=0.1792
+Epoch [253/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0483, reconstruction=0.1823
+Epoch [254/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0474, reconstruction=0.1799
+Epoch [255/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0455, reconstruction=0.1790
+Epoch [256/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0367, reconstruction=0.1568
+Epoch [257/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0426, reconstruction=0.1753
+Epoch [258/400]
+batch = 0 (Δ=0.169s, 100.00%)
+Train Loss: output=0.0414, reconstruction=0.1753
+Epoch [259/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0401, reconstruction=0.1749
+Epoch [260/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0389, reconstruction=0.1750
+Epoch [261/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0381, reconstruction=0.1663
+Epoch [262/400]
+batch = 0 (Δ=0.170s, 100.00%)
+Train Loss: output=0.0379, reconstruction=0.1763
+Epoch [263/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0335, reconstruction=0.1696
+Epoch [264/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0382, reconstruction=0.1742
+Epoch [265/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0329, reconstruction=0.1683
+Epoch [266/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0376, reconstruction=0.1757
+Epoch [267/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0379, reconstruction=0.1776
+Epoch [268/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0328, reconstruction=0.1718
+Epoch [269/400]
+batch = 0 (Δ=0.239s, 100.00%)
+Train Loss: output=0.0380, reconstruction=0.1773
+Epoch [270/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0382, reconstruction=0.1787
+Epoch [271/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0373, reconstruction=0.1809
+Epoch [272/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0374, reconstruction=0.1811
+Epoch [273/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0373, reconstruction=0.1800
+Epoch [274/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0365, reconstruction=0.1801
+Epoch [275/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0359, reconstruction=0.1809
+Epoch [276/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0322, reconstruction=0.1753
+Epoch [277/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0264, reconstruction=0.1727
+Epoch [278/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0338, reconstruction=0.1823
+Epoch [279/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0331, reconstruction=0.1831
+Epoch [280/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0325, reconstruction=0.1831
+Epoch [281/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0322, reconstruction=0.1837
+Epoch [282/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0231, reconstruction=0.1758
+Epoch [283/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0314, reconstruction=0.1871
+Epoch [284/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0232, reconstruction=0.1788
+Epoch [285/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0299, reconstruction=0.1889
+Epoch [286/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0234, reconstruction=0.1829
+Epoch [287/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0281, reconstruction=0.1914
+Epoch [288/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0215, reconstruction=0.1856
+Epoch [289/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0265, reconstruction=0.1941
+Epoch [290/400]
+batch = 0 (Δ=0.159s, 100.00%)
+Train Loss: output=0.0259, reconstruction=0.1928
+Epoch [291/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0252, reconstruction=0.1930
+Epoch [292/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0177, reconstruction=0.1841
+Epoch [293/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0243, reconstruction=0.1972
+Epoch [294/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0183, reconstruction=0.1926
+Epoch [295/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0228, reconstruction=0.2010
+Epoch [296/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0173, reconstruction=0.1947
+Epoch [297/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0219, reconstruction=0.2026
+Epoch [298/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0153, reconstruction=0.1896
+Epoch [299/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0211, reconstruction=0.2014
+Epoch [300/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0209, reconstruction=0.2029
+Epoch [301/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0206, reconstruction=0.2039
+Epoch [302/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0203, reconstruction=0.2040
+Epoch [303/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0198, reconstruction=0.2023
+Epoch [304/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0195, reconstruction=0.2023
+Epoch [305/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0198, reconstruction=0.2027
+Epoch [306/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0194, reconstruction=0.2046
+Epoch [307/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0140, reconstruction=0.1969
+Epoch [308/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0192, reconstruction=0.2078
+Epoch [309/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0187, reconstruction=0.2083
+Epoch [310/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0181, reconstruction=0.2099
+Epoch [311/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0177, reconstruction=0.2121
+Epoch [312/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0181, reconstruction=0.2128
+Epoch [313/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0142, reconstruction=0.2065
+Epoch [314/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0136, reconstruction=0.2054
+Epoch [315/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0181, reconstruction=0.2162
+Epoch [316/400]
+batch = 0 (Δ=0.235s, 100.00%)
+Train Loss: output=0.0178, reconstruction=0.2169
+Epoch [317/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0186, reconstruction=0.2176
+Epoch [318/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0183, reconstruction=0.2193
+Epoch [319/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0187, reconstruction=0.2204
+Epoch [320/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0187, reconstruction=0.2219
+Epoch [321/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0120, reconstruction=0.2104
+Epoch [322/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0182, reconstruction=0.2031
+Epoch [323/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0199, reconstruction=0.2228
+Epoch [324/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0182, reconstruction=0.2021
+Epoch [325/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0146, reconstruction=0.1965
+Epoch [326/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0124, reconstruction=0.2146
+Epoch [327/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0208, reconstruction=0.2308
+Epoch [328/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0199, reconstruction=0.2335
+Epoch [329/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0130, reconstruction=0.2118
+Epoch [330/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0082, reconstruction=0.2127
+Epoch [331/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0135, reconstruction=0.2212
+Epoch [332/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0174, reconstruction=0.2369
+Epoch [333/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0173, reconstruction=0.2371
+Epoch [334/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0111, reconstruction=0.2173
+Epoch [335/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0147, reconstruction=0.2447
+Epoch [336/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0139, reconstruction=0.2330
+Epoch [337/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0122, reconstruction=0.2430
+Epoch [338/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0151, reconstruction=0.2530
+Epoch [339/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0147, reconstruction=0.2564
+Epoch [340/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0125, reconstruction=0.2598
+Epoch [341/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0204, reconstruction=0.2429
+Epoch [342/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0137, reconstruction=0.2149
+Epoch [343/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0145, reconstruction=0.2119
+Epoch [344/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0194, reconstruction=0.2143
+Epoch [345/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0181, reconstruction=0.2462
+Epoch [346/400]
+batch = 0 (Δ=0.168s, 100.00%)
+Train Loss: output=0.0195, reconstruction=0.2415
+Epoch [347/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0214, reconstruction=0.2074
+Epoch [348/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0164, reconstruction=0.2260
+Epoch [349/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0225, reconstruction=0.2067
+Epoch [350/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0152, reconstruction=0.2267
+Epoch [351/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0199, reconstruction=0.2090
+Epoch [352/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0192, reconstruction=0.2115
+Epoch [353/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0151, reconstruction=0.2333
+Epoch [354/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0184, reconstruction=0.2159
+Epoch [355/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0182, reconstruction=0.2094
+Epoch [356/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0183, reconstruction=0.2199
+Epoch [357/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0225, reconstruction=0.2232
+Epoch [358/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0129, reconstruction=0.2432
+Epoch [359/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0230, reconstruction=0.2303
+Epoch [360/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0128, reconstruction=0.2519
+Epoch [361/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0186, reconstruction=0.2387
+Epoch [362/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0189, reconstruction=0.2433
+Epoch [363/400]
+batch = 0 (Δ=0.159s, 100.00%)
+Train Loss: output=0.0214, reconstruction=0.2492
+Epoch [364/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0142, reconstruction=0.2682
+Epoch [365/400]
+batch = 0 (Δ=0.238s, 100.00%)
+Train Loss: output=0.0210, reconstruction=0.2560
+Epoch [366/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0129, reconstruction=0.2727
+Epoch [367/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0123, reconstruction=0.2743
+Epoch [368/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0199, reconstruction=0.2622
+Epoch [369/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0136, reconstruction=0.2340
+Epoch [370/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0123, reconstruction=0.2783
+Epoch [371/400]
+batch = 0 (Δ=0.167s, 100.00%)
+Train Loss: output=0.0130, reconstruction=0.2807
+Epoch [372/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0213, reconstruction=0.2664
+Epoch [373/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0175, reconstruction=0.2643
+Epoch [374/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0098, reconstruction=0.2805
+Epoch [375/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0134, reconstruction=0.2580
+Epoch [376/400]
+batch = 0 (Δ=0.157s, 100.00%)
+Train Loss: output=0.0224, reconstruction=0.2719
+Epoch [377/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0151, reconstruction=0.2877
+Epoch [378/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0225, reconstruction=0.2465
+Epoch [379/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0130, reconstruction=0.2553
+Epoch [380/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0184, reconstruction=0.2652
+Epoch [381/400]
+batch = 0 (Δ=0.159s, 100.00%)
+Train Loss: output=0.0180, reconstruction=0.2832
+Epoch [382/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0182, reconstruction=0.2618
+Epoch [383/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0110, reconstruction=0.2762
+Epoch [384/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0211, reconstruction=0.2732
+Epoch [385/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0169, reconstruction=0.2703
+Epoch [386/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0147, reconstruction=0.2841
+Epoch [387/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0228, reconstruction=0.2696
+Epoch [388/400]
+batch = 0 (Δ=0.166s, 100.00%)
+Train Loss: output=0.0215, reconstruction=0.2600
+Epoch [389/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0208, reconstruction=0.2530
+Epoch [390/400]
+batch = 0 (Δ=0.164s, 100.00%)
+Train Loss: output=0.0125, reconstruction=0.2883
+Epoch [391/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0101, reconstruction=0.2833
+Epoch [392/400]
+batch = 0 (Δ=0.165s, 100.00%)
+Train Loss: output=0.0157, reconstruction=0.2656
+Epoch [393/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0168, reconstruction=0.2631
+Epoch [394/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0179, reconstruction=0.2960
+Epoch [395/400]
+batch = 0 (Δ=0.160s, 100.00%)
+Train Loss: output=0.0170, reconstruction=0.2927
+Epoch [396/400]
+batch = 0 (Δ=0.161s, 100.00%)
+Train Loss: output=0.0190, reconstruction=0.2879
+Epoch [397/400]
+batch = 0 (Δ=0.163s, 100.00%)
+Train Loss: output=0.0128, reconstruction=0.3005
+Epoch [398/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0105, reconstruction=0.2823
+Epoch [399/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0107, reconstruction=0.2807
+Epoch [400/400]
+batch = 0 (Δ=0.162s, 100.00%)
+Train Loss: output=0.0175, reconstruction=0.2849
+Final Stats:
+=== Selected operation grammar ===
+batch = 0 (Δ=5.759s, 100.00%)
+=== Input Reconstruction (test) ===
+  row[0] input='hello world' -> reconstructed='' label=0.0000 predicted=0.1859 MISMATCH
+  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.9238 MISMATCH
+  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.8351 MISMATCH
+  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.1728 MISMATCH
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:5625 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:5625 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+1 failed, 2 warnings in 74.45s (0:01:14)

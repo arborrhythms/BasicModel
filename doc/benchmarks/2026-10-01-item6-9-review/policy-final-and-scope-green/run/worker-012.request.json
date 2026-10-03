@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-final-and-scope-green/run/worker-012.recycle.json"
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+    "--worker",
+    "data/BasicModel_expectation_benchmark.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/BasicModel_expectation_benchmark.json"
+  ],
+  "pid": 89674,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1738492088,
+  "elapsed_seconds": 5.690433166004368,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/BasicModel_expectation_benchmark.log"
+}

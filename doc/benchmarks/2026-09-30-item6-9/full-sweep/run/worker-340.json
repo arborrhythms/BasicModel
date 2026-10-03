@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_dimensional_governance.py::test_converted_grammars_load_role_collapsed"
+  ],
+  "completed": [
+    "test/test_dimensional_governance.py::test_converted_grammars_load_role_collapsed"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_converted_grammars_load_role_collapsed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001781207975000143,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

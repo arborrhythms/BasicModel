@@ -1,0 +1,6 @@
+{'before': [[2.0, 3.0]], 'after': [[0.5547001957893372, 0.8320503234863281]]}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probe_norm_constraint.py", line 10, in <module>
+    assert torch.equal(w,before), 'post-step norm projection is another code writer'
+           ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: post-step norm projection is another code writer

@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_nongrammar_config_disables_cursor_and_next_word_is_none _________
+test/test_input_word_cursor.py:215: in test_nongrammar_config_disables_cursor_and_next_word_is_none
+    m = _build_nongrammar_model()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_input_word_cursor.py:73: in _build_nongrammar_model
+    m, _ = BaseModel.from_config(cfg, data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1824: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7027: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1924: in create_from_config
+    self.create(
+bin/Models.py:7047: in create
+    return self._create_per_stage(
+bin/Models.py:16860: in _create_per_stage
+    self.perceptualSpace = self._make_perceptual_space(
+bin/Models.py:7064: in _make_perceptual_space
+    return PartSpace(inputShape, spaceShape, outputShape)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:11174: in __init__
+    self.percept_store = _PerceptStore(
+bin/Layers.py:13563: in __init__
+    self._basis.freeze_capacity("PartSpace.nVectors")
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'Tensor' object has no attribute 'freeze_capacity'
+=========================== short test summary info ============================
+FAILED test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none
+1 failed in 2.83s

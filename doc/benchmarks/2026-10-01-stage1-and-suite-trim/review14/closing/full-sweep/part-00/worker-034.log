@@ -1,0 +1,34 @@
+.s..FFF.                                                                 [100%]
+=================================== FAILURES ===================================
+_______ TestInputSpaceLexIntegration.test_doc_spans_store_token_offsets ________
+test/test_basicmodel.py:1368: in test_doc_spans_store_token_offsets
+    for spans in emb.doc_spans:
+                 ^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'doc_spans'
+_______ TestInputSpaceLexIntegration.test_forward_produces_correct_shape _______
+test/test_basicmodel.py:1355: in test_forward_produces_correct_shape
+    output = _text_embed(inp, psp, inputTensor)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_basicmodel.py:115: in _text_embed
+    psp_sub = psp._embed(inp_sub)
+              ^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'PartSpace' object has no attribute '_embed'
+__________ TestInputSpaceLexIntegration.test_object_encoding_applied ___________
+test/test_basicmodel.py:1385: in test_object_encoding_applied
+    output = _text_embed(inp, psp, inputTensor)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_basicmodel.py:115: in _text_embed
+    psp_sub = psp._embed(inp_sub)
+              ^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'PartSpace' object has no attribute '_embed'
+=========================== short test summary info ============================
+FAILED test/test_basicmodel.py::TestInputSpaceLexIntegration::test_doc_spans_store_token_offsets
+FAILED test/test_basicmodel.py::TestInputSpaceLexIntegration::test_forward_produces_correct_shape
+FAILED test/test_basicmodel.py::TestInputSpaceLexIntegration::test_object_encoding_applied
+3 failed, 4 passed, 1 skipped in 2.29s

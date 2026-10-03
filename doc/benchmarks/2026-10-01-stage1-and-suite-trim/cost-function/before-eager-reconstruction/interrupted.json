@@ -1,0 +1,6 @@
+{
+  "reason": "Stopped after repeated ~15-second epochs would exceed the unchanged 1800-second ceiling for the 400-epoch fixture.",
+  "training_completed": false,
+  "second_arm_started": false,
+  "signal": "SIGINT to guarded driver; child stopped by its cleanup"
+}

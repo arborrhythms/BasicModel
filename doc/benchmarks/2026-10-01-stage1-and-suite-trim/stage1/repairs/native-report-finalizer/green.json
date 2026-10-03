@@ -1,0 +1,19 @@
+{
+  "pass_": true,
+  "endpoint_calls": 1,
+  "endpoint_batch": 16,
+  "endpoint_predictions_unchanged": true,
+  "console_decoding_calls": 0,
+  "logs": [
+    [
+      [
+        "endpoint_predictions_saved"
+      ],
+      {
+        "split": "test",
+        "rows": 16,
+        "console_rendering": false
+      }
+    ]
+  ]
+}

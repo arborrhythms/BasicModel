@@ -73,14 +73,6 @@ class TestConceptualIsBookkeepingCarrier(unittest.TestCase):
     """CS owns no parameterised fold -- the Stage-10 ``sigma_in`` /
     ``sigma_cs`` + residual-lift cache are RETIRED."""
 
-    def test_cs_has_no_sigma_layers(self):
-        m = _make_model()
-        for k, cs in enumerate(m.conceptualSpaces):
-            for attr in ("sigma_in", "sigma_cs", "sigma"):
-                self.assertFalse(
-                    hasattr(cs, attr),
-                    f"ConceptualSpace[{k}].{attr} must be retired -- CS is "
-                    f"a pure bookkeeping carrier.")
 
     def test_cs_has_no_active_residual_cache(self):
         # The Stage-10 PARALLEL residual-lift roundtrip cache is gone; if

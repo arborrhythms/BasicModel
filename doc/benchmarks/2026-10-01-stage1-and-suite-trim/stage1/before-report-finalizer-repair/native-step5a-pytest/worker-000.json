@@ -1,0 +1,25 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]"
+  ],
+  "completed": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]"
+  ],
+  "slow_selected": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1658.3503206659952,
+      "message": "test/test_objective_conflicts_slow.py:38: in test_native_production_objective_measurements\n    assert result.returncode == 0, f\"Objective measurement failed; see {output / 'run.log'}\"\nE   AssertionError: Objective measurement failed; see /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/BasicModel_answers_tied_benchmark-step5a/run.log\nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '/Users/arogers/github/WikiOrac...cmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/BasicModel_answers_tied_benchmark-step5a'], returncode=1).returncode",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

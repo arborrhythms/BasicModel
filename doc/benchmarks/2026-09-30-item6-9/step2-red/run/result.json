@@ -1,0 +1,160 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/worker-000.json"
+      ],
+      "pid": 38121,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 435471608,
+      "elapsed_seconds": 5.092067457968369,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 2.28348191594705,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step2.py:40: in test_answer_reads_understanding_with_gradient_cut\n    torch.testing.assert_close(readout.seen, expected, rtol=0, atol=0)\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 48 / 48 (100.0%)\nE   Greatest absolute difference: 25.0 at index (1, 0, 3)\nE   Greatest relative difference: inf at index (0, 1, 0)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/worker-001.json"
+      ],
+      "pid": 38122,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 438207688,
+      "elapsed_seconds": 6.057619625004008,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 2.2853241660632193,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step2.py:40: in test_answer_reads_understanding_with_gradient_cut\n    torch.testing.assert_close(readout.seen, expected, rtol=0, atol=0)\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 48 / 48 (100.0%)\nE   Greatest absolute difference: 41.0 at index (1, 2, 3)\nE   Greatest relative difference: inf at index (0, 3, 0)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/worker-002.json"
+      ],
+      "pid": 38123,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435504352,
+      "elapsed_seconds": 7.017298208083957,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.310839124955237,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run",
+  "elapsed_seconds": 9.509689666097984,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1309183648,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/collect.json"
+    ],
+    "pid": 38110,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 179864392,
+    "elapsed_seconds": 2.067592583131045,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step2-red/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

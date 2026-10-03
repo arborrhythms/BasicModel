@@ -1,0 +1,8 @@
+Legacy {'reason': 'exit', 'exit_code': 0, 'elapsed_seconds': 3.588167500005511, 'peak_memory_bytes': 468681904}
+etc-SPNN {'reason': 'exit', 'exit_code': 0, 'elapsed_seconds': 11.4006781660064, 'peak_memory_bytes': 287687688}
+etc-SigmaPi {'reason': 'exit', 'exit_code': 0, 'elapsed_seconds': 3.0716930419948767, 'peak_memory_bytes': 353403960}
+etc-SymPercept {'reason': 'exit', 'exit_code': 0, 'elapsed_seconds': 2.5685835830008727, 'peak_memory_bytes': 286311384}
+[collect] 8 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.40 GiB
+[worker-000] 72 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 5.4s; peak 0.65 GiB

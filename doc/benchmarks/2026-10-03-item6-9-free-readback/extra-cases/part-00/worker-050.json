@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm"
+  ],
+  "completed": [
+    "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm"
+  ],
+  "slow_selected": [
+    "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.25896466700942256,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

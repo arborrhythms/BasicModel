@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_concept_not.py::test_not_reflects_a_full_concept_code",
+    "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-109.recycle.json"
+}

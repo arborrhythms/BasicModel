@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-02-item6-9-ownership/probe_observer_audit.py"
+  ],
+  "pid": 23841,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 653526528,
+  "elapsed_seconds": 4.644552958998247,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/observer-audit-ranking.log"
+}

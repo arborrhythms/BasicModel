@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation"
+  ],
+  "pid": 43305,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 430032168,
+  "elapsed_seconds": 4.642766042001313,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/same-reference-before/run.log"
+}

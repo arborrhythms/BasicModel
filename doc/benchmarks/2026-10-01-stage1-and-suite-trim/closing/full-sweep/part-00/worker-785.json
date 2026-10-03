@@ -1,0 +1,54 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[False-exploit]",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[False-explore]",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[True-exploit]",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[True-explore]"
+  ],
+  "completed": [
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[False-exploit]",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[False-explore]",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[True-exploit]",
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[True-explore]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[False-exploit]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2961610420024954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[False-explore]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.26157054099894594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[True-exploit]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 4.0836618750036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[True-explore]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.26014737499645,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

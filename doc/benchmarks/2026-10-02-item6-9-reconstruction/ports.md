@@ -1,0 +1,72 @@
+# Test ports and retirements
+
+Complete old and new files include fixtures, helpers and all test bodies. Per-test mappings and hashes are in [ports.json](ports.json); the saved first failures are indexed by [prior-failing-cases.json](prior-failing-cases.json) and the probe directories.
+
+46 changed files; 645 old test bodies archived.
+
+| File | Old body | New body | Reason |
+|---|---|---|---|
+| `test/configuration_fixtures.py` | [old](ports/configuration_fixtures.py/old.py.txt) | [new](ports/configuration_fixtures.py/new.py.txt) | Disable SBOW code pressure under §20; retain feature switches at bounded smoke-test geometry and freeze admission for repeated-state comparisons. |
+| `test/objective_conflicts_probe.py` | [old](ports/objective_conflicts_probe.py/old.py.txt) | [new](ports/objective_conflicts_probe.py/new.py.txt) | Observe code geometry and VQ counts without extra forwards; rank candidates with the same free read-back scorer and honor the receipt compile setting. |
+| `test/test_accessible_mind.py` | [old](ports/test_accessible_mind.py/old.py.txt) | [new](ports/test_accessible_mind.py/new.py.txt) | Supply a batch-row priming surface and boost the same symbol in that row; retrieval assertions are unchanged. |
+| `test/test_basicmodel.py` | [old](ports/test_basicmodel.py/old.py.txt) | [new](ports/test_basicmodel.py/new.py.txt) | Native Radix surface/prototype API and explicit spans replace retired Embedding.getW fixture. |
+| `test/test_concept_code_ownership.py` | [old](ports/test_concept_code_ownership.py/old.py.txt) | [new](ports/test_concept_code_ownership.py/new.py.txt) | New regressions: lookup preserves magnitude; promotion, phrase admission and quantization cannot rewrite reconstruction-owned codes. |
+| `test/test_concept_memberships.py` | [old](ports/test_concept_memberships.py/old.py.txt) | [new](ports/test_concept_memberships.py/new.py.txt) | Feature membership remains independent evidence; reset must not replace reconstruction-owned codes. |
+| `test/test_conceptual_recurrence.py` | [old](ports/test_conceptual_recurrence.py/old.py.txt) | [new](ports/test_conceptual_recurrence.py/new.py.txt) | Three-stream current carrier including whole padded bind; no-recompile subject retained at smaller fixture geometry. |
+| `test/test_conceptualize.py` | [old](ports/test_conceptualize.py/old.py.txt) | [new](ports/test_conceptualize.py/new.py.txt) | Assert the current unary word definition returns distinct word/object identities and dereferences to that object; the old META triple is retired. |
+| `test/test_config_matrix.py` | [old](ports/test_config_matrix.py/old.py.txt) | [new](ports/test_config_matrix.py/new.py.txt) | Grammar smoke fixtures retain switches with bounded geometry; tied free inverse supplies decoded rows. |
+| `test/test_context_rotation.py` | [old](ports/test_context_rotation.py/old.py.txt) | [new](ports/test_context_rotation.py/new.py.txt) | Rotation retired by §20.3; no compatibility implementation. |
+| `test/test_contextual_concept_codebook.py` | [old](ports/test_contextual_concept_codebook.py/old.py.txt) | [new](ports/test_contextual_concept_codebook.py/new.py.txt) | §20 parameter, unconstrained gradient and checkpoint contract replaces the buffer/rotation contract. |
+| `test/test_dual_towers.py` | [old](ports/test_dual_towers.py/old.py.txt) | [new](ports/test_dual_towers.py/new.py.txt) | Current three-stream carrier and terminal concept owner; word reads use admitted singleton inputs; pyramid fixture supplies real edges. |
+| `test/test_existence_metadata.py` | [old](ports/test_existence_metadata.py/old.py.txt) | [new](ports/test_existence_metadata.py/new.py.txt) | Use the merged LTM fixture with stateless=False; scoped identity and strict checkpoint round-trip assertions remain. |
+| `test/test_field_learning.py` | [old](ports/test_field_learning.py/old.py.txt) | [new](ports/test_field_learning.py/new.py.txt) | Supply the current batch-row priming tensor to the same shared-field scope check. |
+| `test/test_free_reconstruction.py` | [old](ports/test_free_reconstruction.py/old.py.txt) | [new](ports/test_free_reconstruction.py/new.py.txt) | New regressions: signed activation × cosine × priming; gradients reach true/competitor codes; free reconstruction ignores leaf references and witness offsets. |
+| `test/test_frozen_concepts.py` | [old](ports/test_frozen_concepts.py/old.py.txt) | [new](ports/test_frozen_concepts.py/new.py.txt) | Compare SEEN/DESIRE at the same neutral priming state, without interleaved training changing context. |
+| `test/test_generation_catalog.py` | [old](ports/test_generation_catalog.py/old.py.txt) | [new](ports/test_generation_catalog.py/new.py.txt) | Observe current owned backward with optimizer argument; answer cannot step shared operators. |
+| `test/test_generation_lesson.py` | [old](ports/test_generation_lesson.py/old.py.txt) | [new](ports/test_generation_lesson.py/new.py.txt) | Fixture provides shared concluded trial record; weighted gradient assertion retained. |
+| `test/test_global_attention.py` | [old](ports/test_global_attention.py/old.py.txt) | [new](ports/test_global_attention.py/new.py.txt) | Keep admitted vocabulary fixed when comparing a repeated read; current kept attention switches. |
+| `test/test_global_consume.py` | [old](ports/test_global_consume.py/old.py.txt) | [new](ports/test_global_consume.py/new.py.txt) | Bounded kept attention configurations, fixed admission for repeated reads, current flowing subspace. |
+| `test/test_inter_sentence_prediction_shape.py` | [old](ports/test_inter_sentence_prediction_shape.py/old.py.txt) | [new](ports/test_inter_sentence_prediction_shape.py/new.py.txt) | §15 detaches predictor sources and targets; predictor gradients and graph lifetime are checked. |
+| `test/test_masked_semantic.py` | [old](ports/test_masked_semantic.py/old.py.txt) | [new](ports/test_masked_semantic.py/new.py.txt) | Use actual terminal concept owner; a grammar-free category bank has no live role centroids. Definition-evidence ablation preserves input-dependence assertion. |
+| `test/test_objective_ownership.py` | [old](ports/test_objective_ownership.py/old.py.txt) | [new](ports/test_objective_ownership.py/new.py.txt) | Add XOR_exact evidence coefficients to the answer-only ownership regression. |
+| `test/test_output_path_supervised.py` | [old](ports/test_output_path_supervised.py/old.py.txt) | [new](ports/test_output_path_supervised.py/new.py.txt) | The kept ladder fixture already enables answer synthesis; assert one existing setting instead of injecting a duplicate. |
+| `test/test_output_synthesis.py` | [old](ports/test_output_synthesis.py/old.py.txt) | [new](ports/test_output_synthesis.py/new.py.txt) | Ownership audit replaces retired per-operator conflict diagnostic. |
+| `test/test_output_walk.py` | [old](ports/test_output_walk.py/old.py.txt) | [new](ports/test_output_walk.py/new.py.txt) | Observe current owned backward including optimizer argument and no-answer phase. |
+| `test/test_per_word_ss_padding_noop.py` | [old](ports/test_per_word_ss_padding_noop.py/old.py.txt) | [new](ports/test_per_word_ss_padding_noop.py/new.py.txt) | Count physical active pushes and require inactive rows to preserve every STM tensor exactly; grammar reductions retire depth=number-of-words. |
+| `test/test_priming_energy.py` | [old](ports/test_priming_energy.py/old.py.txt) | [new](ports/test_priming_energy.py/new.py.txt) | Per-row priming and native DEF surface references replace the redundant legacy word/META bridge. |
+| `test/test_primitive_properties.py` | [old](ports/test_primitive_properties.py/old.py.txt) | [new](ports/test_primitive_properties.py/new.py.txt) | Project the same exact PS/WS row sets from a native DEF record. |
+| `test/test_reading_attention.py` | [old](ports/test_reading_attention.py/old.py.txt) | [new](ports/test_reading_attention.py/new.py.txt) | Bounded kept configuration; repeated-read comparison fixes admission state. |
+| `test/test_reconstruction_roundtrip.py` | [old](ports/test_reconstruction_roundtrip.py/old.py.txt) | [new](ports/test_reconstruction_roundtrip.py/new.py.txt) | Measure registry-owned relative R/A totals instead of retired convex blend; decade interval unchanged. |
+| `test/test_relevance_bases.py` | [old](ports/test_relevance_bases.py/old.py.txt) | [new](ports/test_relevance_bases.py/new.py.txt) | Inspect the terminal concept owner that receives the model's actual relevance integration. |
+| `test/test_row_local_concept_optimizer.py` | [old](ports/test_row_local_concept_optimizer.py/old.py.txt) | [new](ports/test_row_local_concept_optimizer.py/new.py.txt) | §20 retires post-step projection; sparse touched-row updates and untouched-row identity remain. |
+| `test/test_sentence_comparison.py` | [old](ports/test_sentence_comparison.py/old.py.txt) | [new](ports/test_sentence_comparison.py/new.py.txt) | Observe each trial’s actual perception pullback gradients. |
+| `test/test_sentence_compose.py` | [old](ports/test_sentence_compose.py/old.py.txt) | [new](ports/test_sentence_compose.py/new.py.txt) | Shared trial understanding in fixtures; controlled total preserves reconstruction tie and known selection. |
+| `test/test_sentence_expectation.py` | [old](ports/test_sentence_expectation.py/old.py.txt) | [new](ports/test_sentence_expectation.py/new.py.txt) | §15 predictor-only learning with detached context and target. |
+| `test/test_serial_object_meta.py` | [old](ports/test_serial_object_meta.py/old.py.txt) | [new](ports/test_serial_object_meta.py/new.py.txt) | Tensor peer boundaries and whitespace perception units replace the old word-only/WholeSpace.forward observers. Disabled old-mode indexing contract is retired. |
+| `test/test_sparse_concept_e2e.py` | [old](ports/test_sparse_concept_e2e.py/old.py.txt) | [new](ports/test_sparse_concept_e2e.py/new.py.txt) | §20 distributional pressure is off; no SBOW gradient on codes. |
+| `test/test_surface_grammar.py` | [old](ports/test_surface_grammar.py/old.py.txt) | [new](ports/test_surface_grammar.py/new.py.txt) | Isolate supplied lesson training from reconstruction; only choosers change, never operators. |
+| `test/test_taxonomy_boundary.py` | [old](ports/test_taxonomy_boundary.py/old.py.txt) | [new](ports/test_taxonomy_boundary.py/new.py.txt) | Remove the obsolete merged-fixture import; keep the current thought fixture and all taxonomy boundary assertions. |
+| `test/test_taxonomy_entry.py` | [old](ports/test_taxonomy_entry.py/old.py.txt) | [new](ports/test_taxonomy_entry.py/new.py.txt) | Remove the obsolete merged-fixture import; keep the current thought fixture and strict taxonomy checkpoint assertions. |
+| `test/test_thought_model_fixture.py` | [old](ports/test_thought_model_fixture.py/old.py.txt) | [new](ports/test_thought_model_fixture.py/new.py.txt) | Build stateful thought tests from the kept LTM configuration with stateless=False. |
+| `test/test_thought_operation_catalog.py` | [old](ports/test_thought_operation_catalog.py/old.py.txt) | [new](ports/test_thought_operation_catalog.py/new.py.txt) | The one-row thought context receives its row of the batch-local priming surface; exact values and detached storage remain checked. |
+| `test/test_training_diagnostic_contracts.py` | [old](ports/test_training_diagnostic_contracts.py/old.py.txt) | [new](ports/test_training_diagnostic_contracts.py/new.py.txt) | The five surviving canonical configurations require context learning rate 0 and similarity scale 0 under reconstruction ownership. |
+| `test/test_where_attention_handoff.py` | [old](ports/test_where_attention_handoff.py/old.py.txt) | [new](ports/test_where_attention_handoff.py/new.py.txt) | Fix admission state for the deterministic dark-refinement comparison. |
+| `test/test_word_store.py` | [old](ports/test_word_store.py/old.py.txt) | [new](ports/test_word_store.py/new.py.txt) | Kept meronomy fixture, independent model per case, XOR smoke corpus, exact native object codes. Retired wordStore summary/WS identity tests and grammar detached-student tests removed (§15.6/§14). |
+
+## Retired tests
+
+These removals retire the named paths; they are not counted as passing ports.
+
+| Removed test | Decision |
+|---|---|
+| `test/test_context_rotation.py::test_situation_weight_adds_only_bounded_prior_anchors` | Rotation retired by §20.3; no compatibility implementation. |
+| `test/test_context_rotation.py::test_expectation_weight_one_removes_arriving_context_from_rotation` | Rotation retired by §20.3; no compatibility implementation. |
+| `test/test_context_rotation.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words` | Rotation retired by §20.3; no compatibility implementation. |
+| `test/test_contextual_concept_codebook.py::test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer` | §20 parameter, unconstrained gradient and checkpoint contract replaces the buffer/rotation contract. |
+| `test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index` | Tensor peer boundaries and whitespace perception units replace the old word-only/WholeSpace.forward observers. Disabled old-mode indexing contract is retired. |
+| `test/test_word_store.py::test_words_summary_row_running_mean` | Kept meronomy fixture, independent model per case, XOR smoke corpus, exact native object codes. Retired wordStore summary/WS identity tests and grammar detached-student tests removed (§15.6/§14). |
+| `test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows` | Kept meronomy fixture, independent model per case, XOR smoke corpus, exact native object codes. Retired wordStore summary/WS identity tests and grammar detached-student tests removed (§15.6/§14). |
+| `test/test_word_store.py::test_leaf_distill_default_off` | Kept meronomy fixture, independent model per case, XOR smoke corpus, exact native object codes. Retired wordStore summary/WS identity tests and grammar detached-student tests removed (§15.6/§14). |
+| `test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves` | Kept meronomy fixture, independent model per case, XOR smoke corpus, exact native object codes. Retired wordStore summary/WS identity tests and grammar detached-student tests removed (§15.6/§14). |
+
+All 60 prior failed or stopped moved cases have a scheduled replacement or an explicit retirement in [prior-case-scheduling.json](prior-case-scheduling.json). Ordinary cases are measured by the final full sweep; slow cases by the moved-case campaign.

@@ -1,0 +1,17 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_conceptual_recurrence.py::test_mm5m_combine_carrier_roundtrip",
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+    "--tb=short"
+  ],
+  "pid": 88643,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 5706241040,
+  "elapsed_seconds": 13.680082999984734,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/combine-port-check/output.log"
+}

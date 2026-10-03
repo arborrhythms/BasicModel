@@ -1,0 +1,28 @@
+.................s..ssssssssssss...............F...........s             [100%]
+=================================== FAILURES ===================================
+______ test_closing_discards_operations_without_changing_other_live_rows _______
+
+    def test_closing_discards_operations_without_changing_other_live_rows():
+        from Models import BasicModel
+    
+        lang = tuple(torch.ones(2, 4) for _ in range(26)) + (
+            torch.ones(2, 4, dtype=torch.long), torch.ones(2, 4, dtype=torch.bool))
+        _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),
+                                                                      torch.tensor([True, False]))
+        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27):
+            expected = -1 if index in (4, 5, 15, 16, 17, 18, 23, 26) else 0
+>           assert (cleared[index][0] == expected).all()
+E           assert tensor(False)
+E            +  where tensor(False) = <built-in method all of Tensor object at 0x12d953b10>()
+E            +    where <built-in method all of Tensor object at 0x12d953b10> = tensor([-1., -1., -1., -1.]) == 0.all
+
+test/test_sentence_end_state.py:128: AssertionError
+=============================== warnings summary ===============================
+test/test_reconstruction_momentum.py::test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_end_state.py::test_closing_discards_operations_without_changing_other_live_rows
+1 failed, 45 passed, 14 skipped, 1 warning in 6.15s

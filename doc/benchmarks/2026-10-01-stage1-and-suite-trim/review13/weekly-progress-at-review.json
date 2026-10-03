@@ -1,0 +1,481 @@
+{
+  "captured": "2026-10-02T05:25:59.900533+00:00",
+  "run_directory": "/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47",
+  "commit": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "source_version": "Frozen review-13 source; predates the normalized cost function",
+  "source_matched": true,
+  "selected": 328,
+  "terminal_attempted": 156,
+  "completed": 151,
+  "active": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+      "progress_file": "/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/ordinary-remaining-continued-05/worker-001.json"
+    }
+  ],
+  "unattempted_count": 171,
+  "complete": false,
+  "counts": {
+    "passed": 92,
+    "failed": 51,
+    "skipped": 5,
+    "xfailed": 3,
+    "process_failed": 5
+  },
+  "parts": [
+    "native/result.json",
+    "ordinary/result.json",
+    "ordinary-remaining/result.json",
+    "ordinary-remaining-continued-01/result.json",
+    "ordinary-remaining-continued-02/result.json",
+    "ordinary-remaining-continued-03/result.json",
+    "ordinary-remaining-continued-04/result.json",
+    "ordinary-remaining-continued-05/result.json"
+  ],
+  "ceilings_gib": {
+    "ordinary_worker": 8,
+    "native_worker": 24,
+    "aggregate": 24
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_enwiki",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00013324999599717557,
+      "message": "../../../../test/test_basicmodel.py:1829: in test_load_enwiki\n    self.assertIsNotNone(self.wv)\nE   AssertionError: unexpectedly None",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 90.05287074999796,
+      "message": "../../../../test/test_blind_decode.py:203: in test_mm20m_xor_blind_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.75 == 1.0\nE    +  where 0.75 = RunRecord(config='data/MM_20M_xor.xml', seed=2134462570, epochs=160, wall_s_per_epoch=0.5280686391699373, output_loss=...5289428749965737, 0.5303601670020726, 0.5309760000018287, 0.5317085409988067, 0.5286542079993524, 0.5294322079935228]}).exact_match_rate",
+      "stdout": " in 0.529s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.528s, 100.00%)\r\nTraining throughput: 1 batches in 0.527s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.528s, 100.00%)\r\nTraining throughput: 1 batches in 0.527s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.529s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.529s, 100.00%)\r\nTraining throughput: 1 batches in 0.528s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.528s, 100.00%)\r\nTraining throughput: 1 batches in 0.528s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.528s, 100.00%)\r\nTraining throughput: 1 batches in 0.527s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.528s, 100.00%)\r\nTraining throughput: 1 batches in 0.529s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.562s, 100.00%)\r\nTraining throughput: 1 batches in 0.562s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.539s, 100.00%)\r\nTraining throughput: 1 batches in 0.538s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.529s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.530s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.527s, 100.00%)\r\nTraining throughput: 1 batches in 0.527s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.528s, 100.00%)\r\nTraining throughput: 1 batches in 0.527s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.528s, 100.00%)\r\nTraining throughput: 1 batches in 0.530s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.526s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.526s, 100.00%)\r\nTraining throughput: 1 batches in 0.525s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.527s, 100.00%)\r\nTraining throughput: 1 batches in 0.525s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.527s, 100.00%)\r\nTraining throughput: 1 batches in 0.527s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.527s, 100.00%)\r\nTraining throughput: 1 batches in 0.527s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.527s, 100.00%)\r\nTraining throughput: 1 batches in 0.525s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.530s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.530s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.529s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.528s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.530s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.530s, 100.00%)\r\nTraining throughput: 1 batches in 0.530s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.531s, 100.00%)\r\nTraining throughput: 1 batches in 0.531s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.532s, 100.00%)\r\nTraining throughput: 1 batches in 0.528s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.528s, 100.00%)\r\nTraining throughput: 1 batches in 0.529s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.537s, 100.00%)\r\nTraining throughput: 1 batches in 0.453s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 4.929020875002607,
+      "message": "../../../../test/test_compile_static_loop.py:57: in test_per_word_body_callable_with_static_signature\n    cs, idea = m._per_word_body_step(w, 0, gate, out_slot)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20313: in _per_word_body_step\n    self._stm_word_rounds(commit_b_1, p)\nbin/Models.py:18946: in _stm_word_rounds\n    applied = self._stm_operation_step(\nbin/Models.py:18903: in _stm_operation_step\n    self._record_operation_choice(trace_slot, choice, state)\nbin/Models.py:18999: in _record_operation_choice\n    if mapping.numel():\n       ^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'numel'",
+      "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_grammar.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 537.3391075830004,
+      "message": "../../../../test/test_compiled_expectation_boundary.py:35: in test_unpacked_forward_observes_each_published_sentence_once\n    raw = _stage_fullgraph_tensor_peer(model, samples)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_compiled_word_chunk.py:410: in _stage_fullgraph_tensor_peer\n    model._staged_in_sub = model._lex_embed_stem(raw)\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13910: in _lex_embed_stem\n    self._validate_reconstruction_bank()\nbin/Models.py:12257: in _validate_reconstruction_bank\n    torch._assert_async(\n../../../../.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.1764245829981519,
+      "message": "../../../../test/test_compiled_expectation_boundary.py:35: in test_unpacked_forward_observes_each_published_sentence_once\n    raw = _stage_fullgraph_tensor_peer(model, samples)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_compiled_word_chunk.py:410: in _stage_fullgraph_tensor_peer\n    model._staged_in_sub = model._lex_embed_stem(raw)\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13910: in _lex_embed_stem\n    self._validate_reconstruction_bank()\nbin/Models.py:12257: in _validate_reconstruction_bank\n    torch._assert_async(\n../../../../.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 899.7288404999999,
+      "message": "../../../../test/test_compiled_word_chunk.py:514: in test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state\n    assert int(tensor_loop._tensor_peer_trip_count) == 4\nE   assert 16 == 4\nE    +  where 16 = int(tensor(16))\nE    +    where tensor(16) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-3): 4 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n)._tensor_peer_trip_count",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 36.223229333001655,
+      "message": "../../../../test/test_compiled_word_chunk.py:784: in test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths\n    assert bool(trace._choice_attempted[:, :12].any())\nE   assert False\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method any of Tensor object at 0x154c01630>()\nE    +      where <built-in method any of Tensor object at 0x154c01630> = tensor([[False, False, False, False, False, False, False, False, False, False,\\n         False, False],\\n        [False, False, False, False, False, False, False, False, False, False,\\n         False, False]]).any",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 694.9247900839982,
+      "message": "../../../../test/test_concept_readout_l1.py:283: in test_real_runbatch_stages_l1_once_and_reports_it_separately\n    result, _ = model.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24422: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18119: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22605: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22143: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21310: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21308: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20767: in _sentence_train_step\n    optimizer.step()\n../../../../test/test_concept_readout_l1.py:275: in step\n    assert (layer.coefficients in leaf._l1_proximal) == (expected is not None)\nE   assert (Parameter containing:\\ntensor([[0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000],\\n        [0.500... 0.0000],\\n        [0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000]],\\n       requires_grad=True) in {}) == ((tensor([ 7,  8,  9, 10, 11]), tensor([[ True,  True,  True,  True,  True, False, False, False, False],\\n        [ True...False, False, False],\\n        [ True,  True,  True,  True,  True,  True,  True,  True, False]]), 0.002, tensor(0.0280)) is not None)\nE    +  where Parameter containing:\\ntensor([[0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000],\\n        [0.500... 0.0000],\\n        [0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000]],\\n       requires_grad=True) = IndexedSigmaConceptsFromPercepts().coefficients\nE    +  and   {} = _RowLocalAdam (\\nParameter Group 0\\n    betas: (0.9, 0.999)\\n    eps: 1e-08\\n    lr: 0.001\\n    maximize: False\\n    moment_dtype: torch.bfloat16\\n    weight_decay: 0.0\\n)._l1_proximal",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_concept_readout_l1.py::test_real_runbatch_stages_l1_once_and_reports_it_separately[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.0037882079996052,
+      "message": "../../../../test/test_concept_readout_l1.py:283: in test_real_runbatch_stages_l1_once_and_reports_it_separately\n    result, _ = model.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24422: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18119: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22605: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22143: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21310: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21308: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20767: in _sentence_train_step\n    optimizer.step()\n../../../../test/test_concept_readout_l1.py:275: in step\n    assert (layer.coefficients in leaf._l1_proximal) == (expected is not None)\nE   assert (Parameter containing:\\ntensor([[0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000],\\n        [0.500... 0.0000],\\n        [0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000]],\\n       requires_grad=True) in {}) == ((tensor([ 7,  8,  9, 10, 11]), tensor([[ True,  True,  True,  True,  True, False, False, False, False],\\n        [ True...False, False, False],\\n        [ True,  True,  True,  True,  True,  True,  True,  True, False]]), 0.002, tensor(0.0280)) is not None)\nE    +  where Parameter containing:\\ntensor([[0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000],\\n        [0.500... 0.0000],\\n        [0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.0000]],\\n       requires_grad=True) = IndexedSigmaConceptsFromPercepts().coefficients\nE    +  and   {} = _RowLocalAdam (\\nParameter Group 0\\n    betas: (0.9, 0.999)\\n    eps: 1e-08\\n    lr: 0.001\\n    maximize: False\\n    moment_dtype: torch.bfloat16\\n    weight_decay: 0.0\\n)._l1_proximal",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_no_recompile_fullgraph",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00848562500323169,
+      "message": "../../../../test/test_conceptual_recurrence.py:305: in test_no_recompile_fullgraph\n    out = subprocess.run(\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py:548: in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py:1026: in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py:1955: in _execute_child\n    raise child_exception_type(errno_num, err_msg, err_filename)\nE   FileNotFoundError: [Errno 2] No such file or directory: '/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/.venv/bin/python'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_conceptualize.py::test_conceptualize_dispatch",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 4.798805958002049,
+      "message": "../../../../test/test_conceptualize.py:46: in test_conceptualize_dispatch\n    assert c1 is not None and len(c1) == 3\nE   assert ((2, 3) is not None and 2 == 3)\nE    +  where 2 = len((2, 3))",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_symbol_tower.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.5879073750038515,
+      "message": "../../../../test/test_config_matrix.py:58: in test_config_builds_runs_and_reconstructs\n    rec = run_config(cfg, epochs=1, seed=0, out_dir=str(tmp_path),\nbin/recon_bench.py:213: in run_config\n    _epoch_loop()\nbin/recon_bench.py:197: in _epoch_loop\n    out_loss, rec_loss, _, _ = model.runEpoch(\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_sparse_concept.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_symbol_tower_parallel_forward_smoke",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.1663035829988075,
+      "message": "../../../../test/test_cs_to_ss_forward.py:65: in test_symbol_tower_parallel_forward_smoke\n    m.forward(x)        # exercises forward_concept_to_symbol in the bind\n    ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_symbol_tower.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_stage0_consumes_unity",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.207549582999491,
+      "message": "../../../../test/test_dual_input_contract.py:126: in test_ws_stage0_consumes_unity\n    assert float(ev1.abs().max()) > 0, \"evidence must be non-trivial symbols\"\nE   AssertionError: evidence must be non-trivial symbols\nE   assert 0.0 > 0\nE    +  where 0.0 = float(tensor(0., grad_fn=<MaxBackward1>))\nE    +    where tensor(0., grad_fn=<MaxBackward1>) = <built-in method max of Tensor object at 0x141856e90>()\nE    +      where <built-in method max of Tensor object at 0x141856e90> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<AbsBackward0>).max\nE    +        where tensor([[[0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<AbsBackward0>) = <built-in method abs of Tensor object at 0x141855900>()\nE    +          where <built-in method abs of Tensor object at 0x141855900> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0....., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.],\\n         [0., 0., 0., 0., 0., 0., 0., 0.]]], grad_fn=<MulBackward0>).abs",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_routing_law_typed",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.432472749998851,
+      "message": "../../../../test/test_dual_input_contract.py:149: in test_ws_routing_law_typed\n    assert getattr(ws, \"_ws_routed_source\", None) == \"carrier\"\nE   AssertionError: assert 'property-neutral' == 'carrier'\nE     \nE     - carrier\nE     + property-neutral",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_model_forward_passes_unity_at_stage0",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.475694958004169,
+      "message": "../../../../test/test_dual_input_contract.py:190: in test_model_forward_passes_unity_at_stage0\n    assert all(src == \"carrier\" for (_u, src) in later), (\nE   AssertionError: t>0 non-parallel stages are carrier-driven\nE   assert False\nE    +  where False = all(<generator object test_model_forward_passes_unity_at_stage0.<locals>.<genexpr> at 0x1217ba9b0>)",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_word_analysis_boundaries_shape_evidence",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.430228666002222,
+      "message": "../../../../test/test_dual_input_contract.py:253: in test_word_analysis_boundaries_shape_evidence\n    assert abs(float(z_pre[0, 0, 0]) - exp0) < 1e-5, (\nE   AssertionError: part-0 mean: expected 0.673109, got 0.000000\nE   assert 0.6731091177830563 < 1e-05\nE    +  where 0.6731091177830563 = abs((0.0 - 0.6731091177830563))\nE    +    where 0.0 = float(tensor(0.))",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_parallel_ws_quantize_fires",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.128404499999306,
+      "message": "../../../../test/test_dual_input_contract.py:277: in test_parallel_ws_quantize_fires\n    basis = ws.analysis_store\n            ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_vq_asymmetric_flags",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.152647582995996,
+      "message": "../../../../test/test_dual_input_contract.py:314: in test_ws_vq_asymmetric_flags\n    (\"analysis\", ws.analysis_store)):\n                 ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_codebook_recon_gradient",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.175528082996607,
+      "message": "../../../../test/test_dual_input_contract.py:362: in test_ws_codebook_recon_gradient\n    vq = ws.analysis_store.vq\n         ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_ws_recon_term_reaches_pipeline_errors",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.417085334003787,
+      "message": "../../../../test/test_dual_input_contract.py:403: in test_ws_recon_term_reaches_pipeline_errors\n    assert \"ws_codebook_recon\" in terms, (\nE   AssertionError: the recon term must reach the pipeline error container; got terms=[]\nE   assert 'ws_codebook_recon' in {}",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_descriptor_roles_lf_coarse_tagging",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.136453208004241,
+      "message": "../../../../test/test_dual_input_contract.py:418: in test_descriptor_roles_lf_coarse_tagging\n    basis = ws.analysis_store\n            ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_input_contract.py::test_semantic_arrangement_mechanism",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.127050791998045,
+      "message": "../../../../test/test_dual_input_contract.py:445: in test_semantic_arrangement_mechanism\n    vq = ws.analysis_store.vq\n         ^^^^^^^^^^^^^^^^^\n../../../../.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'WholeSpace' object has no attribute 'analysis_store'. Did you mean: 'analysis_mode'?",
+      "stdout": "Starting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.587696708003932,
+      "message": "../../../../test/test_dual_towers.py:143: in test_ws_routes_universe_on_parallel_path\n    m = _run_one_epoch(\"data/MM_sparse_concept.xml\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_dual_towers.py:136: in _run_one_epoch\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_sparse_concept.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.680159042000014,
+      "message": "../../../../test/test_dual_towers.py:180: in test_written_order0_words_are_present_after_one_smoke_epoch\n    m = _run_one_epoch(\"data/MM_sparse_concept.xml\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_dual_towers.py:136: in _run_one_epoch\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_sparse_concept.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_replaces_wave",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.578976874996442,
+      "message": "../../../../test/test_dual_towers.py:219: in test_pyramid_replaces_wave\n    m = _run_one_epoch(\"data/MM_sparse_concept.xml\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_dual_towers.py:136: in _run_one_epoch\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_sparse_concept.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.6276972080013365,
+      "message": "../../../../test/test_dual_towers.py:238: in test_pyramid_taper_topk_selection\n    m = _run_one_epoch(\"data/MM_sparse_concept.xml\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_dual_towers.py:136: in _run_one_epoch\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_sparse_concept.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.623017665995576,
+      "message": "../../../../test/test_dual_towers.py:268: in test_pyramid_grads_reach_every_rung\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_sparse_concept.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_expectation_review.py::test_real_packed_bricks_share_one_document_stream",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1369.2443947919965,
+      "message": "../../../../test/test_expectation_review.py:124: in test_real_packed_bricks_share_one_document_stream\n    assert sum(pairs) == 3, pairs\nE   AssertionError: [0, 0, 0, 0]\nE   assert 0 == 3\nE    +  where 0 = sum([0, 0, 0, 0])",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=1.137s)\r\n"
+    },
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 72.8406200419995,
+      "message": "../../../../test/test_explicit_dimensions.py:300: in test_piecewise_overall_at_least_50_pct\n    self.assertEqual(perfect, 4,\nE   AssertionError: 2 != 4 : XOR_grammar reconstruction: 2/4 word multisets recovered; [('hello world', 'loving world'), ('hello there', 'there world'), ('loving world', 'world loving'), ('loving there', 'loving there')]",
+      "stdout": "\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nTrain Loss: output=0.0712, reconstruction=0.3738\r\nEpoch [366/400]\r\nbatch = 0 (\u0394=0.149s, 100.00%)\r\nTrain Loss: output=0.0572, reconstruction=0.3729\r\nEpoch [367/400]\r\nbatch = 0 (\u0394=0.157s, 100.00%)\r\nTrain Loss: output=0.0737, reconstruction=0.3690\r\nEpoch [368/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.0742, reconstruction=0.3667\r\nEpoch [369/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.0755, reconstruction=0.3660\r\nEpoch [370/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.0754, reconstruction=0.3655\r\nEpoch [371/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.0754, reconstruction=0.3643\r\nEpoch [372/400]\r\nbatch = 0 (\u0394=0.158s, 100.00%)\r\nTrain Loss: output=0.0755, reconstruction=0.3656\r\nEpoch [373/400]\r\nbatch = 0 (\u0394=0.165s, 100.00%)\r\nTrain Loss: output=0.0765, reconstruction=0.3690\r\nEpoch [374/400]\r\nbatch = 0 (\u0394=0.164s, 100.00%)\r\nTrain Loss: output=0.0519, reconstruction=0.3649\r\nEpoch [375/400]\r\nbatch = 0 (\u0394=0.165s, 100.00%)\r\nTrain Loss: output=0.0754, reconstruction=0.3676\r\nEpoch [376/400]\r\nbatch = 0 (\u0394=0.166s, 100.00%)\r\nTrain Loss: output=0.0619, reconstruction=0.3661\r\nEpoch [377/400]\r\nbatch = 0 (\u0394=0.167s, 100.00%)\r\nTrain Loss: output=0.0751, reconstruction=0.3652\r\nEpoch [378/400]\r\nbatch = 0 (\u0394=0.169s, 100.00%)\r\nTrain Loss: output=0.0761, reconstruction=0.3644\r\nEpoch [379/400]\r\nbatch = 0 (\u0394=0.164s, 100.00%)\r\nTrain Loss: output=0.0406, reconstruction=0.3621\r\nEpoch [380/400]\r\nbatch = 0 (\u0394=0.164s, 100.00%)\r\nTrain Loss: output=0.0636, reconstruction=0.3666\r\nEpoch [381/400]\r\nbatch = 0 (\u0394=0.166s, 100.00%)\r\nTrain Loss: output=0.0759, reconstruction=0.3706\r\nEpoch [382/400]\r\nbatch = 0 (\u0394=0.171s, 100.00%)\r\nTrain Loss: output=0.0769, reconstruction=0.3728\r\nEpoch [383/400]\r\nbatch = 0 (\u0394=0.167s, 100.00%)\r\nTrain Loss: output=0.0773, reconstruction=0.3740\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.167s, 100.00%)\r\nTrain Loss: output=0.0780, reconstruction=0.3724\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.164s, 100.00%)\r\nTrain Loss: output=0.0637, reconstruction=0.3691\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.166s, 100.00%)\r\nTrain Loss: output=0.0416, reconstruction=0.3613\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.169s, 100.00%)\r\nTrain Loss: output=0.0403, reconstruction=0.3586\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.172s, 100.00%)\r\nTrain Loss: output=0.0778, reconstruction=0.3649\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.169s, 100.00%)\r\nTrain Loss: output=0.0541, reconstruction=0.3624\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.170s, 100.00%)\r\nTrain Loss: output=0.0766, reconstruction=0.3675\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.171s, 100.00%)\r\nTrain Loss: output=0.0760, reconstruction=0.3684\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.167s, 100.00%)\r\nTrain Loss: output=0.0384, reconstruction=0.3643\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.230s, 100.00%)\r\nTrain Loss: output=0.0515, reconstruction=0.3632\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.0499, reconstruction=0.3617\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.153s, 100.00%)\r\nTrain Loss: output=0.0755, reconstruction=0.3648\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.0622, reconstruction=0.3634\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.150s, 100.00%)\r\nTrain Loss: output=0.0480, reconstruction=0.3604\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.151s, 100.00%)\r\nTrain Loss: output=0.0732, reconstruction=0.3658\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.163s, 100.00%)\r\nTrain Loss: output=0.0734, reconstruction=0.3670\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.166s, 100.00%)\r\nTrain Loss: output=0.0738, reconstruction=0.3668\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=6.221s, 100.00%)\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='world world' label=0.0000 predicted=0.2906 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='' label=1.0000 predicted=0.7358 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='' label=1.0000 predicted=0.6718 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='' label=0.0000 predicted=0.3978 MISMATCH\r\n"
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.4184224999917205,
+      "message": "../../../../test/test_frozen_concepts.py:132: in test_reading_wiring_desires_staged_wholes\n    m.runEpoch(optimizer=opt, batchSize=4, split=\"train\", max_batches=1)\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_sparse_concept.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.0541152079968015,
+      "message": "../../../../test/test_global_attention.py:191: in test_forward_parks_typed_obs_over_spaces\n    out1 = m.forward(x)[2]\n           ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_global.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.104221415997017,
+      "message": "../../../../test/test_global_attention.py:213: in test_addressable_spaces_gathers_input_stm_codebook\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_global.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_global_attention.py::test_ltm_space_appears_when_store_present_but_excludes_estimates",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.057155540998792,
+      "message": "../../../../test/test_global_attention.py:238: in test_ltm_space_appears_when_store_present_but_excludes_estimates\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_global.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.073393667000346,
+      "message": "../../../../test/test_global_consume.py:122: in test_qa_config_builds_with_consumer_and_ltm\n    out = m.forward(x)[2]\n          ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_qa.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_zero_gate_matches_consume_off",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.081171541009098,
+      "message": "../../../../test/test_global_consume.py:135: in test_zero_gate_matches_consume_off\n    out_off_flag = (lambda: (setattr(m, \"global_attention_consume\", False),\n../../../../test/test_global_consume.py:136: in <lambda>\n    m.forward(x)[2].clone())[1])()\n    ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_qa.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.050926541007357,
+      "message": "../../../../test/test_global_consume.py:150: in test_gate_feeds_the_read_into_the_answer\n    base = m.forward(x)[2].clone()\n           ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_qa.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.050858167000115,
+      "message": "../../../../test/test_global_consume.py:170: in test_nonzero_gate_does_not_corrupt_the_reverse\n    head_off = m.forward(x)[2].clone()\n               ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_global.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_answer_loss_trains_retrieval",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 4.992283625004347,
+      "message": "../../../../test/test_global_consume.py:190: in test_answer_loss_trains_retrieval\n    out = m.forward(x)\n          ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_qa.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 4.921678166996571,
+      "message": "../../../../test/test_global_consume.py:211: in test_ltm_truthset_read_is_fed_to_the_answer\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_qa.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_idea_decode.py::test_gate_skips_generate_rebuild_when_on",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.162039332994027,
+      "message": "../../../../test/test_idea_decode.py:81: in test_gate_skips_generate_rebuild_when_on\n    m.forward(x)  # populate the C-space_role STM so the snapshot is non-None\n    ^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_mereology.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.02147187499213,
+      "message": "../../../../test/test_idea_decode_d3.py:99: in test_reverse_off_path_unchanged\n    m = _forward(_build(\"MM_mereology.xml\"))\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n../../../../test/test_idea_decode_d3.py:41: in _forward\n    m.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_mereology.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_per_word_enabled_predicate_tracks_use_grammar",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 15.01345912499528,
+      "message": "../../../../test/test_input_word_cursor.py:329: in test_per_word_enabled_predicate_tracks_use_grammar\n    assert ug_g != \"none\", f\"MM_20M must be grammar-enabled, got {ug_g!r}\"\nE   AssertionError: MM_20M must be grammar-enabled, got 'none'\nE   assert 'none' != 'none'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1776.059261041999,
+      "message": "../../../../test/test_joint_objectives.py:159: in test_real_packed_runbatch_trains_prediction_and_representation_with_teacher\n    result, _ = m.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24422: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18119: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22605: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22143: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21310: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21308: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20754: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\n../../../../test/test_joint_objectives.py:124: in backward_probe\n    assert loss is not None and loss.requires_grad, {\nE   AssertionError: {'context': [0, 0], 'roots': tensor([[[-0.0160, -0.0396,  0.0101,  ..., -0.0410, -0.0680, -0.0261],\nE              [ 0.0000,...  ...,  0.0000,  0.0000,  0.0000]]],\nE            grad_fn=<CompiledFunctionBackward>), 'packed': True, 'counts': (2, 1), ...}\nE   assert (None is not None)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 666.2392190829996,
+      "message": "../../../../test/test_joint_objectives.py:159: in test_real_packed_runbatch_trains_prediction_and_representation_with_teacher\n    result, _ = m.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24422: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:18119: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22605: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22143: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21310: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21308: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20754: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\n../../../../test/test_joint_objectives.py:124: in backward_probe\n    assert loss is not None and loss.requires_grad, {\nE   AssertionError: {'context': [0, 0], 'roots': tensor([[[-0.0160, -0.0396,  0.0101,  ..., -0.0410, -0.0680, -0.0261],\nE              [ 0.0000,...,  0.0000,  ...,  0.0000,  0.0000,  0.0000]]],\nE            grad_fn=<WhereBackward0>), 'packed': True, 'counts': (2, 1), ...}\nE   assert (None is not None)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_config_is_masked_parallel_semantic",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.576966708002146,
+      "message": "../../../../test/test_masked_semantic.py:115: in test_config_is_masked_parallel_semantic\n    m = _cached(\"base\")[\"model\"]\n        ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_masked_semantic.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_masked_ir_training_engages",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.4044093749980675,
+      "message": "../../../../test/test_masked_semantic.py:131: in test_masked_ir_training_engages\n    rec = _cached(\"base\")\n          ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_masked_semantic.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_concept_attention_live_not_dark",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.524127083001076,
+      "message": "../../../../test/test_masked_semantic.py:152: in test_concept_attention_live_not_dark\n    m = _cached(\"base\")[\"model\"]\n        ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_masked_semantic.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_masked_prediction_uses_concept_attention",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.471094125008676,
+      "message": "../../../../test/test_masked_semantic.py:165: in test_masked_prediction_uses_concept_attention\n    base, con = _cached(\"base\"), _cached(\"concept\")\n                ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_masked_semantic.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_reconstruction_uses_category_evidence",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.566450833008275,
+      "message": "../../../../test/test_masked_semantic.py:175: in test_reconstruction_uses_category_evidence\n    base, mint = _cached(\"base\"), _cached(\"mint\")\n                 ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_masked_semantic.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_masked_semantic.py::test_seeded_rerun_is_deterministic",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 5.460151584004052,
+      "message": "../../../../test/test_masked_semantic.py:183: in test_seeded_rerun_is_deterministic\n    a, b = _cached(\"base\"), _cached(\"base2\")\n           ^^^^^^^^^^^^^^^\n../../../../test/test_masked_semantic.py:90: in _cached\n    return _run({\"base\": None, \"base2\": None,\n../../../../test/test_masked_semantic.py:82: in _run\n    model.runEpoch(optimizer=opt, batchSize=4, split=\"train\",\nbin/ModeSchedule.py:14: in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:16577: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:14342: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14523: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14893: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9291: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10774: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8990: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8802: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24405: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13905: in _lex_embed_stem\n    self._stage_reading_word_concepts()\nbin/Models.py:11510: in _stage_reading_word_concepts\n    self._stage_mixing_grammar_leaf_mask()\nbin/Models.py:11598: in _stage_mixing_grammar_leaf_mask\n    if texts is not None and b < len(texts) and w < len(texts[b]):\n                                                    ^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/source/output/MM_masked_semantic.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+      "outcome": "process_failed",
+      "reason": "memory",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/ordinary/worker-032.log"
+    },
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+      "outcome": "process_failed",
+      "reason": "memory",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/ordinary-remaining/worker-003.log"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+      "outcome": "process_failed",
+      "reason": "memory",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/ordinary-remaining-continued-01/worker-037.log"
+    },
+    {
+      "nodeid": "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+      "outcome": "process_failed",
+      "reason": "timeout",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/ordinary-remaining-continued-02/worker-006.log"
+    },
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb",
+      "outcome": "process_failed",
+      "reason": "memory",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/20261002T012227Z-32db47/ordinary-remaining-continued-04/worker-009.log"
+    }
+  ],
+  "record_finished": false
+}

@@ -57,6 +57,7 @@ def test_compact_readout_preserves_full_ldu_values_and_gradients(n_input, n_outp
     assert not torch.count_nonzero(expected_grad[3][rank:, :])
 
 
+@pytest.mark.usefixtures('eager_reading')
 @pytest.mark.parametrize("legacy_adapter", [False, True])
 def test_model_checkpoint_preserves_readout_and_adam(tmp_path, legacy_adapter):
     from Layers import InvertibleLinearLayer, LDUReadout

@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_symbolic_iter.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.6695268749899697,
+  "batch": 4,
+  "scope": "perception: no grammar",
+  "reconstruct_in_loop": false,
+  "training_seconds": 0.41040975000942126,
+  "output_loss": 0.1749998778104782,
+  "reconstruction_loss": 0.00017536616360303015,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": null,
+  "total_seconds": 2.080479957992793
+}

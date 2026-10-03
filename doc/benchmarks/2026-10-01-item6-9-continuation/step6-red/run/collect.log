@@ -1,0 +1,4 @@
+test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient
+test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal
+
+2 tests collected in 0.46s

@@ -5,6 +5,16 @@ implementation around for experimentation with activation functions,
 bidirectional updates, and XOR-style toy datasets.
 """
 
+import sys
+from pathlib import Path
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    if "--demo" not in sys.argv:
+        import os
+        os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+        os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+        os.environ.setdefault("MPLBACKEND", "Agg")
+
 # Final project for Machine Learning
 import math
 import os, sys
@@ -420,7 +430,7 @@ class SPNN:
 #endregion
 
 #region Example Usage
-if __name__ == "__main__":
+if __name__ == "__main__" and "--demo" in sys.argv:
     showActivations = True
     showPictures    = True
 
@@ -444,3 +454,25 @@ if __name__ == "__main__":
 
     TheReport.write_html()
 #endregion
+
+
+if __name__ == "__main__" and "--demo" not in sys.argv:
+    import unittest
+    from util import TheDevice
+    util.init_device("cpu")
+
+    class TestSPNN(unittest.TestCase):
+        def test_xor_creation(self):
+            net = SPNN("sigmoid", False)
+            self.assertIsNotNone(net)
+            self.assertTrue(hasattr(net, 'W1'))
+            self.assertTrue(hasattr(net, 'W2'))
+
+        def test_xor_training(self):
+            net = SPNN("tanh", False)
+            net.loadXOR()
+            # Run a few epochs -- just check it doesn't crash
+            for _ in range(3):
+                net.run()
+
+    unittest.main()

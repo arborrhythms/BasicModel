@@ -1,0 +1,76 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 38/38 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.02323587500723079</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.05155200000444893</pre></td><td><pre>test/test_analyse_chunking_forward.py:132: in test_meronomy_synthesis_owns_full_surface_lexing
+    lexicon = [t for t in self._tokens(&quot;meronomy&quot;, lexer=&quot;word&quot;)[0] if t]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_analyse_chunking_forward.py:124: in _tokens
+    unique = list(dict.fromkeys(tuple(pair) for pair in spans.tolist() if pair[1] &gt; pair[0]))
+                                                        ^^^^^^^^^^^^
+E   AttributeError: &#x27;list&#x27; object has no attribute &#x27;tolist&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.010325708004529588</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00023879199579823762</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.045941584001411684</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_lut_type_assignments</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00016599999798927456</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_lut_high_bytes_are_letters</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00010637500963639468</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_words_split_on_space</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0005763329972978681</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_alnum_splits_by_type</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0002280000044265762</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_punct_run_is_one_span</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00022733300284016877</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_letters_punct_space_letters</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0002205420023528859</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00033900000562425703</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_single_char</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0004038339975522831</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_punct_only_run</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0003036249981960282</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_all_space_row_is_zero_padded</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0001507499982835725</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00028916599694639444</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0002257919986732304</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_byte_mode_returns_none</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004365291999420151</pre></td><td><pre>test/test_type_run_spans.py:148: in test_stage_byte_mode_returns_none
+    assert _stage(mode, &quot;abc def&quot;) is None
+E   AssertionError: assert tensor([[[0, 3],\n         [4, 7]]]) is None
+E    +  where tensor([[[0, 3],\n         [4, 7]]]) = _stage(&#x27;byte&#x27;, &#x27;abc def&#x27;)</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_none_input_returns_none</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.002868416006094776</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_word_mode_type_runs</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.006564249997609295</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_accepts_three_dim_unity</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.003286332997959107</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00021033399389125407</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.005008207997889258</pre></td><td><pre>test/test_type_run_spans.py:208: in test_live_ws_has_one_property_basis_with_canonical_teaching_rows
+    ws = _live_ws(&quot;word&quot;)
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError(&quot;WholeSpace.analysis must be meronomy; old reading modes are retired&quot;)
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004338124999776483</pre></td><td><pre>test/test_type_run_spans.py:224: in test_property_teaching_rows_are_idempotent_on_rebuild
+    a = _live_ws(&quot;word&quot;)
+        ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError(&quot;WholeSpace.analysis must be meronomy; old reading modes are retired&quot;)
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004278708001947962</pre></td><td><pre>test/test_type_run_spans.py:237: in test_byte_mode_owns_properties_without_a_type_dictionary
+    ws = _live_ws(&quot;byte&quot;)
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError(&quot;WholeSpace.analysis must be meronomy; old reading modes are retired&quot;)
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004289415999664925</pre></td><td><pre>test/test_type_run_spans.py:246: in test_type_subspace_adds_no_state_dict_keys
+    word = _live_ws(&quot;word&quot;)
+           ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError(&quot;WholeSpace.analysis must be meronomy; old reading modes are retired&quot;)
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004550999990897253</pre></td><td><pre>test/test_type_run_spans.py:265: in test_live_derived_lut_is_byte_identical_to_module_lut
+    ws = _live_ws(&quot;word&quot;)
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError(&quot;WholeSpace.analysis must be meronomy; old reading modes are retired&quot;)
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004105416999664158</pre></td><td><pre>test/test_type_run_spans.py:270: in test_derived_cut_byte_identical_across_a_spread_of_inputs
+    ws = _live_ws(&quot;word&quot;)
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError(&quot;WholeSpace.analysis must be meronomy; old reading modes are retired&quot;)
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004421208999701776</pre></td><td><pre>test/test_type_run_spans.py:292: in test_checkpoint_roundtrip_preserves_property_definitions_and_cut
+    a = _live_ws(&quot;word&quot;)
+        ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError(&quot;WholeSpace.analysis must be meronomy; old reading modes are retired&quot;)
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.004337416001362726</pre></td><td><pre>test/test_type_run_spans.py:309: in test_property_memberships_are_owned_parameters_and_train
+    ws = _live_ws(&quot;word&quot;)
+         ^^^^^^^^^^^^^^^^
+test/test_type_run_spans.py:192: in _live_ws
+    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20768: in __init__
+    raise ValueError(&quot;WholeSpace.analysis must be meronomy; old reading modes are retired&quot;)
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_digit_wholes_cut_each_digit</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0010694160009734333</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_stage_digit_wholes_knob</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.010198375006439164</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_type_run_spans.py::test_digit_wholes_property_basis_signature</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.037274915986927226</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00010329100769013166</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>9.345798753201962e-05</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.015009750000899658</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.30880441699991934</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.9412334999942686</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr></table></body></html>

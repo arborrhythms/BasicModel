@@ -1,0 +1,28 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_known_concept_read_preserves_the_parameter_magnitude ___________
+test/test_concept_code_ownership.py:16: in test_known_concept_read_preserves_the_parameter_magnitude
+    torch.testing.assert_close(content[0], cb.W[0])
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 2 (100.0%)
+E   Greatest absolute difference: 2.167949676513672 at index (1,) (up to 1e-05 allowed)
+E   Greatest relative difference: 0.7226499319076538 at index (0,) (up to 1.3e-06 allowed)
+_____________ test_promoting_an_identity_does_not_rewrite_its_code _____________
+test/test_concept_code_ownership.py:36: in test_promoting_an_identity_does_not_rewrite_its_code
+    torch.testing.assert_close(W, before, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 8 / 1024 (0.8%)
+E   Greatest absolute difference: 0.7804768681526184 at index (64, 7)
+E   Greatest relative difference: 3.083670139312744 at index (64, 4)
+=============================== warnings summary ===============================
+test/test_concept_code_ownership.py::test_promoting_an_identity_does_not_rewrite_its_code
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_code_ownership.py::test_known_concept_read_preserves_the_parameter_magnitude
+FAILED test/test_concept_code_ownership.py::test_promoting_an_identity_does_not_rewrite_its_code
+2 failed, 1 warning in 2.19s

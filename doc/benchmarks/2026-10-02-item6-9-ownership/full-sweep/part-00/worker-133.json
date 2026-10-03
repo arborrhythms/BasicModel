@@ -1,0 +1,44 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_context_rotation.py::test_situation_weight_adds_only_bounded_prior_anchors",
+    "test/test_context_rotation.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+    "test/test_context_rotation.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words"
+  ],
+  "completed": [
+    "test/test_context_rotation.py::test_situation_weight_adds_only_bounded_prior_anchors",
+    "test/test_context_rotation.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+    "test/test_context_rotation.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_context_rotation.py::test_situation_weight_adds_only_bounded_prior_anchors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014002920070197433,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_context_rotation.py::test_expectation_weight_one_removes_arriving_context_from_rotation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012758339871652424,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_context_rotation.py::test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004632920026779175,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

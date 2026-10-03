@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/part-00/worker-100.recycle.json"
+}

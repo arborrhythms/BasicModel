@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

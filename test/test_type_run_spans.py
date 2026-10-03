@@ -143,24 +143,21 @@ def _stage(mode, s, n=None):
     return WholeSpace.stage_analysis_spans(fake, u)
 
 
-def test_stage_byte_mode_returns_none():
-    for mode in ("byte", "raw", "sentence"):
-        assert _stage(mode, "abc def") is None
 
 
 def test_stage_none_input_returns_none():
-    fake = property_reader(analysis_mode="word")
+    fake = property_reader(analysis_mode="meronomy")
     assert WholeSpace.stage_analysis_spans(fake, None) is None
 
 
-def test_stage_word_mode_type_runs():
-    assert _stage("word", "abc123")[0].tolist() == [[0, 3], [3, 6]]
-    assert _stage("word", "hi, there")[0].tolist() == [[0, 2], [2, 3], [4, 9]]
+def test_stage_meronomy_type_runs():
+    assert _stage("meronomy", "abc123")[0].tolist() == [[0, 3], [3, 6]]
+    assert _stage("meronomy", "hi, there")[0].tolist() == [[0, 2], [2, 3], [4, 9]]
 
 
 def test_stage_accepts_three_dim_unity():
     # [B, 1, N] unity (the codebook-selection layout) -> row 0 is read.
-    fake = property_reader(analysis_mode="word")
+    fake = property_reader(analysis_mode="meronomy")
     u = _bytes("a...b").unsqueeze(1)         # [1, 1, 5]
     out = WholeSpace.stage_analysis_spans(fake, u)
     assert out[0].tolist() == [[0, 1], [1, 4], [4, 5]]
@@ -180,7 +177,7 @@ _NP = 4
 _NS = 64
 
 
-def _live_ws(analysis="word", nS=_NS):
+def _live_ws(analysis="meronomy", nS=_NS):
     """A live WholeSpace owning the learned primitive-property basis."""
     _populate_test_config(
         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
@@ -205,7 +202,7 @@ def test_derive_type_lut_matches_frozen_module_lut():
 
 def test_live_ws_has_one_property_basis_with_canonical_teaching_rows():
     from Spaces import _CANONICAL_PROPERTY_ROWS
-    ws = _live_ws("word")
+    ws = _live_ws("meronomy")
     sub = ws.subspace
     assert isinstance(sub, SubSpace)
     tc = sub.what
@@ -221,8 +218,8 @@ def test_live_ws_has_one_property_basis_with_canonical_teaching_rows():
 
 
 def test_property_teaching_rows_are_idempotent_on_rebuild():
-    a = _live_ws("word")
-    b = _live_ws("word")
+    a = _live_ws("meronomy")
+    b = _live_ws("meronomy")
     assert a.well_known_atoms == b.well_known_atoms
     names = dict(a.well_known_atoms)
     a.subspace.what.primitive_properties.teach(names["digit"], [ord("2")], [.25])
@@ -233,8 +230,8 @@ def test_property_teaching_rows_are_idempotent_on_rebuild():
     assert a.type_subspace is None
 
 
-def test_byte_mode_owns_properties_without_a_type_dictionary():
-    ws = _live_ws("byte")
+def test_meronomy_owns_properties_without_a_type_dictionary():
+    ws = _live_ws("meronomy")
     assert ws.type_subspace is None
     assert torch.equal(_analysis_type_lut(ws), _LUT_ANALYSIS_TYPE)
     assert not hasattr(ws, "vocab_extras")
@@ -243,7 +240,7 @@ def test_byte_mode_owns_properties_without_a_type_dictionary():
 
 def test_type_subspace_adds_no_state_dict_keys():
     # There is no second type dictionary in a property-only WholeSpace.
-    word = _live_ws("word")
+    word = _live_ws("meronomy")
     keys = [k for k in word.state_dict().keys() if "type_subspace" in k]
     assert keys == []
 
@@ -257,17 +254,17 @@ def _cut_from_rows(ws, byte_rows):
 
 def _cut_from_apriori_properties(byte_rows):
     u = torch.tensor(byte_rows, dtype=torch.long)
-    fake = property_reader(analysis_mode="word")
+    fake = property_reader(analysis_mode="meronomy")
     return WholeSpace.stage_analysis_spans(fake, u)
 
 
 def test_live_derived_lut_is_byte_identical_to_module_lut():
-    ws = _live_ws("word")
+    ws = _live_ws("meronomy")
     assert torch.equal(_analysis_type_lut(ws), _LUT_ANALYSIS_TYPE)
 
 
 def test_derived_cut_byte_identical_across_a_spread_of_inputs():
-    ws = _live_ws("word")
+    ws = _live_ws("meronomy")
     N = 12
     samples = [
         list(b"abc123") + [0] * (N - 6),          # letter/digit split
@@ -289,11 +286,11 @@ def test_derived_cut_byte_identical_across_a_spread_of_inputs():
 # -- checkpoint save/load preserves learned memberships and their cut --------
 
 def test_checkpoint_roundtrip_preserves_property_definitions_and_cut():
-    a = _live_ws("word")
+    a = _live_ws("meronomy")
     definitions = a.subspace.what.primitive_properties
     definitions.teach(a.well_known_atoms["digit"], [ord("2")], [.25])
     state = a.state_dict()
-    b = _live_ws("word")
+    b = _live_ws("meronomy")
     with torch.no_grad():
         b.subspace.what.primitive_properties.members.zero_()
     b.load_state_dict(state, strict=True)
@@ -306,7 +303,7 @@ def test_checkpoint_roundtrip_preserves_property_definitions_and_cut():
 
 
 def test_property_memberships_are_owned_parameters_and_train():
-    ws = _live_ws("word")
+    ws = _live_ws("meronomy")
     tc = ws.subspace.what
     members = tc.primitive_properties.members
     before = members.detach().clone()
@@ -336,14 +333,14 @@ def test_digit_wholes_cut_each_digit():
 
 
 def test_stage_digit_wholes_knob():
-    fake = property_reader(analysis_mode="word", digit_wholes=True)
+    fake = property_reader(analysis_mode="meronomy", digit_wholes=True)
     assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
         [[0, 1], [1, 2], [3, 7], [8, 9]]
-    fake = property_reader(analysis_mode="word", digit_wholes=False)
+    fake = property_reader(analysis_mode="meronomy", digit_wholes=False)
     assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
         [[0, 2], [3, 7], [8, 9]]
     assert WholeSpace.stage_analysis_spans(
-        property_reader(analysis_mode="word"), _bytes("14 plus 1"))[0].tolist() == \
+        property_reader(analysis_mode="meronomy"), _bytes("14 plus 1"))[0].tolist() == \
         [[0, 2], [3, 7], [8, 9]]                                  # default: unchanged
 
 

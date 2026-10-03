@@ -1,0 +1,35 @@
+.............................FF                                          [100%]
+=================================== FAILURES ===================================
+___________________ test_symbol_space_owns_memory_lifecycle ____________________
+test/test_what_episode_memory.py:72: in test_symbol_space_owns_memory_lifecycle
+    memory.begin_thought_episode(meaning, work_budget=2)
+bin/Thoughts.py:492: in begin_thought_episode
+    record = ThoughtRecord(
+<string>:20: in __init__
+    ???
+bin/Thoughts.py:56: in __post_init__
+    raise ValueError(
+E   ValueError: a thinking context requires an interrogative initiating meaning
+_______ test_provisioning_keeps_its_existing_hard_reset_of_what_episode ________
+test/test_expectation_review.py:83: in test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+    memory.begin_thought_episode(meaning, work_budget=2)
+bin/Thoughts.py:492: in begin_thought_episode
+    record = ThoughtRecord(
+<string>:20: in __init__
+    ???
+bin/Thoughts.py:56: in __post_init__
+    raise ValueError(
+E   ValueError: a thinking context requires an interrogative initiating meaning
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=============================== warnings summary ===============================
+test/test_item7_end_state_storage.py::test_reading_an_idea_returns_its_one_occupied_slot
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_what_episode_memory.py::test_symbol_space_owns_memory_lifecycle
+FAILED test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode
+2 failed, 29 passed, 1 warning in 3.26s

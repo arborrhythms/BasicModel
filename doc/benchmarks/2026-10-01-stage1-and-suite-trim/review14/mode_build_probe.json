@@ -1,0 +1,20 @@
+[
+  {
+    "config": "XOR_grammar",
+    "batch": 64,
+    "scope": "understanding",
+    "reconstruct_in_loop": true
+  },
+  {
+    "config": "MM_grammar",
+    "batch": 64,
+    "scope": "understanding",
+    "reconstruct_in_loop": true
+  },
+  {
+    "config": "xor",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "reconstruct_in_loop": false
+  }
+]

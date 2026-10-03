@@ -1,0 +1,68 @@
+[
+  {
+    "name": "IdeaSubSpace",
+    "returncode": 0,
+    "matches": [
+      "bin/Language.py:9667:class IdeaSubSpace(nn.Module):",
+      "bin/Language.py:9673:    parsing; IdeaSubSpace stores meronymic state for perceptual",
+      "bin/Language.py:9706:    IdeaSubSpace\" in the codification)::",
+      "bin/Language.py:9781:                f\"IdeaSubSpace overflow at row {b}: \"",
+      "bin/Language.py:9819:                f\"IdeaSubSpace.update: slot {slot} not live \"",
+      "bin/Language.py:9835:                    f\"IdeaSubSpace.update: unknown field {name!r}\")",
+      "bin/Language.py:9852:                f\"IdeaSubSpace.top: row {b} has {d} spans, asked k={k}\")",
+      "bin/Language.py:9861:                f\"IdeaSubSpace underflow at row {b}: stack is empty\")",
+      "test/test_idea_subspace.py:1:\"\"\"IdeaSubSpace -- durable PartSpace meronymic-analysis carrier.",
+      "test/test_idea_subspace.py:26:    from Language import IdeaSubSpace",
+      "test/test_idea_subspace.py:27:    return IdeaSubSpace(percept_dim=dim, capacity=cap, batch=batch)"
+    ]
+  },
+  {
+    "name": "bind_marker",
+    "returncode": 0,
+    "matches": [
+      "bin/Layers.py:2286:# is learned at runtime and bound per-operator (GrammarLayer.bind_marker",
+      "bin/Layers.py:2853:            self.bind_marker(marker_id, weight=weight)",
+      "bin/Layers.py:2872:    def bind_marker(self, marker_id, *, weight=1.0):"
+    ]
+  },
+  {
+    "name": "canonical_marker",
+    "returncode": 0,
+    "matches": [
+      "bin/Layers.py:2884:    def canonical_marker(self):",
+      "bin/Layers.py:2909:        return self.canonical_marker()",
+      "test/test_surface_schema.py:81:    assert layer.canonical_marker() == 10"
+    ]
+  },
+  {
+    "name": "bound_markers",
+    "returncode": 0,
+    "matches": [
+      "bin/Layers.py:2879:    def bound_markers(self):",
+      "test/test_surface_schema.py:77:    bound = layer.bound_markers()"
+    ]
+  },
+  {
+    "name": "_marker_bindings",
+    "returncode": 0,
+    "matches": [
+      "bin/Layers.py:2866:        markers = getattr(self, '_marker_bindings', None)",
+      "bin/Layers.py:2869:            self._marker_bindings = markers"
+    ]
+  },
+  {
+    "name": "mark_codebook_parameters_changed",
+    "returncode": 0,
+    "matches": [
+      "bin/space_carrier.py:56:    def mark_codebook_parameters_changed(self):",
+      "bin/space_carrier.py:67:        self.mark_codebook_parameters_changed()"
+    ]
+  },
+  {
+    "name": "mark_codebook_structure_changed",
+    "returncode": 0,
+    "matches": [
+      "bin/space_carrier.py:62:    def mark_codebook_structure_changed(self, role=None):"
+    ]
+  }
+]

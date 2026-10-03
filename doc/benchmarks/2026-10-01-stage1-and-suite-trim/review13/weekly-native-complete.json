@@ -1,0 +1,18 @@
+{
+  "source_record": "tmp/slow-tests/20261002T012227Z-32db47/source.json",
+  "runs": [
+    {
+      "nodeid": "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]",
+      "exit_code": 0,
+      "seconds": 1156.620789540997,
+      "peak_gib": 21.63336982578039
+    },
+    {
+      "nodeid": "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[cut]",
+      "exit_code": 0,
+      "seconds": 1254.2445263339978,
+      "peak_gib": 20.779822811484337
+    }
+  ],
+  "ordinary_continuation": "remaining cases only; no retries"
+}

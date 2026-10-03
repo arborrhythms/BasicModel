@@ -1,0 +1,17 @@
+{
+  "config": "data/RamsifiedModel.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.681291125001735,
+  "batch": 64,
+  "scope": "understanding",
+  "reconstruct_in_loop": true,
+  "training_seconds": 9.525990124995587,
+  "output_loss": 0.19568105041980743,
+  "reconstruction_loss": 0.562855064868927,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": 0,
+  "total_seconds": 11.207905250004842
+}

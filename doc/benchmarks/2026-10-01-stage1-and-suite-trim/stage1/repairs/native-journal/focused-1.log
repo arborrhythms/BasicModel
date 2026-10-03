@@ -1,0 +1,6 @@
+[collect] 4 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.40 GiB
+[worker-000] 29 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 791.6s; peak 3.56 GiB
+Result: passed, exit 0; 29/29 cases completed.
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/repairs/native-journal/focused-1/result.json

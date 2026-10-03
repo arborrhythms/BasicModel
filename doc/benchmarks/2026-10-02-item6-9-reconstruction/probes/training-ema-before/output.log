@@ -1,0 +1,12 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.201s)
+batch = 0 (Δ=0.196s)
+{"ema_update": true, "quantize_calls": 0, "quantize_row_drift": [], "training_row_drift": [0.14380407333374023, 0.08800474554300308, 0.08922886103391647, 0.0, 0.07800411432981491, 1.0464125210774e-07], "cluster_before": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "cluster_after": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probe_training_ema.py", line 29, in <module>
+    assert not cb.vq.ema_update
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError

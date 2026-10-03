@@ -150,7 +150,9 @@ def _raw_targets(model):
 def _decode_texts(model):
     """Render the staged reverse() batch vs that SAME batch's raw inputs."""
     # Route (b): only the LAST staged eval batch is renderable, so targets come from that batch's own stashed inputs (1:1 row-aligned).
-    decoded = model.perceptualSpace.reconstruct_data(text=True)
+    decoded = getattr(model, '_benchmark_sentence_readback', None)
+    if decoded is None:
+        decoded = model.perceptualSpace.reconstruct_data(text=True)
     targets = [_norm(s) for s in _raw_targets(model)]
     decoded = [_norm(s) for s in decoded]
     # Alignment invariant: a row-count mismatch must never silently truncate.
@@ -212,18 +214,31 @@ def run_config(config, epochs, seed, out_dir, profile=False,
     else:
         _epoch_loop()
 
-    # Method-2 free-derivation (serial-plan Task 4): route the serial decode
-    # through the TRAINED STUDENT reverse instead of the Method-1 leaves replay
-    # -- serial_tensor_reverse_debug bypasses _reverse_method1_leaves, and
-    # reconstruct_from_idea rebuilds the derivation from the reduced idea. Must
-    # be set BEFORE the eval decode pass (which stages the reverse). Currently
-    # scores 0.0: the reverse-reduce (backward walk over the recorded fold steps
-    # calling each op's basis-threaded reverse -- the codebook-walk recommender)
-    # is not yet wired, so the decode falls through to the CS reverse; see
-    # test_mm20m_grammar_free_derivation_roundtrip.
-    if free_derivation:
-        model.reconstruct_from_idea = True
-        model.serial_tensor_reverse_debug = True
+    # Grammar readings expose a sentence inverse at the commit boundary;
+    # their journal is intentionally discarded afterwards. Observe that
+    # inverse during this eval pass rather than replaying source leaves.
+    sentence_decode = bool(getattr(model, 'serial', False)
+                           and getattr(model, 'languageSpace', None) is not None)
+    if sentence_decode:
+        original_stem = model._lex_embed_stem
+        original_commit = model._commit_sentence
+        def stem(*args, **kwargs):
+            model._benchmark_sentence_readback = None
+            return original_stem(*args, **kwargs)
+        def commit(state, sid, active, *args, **kwargs):
+            texts, unavailable = model.reconstruct_grammar_sentence(state, sid, active)
+            if model._benchmark_sentence_readback is None:
+                model._benchmark_sentence_readback = [''] * len(texts)
+            for row, text in enumerate(texts):
+                if bool(active[row]):
+                    # Missing candidates or a truncated inverse are a failed
+                    # decode, not permission to supply the target sentence.
+                    text = '' if text is None or bool(unavailable[row]) else text
+                    previous = model._benchmark_sentence_readback[row]
+                    model._benchmark_sentence_readback[row] = ' '.join(x for x in (previous, text) if x)
+            return original_commit(state, sid, active, *args, **kwargs)
+        model._lex_embed_stem = stem
+        model._commit_sentence = commit
 
     # Decode pass: one bounded eval epoch stages the reverse() state.
     test_input, _ = model.inputSpace.getTestData()
@@ -252,7 +267,15 @@ def run_config(config, epochs, seed, out_dir, profile=False,
                 f"decode covers the last eval batch only ({len(decoded)} "
                 f"of {n} rows); targets are that batch's own inputs")
         # Real span metric (Task 5.5): decoded spans vs true word-tile spans.
-        meta = model.perceptualSpace._materialize_recovered_input()
+        if sentence_decode:
+            import Meronomy
+            # These are positions in the generated surface, never copied
+            # from the target or the forward witness.
+            meta = {'tokens': [[(surface[a:b].decode('utf8'), a)
+                     for a, b in Meronomy.word_tiling(surface)]
+                     for surface in (text.encode('utf8') for text in decoded)]}
+        else:
+            meta = model.perceptualSpace._materialize_recovered_input()
         where_recovery = where_recovery_rate(_raw_targets(model), meta)
     except Exception as e:
         # Degrade to the timing-only record; the note keeps the failure loud.
@@ -335,9 +358,8 @@ def main(argv=None):
                            "regression path)")
     ap.add_argument("--free-derivation", dest="free_derivation",
                     action="store_true",
-                    help="Method-2: decode via the trained free-derivation "
-                         "(reconstruct_from_idea) instead of the Method-1 "
-                         "leaves replay -- ceiling-bounded by the fold inverse")
+                    help="decode the grammar inverse with both operands searched "
+                         "over the primed bank (the grammar path default)")
     args = ap.parse_args(argv)
     rec = run_config(args.config, epochs=args.epochs, seed=args.seed,
                      out_dir=args.out, profile=args.profile,

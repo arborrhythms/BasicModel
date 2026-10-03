@@ -1,0 +1,5 @@
+test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_clears_registered_prediction_targets
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature
+
+3 tests collected in 2.06s

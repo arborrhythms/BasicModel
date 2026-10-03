@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[todo.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/part-00/worker-209.recycle.json"
+}

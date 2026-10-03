@@ -1,0 +1,209 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+    "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+    "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+    "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+    "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+    "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
+    "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total"
+  ],
+  "completed": [
+    "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+    "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+    "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+    "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+    "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+    "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
+    "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/registry-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/registry-before/worker-000.json"
+      ],
+      "pid": 7728,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 426542328,
+      "elapsed_seconds": 3.7957300000052783,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/registry-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+        "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+        "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+        "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+        "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+        "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+        "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+        "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+        "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
+        "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total"
+      ],
+      "completed": [
+        "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+        "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+        "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+        "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+        "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+        "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+        "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+        "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+        "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
+        "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00017949999892152846,
+          "message": "test/test_relative_error.py:12: in test_squared_error_is_ratio_of_means_and_baseline_is_detached\n    costs.squared('answer', pred, target)\n    ^^^^^^^^^^^^^\nE   AttributeError: 'Error' object has no attribute 'squared'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0001143749977927655,
+          "message": "test/test_relative_error.py:25: in test_uniform_categorical_prediction_is_one_even_for_constant_targets\n    costs.categorical('category', logits, torch.zeros(3, dtype=torch.long))\n    ^^^^^^^^^^^^^^^^^\nE   AttributeError: 'Error' object has no attribute 'categorical'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 9.633300214773044e-05,
+          "message": "test/test_relative_error.py:25: in test_uniform_categorical_prediction_is_one_even_for_constant_targets\n    costs.categorical('category', logits, torch.zeros(3, dtype=torch.long))\n    ^^^^^^^^^^^^^^^^^\nE   AttributeError: 'Error' object has no attribute 'categorical'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 9.31249960558489e-05,
+          "message": "test/test_relative_error.py:25: in test_uniform_categorical_prediction_is_one_even_for_constant_targets\n    costs.categorical('category', logits, torch.zeros(3, dtype=torch.long))\n    ^^^^^^^^^^^^^^^^^\nE   AttributeError: 'Error' object has no attribute 'categorical'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 8.991699723992497e-05,
+          "message": "test/test_relative_error.py:32: in test_binary_zero_logits_have_one_error_for_constant_targets\n    costs.binary('kind', torch.zeros(5), torch.zeros(5))\n    ^^^^^^^^^^^^\nE   AttributeError: 'Error' object has no attribute 'binary'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 8.979200356407091e-05,
+          "message": "test/test_relative_error.py:38: in test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive\n    costs.squared('zero_target', torch.tensor([2., 4.]), torch.zeros(2), weight=.25)\n    ^^^^^^^^^^^^^\nE   AttributeError: 'Error' object has no attribute 'squared'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 9.408399637322873e-05,
+          "message": "test/test_relative_error.py:49: in test_repeated_contributions_share_one_target_baseline\n    costs.squared('code', torch.tensor([2.]), torch.tensor([1.]))\n    ^^^^^^^^^^^^^\nE   AttributeError: 'Error' object has no attribute 'squared'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00010058299812953919,
+          "message": "test/test_relative_error.py:56: in test_row_costs_train_one_ratio_without_amplifying_small_target_rows\n    costs = Error(row_mask=active)\n            ^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: Error.__init__() got an unexpected keyword argument 'row_mask'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 9.383300493936986e-05,
+          "message": "test/test_relative_error.py:66: in test_nearly_solved_error_stays_small_and_regularizer_keeps_strength\n    costs.squared('solved', torch.tensor([1.001]), torch.tensor([1.]))\n    ^^^^^^^^^^^^^\nE   AttributeError: 'Error' object has no attribute 'squared'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 9.116700675804168e-05,
+          "message": "test/test_relative_error.py:74: in test_reporting_only_penalty_does_not_enter_trained_total\n    costs.squared('fit', torch.tensor([0.]), torch.tensor([1.]))\n    ^^^^^^^^^^^^^\nE   AttributeError: 'Error' object has no attribute 'squared'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/registry-before",
+  "elapsed_seconds": 6.46130308300053,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 426542328,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/registry-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/registry-before/collect.json"
+    ],
+    "pid": 7708,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 260785040,
+    "elapsed_seconds": 2.300242083998455,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/registry-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+        "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+        "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+        "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+        "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+        "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+        "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+        "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+        "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
+        "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

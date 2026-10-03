@@ -1,0 +1,661 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients __________
+
+    def test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients():
+        """K=2 replay is parity-exact for all six STM tensors and L_intra."""
+        torch.manual_seed(71)
+        words = torch.randn(2, 4, 5)
+        gates = torch.tensor([
+            [True, True, True, True],
+            [True, True, False, False],
+        ])
+    
+        legacy = _harness(words, gates, chunk=False)
+        predictor_state = legacy.conceptualSpace.intraSentenceLayer.state_dict()
+        chunked = _harness(
+            words, gates, chunk=True, predictor_state=predictor_state)
+    
+        for p in range(words.shape[1]):
+>           legacy._per_word_body_step(
+                words[:, p:p + 1], p, gates[:, p:p + 1],
+                legacy._per_word_contributions)
+
+test/test_compiled_word_chunk.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_compiled_word_chunk.py:77: in _fake_word_body
+    cs._stm_predict_then_perceive_serial(
+bin/Spaces.py:15942: in _stm_predict_then_perceive_serial
+    self._accumulate_intra_loss(prediction, idea, row_gate=row_gate)
+bin/Spaces.py:15816: in _accumulate_intra_loss
+    self._intra_errors.squared('intra', prediction, target, mask=row_gate,
+    ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (stm): ShortTermMemory()
+  (intraSentenceLayer): IntraSentenceLayer(
+    (pi): PiLayer(
+      (laye...ayer): InvertibleLinearLayer()
+      )
+    )
+    (routing_proj): Linear(in_features=2, out_features=5, bias=True)
+  )
+)
+name = '_intra_errors'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_intra_errors'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ test_k2_adapter_maps_local_choice_trace_into_sentence_slots __________
+torch._dynamo.exc.ObservedAttributeError: raised exception AttributeError("'ConceptualSpace' object has no attribute '_intra_errors'")
+
+The above exception was the direct cause of the following exception:
+
+    def test_k2_adapter_maps_local_choice_trace_into_sentence_slots():
+        """A reused local p=0/1 graph must not overwrite earlier word choices."""
+        torch.manual_seed(73)
+        words = torch.randn(1, 4, 5)
+        gates = torch.ones(1, 4, dtype=torch.bool)
+        model = _harness(words, gates, chunk=True)
+        trace = Language.ReconstructionStack(batch=1, max_depth=16)
+        trace.prepare_choices(
+            1, 3 * int(words.shape[1]) + 2, device=words.device,
+            unary_rule_ids=(15, 16), binary_rule_ids=(5, 6))
+        model.symbolSpace = types.SimpleNamespace(reconstruction_stack=trace)
+        model.trace_scale = nn.Parameter(torch.tensor(0.25))
+        original_body = model._per_word_body_step
+    
+        def traced_body(self, word, p, gate, out_slot, active_host=True):
+            result = original_body(word, p, gate, out_slot, active_host)
+            active = gate.reshape(-1).bool()
+            trace.record_choice(
+                3 * p, torch.full_like(active, 5 + p, dtype=torch.long),
+                arity=2, mask=active,
+                local_structural_loss=(self.trace_scale * float(p + 1)).expand(
+                    active.shape[0]))
+            trace.record_choice(
+                3 * p + 2,
+                torch.full_like(active, 15 + p, dtype=torch.long),
+                arity=1, mask=active,
+                local_structural_loss=(self.trace_scale * float(p + 1)).expand(
+                    active.shape[0]))
+            return result
+    
+        model._per_word_body_step = types.MethodType(traced_body, model)
+        model._compiled_word_chunk_step = torch.compile(
+            model._aligned_word_chunk2, backend="eager", fullgraph=True)
+>       result = model._run_aligned_word_chunk_loop(
+            model._per_word_contributions, int(words.shape[1]))
+
+test/test_compiled_word_chunk.py:230: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19748: in _run_aligned_word_chunk_loop
+    concept_chunk, percept_chunk = step(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[[ 0.3408,  0.2297,  1.7066,  1.3925,  0.0561],
+         [ 0.2836, -0.5602,  1.4158,  1.6667, -0.2644]]]), tensor([[True, True]]))
+kwargs = {}
+
+    @functools.wraps(fn)
+    def compile_wrapper(*args: Any, **kwargs: Any) -> Any:
+        # NB: function calls here could change global state (e.g. random state)
+        # and that can result in different behavior between eager and compiled!
+        # In particular, we don't have control over internal functions like justknobs_check
+        # called in _maybe_set_eval_frame.
+        # Unlike in eval_frame_cpp.cpp/convert_frame.py, we don't attempt to restore global state
+        # due to additional overhead costs.
+        prior = set_eval_frame(None)
+        prior_error_on_nested_compile: bool | None = None
+        fullgraph_count_enabled = False
+        # Fake propagation and AOT metadata collection execute user
+        # subclass code under active fake/functional modes. Nested compile
+        # must run the original function in those regions.  Still honor
+        # explicit/internal requests to compile during FX tracing: HOP export
+        # depends on its internal compile to preserve HOPs, and some tests
+        # intentionally enable force_compile_during_fx_trace to get nested
+        # subgraphs.
+        if (
+            _is_eager_on_nested_compile()
+            and not config.force_compile_during_fx_trace
+        ):
+            from torch._higher_order_ops.utils import _in_hop_compile
+    
+            if not _in_hop_compile():
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    _maybe_set_eval_frame(prior)
+    
+        if self.fullgraph:
+            prior_error_on_nested_compile = set_fullgraph_error_on_nested_compile(
+                torch._dynamo.config.error_on_dynamo_callback_in_fullgraph_compiled_code
+            )
+            if not self.export:
+                fullgraph_count_enabled = set_fullgraph_compiled_frame_count(0) < 0
+                if fullgraph_count_enabled:
+                    reset_skip_reasons()
+        try:
+            # We shouldn't compile inside kernel invocation.
+            if tracing_context := torch._guards.TracingContext.try_get():
+                if (
+                    tracing_context.fake_mode is not None
+                    and tracing_context.fake_mode.in_kernel_invocation
+                ):
+                    return fn(*args, **kwargs)
+            # Skip nested compile during export (but not HOP internal compile)
+            # Only skip if there's an active TracingContext (nested), not for top-level export
+            if (
+                torch.compiler.is_exporting()
+                and not config.force_compile_during_fx_trace
+            ):
+                from torch._higher_order_ops.utils import _in_hop_compile
+    
+                if not _in_hop_compile():
+                    if torch._guards.TracingContext.try_get() is not None:
+                        return fn(*args, **kwargs)
+            # Skip nested compile - just inline the function
+            if (
+                is_fx_symbolic_tracing()
+                and not config.force_compile_during_fx_trace
+            ):
+                if config.error_on_nested_fx_trace:
+                    raise RuntimeError(
+                        "Detected that you are using FX to symbolically trace "
+                        "a dynamo-optimized function. This is not supported at the moment."
+                    )
+                else:
+                    return fn(*args, **kwargs)
+    
+            if is_jit_tracing():
+                raise RuntimeError(
+                    "Detected that you are using FX to torch.jit.trace "
+                    "a dynamo-optimized function. This is not supported at the moment."
+                )
+    
+            cleanups = [enter() for enter in self.enter_exit_hooks]
+            prior_skip_guard_eval_unsafe = set_skip_guard_eval_unsafe(
+                _is_skip_guard_eval_unsafe_stance()
+            )
+            prior_isolate_recompiles_id = set_eval_frame_isolate_recompiles_id(
+                self._isolate_recompiles_id
+            )
+            prior_error_on_graph_break = None
+            if not self.fullgraph and self.error_on_graph_break is not None:
+                current_error_on_graph_break = _get_error_on_graph_break()
+                if current_error_on_graph_break != self.error_on_graph_break:
+                    prior_error_on_graph_break = current_error_on_graph_break
+                    _set_error_on_graph_break(self.error_on_graph_break)
+    
+            # Ensure that if an assertion occurs after graph pushes
+            # something onto the DynamicLayerStack then we pop it off (the
+            # constructed graph code isn't guarded with try/finally).
+            #
+            # This used to be a context but putting a `with` here is a noticeable
+            # perf regression (#126293)
+            saved_dynamic_layer_stack_depth = (
+                torch._C._functorch.get_dynamic_layer_stack_depth()
+            )
+    
+            _maybe_set_eval_frame(_callback_from_stance(callback))
+    
+            # Snapshot the local dispatch key set onto a C++ thread-local
+            # stack so it can be restored after the compiled call, matching
+            # the old _ForceDispatchKeyGuard behavior. Keeping the snapshot
+            # in C++ avoids constructing pybind11 DispatchKeySet /
+            # context-manager instances on every compiled call. The restore
+            # runs in the outer finally below (after the inner finally, i.e.
+            # after pop_dynamic_layer_stack) so the save/restore stack stays
+            # balanced even if the inner finally itself raises (e.g. the
+            # fullgraph "found no compiled frames" error).
+            torch._C._dynamo_save_local_dispatch_key_set()
+            try:
+                call_succeeded = False
+                try:
+                    result = fn(*args, **kwargs)
+                    call_succeeded = True
+                except (Unsupported, UncapturedHigherOrderOpError, UserError) as e:
+                    if config.verbose:
+                        raise
+                    # strip internal tracebacks from causes
+                    cur_exn: BaseException = e
+                    while cur_exn.__cause__ is not None:
+                        cur_exn.__cause__.with_traceback(None)
+                        cur_exn = cur_exn.__cause__
+    
+>                   raise e.with_traceback(
+                        None
+                    ) from e.__cause__  # User compiler error
+E                   torch._dynamo.exc.Unsupported: Observed exception
+E                     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.
+E                     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance("force_eager")`. 
+E                     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+E                   
+E                     Developer debug context: raised exception AttributeError("'ConceptualSpace' object has no attribute '_intra_errors'")
+E                   
+E                    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html
+E                   
+E                   from user code:
+E                      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 19551, in _aligned_word_chunk2
+E                       self._per_word_body_step(
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py", line 212, in traced_body
+E                       result = original_body(word, p, gate, out_slot, active_host)
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py", line 74, in _fake_word_body
+E                       cs._stm_predict_then_perceive_serial_fixed(
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 15996, in _stm_predict_then_perceive_serial_fixed
+E                       self._accumulate_intra_loss(
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 15816, in _accumulate_intra_loss
+E                       self._intra_errors.squared('intra', prediction, target, mask=row_gate,
+E                   
+E                   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: Unsupported
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+________ test_chunk_views_keep_one_graph_across_part_and_bucket_widths _________
+torch._dynamo.exc.ObservedAttributeError: raised exception AttributeError("'ConceptualSpace' object has no attribute '_intra_errors'")
+
+The above exception was the direct cause of the following exception:
+
+    def test_chunk_views_keep_one_graph_across_part_and_bucket_widths():
+        """K=2 layouts avoid specialization by residual P or outer W."""
+        torch.manual_seed(151)
+        words = torch.randn(2, 2, 5)
+        gates = torch.ones(2, 2, dtype=torch.bool)
+        model = _harness(words, gates, chunk=True)
+        original_body = model._per_word_body_step
+    
+        def part_reading_body(self, word, p, gate, out_slot,
+                              active_host=True):
+            result = original_body(word, p, gate, out_slot, active_host)
+            isp = self.inputSpace
+            residual = (
+                isp._ar_word_part_ids[:, p, :].to(word.dtype)
+                * isp._ar_word_part_mask[:, p, :].to(word.dtype)
+                + isp._ar_word_part_offsets[:, p, :].to(word.dtype)
+            ).sum(dim=-1, keepdim=True)
+            out_slot[p] = out_slot[p] + residual * 1e-6
+            self._per_word_percept_contributions[p] = (
+                self._per_word_percept_contributions[p] + residual * 1e-6)
+            return result
+    
+        model._per_word_body_step = types.MethodType(part_reading_body, model)
+        graphs = []
+    
+        def record_graph(gm, _example_inputs):
+            graphs.append(gm)
+            return gm.forward
+    
+        def install_layout(n_words, part_width):
+            batch, _, dim = words.shape
+            isp = model.inputSpace
+            isp._ar_embedded_N = torch.randn(batch, n_words, dim)
+            isp._word_active_mask = torch.ones(
+                batch, n_words, dtype=torch.bool)
+            parts = torch.arange(part_width).view(1, 1, part_width).expand(
+                batch, n_words, part_width).clone()
+            isp._ar_word_part_ids = parts
+            isp._ar_word_part_mask = torch.ones_like(
+                parts, dtype=torch.bool)
+            isp._ar_word_part_offsets = parts.clone()
+            isp._ar_word_concept_rows = (
+                torch.arange(n_words).view(1, n_words).expand(batch, -1) + 20)
+            isp._ar_word_concept_orders = (
+                torch.arange(n_words).view(1, n_words).expand(batch, -1) + 2)
+            isp._word_last_slot_mask = isp._word_active_mask.clone()
+            model._per_word_contributions = [None] * n_words
+            model._per_word_percept_contributions = [None] * n_words
+    
+        try:
+            model._compiled_word_chunk_step = torch.compile(
+                model._aligned_word_chunk2,
+                backend=record_graph,
+                fullgraph=True)
+            install_layout(2, 3)
+>           model._run_aligned_word_chunk_loop(
+                model._per_word_contributions, 2)
+
+test/test_compiled_word_chunk.py:301: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19748: in _run_aligned_word_chunk_loop
+    concept_chunk, percept_chunk = step(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[[ 0.1215,  0.5608,  2.1205,  0.1320,  0.9386],
+         [-1.1876, -1.0010,  0.0958, -0.0530, -0.1290]],
+
+   ...149,  0.4186],
+         [ 1.6431,  1.6006,  1.8757,  2.0816, -2.0026]]]), tensor([[True, True],
+        [True, True]]))
+kwargs = {}
+
+    @functools.wraps(fn)
+    def compile_wrapper(*args: Any, **kwargs: Any) -> Any:
+        # NB: function calls here could change global state (e.g. random state)
+        # and that can result in different behavior between eager and compiled!
+        # In particular, we don't have control over internal functions like justknobs_check
+        # called in _maybe_set_eval_frame.
+        # Unlike in eval_frame_cpp.cpp/convert_frame.py, we don't attempt to restore global state
+        # due to additional overhead costs.
+        prior = set_eval_frame(None)
+        prior_error_on_nested_compile: bool | None = None
+        fullgraph_count_enabled = False
+        # Fake propagation and AOT metadata collection execute user
+        # subclass code under active fake/functional modes. Nested compile
+        # must run the original function in those regions.  Still honor
+        # explicit/internal requests to compile during FX tracing: HOP export
+        # depends on its internal compile to preserve HOPs, and some tests
+        # intentionally enable force_compile_during_fx_trace to get nested
+        # subgraphs.
+        if (
+            _is_eager_on_nested_compile()
+            and not config.force_compile_during_fx_trace
+        ):
+            from torch._higher_order_ops.utils import _in_hop_compile
+    
+            if not _in_hop_compile():
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    _maybe_set_eval_frame(prior)
+    
+        if self.fullgraph:
+            prior_error_on_nested_compile = set_fullgraph_error_on_nested_compile(
+                torch._dynamo.config.error_on_dynamo_callback_in_fullgraph_compiled_code
+            )
+            if not self.export:
+                fullgraph_count_enabled = set_fullgraph_compiled_frame_count(0) < 0
+                if fullgraph_count_enabled:
+                    reset_skip_reasons()
+        try:
+            # We shouldn't compile inside kernel invocation.
+            if tracing_context := torch._guards.TracingContext.try_get():
+                if (
+                    tracing_context.fake_mode is not None
+                    and tracing_context.fake_mode.in_kernel_invocation
+                ):
+                    return fn(*args, **kwargs)
+            # Skip nested compile during export (but not HOP internal compile)
+            # Only skip if there's an active TracingContext (nested), not for top-level export
+            if (
+                torch.compiler.is_exporting()
+                and not config.force_compile_during_fx_trace
+            ):
+                from torch._higher_order_ops.utils import _in_hop_compile
+    
+                if not _in_hop_compile():
+                    if torch._guards.TracingContext.try_get() is not None:
+                        return fn(*args, **kwargs)
+            # Skip nested compile - just inline the function
+            if (
+                is_fx_symbolic_tracing()
+                and not config.force_compile_during_fx_trace
+            ):
+                if config.error_on_nested_fx_trace:
+                    raise RuntimeError(
+                        "Detected that you are using FX to symbolically trace "
+                        "a dynamo-optimized function. This is not supported at the moment."
+                    )
+                else:
+                    return fn(*args, **kwargs)
+    
+            if is_jit_tracing():
+                raise RuntimeError(
+                    "Detected that you are using FX to torch.jit.trace "
+                    "a dynamo-optimized function. This is not supported at the moment."
+                )
+    
+            cleanups = [enter() for enter in self.enter_exit_hooks]
+            prior_skip_guard_eval_unsafe = set_skip_guard_eval_unsafe(
+                _is_skip_guard_eval_unsafe_stance()
+            )
+            prior_isolate_recompiles_id = set_eval_frame_isolate_recompiles_id(
+                self._isolate_recompiles_id
+            )
+            prior_error_on_graph_break = None
+            if not self.fullgraph and self.error_on_graph_break is not None:
+                current_error_on_graph_break = _get_error_on_graph_break()
+                if current_error_on_graph_break != self.error_on_graph_break:
+                    prior_error_on_graph_break = current_error_on_graph_break
+                    _set_error_on_graph_break(self.error_on_graph_break)
+    
+            # Ensure that if an assertion occurs after graph pushes
+            # something onto the DynamicLayerStack then we pop it off (the
+            # constructed graph code isn't guarded with try/finally).
+            #
+            # This used to be a context but putting a `with` here is a noticeable
+            # perf regression (#126293)
+            saved_dynamic_layer_stack_depth = (
+                torch._C._functorch.get_dynamic_layer_stack_depth()
+            )
+    
+            _maybe_set_eval_frame(_callback_from_stance(callback))
+    
+            # Snapshot the local dispatch key set onto a C++ thread-local
+            # stack so it can be restored after the compiled call, matching
+            # the old _ForceDispatchKeyGuard behavior. Keeping the snapshot
+            # in C++ avoids constructing pybind11 DispatchKeySet /
+            # context-manager instances on every compiled call. The restore
+            # runs in the outer finally below (after the inner finally, i.e.
+            # after pop_dynamic_layer_stack) so the save/restore stack stays
+            # balanced even if the inner finally itself raises (e.g. the
+            # fullgraph "found no compiled frames" error).
+            torch._C._dynamo_save_local_dispatch_key_set()
+            try:
+                call_succeeded = False
+                try:
+                    result = fn(*args, **kwargs)
+                    call_succeeded = True
+                except (Unsupported, UncapturedHigherOrderOpError, UserError) as e:
+                    if config.verbose:
+                        raise
+                    # strip internal tracebacks from causes
+                    cur_exn: BaseException = e
+                    while cur_exn.__cause__ is not None:
+                        cur_exn.__cause__.with_traceback(None)
+                        cur_exn = cur_exn.__cause__
+    
+>                   raise e.with_traceback(
+                        None
+                    ) from e.__cause__  # User compiler error
+E                   torch._dynamo.exc.Unsupported: Observed exception
+E                     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.
+E                     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance("force_eager")`. 
+E                     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+E                   
+E                     Developer debug context: raised exception AttributeError("'ConceptualSpace' object has no attribute '_intra_errors'")
+E                   
+E                    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html
+E                   
+E                   from user code:
+E                      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 19551, in _aligned_word_chunk2
+E                       self._per_word_body_step(
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py", line 256, in part_reading_body
+E                       result = original_body(word, p, gate, out_slot, active_host)
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py", line 74, in _fake_word_body
+E                       cs._stm_predict_then_perceive_serial_fixed(
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 15996, in _stm_predict_then_perceive_serial_fixed
+E                       self._accumulate_intra_loss(
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 15816, in _accumulate_intra_loss
+E                       self._intra_errors.squared('intra', prediction, target, mask=row_gate,
+E                   
+E                   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: Unsupported
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=========================== short test summary info ============================
+FAILED test/test_compiled_word_chunk.py::test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients
+FAILED test/test_compiled_word_chunk.py::test_k2_adapter_maps_local_choice_trace_into_sentence_slots
+FAILED test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths
+3 failed in 3.72s

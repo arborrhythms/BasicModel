@@ -1,0 +1,61 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+EXPECTATION_OWNER {"sid": 0, "trial": "exploit", "predictors": 6, "in_optimizer": 0, "owner_parameters": 40, "terms": {"reconstruction.bytes": {"weight": 0.1, "value": 0.2667964994907379, "weighted": 0.02667964994907379, "space": null, "category": "reconstruction", "count": 1, "kind": "relative", "objective": "reconstruction", "trained": true, "context_weight": 1.0, "row_values": [0.2667964994907379], "raw": 1.4794338941574097, "baseline": 5.545177459716797, "active_entries": 1.0}, "concept_readout_l1": {"weight": 0.01, "value": 0.875, "weighted": 0.00875, "space": null, "category": "reg", "count": 1, "kind": "penalty", "objective": "reg", "trained": false, "context_weight": 1.0}, "expectation.intra": {"weight": 0.0, "value": 0.0, "weighted": 0.0, "space": null, "category": "expectation", "count": 1, "kind": "penalty", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [0.0], "raw": 0.0, "baseline": 0.0, "active_entries": 0.0}}}
+EXPECTATION_OWNER {"sid": 0, "trial": "explore", "predictors": 6, "in_optimizer": 0, "owner_parameters": 40, "terms": {"reconstruction.bytes": {"weight": 0.1, "value": 0.14686742424964905, "weighted": 0.014686742424964906, "space": null, "category": "reconstruction", "count": 1, "kind": "relative", "objective": "reconstruction", "trained": true, "context_weight": 1.0, "row_values": [0.14686742424964905], "raw": 0.8144059181213379, "baseline": 5.545177459716797, "active_entries": 1.0}, "concept_readout_l1": {"weight": 0.01, "value": 0.875, "weighted": 0.00875, "space": null, "category": "reg", "count": 1, "kind": "penalty", "objective": "reg", "trained": false, "context_weight": 1.0}, "expectation.intra": {"weight": 0.0, "value": 0.0, "weighted": 0.0, "space": null, "category": "expectation", "count": 1, "kind": "penalty", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [0.0], "raw": 0.0, "baseline": 0.0, "active_entries": 0.0}}}
+EXPECTATION_OWNER {"sid": 1, "trial": "exploit", "predictors": 6, "in_optimizer": 0, "owner_parameters": 40, "terms": {"reconstruction.bytes": {"weight": 0.1, "value": 0.31024396419525146, "weighted": 0.031024396419525146, "space": null, "category": "reconstruction", "count": 1, "kind": "relative", "objective": "reconstruction", "trained": true, "context_weight": 1.0, "row_values": [0.31024396419525146], "raw": 1.720357894897461, "baseline": 5.545177459716797, "active_entries": 1.0}, "expectation.roles": {"weight": 0.1, "value": 1.1249150037765503, "weighted": 0.11249150037765504, "space": null, "category": "expectation", "count": 1, "kind": "relative", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [1.1249150037765503], "raw": 0.0034045034553855658, "baseline": 0.0030264537781476974, "active_entries": 408.0}, "expectation.presence": {"weight": 0.1, "value": 0.9866308569908142, "weighted": 0.09866308569908143, "space": null, "category": "expectation", "count": 1, "kind": "relative", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [0.9866308569908142], "raw": 0.6838803887367249, "baseline": 0.6931471824645996, "active_entries": 3.0}, "expectation.kind": {"weight": 0.1, "value": 1.0, "weighted": 0.1, "space": null, "category": "expectation", "count": 1, "kind": "relative", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [1.0], "raw": 0.6931471824645996, "baseline": 0.6931471824645996, "active_entries": 1.0}, "concept_readout_l1": {"weight": 0.01, "value": 0.5, "weighted": 0.005, "space": null, "category": "reg", "count": 1, "kind": "penalty", "objective": "reg", "trained": false, "context_weight": 1.0}, "expectation.intra": {"weight": 0.0, "value": 0.0, "weighted": 0.0, "space": null, "category": "expectation", "count": 1, "kind": "penalty", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [0.0], "raw": 0.0, "baseline": 0.0, "active_entries": 0.0}}}
+EXPECTATION_OWNER {"sid": 1, "trial": "explore", "predictors": 6, "in_optimizer": 0, "owner_parameters": 40, "terms": {"reconstruction.bytes": {"weight": 0.1, "value": 0.31024396419525146, "weighted": 0.031024396419525146, "space": null, "category": "reconstruction", "count": 1, "kind": "relative", "objective": "reconstruction", "trained": true, "context_weight": 1.0, "row_values": [0.31024396419525146], "raw": 1.720357894897461, "baseline": 5.545177459716797, "active_entries": 1.0}, "expectation.roles": {"weight": 0.1, "value": 1.1249150037765503, "weighted": 0.11249150037765504, "space": null, "category": "expectation", "count": 1, "kind": "relative", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [1.1249150037765503], "raw": 0.0034045034553855658, "baseline": 0.0030264537781476974, "active_entries": 408.0}, "expectation.presence": {"weight": 0.1, "value": 0.9866308569908142, "weighted": 0.09866308569908143, "space": null, "category": "expectation", "count": 1, "kind": "relative", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [0.9866308569908142], "raw": 0.6838803887367249, "baseline": 0.6931471824645996, "active_entries": 3.0}, "expectation.kind": {"weight": 0.1, "value": 1.0, "weighted": 0.1, "space": null, "category": "expectation", "count": 1, "kind": "relative", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [1.0], "raw": 0.6931471824645996, "baseline": 0.6931471824645996, "active_entries": 1.0}, "concept_readout_l1": {"weight": 0.01, "value": 0.5, "weighted": 0.005, "space": null, "category": "reg", "count": 1, "kind": "penalty", "objective": "reg", "trained": false, "context_weight": 1.0}, "expectation.intra": {"weight": 0.0, "value": 0.0, "weighted": 0.0, "space": null, "category": "expectation", "count": 1, "kind": "penalty", "objective": "expectation", "trained": true, "context_weight": 1.0, "row_values": [0.0], "raw": 0.0, "baseline": 0.0, "active_entries": 0.0}}}
+batch = 0 (warm-up)
+F
+=================================== FAILURES ===================================
+_ test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning _
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-822/test_enable_after_disabled_con0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1420ed6d0>
+
+    @pytest.mark.usefixtures('eager_reading')
+    @pytest.mark.slow
+    def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning(tmp_path, monkeypatch):
+        from test_meronomy_ladder import _build_ladder_variant
+        monkeypatch.setenv("MODEL_COMPILE", "none")
+        model = _build_ladder_variant(tmp_path, "toggle_expectation", [
+            ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+            ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+            ("<interLossWeight>0.0</interLossWeight>", "<interLossWeight>0.1</interLossWeight>"),
+        ])
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model._install_unit_span_fn()
+        monkeypatch.setattr(model.inputSpace.data, "has_supervised_outputs", False)
+        model.eval()
+        optimizer = model.getOptimizer(lr=1e-5)
+        owner = model._what_memory()
+        assert model.symbolSpace.discourse is None
+        try:
+            for enabled in (True, False, True):
+                model.set_sentence_expectation(enabled)
+                discourse = model.symbolSpace.discourse
+                parameters = list(discourse._inter_predictor.parameters())
+                before = [p.detach().clone() for p in parameters]
+                count = discourse.expectation_metrics()["predicted_targets"]
+                inputs = model.inputSpace.prepPackedInput([["1 plus 2", "3 plus 4"]])
+                result, _ = model.runBatch(train=True, batchSize=1, optimizer=optimizer,
+                                          batch_override=(inputs, torch.zeros(1, 1, 0)))
+                assert model._what_memory() is owner
+                assert result.lossIn is not None
+                changes = [not torch.equal(p, old) for p, old in zip(parameters, before)]
+>               assert any(changes) if enabled else not any(changes)
+E               assert False
+
+test/test_expectation_defaults.py:206: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning
+1 failed, 2 warnings in 6.88s

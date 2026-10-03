@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer"
+  ],
+  "completed": [
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer"
+  ],
+  "slow_selected": [
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.14510929200332612,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

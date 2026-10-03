@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]"
+  ],
+  "completed": [
+    "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.2538497499990626,
+      "message": "test/test_trial_policy_ownership.py:37: in test_trial_generation_leaves_policy_credit_at_batch_end\n    assert model._output_policy_cost is None\nE   assert tensor([4.7232], grad_fn=<CloneBackward0>) is None\nE    +  where tensor([4.7232], grad_fn=<CloneBackward0>) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-3): 4 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n)._output_policy_cost",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

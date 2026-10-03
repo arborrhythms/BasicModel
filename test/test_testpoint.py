@@ -421,11 +421,7 @@ class TestModelXmlSchema(unittest.TestCase):
     def test_xor_exact_xml(self):
         self._validate(os.path.join(_DATA_DIR, "XOR_exact.xml"))
 
-    def test_xor_spaces_xml(self):
-        self._validate(os.path.join(_DATA_DIR, "XOR_spaces.xml"))
 
-    def test_xor_recon_xml(self):
-        self._validate(os.path.join(_DATA_DIR, "XOR_recon.xml"))
 
     def test_xor_pos_xml(self):
         self._validate(os.path.join(_DATA_DIR, "XOR_pos.xml"))

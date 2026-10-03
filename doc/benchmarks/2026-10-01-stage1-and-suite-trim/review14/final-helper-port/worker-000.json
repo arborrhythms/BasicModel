@@ -1,0 +1,24 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none"
+  ],
+  "completed": [
+    "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01337470900034532,
+      "message": "test/test_input_word_cursor.py:215: in test_nongrammar_config_disables_cursor_and_next_word_is_none\n    m = _build_nongrammar_model()\n        ^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_input_word_cursor.py:73: in _build_nongrammar_model\n    m, _ = BaseModel.from_config(cfg, data=TheData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1824: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7027: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1924: in create_from_config\n    self.create(\nbin/Models.py:7047: in create\n    return self._create_per_stage(\nbin/Models.py:16860: in _create_per_stage\n    self.perceptualSpace = self._make_perceptual_space(\nbin/Models.py:7064: in _make_perceptual_space\n    return PartSpace(inputShape, spaceShape, outputShape)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:11174: in __init__\n    self.percept_store = _PerceptStore(\nbin/Layers.py:13563: in __init__\n    self._basis.freeze_capacity(\"PartSpace.nVectors\")\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'Tensor' object has no attribute 'freeze_capacity'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

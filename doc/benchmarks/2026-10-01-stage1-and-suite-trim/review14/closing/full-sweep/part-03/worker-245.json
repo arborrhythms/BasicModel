@@ -1,0 +1,94 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_xor_spaces.py::TestLoadInline::test_single_input_element_not_list",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_forward_pass_runs",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_model_has_input_space",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_output_shape",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_space_char_in_vocab",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_xor_words_in_vocab",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_consecutive_join_no_auto_spaces",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_space_token_predicted_by_reverse"
+  ],
+  "completed": [
+    "test/test_xor_spaces.py::TestLoadInline::test_single_input_element_not_list",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_forward_pass_runs",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_model_has_input_space",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_output_shape",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_space_char_in_vocab",
+    "test/test_xor_spaces.py::TestXORSpacesModel::test_xor_words_in_vocab",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_consecutive_join_no_auto_spaces",
+    "test/test_xor_spaces.py::TestSpacePrediction::test_space_token_predicted_by_reverse"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_xor_spaces.py::TestLoadInline::test_single_input_element_not_list",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014933299098629504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_forward_pass_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01704304199665785,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_model_has_input_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.554199641570449e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_output_shape",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0024525410117348656,
+      "message": "test/test_xor_spaces.py:219: in test_output_shape\n    _, _, output, _ = self.model.forward(inp)\n                      ^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8707: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24085: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13825: in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\nbin/Spaces.py:12347: in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:11784: in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:12228: in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:27: in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:42: in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: occurrence exceeds its configured where-space capacity",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_space_char_in_vocab",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00014737500168848783,
+      "message": "test/test_xor_spaces.py:174: in test_space_char_in_vocab\n    self.assertIsInstance(emb, Models.Embedding,\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'> : InputSpace should use Embedding for text model",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestXORSpacesModel::test_xor_words_in_vocab",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00011162500595673919,
+      "message": "test/test_xor_spaces.py:188: in test_xor_words_in_vocab\n    self.assertIn(ch, emb.pretrain.key_to_index,\n                      ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestSpacePrediction::test_consecutive_join_no_auto_spaces",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.003302875004010275,
+      "message": "test/test_xor_spaces.py:252: in test_consecutive_join_no_auto_spaces\n    self.assertIsInstance(emb, Models.Embedding)\nE   AssertionError: RadixLayer(\nE     (byte_fallback): BytesFallbackEncoder()\nE   ) is not an instance of <class 'Spaces.Embedding'>",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestSpacePrediction::test_space_token_predicted_by_reverse",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.002994209004100412,
+      "message": "test/test_xor_spaces.py:303: in test_space_token_predicted_by_reverse\n    self.assertIn(\" \", emb.pretrain.key_to_index)\n                       ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

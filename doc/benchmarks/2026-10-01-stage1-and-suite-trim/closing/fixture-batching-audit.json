@@ -1,0 +1,56 @@
+[
+  {
+    "file": "test/test_output_path_supervised.py",
+    "fixture": "xor_synth_config",
+    "consumers": [
+      "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_parallel_topology"
+    ],
+    "workers": [
+      "worker-464.log"
+    ]
+  },
+  {
+    "file": "test/test_output_path_supervised.py",
+    "fixture": "serial_synth_config",
+    "consumers": [
+      "test/test_output_path_supervised.py::test_serial_answer_path_varies_with_the_input",
+      "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology"
+    ],
+    "workers": [
+      "worker-464.log"
+    ]
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "fixture": "ladder",
+    "consumers": [
+      "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes",
+      "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact",
+      "test/test_meronomy_ladder.py::test_long_unit_presents_every_atom",
+      "test/test_meronomy_ladder.py::test_ladder_grammar_has_chunk_as_a_reduce_candidate",
+      "test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole",
+      "test/test_meronomy_ladder.py::test_word_unit_fraction_is_one_on_plain_text",
+      "test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units",
+      "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+      "test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling",
+      "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences"
+    ],
+    "workers": [
+      "worker-405.log",
+      "worker-407.log",
+      "worker-408.log",
+      "worker-406.log"
+    ]
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "fixture": "trained_ladder",
+    "consumers": [
+      "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+      "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation"
+    ],
+    "workers": [
+      "worker-407.log"
+    ]
+  }
+]

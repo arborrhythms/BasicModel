@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mereology_raise.py::test_synthesize_over_set_shape_and_binary_equivalence"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-293.recycle.json"
+}

@@ -1,0 +1,81 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_distributional_code_cost_is_off_in_reconstruction_round",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+  ],
+  "completed": [
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_distributional_code_cost_is_off_in_reconstruction_round",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+  ],
+  "slow_selected": [
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_distributional_code_cost_is_off_in_reconstruction_round",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06303350001689978,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19882879199576564,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06000133400084451,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_distributional_code_cost_is_off_in_reconstruction_round",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.058305125014157966,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1937106660043355,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.19922929198946804,
+      "message": "test/test_sparse_concept_e2e.py:300: in test_two_phase_forward_cutover_stamps_terminal_activations\n    assert acts is not None and int(acts.shape[0]) == sum(cs0._field_caps())\nE   assert (tensor([[[[0., 0.]],\\n\\n         [[1., 1.]],\\n\\n         [[1., 1.]],\\n\\n         [[1., 1.]]],\\n\\n\\n        [[[0., 0.]],\\n\\n      ...]]],\\n\\n\\n        [[[0., 0.]],\\n\\n         [[0., 0.]],\\n\\n         [[0., 0.]],\\n\\n         [[0., 0.]]]], grad_fn=<CatBackward0>) is not None and 8 == 15)\nE    +  where 8 = int(8)\nE    +  and   15 = sum((8, 4, 2, 1))\nE    +    where (8, 4, 2, 1) = _field_caps()\nE    +      where _field_caps = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ... (concept_source_readout): SigmaConceptsFromPercepts(\\n    (sigma): SigmaLayer(\\n      (layer): LinearLayer()\\n    )\\n  )\\n)._field_caps",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

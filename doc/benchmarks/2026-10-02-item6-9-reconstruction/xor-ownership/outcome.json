@@ -1,0 +1,383 @@
+{
+  "training_batches": 400,
+  "evaluation_batches": 1,
+  "last_training_trials": {
+    "exploit": {
+      "pair": 399,
+      "trial": "exploit",
+      "train": true,
+      "scope": "batch",
+      "batch": 399,
+      "sid": 0,
+      "active": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "weighted": {
+        "reconstruction": [
+          7.48116071918048e-05,
+          0.0003178926126565784,
+          2.626338209665846e-05,
+          0.004233344458043575
+        ],
+        "expectation": [
+          9.344459977000952e-05,
+          6.149160617496818e-05,
+          0.00017446951824240386,
+          0.00013179969391785562
+        ],
+        "supplied_answer": [
+          0.029324723407626152,
+          0.4778463840484619,
+          0.1139085441827774,
+          0.07709921896457672
+        ],
+        "total": [
+          0.029399534687399864,
+          0.47816428542137146,
+          0.11393480747938156,
+          0.08133256435394287
+        ]
+      },
+      "terms": {
+        "reconstruction.bytes": {
+          "weight": 0.1,
+          "value": 0.011630779132246971,
+          "weighted": 0.0011630779132246972,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0007481160573661327,
+            0.0031789259519428015,
+            0.0002626338100526482,
+            0.042333442717790604
+          ],
+          "raw": 0.06449473649263382,
+          "baseline": 5.545177459716797,
+          "active_entries": 4.0
+        },
+        "reconstruction.free_bytes": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 5.545177459716797,
+          "active_entries": 4.0
+        },
+        "answer.what": {
+          "weight": 0.7,
+          "value": 0.24934959411621094,
+          "weighted": 0.17454471588134765,
+          "space": null,
+          "category": "prediction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "output",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.041892461478710175,
+            0.6826376914978027,
+            0.162726491689682,
+            0.11014173924922943
+          ],
+          "raw": 0.12467479705810547,
+          "baseline": 0.5,
+          "active_entries": 4.0
+        },
+        "expectation.intra": {
+          "weight": 0.1,
+          "value": 0.0011530135525390506,
+          "weighted": 0.00011530135525390507,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0009344459977000952,
+            0.0006149160326458514,
+            0.0017446951242163777,
+            0.0013179968809708953
+          ],
+          "raw": 0.0004614538629539311,
+          "baseline": 0.4002154767513275,
+          "active_entries": 40.0
+        }
+      },
+      "evaluation_supplied_answer": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "reconstruction_enabled": true
+    },
+    "explore": {
+      "pair": 399,
+      "trial": "explore",
+      "train": true,
+      "scope": "batch",
+      "batch": 399,
+      "sid": 0,
+      "active": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "weighted": {
+        "reconstruction": [
+          7.48116071918048e-05,
+          0.0003178926126565784,
+          0.21061280369758606,
+          0.004233344458043575
+        ],
+        "expectation": [
+          9.344459977000952e-05,
+          6.149160617496818e-05,
+          0.00017446951824240386,
+          0.00013179969391785562
+        ],
+        "supplied_answer": [
+          0.3861978054046631,
+          0.49263811111450195,
+          0.1222568154335022,
+          0.41181477904319763
+        ],
+        "total": [
+          0.3862726092338562,
+          0.4929560124874115,
+          0.33286961913108826,
+          0.4160481095314026
+        ]
+      },
+      "terms": {
+        "reconstruction.bytes": {
+          "weight": 0.1,
+          "value": 0.011630779132246971,
+          "weighted": 0.0011630779132246972,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0007481160573661327,
+            0.0031789259519428015,
+            0.0002626338100526482,
+            0.042333442717790604
+          ],
+          "raw": 0.06449473649263382,
+          "baseline": 5.545177459716797,
+          "active_entries": 4.0
+        },
+        "reconstruction.free_bytes": {
+          "weight": 0.1,
+          "value": 0.5264663100242615,
+          "weighted": 0.05264663100242615,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0,
+            2.105865240097046,
+            0.0
+          ],
+          "raw": 2.919348955154419,
+          "baseline": 5.545177459716797,
+          "active_entries": 4.0
+        },
+        "answer.what": {
+          "weight": 0.7,
+          "value": 0.5046098232269287,
+          "weighted": 0.3532268762588501,
+          "space": null,
+          "category": "prediction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "output",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.5517111420631409,
+            0.7037687301635742,
+            0.1746525913476944,
+            0.5883068442344666
+          ],
+          "raw": 0.25230491161346436,
+          "baseline": 0.5,
+          "active_entries": 4.0
+        },
+        "expectation.intra": {
+          "weight": 0.1,
+          "value": 0.0011530135525390506,
+          "weighted": 0.00011530135525390507,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0009344459977000952,
+            0.0006149160326458514,
+            0.0017446951242163777,
+            0.0013179968809708953
+          ],
+          "raw": 0.0004614538629539311,
+          "baseline": 0.4002154767513275,
+          "active_entries": 40.0
+        }
+      },
+      "evaluation_supplied_answer": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "reconstruction_enabled": true
+    }
+  },
+  "last_batch": {
+    "raw": {
+      "totalLoss": 0.20563943684101105
+    },
+    "terms": {
+      "output": {
+        "weight": 1.0,
+        "value": 0.10224514454603195,
+        "weighted": 0.10224514454603195,
+        "space": "OutputSpace",
+        "category": "prediction",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "prediction",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "answer.what": {
+        "weight": 0.7,
+        "value": 0.2921289801597595,
+        "weighted": 0.20449028611183165,
+        "space": null,
+        "category": "prediction",
+        "count": 1,
+        "kind": "relative",
+        "objective": "output",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 0.14606449007987976,
+        "baseline": 0.5,
+        "active_entries": 4.0
+      },
+      "reconstruction": {
+        "weight": 1.0,
+        "value": 0.06372188776731491,
+        "weighted": 0.06372188776731491,
+        "space": "InputSpace",
+        "category": "reconstruction",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "reconstruction",
+        "trained": false,
+        "context_weight": 1.0
+      },
+      "reconstruction.bytes": {
+        "weight": 0.1,
+        "value": 0.011491406708955765,
+        "weighted": 0.0011491406708955766,
+        "space": null,
+        "category": "reconstruction",
+        "count": 1,
+        "kind": "relative",
+        "objective": "reconstruction",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 0.06372188776731491,
+        "baseline": 5.545177459716797,
+        "active_entries": 4.0
+      },
+      "reconstruction.free_bytes": {
+        "weight": 0.1,
+        "value": 0.0,
+        "weighted": 0.0,
+        "space": null,
+        "category": "reconstruction",
+        "count": 1,
+        "kind": "relative",
+        "objective": "reconstruction",
+        "trained": true,
+        "context_weight": 1.0,
+        "raw": 0.0,
+        "baseline": 5.545177459716797,
+        "active_entries": 4.0
+      },
+      "reconstruction_unavailable_sentences": {
+        "weight": 1.0,
+        "value": 0.0,
+        "weighted": 0.0,
+        "space": null,
+        "category": "count",
+        "count": 1,
+        "kind": "penalty",
+        "objective": "count",
+        "trained": false,
+        "context_weight": 1.0
+      }
+    },
+    "objective_costs": {
+      "reconstruction": 0.0011491406476125121,
+      "expectation": null,
+      "output": 0.2044902890920639
+    },
+    "train": false,
+    "split": "test"
+  },
+  "grammar_reconstructions": [
+    {
+      "texts": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  ]
+}

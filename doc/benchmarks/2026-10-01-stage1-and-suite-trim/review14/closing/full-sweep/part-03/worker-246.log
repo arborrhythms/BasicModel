@@ -1,0 +1,36 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+________________ TestNullEOS.test_null_char_in_embedding_vocab _________________
+test/test_xor_spaces.py:369: in test_null_char_in_embedding_vocab
+    "\x00", self.emb.pretrain.key_to_index,
+            ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'pretrain'
+______________ TestNullEOS.test_null_embedding_is_regular_vector _______________
+test/test_xor_spaces.py:382: in test_null_embedding_is_regular_vector
+    self.assertIn("\x00", self.emb.pretrain.key_to_index)
+                          ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'pretrain'
+___________ TestNullEOS.test_reconstruct_buffer_stops_at_null_token ____________
+test/test_xor_spaces.py:399: in test_reconstruct_buffer_stops_at_null_token
+    self.assertIn("\x00", emb.pretrain.key_to_index)
+                          ^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'pretrain'
+_________ TestNullEOS.test_trailing_null_produces_clean_reconstruction _________
+test/test_xor_spaces.py:445: in test_trailing_null_produces_clean_reconstruction
+    self.assertIn("\x00", emb.pretrain.key_to_index)
+                          ^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'pretrain'
+=========================== short test summary info ============================
+FAILED test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab
+FAILED test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector
+FAILED test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token
+FAILED test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction
+4 failed in 2.22s

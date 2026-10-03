@@ -1,0 +1,94 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_inter_sentence_prediction_shape.py::test_prediction_trains_live_context_encoder_but_not_observed_target",
+    "test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_ends_encoder_graph_lifetime",
+    "test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows",
+    "test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak",
+    "test/test_inter_sentence_prediction_shape.py::test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled",
+    "test/test_inter_sentence_prediction_shape.py::TestPredictNextEndStateShape::test_cold_start_returns_degenerate_shape",
+    "test/test_inter_sentence_prediction_shape.py::TestPredictNextEndStateShape::test_depth_hat_tracks_most_recent_end_state",
+    "test/test_inter_sentence_prediction_shape.py::TestPredictNextEndStateShape::test_payload_finite_over_a_longer_chain"
+  ],
+  "completed": [
+    "test/test_inter_sentence_prediction_shape.py::test_prediction_trains_live_context_encoder_but_not_observed_target",
+    "test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_ends_encoder_graph_lifetime",
+    "test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows",
+    "test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak",
+    "test/test_inter_sentence_prediction_shape.py::test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled",
+    "test/test_inter_sentence_prediction_shape.py::TestPredictNextEndStateShape::test_cold_start_returns_degenerate_shape",
+    "test/test_inter_sentence_prediction_shape.py::TestPredictNextEndStateShape::test_depth_hat_tracks_most_recent_end_state",
+    "test/test_inter_sentence_prediction_shape.py::TestPredictNextEndStateShape::test_payload_finite_over_a_longer_chain"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_prediction_trains_live_context_encoder_but_not_observed_target",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.017804583010729402,
+      "message": "test/test_inter_sentence_prediction_shape.py:38: in test_prediction_trains_live_context_encoder_but_not_observed_target\n    assert encoder.weight.grad is not None and encoder.weight.grad.norm() > 0\nE   assert (None is not None)\nE    +  where None = Parameter containing:\\ntensor([[ 0.1265, -0.4293, -0.2800,  0.4698],\\n        [ 0.1774,  0.1917, -0.1489,  0.4084],\\n        [ 0.0789, -0.0672,  0.0700,  0.1348],\\n        [-0.3856,  0.1878,  0.0490, -0.2442]], requires_grad=True).grad\nE    +    where Parameter containing:\\ntensor([[ 0.1265, -0.4293, -0.2800,  0.4698],\\n        [ 0.1774,  0.1917, -0.1489,  0.4084],\\n        [ 0.0789, -0.0672,  0.0700,  0.1348],\\n        [-0.3856,  0.1878,  0.0490, -0.2442]], requires_grad=True) = Linear(in_features=4, out_features=4, bias=False).weight",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_consuming_prediction_loss_ends_encoder_graph_lifetime",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0022356660047080368,
+      "message": "test/test_inter_sentence_prediction_shape.py:57: in test_consuming_prediction_loss_ends_encoder_graph_lifetime\n    assert encoder.weight.grad is not None and encoder.weight.grad.norm() > 0\nE   assert (None is not None)\nE    +  where None = Parameter containing:\\ntensor([[ 0.1265, -0.4293, -0.2800,  0.4698],\\n        [ 0.1774,  0.1917, -0.1489,  0.4084],\\n        [ 0.0789, -0.0672,  0.0700,  0.1348],\\n        [-0.3856,  0.1878,  0.0490, -0.2442]], requires_grad=True).grad\nE    +    where Parameter containing:\\ntensor([[ 0.1265, -0.4293, -0.2800,  0.4698],\\n        [ 0.1774,  0.1917, -0.1489,  0.4084],\\n        [ 0.0789, -0.0672,  0.0700,  0.1348],\\n        [-0.3856,  0.1878,  0.0490, -0.2442]], requires_grad=True) = Linear(in_features=4, out_features=4, bias=False).weight",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017671249952400103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009238339989678934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010803750046761706,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestPredictNextEndStateShape::test_cold_start_returns_degenerate_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07527945800393354,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestPredictNextEndStateShape::test_depth_hat_tracks_most_recent_end_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07320875000732485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inter_sentence_prediction_shape.py::TestPredictNextEndStateShape::test_payload_finite_over_a_longer_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0851639580068877,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

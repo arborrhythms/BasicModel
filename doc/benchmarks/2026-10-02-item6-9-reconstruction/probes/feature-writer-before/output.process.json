@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-02-item6-9-reconstruction/probe_feature_writer.py"
+  ],
+  "pid": 86993,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 552633568,
+  "elapsed_seconds": 3.7973933340108488,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/feature-writer-before/output.log"
+}

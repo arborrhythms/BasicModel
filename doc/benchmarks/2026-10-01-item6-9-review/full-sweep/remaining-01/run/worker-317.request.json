@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_transform_chooser_parity.py::test_unary_score_matches_raw_einsum"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-317.recycle.json"
+}

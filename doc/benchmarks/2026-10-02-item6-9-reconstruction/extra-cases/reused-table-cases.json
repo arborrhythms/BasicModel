@@ -1,0 +1,9 @@
+[
+  "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]",
+  "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]",
+  "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+  "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+  "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+  "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+  "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+]

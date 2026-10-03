@@ -1,0 +1,11 @@
+{
+  "label": "candidate",
+  "kind": "mm",
+  "reserved_bytes": 1610612736.0,
+  "gate": null,
+  "trial": 3,
+  "exit_code": 0,
+  "peak_memory_bytes": 600098208,
+  "reason": "exit",
+  "elapsed_seconds": 156.51946512500035
+}

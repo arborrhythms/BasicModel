@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_dataset.py::test_stage_zero_problems_are_direct_and_in_range[operators1]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-375.recycle.json"
+}

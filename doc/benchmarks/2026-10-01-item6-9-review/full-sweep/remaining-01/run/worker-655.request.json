@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_idea_decode.py::test_gate_skips_generate_rebuild_when_on"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-655.recycle.json"
+}

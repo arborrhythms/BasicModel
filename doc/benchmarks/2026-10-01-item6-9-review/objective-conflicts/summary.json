@@ -1,0 +1,2988 @@
+{
+  "XOR_grammar": {
+    "step5a": {
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/observe.py",
+          "--config",
+          "XOR_grammar",
+          "--arm",
+          "step5a",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/XOR_grammar-step5a"
+        ],
+        "pid": 59399,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 746554976,
+        "elapsed_seconds": 68.9494017500001,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/XOR_grammar-step5a/run.log"
+      },
+      "error": null,
+      "completed": true,
+      "endpoint_objectives": {
+        "reconstruction": {
+          "count": 4,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": -0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "expectation": {
+          "count": 4,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "supplied_answer": {
+          "count": 4,
+          "minimum": 0.008521435782313347,
+          "p10": 0.012079036794602871,
+          "median": 0.02399638667702675,
+          "mean": 0.028123059775680304,
+          "p90": 0.04746842123568058,
+          "maximum": 0.05597802996635437
+        },
+        "raw_reconstruction": {
+          "count": 4,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": -0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        }
+      },
+      "last_batch": {
+        "raw": {
+          "lossOut": 0.019686143845319748,
+          "lossIn": 0.7134138345718384,
+          "lossRev": 0.7134138345718384,
+          "sbow": null,
+          "grammar_lesson": null,
+          "output_policy_loss": null,
+          "csbow": null,
+          "defsp": null,
+          "arma_loss": null,
+          "intra_loss": null,
+          "inter_loss": null,
+          "inter_contrastive": null,
+          "aux_total": null,
+          "expectation_policy_loss": null,
+          "selected_pol_loss": null,
+          "ld_loss": null,
+          "gate_l1": null,
+          "readout_l1": null,
+          "totalLoss": 0.16040030121803284
+        },
+        "weights": {
+          "lossOut": 0.9,
+          "lossIn": 0.1,
+          "lossRev": 0.1,
+          "sbow": 0.05,
+          "grammar_lesson": 1.0,
+          "output_policy_loss": 0.0,
+          "csbow": 0.0,
+          "defsp": 1.0,
+          "arma_loss": 0.0,
+          "intra_loss": 0.1,
+          "inter_loss": 0.1,
+          "inter_contrastive": 0.0,
+          "aux_total": 1.0,
+          "expectation_policy_loss": 0.0,
+          "selected_pol_loss": 0.0,
+          "ld_loss": 0.0,
+          "gate_l1": 1.0,
+          "readout_l1": 1.0
+        },
+        "train": false,
+        "split": "test"
+      },
+      "last_training_trials": {
+        "exploit": {
+          "pair": 399,
+          "trial": "exploit",
+          "train": true,
+          "scope": "batch",
+          "batch": 399,
+          "sid": 0,
+          "active": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "raw": {
+            "reconstruction": [
+              0.0,
+              -0.0,
+              -0.0,
+              0.0
+            ],
+            "expectation_inter": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "expectation_contrastive": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "supplied_answer": [
+              0.05773162841796875,
+              0.008254393003880978,
+              0.02591509371995926,
+              0.01993248425424099
+            ],
+            "grammar_lesson": [
+              null,
+              null,
+              null,
+              null
+            ]
+          },
+          "weighted": {
+            "reconstruction": [
+              0.0,
+              -0.0,
+              -0.0,
+              0.0
+            ],
+            "expectation": [
+              0.0005115270614624023,
+              0.0005115289241075516,
+              0.0005115289241075516,
+              0.0005115289241075516
+            ],
+            "supplied_answer": [
+              0.05773162841796875,
+              0.008254393003880978,
+              0.02591509371995926,
+              0.01993248425424099
+            ],
+            "total": [
+              0.05824315547943115,
+              0.00876592192798853,
+              0.02642662264406681,
+              0.02044401317834854
+            ],
+            "legacy_intra": [
+              0.0005115270614624023,
+              0.0005115289241075516,
+              0.0005115289241075516,
+              0.0005115289241075516
+            ]
+          },
+          "evaluation_supplied_answer": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "grammar_terms": {},
+          "weights": {
+            "reconstruction": 0.1,
+            "expectation_inter": 0.1,
+            "expectation_contrastive": 0.0,
+            "supplied_answer": 1.0,
+            "grammar_lesson": 1.0
+          },
+          "reconstruction_enabled": false
+        },
+        "explore": {
+          "pair": 399,
+          "trial": "explore",
+          "train": true,
+          "scope": "batch",
+          "batch": 399,
+          "sid": 0,
+          "active": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "raw": {
+            "reconstruction": [
+              -0.0,
+              -0.0,
+              0.0,
+              0.0
+            ],
+            "expectation_inter": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "expectation_contrastive": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "supplied_answer": [
+              0.984286904335022,
+              0.008254393003880978,
+              0.3680022358894348,
+              0.06250472366809845
+            ],
+            "grammar_lesson": [
+              null,
+              null,
+              null,
+              null
+            ]
+          },
+          "weighted": {
+            "reconstruction": [
+              -0.0,
+              -0.0,
+              0.0,
+              0.0
+            ],
+            "expectation": [
+              0.0004930496215820312,
+              0.0004930468276143074,
+              0.0004930496215820312,
+              0.0004930496215820312
+            ],
+            "supplied_answer": [
+              0.984286904335022,
+              0.008254393003880978,
+              0.3680022358894348,
+              0.06250472366809845
+            ],
+            "total": [
+              0.984779953956604,
+              0.008747439831495285,
+              0.36849528551101685,
+              0.06299777328968048
+            ],
+            "legacy_intra": [
+              0.0004930496215820312,
+              0.0004930468276143074,
+              0.0004930496215820312,
+              0.0004930496215820312
+            ]
+          },
+          "evaluation_supplied_answer": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "grammar_terms": {},
+          "weights": {
+            "reconstruction": 0.1,
+            "expectation_inter": 0.1,
+            "expectation_contrastive": 0.0,
+            "supplied_answer": 1.0,
+            "grammar_lesson": 1.0
+          },
+          "reconstruction_enabled": false
+        }
+      },
+      "xor": {
+        "answers": [
+          0.23659676313400269,
+          0.9076883792877197,
+          0.833829402923584,
+          0.14275890588760376
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "correct": 4,
+        "mse": 0.028123059046743393,
+        "read_backs": [
+          "world world",
+          "there world",
+          "there world",
+          "there hello"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "class_bar": true,
+        "reconstruction_bar": false
+      },
+      "selection_audit": {
+        "reconstruction": {
+          "comparisons": 1600,
+          "worse": 0,
+          "equal": 1600,
+          "better": 0,
+          "signed_delta": {
+            "count": 1600,
+            "minimum": -0.0,
+            "p10": 0.0,
+            "median": 0.0,
+            "mean": 0.0,
+            "p90": 0.0,
+            "maximum": 0.0
+          },
+          "positive_delta": {
+            "count": 0
+          }
+        },
+        "expectation": {
+          "comparisons": 1600,
+          "worse": 297,
+          "equal": 128,
+          "better": 1175,
+          "signed_delta": {
+            "count": 1600,
+            "minimum": -0.22975239902734756,
+            "p10": -0.002389626624062657,
+            "median": -6.69184373691678e-05,
+            "mean": -0.0035143674973642193,
+            "p90": 1.6950070858001963e-08,
+            "maximum": 0.13734063506126404
+          },
+          "positive_delta": {
+            "count": 297,
+            "minimum": 5.238689482212067e-10,
+            "p10": 2.7939677238464355e-09,
+            "median": 2.2351741790771484e-08,
+            "mean": 0.0031735501352067323,
+            "p90": 0.0004733197391033177,
+            "maximum": 0.13734063506126404
+          }
+        },
+        "supplied_answer": {
+          "comparisons": 1600,
+          "worse": 12,
+          "equal": 331,
+          "better": 1257,
+          "signed_delta": {
+            "count": 1600,
+            "minimum": -1.41069202311337,
+            "p10": -0.7543383922427893,
+            "median": -0.1570628248155117,
+            "mean": -0.28215652602770236,
+            "p90": 0.0,
+            "maximum": 0.07249914854764938
+          },
+          "positive_delta": {
+            "count": 12,
+            "minimum": 0.0001391097903251648,
+            "p10": 0.0047207757830619815,
+            "median": 0.021572977304458618,
+            "mean": 0.03248312075932821,
+            "p90": 0.07035998702049255,
+            "maximum": 0.07249914854764938
+          }
+        }
+      },
+      "gradient_snapshots": [
+        {
+          "scope": "trial",
+          "trial": "exploit",
+          "pair": 0,
+          "batch": 0,
+          "version_sha256": "2999a5b0cc9e8e7779e47b94e2c27b04eda7bbf3a7d5f8f7183b27644fdc4aa5",
+          "versions": [
+            [
+              "inputSpace.outputSpace._readout_bias",
+              0
+            ],
+            [
+              "inputSpace.outputSpace._vocabulary.wv._local_vectors",
+              1
+            ],
+            [
+              "inputSpace.outputSpace.layers.0.W",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.0.biasWeight",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.1.W",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.1.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.4.coefficients",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.5.sigma.layer.W",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.4.coefficients",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.5.sigma.layer.W",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.3.W",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.3.W",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.2.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.routing_proj.weight",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.0.routing_proj.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.6.callosum",
+              2
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.routing_proj.weight",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.0.routing_proj.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.6.callosum",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_L",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_d",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1._category_vq._codebook",
+              0
+            ],
+            [
+              "conceptualSpaces.1.concept_parts_layer.features.values",
+              1
+            ],
+            [
+              "wholeSpaces.0.begins_weight",
+              2
+            ],
+            [
+              "wholeSpaces.0.ends_weight",
+              2
+            ],
+            [
+              "wholeSpaces.0.atom_level",
+              0
+            ],
+            [
+              "wholeSpaces.0._owned_bases.what.W",
+              0
+            ],
+            [
+              "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+              198
+            ],
+            [
+              "wholeSpaces.1.begins_weight",
+              2
+            ],
+            [
+              "wholeSpaces.1.ends_weight",
+              2
+            ],
+            [
+              "wholeSpaces.1.atom_level",
+              0
+            ],
+            [
+              "wholeSpaces.1._owned_bases.what.W",
+              0
+            ],
+            [
+              "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+              198
+            ],
+            [
+              "symbolSpace.subspace.category_embedding.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.2.bias",
+              1
+            ]
+          ],
+          "costs": {
+            "reconstruction": 0.0,
+            "expectation": 0.1579902470111847,
+            "supplied_answer": 0.2504332661628723
+          },
+          "groups": {
+            "perception": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.019362522397337933,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [
+                  "inputSpace.outputSpace._vocabulary.wv._local_vectors"
+                ],
+                "supplied_answer": []
+              }
+            },
+            "codes": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.02841479560182769,
+                "supplied_answer": 0.0009124148311224073
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": -0.11709003895521164
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [
+                  "conceptualSpaces.1.layers.3.W"
+                ],
+                "supplied_answer": [
+                  "conceptualSpaces.1.layers.3.W"
+                ]
+              }
+            },
+            "chooser": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0015329631410941802,
+                "supplied_answer": 0.0009322572780251556
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": -0.029664484880735528
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [
+                  "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+                  "symbolSpace.subspace.layers.0.operation_layer.stop_anchor"
+                ],
+                "supplied_answer": [
+                  "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+                  "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+                  "symbolSpace.subspace.layers.0.operation_layer.stop_anchor"
+                ]
+              }
+            },
+            "operators_and_tied_inverses": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "generate": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "reading_map": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.18953630051059553
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": [
+                  "inputSpace.outputSpace._readout_bias",
+                  "inputSpace.outputSpace.layers.0.W"
+                ]
+              }
+            },
+            "expectation_predictor": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.15740534327550165,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [
+                  "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+                  "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+                  "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+                  "conceptualSpaces.1.layers.0.routing_proj.bias",
+                  "conceptualSpaces.1.layers.0.routing_proj.weight",
+                  "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+                  "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+                  "conceptualSpaces.1.layers.0.sigma.layer.raw_U"
+                ],
+                "supplied_answer": []
+              }
+            },
+            "other": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            }
+          },
+          "rng_unchanged": true,
+          "role_correction": "InputSpace registers OutputSpace as a back-reference; its head is the reading map and its shared vocabulary is perception. ConceptualSpace.layers.0 is intraSentenceLayer. No new measurement; all nonzero norms/cosines recovered exactly from identical saved supports."
+        },
+        {
+          "scope": "trial",
+          "trial": "explore",
+          "pair": 0,
+          "batch": 0,
+          "version_sha256": "2999a5b0cc9e8e7779e47b94e2c27b04eda7bbf3a7d5f8f7183b27644fdc4aa5",
+          "versions": [
+            [
+              "inputSpace.outputSpace._readout_bias",
+              0
+            ],
+            [
+              "inputSpace.outputSpace._vocabulary.wv._local_vectors",
+              1
+            ],
+            [
+              "inputSpace.outputSpace.layers.0.W",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.0.biasWeight",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.1.W",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.1.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.4.coefficients",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.5.sigma.layer.W",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.4.coefficients",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.5.sigma.layer.W",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.3.W",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.3.W",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.2.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.routing_proj.weight",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.0.routing_proj.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.6.callosum",
+              2
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.routing_proj.weight",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.0.routing_proj.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.6.callosum",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_L",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_d",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1._category_vq._codebook",
+              0
+            ],
+            [
+              "conceptualSpaces.1.concept_parts_layer.features.values",
+              1
+            ],
+            [
+              "wholeSpaces.0.begins_weight",
+              2
+            ],
+            [
+              "wholeSpaces.0.ends_weight",
+              2
+            ],
+            [
+              "wholeSpaces.0.atom_level",
+              0
+            ],
+            [
+              "wholeSpaces.0._owned_bases.what.W",
+              0
+            ],
+            [
+              "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+              198
+            ],
+            [
+              "wholeSpaces.1.begins_weight",
+              2
+            ],
+            [
+              "wholeSpaces.1.ends_weight",
+              2
+            ],
+            [
+              "wholeSpaces.1.atom_level",
+              0
+            ],
+            [
+              "wholeSpaces.1._owned_bases.what.W",
+              0
+            ],
+            [
+              "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+              198
+            ],
+            [
+              "symbolSpace.subspace.category_embedding.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.2.bias",
+              1
+            ]
+          ],
+          "costs": {
+            "reconstruction": 0.0,
+            "expectation": 0.17774242162704468,
+            "supplied_answer": 0.2529911994934082
+          },
+          "groups": {
+            "perception": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.018676415648878564,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [
+                  "inputSpace.outputSpace._vocabulary.wv._local_vectors"
+                ],
+                "supplied_answer": []
+              }
+            },
+            "codes": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.021083625636668102,
+                "supplied_answer": 0.0008990748763709755
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": -0.016412662342190742
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [
+                  "conceptualSpaces.1.layers.3.W"
+                ],
+                "supplied_answer": [
+                  "conceptualSpaces.1.layers.3.W"
+                ]
+              }
+            },
+            "chooser": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0030565190349694155,
+                "supplied_answer": 0.0008053818354523944
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": -0.6016575127937833
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [
+                  "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+                  "symbolSpace.subspace.layers.0.operation_layer.stop_anchor"
+                ],
+                "supplied_answer": [
+                  "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+                  "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+                  "symbolSpace.subspace.layers.0.operation_layer.stop_anchor"
+                ]
+              }
+            },
+            "operators_and_tied_inverses": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "generate": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "reading_map": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.2455167647879585
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": [
+                  "inputSpace.outputSpace._readout_bias",
+                  "inputSpace.outputSpace.layers.0.W"
+                ]
+              }
+            },
+            "expectation_predictor": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.13107209277159454,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [
+                  "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+                  "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+                  "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+                  "conceptualSpaces.1.layers.0.routing_proj.bias",
+                  "conceptualSpaces.1.layers.0.routing_proj.weight",
+                  "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+                  "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+                  "conceptualSpaces.1.layers.0.sigma.layer.raw_U"
+                ],
+                "supplied_answer": []
+              }
+            },
+            "other": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            }
+          },
+          "rng_unchanged": true,
+          "role_correction": "InputSpace registers OutputSpace as a back-reference; its head is the reading map and its shared vocabulary is perception. ConceptualSpace.layers.0 is intraSentenceLayer. No new measurement; all nonzero norms/cosines recovered exactly from identical saved supports."
+        },
+        {
+          "scope": "batch",
+          "trial": null,
+          "pair": 1,
+          "batch": 0,
+          "version_sha256": "707ab309847e1fafb02a08495768798d28ecc7b59c41cee4e2ade786e589b284",
+          "versions": [
+            [
+              "inputSpace.outputSpace._readout_bias",
+              2
+            ],
+            [
+              "inputSpace.outputSpace._vocabulary.wv._local_vectors",
+              5
+            ],
+            [
+              "inputSpace.outputSpace.layers.0.W",
+              2
+            ],
+            [
+              "inputSpace.outputSpace.layers.0.biasWeight",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.1.W",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.1.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.4.coefficients",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.5.sigma.layer.W",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.4.coefficients",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.5.sigma.layer.W",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.3.W",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.3.W",
+              4
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+              2
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+              2
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+              2
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.2.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.routing_proj.weight",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.0.routing_proj.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.6.callosum",
+              2
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.d",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.d",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.routing_proj.weight",
+              3
+            ],
+            [
+              "conceptualSpaces.1.layers.0.routing_proj.bias",
+              3
+            ],
+            [
+              "conceptualSpaces.1.layers.6.callosum",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_L",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_d",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1._category_vq._codebook",
+              0
+            ],
+            [
+              "conceptualSpaces.1.concept_parts_layer.features.values",
+              3
+            ],
+            [
+              "wholeSpaces.0.begins_weight",
+              2
+            ],
+            [
+              "wholeSpaces.0.ends_weight",
+              2
+            ],
+            [
+              "wholeSpaces.0.atom_level",
+              0
+            ],
+            [
+              "wholeSpaces.0._owned_bases.what.W",
+              0
+            ],
+            [
+              "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+              200
+            ],
+            [
+              "wholeSpaces.1.begins_weight",
+              2
+            ],
+            [
+              "wholeSpaces.1.ends_weight",
+              2
+            ],
+            [
+              "wholeSpaces.1.atom_level",
+              0
+            ],
+            [
+              "wholeSpaces.1._owned_bases.what.W",
+              0
+            ],
+            [
+              "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+              200
+            ],
+            [
+              "symbolSpace.subspace.category_embedding.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.2.bias",
+              1
+            ]
+          ],
+          "costs": {
+            "reconstruction": 0.035428475588560104,
+            "expectation": 0.0,
+            "supplied_answer": 0.1527208536863327
+          },
+          "groups": {
+            "perception": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "codes": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "chooser": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "operators_and_tied_inverses": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "generate": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "reading_map": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.11522647882397127
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": [
+                  "inputSpace.outputSpace._readout_bias",
+                  "inputSpace.outputSpace.layers.0.W"
+                ]
+              }
+            },
+            "expectation_predictor": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            },
+            "other": {
+              "norms": {
+                "reconstruction": 0.0,
+                "expectation": 0.0,
+                "supplied_answer": 0.0
+              },
+              "cosines": {
+                "reconstruction__expectation": null,
+                "reconstruction__supplied_answer": null,
+                "expectation__supplied_answer": null
+              },
+              "nonzero_parameters": {
+                "reconstruction": [],
+                "expectation": [],
+                "supplied_answer": []
+              }
+            }
+          },
+          "rng_unchanged": true,
+          "role_correction": "InputSpace registers OutputSpace as a back-reference; its head is the reading map and its shared vocabulary is perception. ConceptualSpace.layers.0 is intraSentenceLayer. No new measurement; all nonzero norms/cosines recovered exactly from identical saved supports."
+        },
+        {
+          "scope": "batch_auxiliary",
+          "trial": null,
+          "pair": 1,
+          "batch": 0,
+          "version_sha256": "707ab309847e1fafb02a08495768798d28ecc7b59c41cee4e2ade786e589b284",
+          "versions": [
+            [
+              "inputSpace.outputSpace._readout_bias",
+              2
+            ],
+            [
+              "inputSpace.outputSpace._vocabulary.wv._local_vectors",
+              5
+            ],
+            [
+              "inputSpace.outputSpace.layers.0.W",
+              2
+            ],
+            [
+              "inputSpace.outputSpace.layers.0.biasWeight",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.1.W",
+              0
+            ],
+            [
+              "inputSpace.outputSpace.layers.1.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.4.coefficients",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.5.sigma.layer.W",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.4.coefficients",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.5.sigma.layer.W",
+              1
+            ],
+            [
+              "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.3.W",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.3.W",
+              4
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+              2
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+              2
+            ],
+            [
+              "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+              2
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2.predictor.2.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+              0
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.0.routing_proj.weight",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.0.routing_proj.bias",
+              1
+            ],
+            [
+              "conceptualSpaces.0.layers.6.callosum",
+              2
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_L",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_d",
+              0
+            ],
+            [
+              "conceptualSpaces.0.layers.6.layer.butterfly_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.d",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.d",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.0.routing_proj.weight",
+              3
+            ],
+            [
+              "conceptualSpaces.1.layers.0.routing_proj.bias",
+              3
+            ],
+            [
+              "conceptualSpaces.1.layers.6.callosum",
+              2
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_L",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_d",
+              0
+            ],
+            [
+              "conceptualSpaces.1.layers.6.layer.butterfly_U",
+              0
+            ],
+            [
+              "conceptualSpaces.1._category_vq._codebook",
+              0
+            ],
+            [
+              "conceptualSpaces.1.concept_parts_layer.features.values",
+              3
+            ],
+            [
+              "wholeSpaces.0.begins_weight",
+              2
+            ],
+            [
+              "wholeSpaces.0.ends_weight",
+              2
+            ],
+            [
+              "wholeSpaces.0.atom_level",
+              0
+            ],
+            [
+              "wholeSpaces.0._owned_bases.what.W",
+              0
+            ],
+            [
+              "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+              200
+            ],
+            [
+              "wholeSpaces.1.begins_weight",
+              2
+            ],
+            [
+              "wholeSpaces.1.ends_weight",
+              2
+            ],
+            [
+              "wholeSpaces.1.atom_level",
+              0
+            ],
+            [
+              "wholeSpaces.1._owned_bases.what.W",
+              0
+            ],
+            [
+              "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+              200
+            ],
+            [
+              "symbolSpace.subspace.category_embedding.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.0.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.0.bias",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.2.weight",
+              1
+            ],
+            [
+              "symbolSpace.subspace.rule_predictor.2.bias",
+              1
+            ]
+          ],
+          "costs": {
+            "sbow": 0.08025392144918442
+          },
+          "groups": {
+            "perception": {
+              "norms": {
+                "sbow": 0.017870620367018586
+              },
+              "cosines": {},
+              "nonzero_parameters": {
+                "sbow": [
+                  "inputSpace.outputSpace._vocabulary.wv._local_vectors"
+                ]
+              }
+            },
+            "codes": {
+              "norms": {
+                "sbow": 0.0
+              },
+              "cosines": {},
+              "nonzero_parameters": {
+                "sbow": []
+              }
+            },
+            "chooser": {
+              "norms": {
+                "sbow": 0.0
+              },
+              "cosines": {},
+              "nonzero_parameters": {
+                "sbow": []
+              }
+            },
+            "operators_and_tied_inverses": {
+              "norms": {
+                "sbow": 0.0
+              },
+              "cosines": {},
+              "nonzero_parameters": {
+                "sbow": []
+              }
+            },
+            "generate": {
+              "norms": {
+                "sbow": 0.0
+              },
+              "cosines": {},
+              "nonzero_parameters": {
+                "sbow": []
+              }
+            },
+            "reading_map": {
+              "norms": {
+                "sbow": 0.0
+              },
+              "cosines": {},
+              "nonzero_parameters": {
+                "sbow": []
+              }
+            },
+            "expectation_predictor": {
+              "norms": {
+                "sbow": 0.0
+              },
+              "cosines": {},
+              "nonzero_parameters": {
+                "sbow": []
+              }
+            },
+            "other": {
+              "norms": {
+                "sbow": 0.0
+              },
+              "cosines": {},
+              "nonzero_parameters": {
+                "sbow": []
+              }
+            }
+          },
+          "rng_unchanged": true,
+          "role_correction": "InputSpace registers OutputSpace as a back-reference; its head is the reading map and its shared vocabulary is perception. ConceptualSpace.layers.0 is intraSentenceLayer. No new measurement; all nonzero norms/cosines recovered exactly from identical saved supports."
+        }
+      ],
+      "sampled_nonzero_reach": {
+        "trial": {
+          "reconstruction": [],
+          "expectation": [
+            "chooser",
+            "codes",
+            "expectation_predictor",
+            "perception"
+          ],
+          "supplied_answer": [
+            "chooser",
+            "codes",
+            "reading_map"
+          ]
+        },
+        "batch": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": [
+            "reading_map"
+          ]
+        },
+        "batch_auxiliary": {
+          "sbow": [
+            "perception"
+          ]
+        }
+      },
+      "term_magnitudes": {
+        "band.None._reverse_event_loss.what.raw": {
+          "count": 400,
+          "minimum": 0.28326094150543213,
+          "p10": 0.5612189710140228,
+          "median": 0.7560267448425293,
+          "mean": 0.764343671426177,
+          "p90": 0.9547183811664581,
+          "maximum": 0.9794967770576477
+        },
+        "band.None._reverse_event_loss.what.weighted": {
+          "count": 400,
+          "minimum": 0.1982826590538025,
+          "p10": 0.392853279709816,
+          "median": 0.5292187213897706,
+          "mean": 0.5350405699983238,
+          "p90": 0.6683028668165206,
+          "maximum": 0.6856477439403533
+        },
+        "band.None._reverse_event_loss.where.raw": {
+          "count": 400,
+          "minimum": 0.45349812507629395,
+          "p10": 0.4605849713087082,
+          "median": 0.47370991110801697,
+          "mean": 0.4799450220912695,
+          "p90": 0.5011602759361267,
+          "maximum": 0.6428964138031006
+        },
+        "band.None._reverse_event_loss.where.weighted": {
+          "count": 400,
+          "minimum": 0.0906996250152588,
+          "p10": 0.09211699426174165,
+          "median": 0.0947419822216034,
+          "mean": 0.0959890044182539,
+          "p90": 0.10023205518722535,
+          "maximum": 0.1285792827606201
+        },
+        "band.None._run_batch_once.what.raw": {
+          "count": 400,
+          "minimum": 0.00926809199154377,
+          "p10": 0.01895332895219326,
+          "median": 0.031044872477650642,
+          "mean": 0.039051101228687914,
+          "p90": 0.06341470256447797,
+          "maximum": 0.24471384286880493
+        },
+        "band.None._run_batch_once.what.weighted": {
+          "count": 400,
+          "minimum": 0.0064876643940806385,
+          "p10": 0.013267330266535282,
+          "median": 0.021731410734355448,
+          "mean": 0.027335770860081536,
+          "p90": 0.044390291795134575,
+          "maximum": 0.17129969000816345
+        },
+        "batch.accounting_residual": {
+          "count": 400,
+          "minimum": -1.3783574115411312e-08,
+          "p10": -7.674098032039999e-09,
+          "median": 2.28174031058348e-09,
+          "mean": 1.73936131747654e-09,
+          "p90": 1.0430812824591129e-08,
+          "maximum": 1.7788261169604525e-08
+        },
+        "batch.raw.arma_loss": {
+          "count": 400,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "batch.raw.aux_total": {
+          "count": 0
+        },
+        "batch.raw.csbow": {
+          "count": 0
+        },
+        "batch.raw.defsp": {
+          "count": 0
+        },
+        "batch.raw.expectation_policy_loss": {
+          "count": 0
+        },
+        "batch.raw.gate_l1": {
+          "count": 0
+        },
+        "batch.raw.grammar_lesson": {
+          "count": 0
+        },
+        "batch.raw.inter_contrastive": {
+          "count": 0
+        },
+        "batch.raw.inter_loss": {
+          "count": 0
+        },
+        "batch.raw.intra_loss": {
+          "count": 0
+        },
+        "batch.raw.ld_loss": {
+          "count": 0
+        },
+        "batch.raw.lossIn": {
+          "count": 400,
+          "minimum": 0.305039644241333,
+          "p10": 0.4933001905679703,
+          "median": 0.6246404051780701,
+          "mean": 0.6310295636951924,
+          "p90": 0.7614436447620392,
+          "maximum": 0.7818436622619629
+        },
+        "batch.raw.lossOut": {
+          "count": 400,
+          "minimum": 0.006487664300948381,
+          "p10": 0.013267330452799798,
+          "median": 0.02173141110688448,
+          "mean": 0.02733577044098638,
+          "p90": 0.04439029097557071,
+          "maximum": 0.17129968106746674
+        },
+        "batch.raw.lossRev": {
+          "count": 400,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "batch.raw.output_policy_loss": {
+          "count": 0
+        },
+        "batch.raw.readout_l1": {
+          "count": 0
+        },
+        "batch.raw.sbow": {
+          "count": 400,
+          "minimum": 1.22743821144104,
+          "p10": 1.241882085800171,
+          "median": 1.258791208267212,
+          "mean": 1.2779222080111503,
+          "p90": 1.3282745361328125,
+          "maximum": 1.6050784587860107
+        },
+        "batch.raw.selected_pol_loss": {
+          "count": 0
+        },
+        "batch.raw.totalLoss": {
+          "count": 400,
+          "minimum": 0.12926632165908813,
+          "p10": 0.138416288793087,
+          "median": 0.14697470515966415,
+          "mean": 0.1516012619063258,
+          "p90": 0.1628878265619278,
+          "maximum": 0.2708964943885803
+        },
+        "batch.truth.balance_weight": {
+          "count": 400,
+          "minimum": 0.1,
+          "p10": 0.1,
+          "median": 0.1,
+          "mean": 0.1,
+          "p90": 0.1,
+          "maximum": 0.1
+        },
+        "batch.truth.luminosity_weight": {
+          "count": 400,
+          "minimum": 0.1,
+          "p10": 0.1,
+          "median": 0.1,
+          "mean": 0.1,
+          "p90": 0.1,
+          "maximum": 0.1
+        },
+        "batch.truth.truth_loss_weight": {
+          "count": 400,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "batch.truth.universality_weight": {
+          "count": 400,
+          "minimum": 0.1,
+          "p10": 0.1,
+          "median": 0.1,
+          "mean": 0.1,
+          "p90": 0.1,
+          "maximum": 0.1
+        },
+        "batch.weighted.arma_loss": {
+          "count": 400,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "batch.weighted.lossIn": {
+          "count": 400,
+          "minimum": 0.030503964424133303,
+          "p10": 0.04933001905679703,
+          "median": 0.062464040517807004,
+          "mean": 0.06310295636951924,
+          "p90": 0.07614436447620393,
+          "maximum": 0.07818436622619629
+        },
+        "batch.weighted.lossOut": {
+          "count": 400,
+          "minimum": 0.005838897870853544,
+          "p10": 0.011940597407519819,
+          "median": 0.01955826999619603,
+          "mean": 0.024602193396887743,
+          "p90": 0.03995126187801364,
+          "maximum": 0.15416971296072007
+        },
+        "batch.weighted.lossRev": {
+          "count": 400,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "batch.weighted.sbow": {
+          "count": 400,
+          "minimum": 0.061371910572052005,
+          "p10": 0.06209410429000854,
+          "median": 0.0629395604133606,
+          "mean": 0.06389611040055752,
+          "p90": 0.06641372680664064,
+          "maximum": 0.08025392293930055
+        },
+        "trial.exploit.raw.expectation_contrastive": {
+          "count": 1600,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "trial.exploit.raw.expectation_inter": {
+          "count": 1600,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "trial.exploit.raw.grammar_lesson": {
+          "count": 0
+        },
+        "trial.exploit.raw.legacy_intra": {
+          "count": 1600,
+          "minimum": 0.00046504661440849304,
+          "p10": 0.0008316658204421401,
+          "median": 0.0023320899344980717,
+          "mean": 0.032687857710243406,
+          "p90": 0.0183834806084633,
+          "maximum": 1.9411653280258179
+        },
+        "trial.exploit.raw.reconstruction": {
+          "count": 1600,
+          "minimum": -0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "trial.exploit.raw.supplied_answer": {
+          "count": 1600,
+          "minimum": 3.0700994102517143e-07,
+          "p10": 0.0037879384122788905,
+          "median": 0.0248034643009305,
+          "mean": 0.046870664744635346,
+          "p90": 0.09158792346715927,
+          "maximum": 1.2408204078674316
+        },
+        "trial.exploit.weighted.expectation": {
+          "count": 1600,
+          "minimum": 4.6504661440849304e-05,
+          "p10": 8.316658204421401e-05,
+          "median": 0.00023320899344980717,
+          "mean": 0.0032687857710243405,
+          "p90": 0.0018383480608463302,
+          "maximum": 0.1941165328025818
+        },
+        "trial.exploit.weighted.legacy_intra": {
+          "count": 1600,
+          "minimum": 4.6504661440849304e-05,
+          "p10": 8.316658204421401e-05,
+          "median": 0.00023320899344980717,
+          "mean": 0.0032687857710243405,
+          "p90": 0.0018383480608463302,
+          "maximum": 0.1941165328025818
+        },
+        "trial.exploit.weighted.reconstruction": {
+          "count": 1600,
+          "minimum": -0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "trial.exploit.weighted.supplied_answer": {
+          "count": 1600,
+          "minimum": 3.0700994102517143e-07,
+          "p10": 0.0037879384122788905,
+          "median": 0.0248034643009305,
+          "mean": 0.046870664744635346,
+          "p90": 0.09158792346715927,
+          "maximum": 1.2408204078674316
+        },
+        "trial.exploit.weighted.total": {
+          "count": 1600,
+          "minimum": 0.00014514713257085532,
+          "p10": 0.004063406120985746,
+          "median": 0.025128550827503204,
+          "mean": 0.050139450515662244,
+          "p90": 0.09172930344939234,
+          "maximum": 1.2412248849868774
+        },
+        "trial.explore.raw.expectation_contrastive": {
+          "count": 1600,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "trial.explore.raw.expectation_inter": {
+          "count": 1600,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "trial.explore.raw.grammar_lesson": {
+          "count": 0
+        },
+        "trial.explore.raw.legacy_intra": {
+          "count": 1600,
+          "minimum": 0.0005386397242546082,
+          "p10": 0.0013338327407836916,
+          "median": 0.0036753714084625244,
+          "mean": 0.0793164495322344,
+          "p90": 0.058352641761303704,
+          "maximum": 2.3250412940979004
+        },
+        "trial.explore.raw.reconstruction": {
+          "count": 1600,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "trial.explore.raw.supplied_answer": {
+          "count": 1600,
+          "minimum": 2.3861652152845636e-05,
+          "p10": 0.012810963578522206,
+          "median": 0.18924857676029205,
+          "mean": 0.31393295184288716,
+          "p90": 0.8080570340156558,
+          "maximum": 1.4408167600631714
+        },
+        "trial.explore.weighted.expectation": {
+          "count": 1600,
+          "minimum": 5.3863972425460815e-05,
+          "p10": 0.00013338327407836915,
+          "median": 0.00036753714084625244,
+          "mean": 0.00793164495322344,
+          "p90": 0.0058352641761303704,
+          "maximum": 0.23250412940979004
+        },
+        "trial.explore.weighted.legacy_intra": {
+          "count": 1600,
+          "minimum": 5.3863972425460815e-05,
+          "p10": 0.00013338327407836915,
+          "median": 0.00036753714084625244,
+          "mean": 0.00793164495322344,
+          "p90": 0.0058352641761303704,
+          "maximum": 0.23250412940979004
+        },
+        "trial.explore.weighted.reconstruction": {
+          "count": 1600,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "trial.explore.weighted.supplied_answer": {
+          "count": 1600,
+          "minimum": 2.3861652152845636e-05,
+          "p10": 0.012810963578522206,
+          "median": 0.18924857676029205,
+          "mean": 0.31393295184288716,
+          "p90": 0.8080570340156558,
+          "maximum": 1.4408167600631714
+        },
+        "trial.explore.weighted.total": {
+          "count": 1600,
+          "minimum": 0.00034828390926122665,
+          "p10": 0.013136392831802369,
+          "median": 0.20051323622465134,
+          "mean": 0.3218645967879638,
+          "p90": 0.8100185632705689,
+          "maximum": 1.4411424398422241
+        }
+      }
+    },
+    "cut": {
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/observe.py",
+          "--config",
+          "XOR_grammar",
+          "--arm",
+          "cut",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/XOR_grammar-cut"
+        ],
+        "pid": 59675,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 754959944,
+        "elapsed_seconds": 68.4010465829997,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/XOR_grammar-cut/run.log"
+      },
+      "error": null,
+      "completed": true,
+      "endpoint_objectives": {
+        "reconstruction": {
+          "count": 4,
+          "minimum": -0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "expectation": {
+          "count": 4,
+          "minimum": 0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        },
+        "supplied_answer": {
+          "count": 4,
+          "minimum": 0.10975555330514908,
+          "p10": 0.11372314170002937,
+          "median": 0.1943238005042076,
+          "mean": 0.1948185320943594,
+          "p90": 0.2763097077608109,
+          "maximum": 0.2808709740638733
+        },
+        "raw_reconstruction": {
+          "count": 4,
+          "minimum": -0.0,
+          "p10": 0.0,
+          "median": 0.0,
+          "mean": 0.0,
+          "p90": 0.0,
+          "maximum": 0.0
+        }
+      },
+      "last_batch": {
+        "raw": {
+          "lossOut": 0.13637296855449677,
+          "lossIn": 0.30006521940231323,
+          "lossRev": 0.30006521940231323,
+          "sbow": null,
+          "grammar_lesson": null,
+          "output_policy_loss": null,
+          "csbow": null,
+          "defsp": null,
+          "arma_loss": null,
+          "intra_loss": null,
+          "inter_loss": null,
+          "inter_contrastive": null,
+          "aux_total": null,
+          "expectation_policy_loss": null,
+          "selected_pol_loss": null,
+          "ld_loss": null,
+          "gate_l1": null,
+          "readout_l1": null,
+          "totalLoss": 0.1827487200498581
+        },
+        "weights": {
+          "lossOut": 0.9,
+          "lossIn": 0.1,
+          "lossRev": 0.1,
+          "sbow": 0.05,
+          "grammar_lesson": 1.0,
+          "output_policy_loss": 0.0,
+          "csbow": 0.0,
+          "defsp": 1.0,
+          "arma_loss": 0.0,
+          "intra_loss": 0.1,
+          "inter_loss": 0.1,
+          "inter_contrastive": 0.0,
+          "aux_total": 1.0,
+          "expectation_policy_loss": 0.0,
+          "selected_pol_loss": 0.0,
+          "ld_loss": 0.0,
+          "gate_l1": 1.0,
+          "readout_l1": 1.0
+        },
+        "train": false,
+        "split": "test"
+      },
+      "last_training_trials": {
+        "exploit": {
+          "pair": 399,
+          "trial": "exploit",
+          "train": true,
+          "scope": "batch",
+          "batch": 399,
+          "sid": 0,
+          "active": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "raw": {
+            "reconstruction": [
+              -0.0,
+              0.0,
+              -0.0,
+              0.0
+            ],
+            "expectation_inter": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "expectation_contrastive": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "supplied_answer": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "grammar_lesson": [
+              null,
+              null,
+              null,
+              null
+            ]
+          },
+          "weighted": {
+            "reconstruction": [
+              -0.0,
+              0.0,
+              -0.0,
+              0.0
+            ],
+            "expectation": [
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206
+            ],
+            "supplied_answer": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "total": [
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206
+            ],
+            "legacy_intra": [
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206
+            ]
+          },
+          "evaluation_supplied_answer": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "grammar_terms": {},
+          "weights": {
+            "reconstruction": 0.1,
+            "expectation_inter": 0.1,
+            "expectation_contrastive": 0.0,
+            "supplied_answer": 0.0,
+            "grammar_lesson": 1.0
+          },
+          "reconstruction_enabled": false
+        },
+        "explore": {
+          "pair": 399,
+          "trial": "explore",
+          "train": true,
+          "scope": "batch",
+          "batch": 399,
+          "sid": 0,
+          "active": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "raw": {
+            "reconstruction": [
+              0.0,
+              -0.0,
+              0.0,
+              -0.0
+            ],
+            "expectation_inter": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "expectation_contrastive": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "supplied_answer": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "grammar_lesson": [
+              null,
+              null,
+              null,
+              null
+            ]
+          },
+          "weighted": {
+            "reconstruction": [
+              0.0,
+              -0.0,
+              0.0,
+              -0.0
+            ],
+            "expectation": [
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206
+            ],
+            "supplied_answer": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "total": [
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206
+            ],
+            "legacy_intra": [
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206,
+              0.0015342303086072206
+            ]
+          },
+          "evaluation_supplied_answer": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "grammar_terms": {},
+          "weights": {
+            "reconstruction": 0.1,
+            "expectation_inter": 0.1,
+            "expectation_contrastive": 0.0,
+            "supplied_answer": 0.0,
+            "grammar_lesson": 1.0
+          },
+          "reconstruction_enabled": false
+        }
+      },
+      "xor": {
+        "answers": [
+          0.350686252117157,
+          0.6687062382698059,
+          0.4700273871421814,
+          0.5154287219047546
+        ],
+        "targets": [
+          0.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "correct": 2,
+        "mse": 0.19481853543225824,
+        "read_backs": [
+          "world there",
+          "there there",
+          "world there",
+          "there there"
+        ],
+        "unavailable": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "reconstructed": 0,
+        "class_bar": false,
+        "reconstruction_bar": false
+      }
+    }
+  },
+  "BasicModel_answers_tied_benchmark": {
+    "step5a": {
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/observe.py",
+          "--config",
+          "BasicModel_answers_tied_benchmark",
+          "--arm",
+          "step5a",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/BasicModel_answers_tied_benchmark-step5a"
+        ],
+        "pid": 59995,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 9591185808,
+        "elapsed_seconds": 7.4998387080013345,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/BasicModel_answers_tied_benchmark-step5a/run.log"
+      },
+      "error": null,
+      "completed": false,
+      "endpoint_objectives": {},
+      "last_batch": null,
+      "last_training_trials": null,
+      "selection_audit": {},
+      "gradient_snapshots": [],
+      "sampled_nonzero_reach": {},
+      "term_magnitudes": {}
+    },
+    "cut": {
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/observe.py",
+          "--config",
+          "BasicModel_answers_tied_benchmark",
+          "--arm",
+          "cut",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/BasicModel_answers_tied_benchmark-cut"
+        ],
+        "pid": 60099,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 9590382944,
+        "elapsed_seconds": 7.495509208001749,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/BasicModel_answers_tied_benchmark-cut/run.log"
+      },
+      "error": null,
+      "completed": false,
+      "endpoint_objectives": {},
+      "last_batch": null,
+      "last_training_trials": null
+    }
+  }
+}

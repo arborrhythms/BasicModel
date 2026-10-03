@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 2/2 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.022808791996794753</pre></td><td><pre>test/test_sentence_compose.py:223: in test_disabled_sentence_prediction_leaves_adam_momentum_unused
+    cost, *_ = BasicModel._sentence_path_cost(
+bin/Models.py:20797: in _sentence_path_cost
+    prediction_errors, contrast_errors = disc._sentence_prediction_errors
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;types.SimpleNamespace&#x27; object has no attribute &#x27;_sentence_prediction_errors&#x27;. Did you mean: &#x27;sentence_prediction_cost&#x27;?</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00027762500394601375</pre></td><td><pre>test/test_generation_lesson.py:28: in test_sentence_generation_lesson_keeps_its_weighted_output_gradient
+    cost, *_ = BasicModel._sentence_path_cost(
+bin/Models.py:20786: in _sentence_path_cost
+    errors.merge(self._grammar_lesson_errors[name], prefix=&#x27;grammar.&#x27;,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: &#x27;types.SimpleNamespace&#x27; object has no attribute &#x27;_grammar_lesson_errors&#x27;. Did you mean: &#x27;grammar_lesson_weight&#x27;?</pre></td><td><pre></pre></td></tr></table></body></html>

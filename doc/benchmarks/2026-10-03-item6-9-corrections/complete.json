@@ -1,0 +1,31 @@
+{
+  "source_matched": true,
+  "data_and_grammar_unchanged": true,
+  "source_changes": [
+    "bin/Language.py",
+    "bin/Layers.py",
+    "bin/Models.py",
+    "test/test_concept_memberships.py",
+    "test/test_partspace_dynamic_capacity.py",
+    "test/test_readback_log_probability.py",
+    "test/test_readback_operand_unaries.py",
+    "test/test_reverse_traversal.py",
+    "test/test_sentence_journal.py",
+    "test/test_sparse_concept_e2e.py",
+    "test/test_word_store.py"
+  ],
+  "receipt_links_exist": true,
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "committed": false,
+  "acceptance_campaign_deferred": true,
+  "prior_sweep_failures_passed": 8,
+  "prior_moved_fixtures_passed": 4,
+  "prior_moved_learning_failures": 2,
+  "single_xor_training": {
+    "class_bar": false,
+    "reconstruction_bar": false,
+    "both": false
+  },
+  "collection_count": 5009,
+  "doc_link_checks_passed": 270
+}

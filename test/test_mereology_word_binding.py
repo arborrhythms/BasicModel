@@ -1,7 +1,7 @@
 """Word/object binding and taxonomy belong to the native concept inventory."""
 import pytest
 from Spaces import WholeSpace, _concept_alloc_of
-from test_item9b_interpret import _operator
+from test_word_interpretation import _operator
 
 
 def test_word_spelling_is_ordered_and_binding_is_idempotent():

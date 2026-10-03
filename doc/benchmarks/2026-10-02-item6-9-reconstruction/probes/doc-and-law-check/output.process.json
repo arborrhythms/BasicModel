@@ -1,0 +1,22 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_doc_links.py",
+    "test/test_training_diagnostics.py",
+    "test/test_objective_ownership.py",
+    "test/test_free_reconstruction.py",
+    "test/test_contextual_concept_codebook.py",
+    "test/test_concept_code_ownership.py",
+    "test/test_inter_sentence_prediction_shape.py",
+    "--tb=short"
+  ],
+  "pid": 88717,
+  "exit_code": 4,
+  "reason": "exit",
+  "peak_memory_bytes": 180296,
+  "elapsed_seconds": 1.320861457992578,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/doc-and-law-check/output.log"
+}

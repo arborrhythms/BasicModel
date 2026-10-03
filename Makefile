@@ -29,9 +29,7 @@ PDFOPTS := --pdf-engine=xelatex \
 
 # Ordered list of doc chapters for PDF generation
 PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/Componentization.md doc/BasicModel.md doc/Spaces.md doc/STM.md doc/Language.md doc/Mereology.md doc/Logic.md doc/Reasoning.md doc/Training.md doc/Ergodic.md doc/MachineMinds.md doc/Params.md
-XML1 ?= data/simple.xml
-XML2 ?= data/ergodic-only.xml
-MODEL ?= data/MM_20M_fineweb.xml
+MODEL ?= data/BasicModel.xml
 PYTHON := PYTHONPATH=bin $(VENV_PYTHON)
 TRAIN_ARGS ?=
 TRAIN_MEMORY_PERCENT ?= 60
@@ -47,7 +45,7 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 		--toc --toc-depth=3 \
 		--resource-path=.:doc
 
-.PHONY : all install xor tomatoes ergodic simple run compare test testp test_all preflight preflight_full bench doc clean \
+.PHONY : all install xor mnist ergodic run compare test testp test_all preflight preflight_full bench doc clean \
          train train_micro bench_local bench_sync bench_remote bench_pull
 
 all : xor
@@ -102,26 +100,20 @@ train_micro : $(VENV_STAMP)
 xor : data/MM_xor.xml
 	PYTORCH_ENABLE_MPS_FALLBACK=1 $(MAKE) run XML1=$<
 
-tomatoes : data/tomatoes.xml
-	$(MAKE) run XML1=$<
-
 ergodic : data/ergodic.xml
-	$(MAKE) run XML1=$<
-
-simple : data/simple.xml
 	$(MAKE) run XML1=$<
 
 mnist : data/mnist.xml
 	$(MAKE) run XML1=$<
 
 SigmaPi : $(VENV_STAMP)
-	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SigmaPi.py
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SigmaPi.py --demo
 
 SymPercept : $(VENV_STAMP)
-	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SymPercept.py
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SymPercept.py --demo
 
 SPNN : $(VENV_STAMP)
-	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SPNN.py
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SPNN.py --demo
 
 
 compare : $(VENV_STAMP)
@@ -141,6 +133,12 @@ testp : $(VENV_STAMP)
 
 test_all : $(VENV_STAMP)
 	RUN_SLOW=1 PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)
+
+# Existing environment only; the item 6.9 baseline holds the venv rebuild.
+# 8 GiB ordinary workers; 24 GiB only for the native production stage-1 arms.
+.PHONY: test_slow_weekly
+test_slow_weekly:
+	PYTHONPATH=bin:test $(VENV_PYTHON) test/slow_weekly.py
 
 preflight : $(VENV_STAMP)
 	BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager PYTHONPATH=bin:test \
@@ -185,7 +183,7 @@ BENCH_EXCLUDES = --exclude .venv --exclude venv --exclude output --exclude .git 
 	--exclude 'data/*.ckpt' --exclude 'data/*.kv'
 
 # Benchmarks retain the compact grammar fixture; training defaults to FineWeb.
-bench_local bench_remote : MODEL = data/MM_20M_grammar.xml
+bench_local bench_remote : MODEL = data/MM_ladder.xml
 
 bench_local : $(VENV_STAMP)
 	BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager $(PYTHON) bin/recon_bench.py $(MODEL) --epochs $(EPOCHS) --out output/

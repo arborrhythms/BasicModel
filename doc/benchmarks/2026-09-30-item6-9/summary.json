@@ -1,0 +1,1261 @@
+{
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "preserved_records": {
+    "doc/benchmarks/2026-09-30-item7-review-round5/final-xor-comparison.md": "bf430163f604c690519a7a925e8f1919e6fe358f0ae1b043ff88e09459258a51",
+    "doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-table.md": "e8212f512be92f1fd36b4f91693a65cf01bbc0276d572ec4af365d9d9189dc19",
+    "doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md": "5bac3cd85194ddd07983010229003bd197681587c73e6b750e03d8991a34c608",
+    "doc/benchmarks/2026-09-27-item7-5-landing/README.md": "2afd12ec360a80201cfbfe154b933e7b23a2950ae4f4676712fcff359d957edb"
+  },
+  "configurations_unchanged": true,
+  "source_matches_current": true,
+  "staged_files": [],
+  "stages": {
+    "before": {
+      "elapsed_seconds": 1463.0032274578698,
+      "peak_aggregate_memory_bytes": 15431354032,
+      "trees": {
+        "head": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 45,
+            "failed": 4
+          },
+          "exact_roundtrips": {
+            "passed": 13,
+            "failed": 2
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 18,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 21,
+              "outcome": "failed"
+            }
+          ]
+        },
+        "candidate": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 45,
+            "failed": 4
+          },
+          "exact_roundtrips": {
+            "passed": 13,
+            "failed": 2
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 15,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 20,
+              "outcome": "failed"
+            }
+          ]
+        }
+      }
+    },
+    "step1": {
+      "elapsed_seconds": 1230.317441415973,
+      "peak_aggregate_memory_bytes": 16118780568,
+      "trees": {
+        "head": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 44,
+            "failed": 5
+          },
+          "exact_roundtrips": {
+            "failed": 2,
+            "passed": 13
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+              "gate": 2,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 14,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 15,
+              "outcome": "failed"
+            }
+          ]
+        },
+        "candidate": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 44,
+            "failed": 5
+          },
+          "exact_roundtrips": {
+            "passed": 12,
+            "failed": 3
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 18,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 22,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 25,
+              "outcome": "failed"
+            }
+          ]
+        }
+      }
+    },
+    "step2": {
+      "elapsed_seconds": 1220.1353562918957,
+      "peak_aggregate_memory_bytes": 16143864400,
+      "trees": {
+        "head": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 42,
+            "failed": 7
+          },
+          "exact_roundtrips": {
+            "passed": 11,
+            "failed": 4
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+              "gate": 2,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 17,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 23,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 24,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 28,
+              "outcome": "failed"
+            }
+          ]
+        },
+        "candidate": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 42,
+            "failed": 7
+          },
+          "exact_roundtrips": {
+            "failed": 5,
+            "passed": 10
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 14,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 15,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 16,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 21,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 28,
+              "outcome": "failed"
+            }
+          ]
+        }
+      }
+    },
+    "step3": {
+      "elapsed_seconds": 1193.307961583836,
+      "peak_aggregate_memory_bytes": 15877624280,
+      "trees": {
+        "head": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 44,
+            "failed": 5
+          },
+          "exact_roundtrips": {
+            "passed": 12,
+            "failed": 3
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 17,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 22,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 26,
+              "outcome": "failed"
+            }
+          ]
+        },
+        "candidate": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 45,
+            "failed": 4
+          },
+          "exact_roundtrips": {
+            "passed": 13,
+            "failed": 2
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 17,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 26,
+              "outcome": "failed"
+            }
+          ]
+        }
+      }
+    },
+    "step4": {
+      "elapsed_seconds": 1201.0645560000557,
+      "peak_aggregate_memory_bytes": 15508212432,
+      "trees": {
+        "head": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 45,
+            "failed": 4
+          },
+          "exact_roundtrips": {
+            "passed": 13,
+            "failed": 2
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 15,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 24,
+              "outcome": "failed"
+            }
+          ]
+        },
+        "candidate": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 46,
+            "failed": 3
+          },
+          "exact_roundtrips": {
+            "passed": 14,
+            "failed": 1
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 28,
+              "outcome": "failed"
+            }
+          ]
+        }
+      }
+    },
+    "step5": {
+      "elapsed_seconds": 1487.3862279588357,
+      "peak_aggregate_memory_bytes": 16259091680,
+      "trees": {
+        "head": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 44,
+            "failed": 5
+          },
+          "exact_roundtrips": {
+            "passed": 12,
+            "failed": 3
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 24,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 25,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 28,
+              "outcome": "failed"
+            }
+          ]
+        },
+        "candidate": {
+          "named_attempts": 49,
+          "expected_named_attempts": 49,
+          "outcomes": {
+            "passed": 43,
+            "failed": 6
+          },
+          "exact_roundtrips": {
+            "failed": 4,
+            "passed": 11
+          },
+          "failures": [
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+              "gate": 5,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+              "gate": 6,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 14,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 21,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 24,
+              "outcome": "failed"
+            },
+            {
+              "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+              "gate": 25,
+              "outcome": "failed"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "native": {
+    "native-before": {
+      "process": {
+        "command": [
+          ".venv/bin/python",
+          "doc/benchmarks/2026-09-30-item6-9/native_profile.py",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native-before/measurement.json"
+        ],
+        "pid": 38912,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 6167353320,
+        "elapsed_seconds": 1224.1473441668786,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native-before/driver.log"
+      },
+      "phases": [
+        {
+          "name": "before_training",
+          "steps": [
+            {
+              "reconstruction": 0.11997836828231812,
+              "answer": 0.2311561554670334,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 215.25613612495363
+            },
+            {
+              "reconstruction": 0.12478183209896088,
+              "answer": 0.04729529097676277,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 65.16860762517899
+            },
+            {
+              "reconstruction": 0.12483186274766922,
+              "answer": 0.04374999925494194,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.5753321668598801
+            },
+            {
+              "reconstruction": 0.12242075055837631,
+              "answer": 0.08048775047063828,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.49396195798181
+            }
+          ],
+          "reconstruction_mean": 0.12300320342183113,
+          "sentences_per_second": 0.02841978487499335,
+          "thought_calls": 0
+        },
+        {
+          "name": "training",
+          "steps": [
+            {
+              "reconstruction": 0.12480615824460983,
+              "answer": 0.04041113331913948,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 916.2471473750193
+            },
+            {
+              "reconstruction": 0.10994166880846024,
+              "answer": 0.06241219863295555,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.7835199588444084
+            },
+            {
+              "reconstruction": 0.1127014234662056,
+              "answer": 0.04622936248779297,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.5226795000489801
+            },
+            {
+              "reconstruction": 0.10935822874307632,
+              "answer": 0.036631833761930466,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.7803616661112756
+            },
+            {
+              "reconstruction": 0.10508888959884644,
+              "answer": 0.09974078834056854,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.498178208945319
+            },
+            {
+              "reconstruction": 0.11607131361961365,
+              "answer": 0.25281834602355957,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.484904166078195
+            },
+            {
+              "reconstruction": 0.10335942357778549,
+              "answer": 0.04677186161279678,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.7636292499955744
+            }
+          ],
+          "reconstruction_mean": 0.1093158558011055,
+          "sentences_per_second": 1.2422741740538508,
+          "thought_calls": 0
+        },
+        {
+          "name": "after_training",
+          "steps": [
+            {
+              "reconstruction": 0.12562763690948486,
+              "answer": 0.20714609324932098,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.385411832947284
+            },
+            {
+              "reconstruction": 0.09715728461742401,
+              "answer": 0.053391359746456146,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.4439122499898076
+            },
+            {
+              "reconstruction": 0.09599966555833817,
+              "answer": 0.04317079111933708,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.45493145915679634
+            },
+            {
+              "reconstruction": 0.10410332679748535,
+              "answer": 0.05008876323699951,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.3954304999206215
+            }
+          ],
+          "reconstruction_mean": 0.1057219784706831,
+          "sentences_per_second": 4.762794831827801,
+          "thought_calls": 0
+        }
+      ],
+      "timing": {
+        "warmup_training": {
+          "batches": 2,
+          "mean_seconds": {
+            "exploit_compose": 67.36412672908045,
+            "explore_compose": 54.63018387486227,
+            "exploit_backward": 4.0479651460191235,
+            "explore_backward": 0.3665216665249318,
+            "batch_backward": 0.00034643744584172964,
+            "sentence_scoring": 330.37637974938843,
+            "snapshot": 1.2705568224191666e-06,
+            "restore": 0.00045743805821985006,
+            "other": 2.219866876024753,
+            "total": 459.00584918796085
+          },
+          "fraction": {
+            "exploit_compose": 0.14676093310849106,
+            "explore_compose": 0.11901849175018127,
+            "exploit_backward": 0.008818983795479914,
+            "explore_backward": 0.0007985119735910878,
+            "batch_backward": 7.547560591104038e-07,
+            "sentence_scoring": 0.7197650756169357,
+            "snapshot": 2.768062378000066e-09,
+            "restore": 9.96584376929217e-07,
+            "other": 0.004836249646822534
+          }
+        },
+        "warmed_training": {
+          "batches": 5,
+          "mean_seconds": {
+            "exploit_compose": 0.3467392414342612,
+            "explore_compose": 0.35474536661058664,
+            "exploit_backward": 0.3256596500054002,
+            "explore_backward": 0.32584774983115494,
+            "batch_backward": 0.000322816614061594,
+            "sentence_scoring": 0.09915269161574543,
+            "snapshot": 6.585847586393356e-07,
+            "restore": 0.0003787333611398935,
+            "other": 0.14879177566617727,
+            "total": 1.6016386837232859
+          },
+          "fraction": {
+            "exploit_compose": 0.2164903014381533,
+            "explore_compose": 0.22148901010927116,
+            "exploit_backward": 0.20332903626450136,
+            "explore_backward": 0.20344647837405222,
+            "batch_backward": 0.0002015539567957681,
+            "sentence_scoring": 0.06190702848488141,
+            "snapshot": 4.111943382313554e-07,
+            "restore": 0.00023646616742514133,
+            "other": 0.09289971401058138
+          }
+        },
+        "evaluation": {
+          "batches": 8,
+          "mean_seconds": {
+            "exploit_compose": 15.694196765805827,
+            "explore_compose": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "batch_backward": 0.0,
+            "sentence_scoring": 19.28644775506109,
+            "snapshot": 7.75966327637434e-07,
+            "restore": 0.0001978438231162727,
+            "other": 0.40535395307233557,
+            "total": 35.3861970937287
+          },
+          "fraction": {
+            "exploit_compose": 0.44351182254018545,
+            "explore_compose": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "batch_backward": 0.0,
+            "sentence_scoring": 0.5450274213975687,
+            "snapshot": 2.1928502957865293e-08,
+            "restore": 5.5909885595289204e-06,
+            "other": 0.011455143145183415
+          }
+        }
+      }
+    },
+    "native-prepair": {
+      "process": {
+        "command": [
+          ".venv/bin/python",
+          "doc/benchmarks/2026-09-30-item6-9/native_profile.py",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native-prepair/measurement.json"
+        ],
+        "pid": 52455,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5680387856,
+        "elapsed_seconds": 920.7330635420512,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native-prepair/driver.log"
+      },
+      "phases": [
+        {
+          "name": "before_training",
+          "steps": [
+            {
+              "reconstruction": 0.12923862040042877,
+              "answer": 0.39717113971710205,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 162.3670767499134
+            },
+            {
+              "reconstruction": 0.1298031508922577,
+              "answer": 0.22772473096847534,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 51.593886375194415
+            },
+            {
+              "reconstruction": 0.12077975273132324,
+              "answer": 0.15000775456428528,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.47190954186953604
+            },
+            {
+              "reconstruction": 0.12556520104408264,
+              "answer": 0.0631718710064888,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.408505667001009
+            }
+          ],
+          "reconstruction_mean": 0.1263466812670231,
+          "sentences_per_second": 0.037236774694136075,
+          "thought_calls": 0
+        },
+        {
+          "name": "training",
+          "steps": [
+            {
+              "reconstruction": 0.12492383271455765,
+              "answer": 0.045876309275627136,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 674.5244082089048
+            },
+            {
+              "reconstruction": 0.1065826267004013,
+              "answer": 0.048769719898700714,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.8745445830281824
+            },
+            {
+              "reconstruction": 0.11094953864812851,
+              "answer": 0.11879788339138031,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.586427291855216
+            },
+            {
+              "reconstruction": 0.12067516148090363,
+              "answer": 0.10773277282714844,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.8540733330883086
+            },
+            {
+              "reconstruction": 0.11162827163934708,
+              "answer": 0.057060956954956055,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.557252167025581
+            },
+            {
+              "reconstruction": 0.10864241421222687,
+              "answer": 0.3716121017932892,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 7.28794266609475
+            },
+            {
+              "reconstruction": 0.10012995451688766,
+              "answer": 0.05543866753578186,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.8408010839484632
+            }
+          ],
+          "reconstruction_mean": 0.11040506809949875,
+          "sentences_per_second": 0.7078896009537762,
+          "thought_calls": 0
+        },
+        {
+          "name": "after_training",
+          "steps": [
+            {
+              "reconstruction": 0.10677700489759445,
+              "answer": 0.048981036990880966,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.3952842499129474
+            },
+            {
+              "reconstruction": 0.11274401843547821,
+              "answer": 0.16377601027488708,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.44781587505713105
+            },
+            {
+              "reconstruction": 0.10568761080503464,
+              "answer": 0.21342216432094574,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.4446432909462601
+            },
+            {
+              "reconstruction": 0.10760973393917084,
+              "answer": 0.08255232870578766,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.39012483414262533
+            }
+          ],
+          "reconstruction_mean": 0.10820459201931953,
+          "sentences_per_second": 4.76795481392467,
+          "thought_calls": 0
+        }
+      ],
+      "timing": {
+        "warmup_training": {
+          "batches": 2,
+          "mean_seconds": {
+            "exploit_compose": 52.654074416612275,
+            "explore_compose": 57.10280714544933,
+            "exploit_backward": 1.0913236875785515,
+            "explore_backward": 0.3847209169762209,
+            "batch_backward": 0.0003397916443645954,
+            "sentence_scoring": 225.24980050034355,
+            "snapshot": 7.711350917816162e-07,
+            "restore": 0.00041137507651001215,
+            "other": 1.7064310617279261,
+            "total": 338.1899096665438
+          },
+          "fraction": {
+            "exploit_compose": 0.15569380667959412,
+            "explore_compose": 0.1688483467817028,
+            "exploit_backward": 0.003226955199978023,
+            "explore_backward": 0.0011375883962817129,
+            "batch_backward": 1.0047361989588361e-06,
+            "sentence_scoring": 0.6660453019501394,
+            "snapshot": 2.2801836179617466e-09,
+            "restore": 1.2164025736771067e-06,
+            "other": 0.005045777573347685
+          }
+        },
+        "warmed_training": {
+          "batches": 5,
+          "mean_seconds": {
+            "exploit_compose": 0.3599409915972501,
+            "explore_compose": 1.507843791646883,
+            "exploit_backward": 0.34484879951924086,
+            "explore_backward": 0.3431724998168647,
+            "batch_backward": 0.00033166659995913504,
+            "sentence_scoring": 0.10743844974786043,
+            "snapshot": 7.08363950252533e-07,
+            "restore": 0.0004022665787488222,
+            "other": 0.15246197590604424,
+            "total": 2.8164411497768014
+          },
+          "fraction": {
+            "exploit_compose": 0.12779993348193158,
+            "explore_compose": 0.5353720214485495,
+            "exploit_backward": 0.1224413297421711,
+            "explore_backward": 0.1218461460996835,
+            "batch_backward": 0.0001177608841517669,
+            "sentence_scoring": 0.03814688254940983,
+            "snapshot": 2.5151029706715857e-07,
+            "restore": 0.00014282797237950498,
+            "other": 0.05413284631142625
+          }
+        },
+        "evaluation": {
+          "batches": 8,
+          "mean_seconds": {
+            "exploit_compose": 12.527847135264892,
+            "explore_compose": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "batch_backward": 0.0,
+            "sentence_scoring": 14.190303088631481,
+            "snapshot": 6.769842002540827e-07,
+            "restore": 0.00016874488210305572,
+            "other": 0.33772791671799496,
+            "total": 27.05604756248067
+          },
+          "fraction": {
+            "exploit_compose": 0.463033157608637,
+            "explore_compose": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "batch_backward": 0.0,
+            "sentence_scoring": 0.5244780508262243,
+            "snapshot": 2.502154827643319e-08,
+            "restore": 6.2368637441729905e-06,
+            "other": 0.012482529679846184
+          }
+        }
+      }
+    },
+    "native-after": {
+      "process": {
+        "command": [
+          ".venv/bin/python",
+          "doc/benchmarks/2026-09-30-item6-9/native_profile.py",
+          "--out",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native-after/measurement.json"
+        ],
+        "pid": 58597,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5743498904,
+        "elapsed_seconds": 1457.976812750101,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native-after/driver.log"
+      },
+      "phases": [
+        {
+          "name": "before_training",
+          "steps": [
+            {
+              "reconstruction": 0.11403341591358185,
+              "answer": 0.0882645770907402,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 235.5026532500051
+            },
+            {
+              "reconstruction": 0.13062816858291626,
+              "answer": 0.08851741999387741,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 70.87785545899533
+            },
+            {
+              "reconstruction": 0.10150861740112305,
+              "answer": 0.07865025848150253,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.524792707990855
+            },
+            {
+              "reconstruction": 0.11363057047128677,
+              "answer": 0.09357602894306183,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.4659629170782864
+            }
+          ],
+          "reconstruction_mean": 0.11495019309222698,
+          "sentences_per_second": 0.02602715649861504,
+          "thought_calls": 0
+        },
+        {
+          "name": "training",
+          "steps": [
+            {
+              "reconstruction": 0.12298747897148132,
+              "answer": 0.10955234616994858,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1108.7302680828143
+            },
+            {
+              "reconstruction": 0.13592608273029327,
+              "answer": 0.11667440086603165,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 2.441470750141889
+            },
+            {
+              "reconstruction": 0.09452829509973526,
+              "answer": 0.05667513608932495,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 2.0055505000054836
+            },
+            {
+              "reconstruction": 0.11179530620574951,
+              "answer": 0.0585385300219059,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 2.334951916942373
+            },
+            {
+              "reconstruction": 0.12239345908164978,
+              "answer": 0.06507253646850586,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 1.9663487079087645
+            },
+            {
+              "reconstruction": 0.10820859670639038,
+              "answer": 0.07328476011753082,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 11.67331345914863
+            },
+            {
+              "reconstruction": 0.1322823166847229,
+              "answer": 0.04281463846564293,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 2.3697124999016523
+            }
+          ],
+          "reconstruction_mean": 0.11384159475564956,
+          "sentences_per_second": 0.4914034595279302,
+          "thought_calls": 0
+        },
+        {
+          "name": "after_training",
+          "steps": [
+            {
+              "reconstruction": 0.11248408257961273,
+              "answer": 0.06141866371035576,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.4427100829780102
+            },
+            {
+              "reconstruction": 0.12685643136501312,
+              "answer": 0.057963427156209946,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.5195975420065224
+            },
+            {
+              "reconstruction": 0.12273743748664856,
+              "answer": 0.05164584144949913,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.5219476658385247
+            },
+            {
+              "reconstruction": 0.11360630393028259,
+              "answer": 0.05878590792417526,
+              "thought_calls": 0,
+              "thought_work": 0,
+              "execute_records": 0,
+              "seconds": 0.45549629209563136
+            }
+          ],
+          "reconstruction_mean": 0.11892106384038925,
+          "sentences_per_second": 4.1242394492405205,
+          "thought_calls": 0
+        }
+      ],
+      "timing": {
+        "warmup_training": {
+          "batches": 2,
+          "mean_seconds": {
+            "exploit_compose": 73.91506291658152,
+            "explore_compose": 81.87139458453748,
+            "exploit_backward": 1.9690494169481099,
+            "explore_backward": 0.48874593747314066,
+            "batch_backward": 0.000501833506859839,
+            "sentence_scoring": 395.09171485411935,
+            "snapshot": 1.0210787877440453e-06,
+            "restore": 0.0013085829559713602,
+            "other": 2.236117415362969,
+            "total": 555.5738965625642
+          },
+          "fraction": {
+            "exploit_compose": 0.1330427210023857,
+            "explore_compose": 0.14736364521639794,
+            "exploit_backward": 0.0035441719438781653,
+            "explore_backward": 0.00087971364475023,
+            "batch_backward": 9.032704919449479e-07,
+            "sentence_scoring": 0.7111416092415842,
+            "snapshot": 1.837881142475634e-09,
+            "restore": 2.355371560953095e-06,
+            "other": 0.0040248784710697
+          }
+        },
+        "warmed_training": {
+          "batches": 5,
+          "mean_seconds": {
+            "exploit_compose": 0.48959351680241525,
+            "explore_compose": 2.415393541706726,
+            "exploit_backward": 0.43152087517082693,
+            "explore_backward": 0.42212394983507695,
+            "batch_backward": 0.0004458247683942318,
+            "sentence_scoring": 0.1200080584269017,
+            "snapshot": 1.0499730706214906e-06,
+            "restore": 0.001194041781127453,
+            "other": 0.17809700793586672,
+            "total": 4.058377866400406
+          },
+          "fraction": {
+            "exploit_compose": 0.12063773579483424,
+            "explore_compose": 0.5951623089865382,
+            "exploit_backward": 0.1063284123303102,
+            "explore_backward": 0.10401297358973659,
+            "batch_backward": 0.00010985294693361262,
+            "sentence_scoring": 0.029570449666714578,
+            "snapshot": 2.587174248396856e-07,
+            "restore": 0.0002942165122210547,
+            "other": 0.04388379145528668
+          }
+        },
+        "evaluation": {
+          "batches": 8,
+          "mean_seconds": {
+            "exploit_compose": 16.399960781098343,
+            "explore_compose": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "batch_backward": 0.0,
+            "sentence_scoring": 21.85780282795895,
+            "snapshot": 1.1301017366349697e-06,
+            "restore": 0.000267520867055282,
+            "other": 0.3947985525301192,
+            "total": 38.6528308125562
+          },
+          "fraction": {
+            "exploit_compose": 0.42428873736644634,
+            "explore_compose": 0.0,
+            "exploit_backward": 0.0,
+            "explore_backward": 0.0,
+            "batch_backward": 0.0,
+            "sentence_scoring": 0.5654903500847481,
+            "snapshot": 2.9237230828326836e-08,
+            "restore": 6.921119654925223e-06,
+            "other": 0.010213962191919734
+          }
+        }
+      }
+    }
+  },
+  "grammar": {
+    "class_successes": 0,
+    "all_ten_class_runs_meet_bar": false,
+    "decision": "STOP implementation after step 5"
+  },
+  "full_sweep": {
+    "reason": "test_failure",
+    "outcomes": {
+      "passed": 4832,
+      "skipped": 322,
+      "failed": 6,
+      "xfailed": 1
+    },
+    "selected": 5161,
+    "completed": 5161,
+    "complete_unique_coverage": true,
+    "missing": [],
+    "unreported": [],
+    "resource_stops": []
+  }
+}

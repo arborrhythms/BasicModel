@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_grammar_sentence_scope.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-041.recycle.json"
+}

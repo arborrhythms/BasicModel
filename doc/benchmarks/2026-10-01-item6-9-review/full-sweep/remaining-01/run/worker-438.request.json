@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_train_compile_target.py::test_parse_compile_target_mlx"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-438.recycle.json"
+}

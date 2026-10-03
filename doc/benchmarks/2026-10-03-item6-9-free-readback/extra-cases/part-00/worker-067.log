@@ -1,0 +1,98 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_output_path_memorizes_supervised_labels_on_the_serial_topology ______
+test/test_output_path_supervised.py:134: in test_output_path_memorizes_supervised_labels_on_the_serial_topology
+    assert _memorize(m, epochs=40, lr=1e-3) >= 1.0
+E   assert 0.96875 >= 1.0
+E    +  where 0.96875 = _memorize(BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=29, out_features=136, bias=False)\n  )\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\n), epochs=40, lr=0.001)
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 1.945s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.456s, 100.00%)
+Training throughput: 1 batches in 1.453s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.463s, 100.00%)
+Training throughput: 1 batches in 1.461s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.555s, 100.00%)
+Training throughput: 1 batches in 1.553s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.474s, 100.00%)
+Training throughput: 1 batches in 1.473s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.451s, 100.00%)
+Training throughput: 1 batches in 1.448s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.459s, 100.00%)
+Training throughput: 1 batches in 1.457s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.545s, 100.00%)
+Training throughput: 1 batches in 1.544s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.449s, 100.00%)
+Training throughput: 1 batches in 1.447s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.455s, 100.00%)
+Training throughput: 1 batches in 1.453s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.951s, 100.00%)
+Training throughput: 1 batches in 1.464s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.469s, 100.00%)
+Training throughput: 1 batches in 1.467s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.468s, 100.00%)
+Training throughput: 1 batches in 1.465s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.547s, 100.00%)
+Training throughput: 1 batches in 1.545s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.453s, 100.00%)
+Training throughput: 1 batches in 1.452s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.444s, 100.00%)
+Training throughput: 1 batches in 1.442s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.477s, 100.00%)
+Training throughput: 1 batches in 1.475s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.557s, 100.00%)
+Training throughput: 1 batches in 1.555s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.451s, 100.00%)
+Training throughput: 1 batches in 1.449s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.458s, 100.00%)
+Training throughput: 1 batches in 1.456s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.942s, 100.00%)
+Training throughput: 1 batches in 1.442s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.468s, 100.00%)
+Training throughput: 1 batches in 1.467s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.458s, 100.00%)
+Training throughput: 1 batches in 1.456s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.550s, 100.00%)
+Training throughput: 1 batches in 1.548s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.360s, 100.00%)
+Training throughput: 1 batches in 1.358s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.429s, 100.00%)
+Training throughput: 1 batches in 1.427s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.439s, 100.00%)
+Training throughput: 1 batches in 1.439s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.543s, 100.00%)
+Training throughput: 1 batches in 1.538s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.374s, 100.00%)
+Training throughput: 1 batches in 1.374s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.464s, 100.00%)
+Training throughput: 1 batches in 1.462s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.970s, 100.00%)
+Training throughput: 1 batches in 1.466s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.379s, 100.00%)
+Training throughput: 1 batches in 1.376s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.510s, 100.00%)
+Training throughput: 1 batches in 1.510s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.434s, 100.00%)
+Training throughput: 1 batches in 1.432s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.450s, 100.00%)
+Training throughput: 1 batches in 1.449s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.392s, 100.00%)
+Training throughput: 1 batches in 1.388s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.430s, 100.00%)
+Training throughput: 1 batches in 1.430s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.533s, 100.00%)
+Training throughput: 1 batches in 1.531s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.459s, 100.00%)
+Training throughput: 1 batches in 1.458s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.490s, 100.00%)
+Training throughput: 1 batches in 1.489s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+=============================== warnings summary ===============================
+test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology
+1 failed, 1 warning in 64.03s (0:01:04)

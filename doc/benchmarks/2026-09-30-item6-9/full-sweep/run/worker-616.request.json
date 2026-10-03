@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mereology.py::TestCopyLayer::test_swap_and_copy_dual"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-616.recycle.json"
+}

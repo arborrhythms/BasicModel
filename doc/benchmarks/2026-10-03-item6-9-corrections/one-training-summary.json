@@ -1,0 +1,88 @@
+{
+  "predictions": [
+    0.49994224309921265,
+    0.499952495098114,
+    0.4999217987060547,
+    0.5000132918357849
+  ],
+  "targets": [
+    0.0,
+    1.0,
+    1.0,
+    0.0
+  ],
+  "mse": 0.25002031325387986,
+  "correct": 1,
+  "contrast": 8.124113082885742e-05,
+  "readbacks": [
+    "hello world",
+    "hello there",
+    "world world",
+    "there there"
+  ],
+  "class_bar": false,
+  "reconstruction_bar": false,
+  "both": false,
+  "wrong_readback_gradients": {
+    "leaf": {
+      "count": 1682,
+      "nonzero": 1682,
+      "minimum": 0.00031647749710828066,
+      "maximum": 91.01747131347656,
+      "median": 0.3003769814968109
+    },
+    "codes": {
+      "count": 1682,
+      "nonzero": 1682,
+      "minimum": 18.664154052734375,
+      "maximum": 163.29147338867188,
+      "median": 69.6244010925293
+    }
+  },
+  "displacement": {
+    "conceptualSpaces.1.layers.3.W": {
+      "steps": 800,
+      "nonzero_gradient_steps": 800,
+      "nonzero_displacement_steps": 800,
+      "max_gradient": 0.644611536455078,
+      "max_displacement": 0.0500913993261072,
+      "cosine_range": [
+        -0.9999999998855895,
+        0.9999005101531921
+      ]
+    },
+    "symbolSpace.subspace.layers.0.operation_layer.stop_anchor": {
+      "steps": 800,
+      "nonzero_gradient_steps": 768,
+      "nonzero_displacement_steps": 40,
+      "max_gradient": 2.291489159130727e-07,
+      "max_displacement": 6.152414838654833e-09,
+      "cosine_range": [
+        -0.9876560711239363,
+        0.9166352281894254
+      ]
+    },
+    "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor": {
+      "steps": 800,
+      "nonzero_gradient_steps": 768,
+      "nonzero_displacement_steps": 97,
+      "max_gradient": 9.559733689846449e-08,
+      "max_displacement": 1.1614443198284095e-09,
+      "cosine_range": [
+        -0.8616731867337851,
+        0.6521566462735746
+      ]
+    },
+    "symbolSpace.subspace.layers.0.operation_layer.apply_anchor": {
+      "steps": 800,
+      "nonzero_gradient_steps": 768,
+      "nonzero_displacement_steps": 47,
+      "max_gradient": 2.322833544008249e-07,
+      "max_displacement": 6.452392069879462e-09,
+      "cosine_range": [
+        -0.9868635976639168,
+        0.9214370025692455
+      ]
+    }
+  }
+}

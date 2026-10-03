@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/mps-slow-check/worker-000.recycle.json"
+}

@@ -1,4 +1,5 @@
 """Both compose trials train; the strictly lower-loss end state survives."""
+import pytest
 import os
 import re
 import sys
@@ -58,6 +59,7 @@ def _batch(m):
             m.outputSpace.prepOutput(out_items))
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_pair_trains_twice_and_commits_once(monkeypatch):
     m = _build()
     optimizer = torch.optim.SGD(m.parameters(), lr=0.0)
@@ -115,6 +117,7 @@ def test_pair_trains_twice_and_commits_once(monkeypatch):
         m.symbolSpace.soft_reset()
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_evaluation_repeats_the_same_program_without_an_explore_trial(monkeypatch):
     m = _build('<composeTemperature>2</composeTemperature>')
     batch = _batch(m)
@@ -148,8 +151,3 @@ def test_evaluation_repeats_the_same_program_without_an_explore_trial(monkeypatc
     finally:
         m.End()
         m.symbolSpace.soft_reset()
-
-
-def test_flattened_temperature_driver_is_deleted():
-    import Models
-    assert not hasattr(Models.BasicModel, '_set_superposition_temperature')

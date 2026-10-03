@@ -1,0 +1,24 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column"
+  ],
+  "completed": [
+    "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.33331458299653605,
+      "message": "",
+      "stdout": "# Mathematical thinking evaluation\n\nConfig `/Users/arogers/github/WikiOracle/basicmodel/data/MM_math.xml`; weights `fresh (untrained)`; seeds [1]; split `train`.\n\n## thinking\n\n| budget | depth | n | accuracy | forced | iterations | latency_s |\n|---|---|---:|---:|---:|---:|---:|\n| 1 | 1 | 1 | 0.000 | 0.000 | 1.000 | 0.022 |\n| 1 | 2 | 3 | 0.000 | 0.000 | 1.000 | 0.019 |\n| 1 | all | 4 | 0.000 | 0.000 | 1.000 | 0.019 |\n| 4 | 1 | 1 | 0.000 | 0.000 | 1.000 | 0.016 |\n| 4 | 2 | 3 | 0.000 | 0.000 | 1.000 | 0.016 |\n| 4 | all | 4 | 0.000 | 0.000 | 1.000 | 0.016 |\n\n## memory ablation\n\n| budget | depth | n | accuracy | forced | iterations | latency_s |\n|---|---|---:|---:|---:|---:|---:|\n| 1 | 1 | 1 | 0.000 | 0.000 | 1.000 | 0.016 |\n| 1 | 2 | 3 | 0.000 | 0.000 | 1.000 | 0.016 |\n| 1 | all | 4 | 0.000 | 0.000 | 1.000 | 0.016 |\n| 4 | 1 | 1 | 0.000 | 0.000 | 1.000 | 0.016 |\n| 4 | 2 | 3 | 0.000 | 0.000 | 1.000 | 0.016 |\n| 4 | all | 4 | 0.000 | 0.000 | 1.000 | 0.016 |\n\n\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

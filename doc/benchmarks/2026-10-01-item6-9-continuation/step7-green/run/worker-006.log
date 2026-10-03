@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_single_legal_derivation_is_compared_without_inventing_an_alternative ___
+test/test_inverse_unary_exclusion.py:74: in test_single_legal_derivation_is_compared_without_inventing_an_alternative
+    assert explore['forced_round'].tolist() == [-1]
+E   assert [0] == [-1]
+E     
+E     At index 0 diff: 0 != -1
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED test/test_inverse_unary_exclusion.py::test_single_legal_derivation_is_compared_without_inventing_an_alternative
+1 failed in 2.33s

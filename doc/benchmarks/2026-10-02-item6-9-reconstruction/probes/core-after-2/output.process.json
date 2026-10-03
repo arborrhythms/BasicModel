@@ -1,0 +1,18 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "test/test_free_reconstruction.py",
+    "test/test_objective_ownership.py",
+    "test/test_training_diagnostic_contracts.py",
+    "test/test_grammar_reconstruction_gate.py",
+    "-q"
+  ],
+  "pid": 85220,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 647562776,
+  "elapsed_seconds": 7.193729708000319,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/core-after-2/output.log"
+}

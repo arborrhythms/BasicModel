@@ -1,0 +1,26 @@
+...F.                                                                    [100%]
+=================================== FAILURES ===================================
+__________________ test_unconditional_integration_end_to_end ___________________
+test/test_relevance_bases.py:90: in test_unconditional_integration_end_to_end
+    assert torch.is_tensor(b) and float(b.max()) > 1.0, (
+E   AssertionError: admitted rows must prime the surface unconditionally
+E   assert (True and 1.0 > 1.0)
+E    +  where True = <function is_tensor at 0x107d2f6a0>(tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]))
+E    +    where <function is_tensor at 0x107d2f6a0> = torch.is_tensor
+E    +  and   1.0 = float(tensor(1.))
+E    +    where tensor(1.) = <built-in method max of Tensor object at 0x13e72b110>()
+E    +      where <built-in method max of Tensor object at 0x13e72b110> = tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]).max
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.505s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_relevance_bases.py::test_unconditional_integration_end_to_end
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_relevance_bases.py::test_unconditional_integration_end_to_end
+1 failed, 4 passed, 1 warning in 2.90s

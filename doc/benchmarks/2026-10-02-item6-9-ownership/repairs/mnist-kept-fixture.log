@@ -1,0 +1,206 @@
+.FF                                                                      [100%]
+=================================== FAILURES ===================================
+_____________ test_real_mnist_subset_trains_one_short_batch[False] _____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-833/test_real_mnist_subset_trains_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11051fbc0>
+ergodic = False
+
+    @pytest.mark.parametrize('ergodic', [False, True])
+    def test_real_mnist_subset_trains_one_short_batch(tmp_path, monkeypatch, ergodic):
+        import data, util, Models
+        root=Path(__file__).resolve().parents[1]
+        # Use rows from the real downloaded files; bound only this test's subset.
+        read_csv=data.pd.read_csv
+        monkeypatch.setattr(data.pd,'read_csv',lambda path,*a,**kw:read_csv(path,*a,nrows=32,**kw))
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        monkeypatch.setenv('BASIC_AUTOLOAD','false')
+        monkeypatch.setenv('BASIC_AUTOSAVE','false')
+        # The kept ergodic-only fixture already declares MNIST's 784/10 shape.
+        # mnist.xml's historical 1/1 dimensions remain a separate review issue.
+        path=tmp_path/'ergodic-only.xml'
+        path.write_text((root/'data/ergodic-only.xml').read_text().replace(
+            '<ergodic>true</ergodic>', f'<ergodic>{str(ergodic).lower()}</ergodic>',1))
+        util.init_config(path=str(path),defaults_path=str(root/'data/model.xml'))
+        data.TheData.load('mnist')
+        model,_=Models.BaseModel.from_config(str(path),data=data.TheData)
+        try:
+            assert model.ergodic is ergodic
+            assert len(data.TheData.train_input)==32
+            assert data.TheData.inputLength==784
+            optimizer=model.getOptimizer(lr=.001)
+            raw,target=next(iter(data.TheData.data_loader(split='train',num_streams=2)))
+            batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
+            before=[p.detach().clone() for g in optimizer.param_groups for p in g['params']]
+>           result,_=model.runBatch(train=True,batchSize=2,split='train',optimizer=optimizer,batch_override=batch)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_mnist.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14250: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14424: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14792: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9157: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10640: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8854: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8665: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23985: in _forward_per_stage
+    if sentence_state is not None else self._forward_head(body_sub))
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:17864: in _forward_head
+    result = self.outputSpace(sub)
+             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:22052: in forward
+    x = self.forwardBegin(vspace, returnVectors=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9018: in forwardBegin
+    x = x.reshape(x.shape[0], -1, _w if _w > 0 else self.nInputDim)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x1109d7620>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[ 0.0000,  0.0980,  0.9952,  ...,  1.0000,  0.0245,  0.9997],
+         [ 0.0000,  0.1011,  0.9949,  ...,  1.... ...,  1.0000,  0.0245,  0.9997],
+         [ 0.0000,  0.5982, -0.8014,  ...,  1.0000,  0.0245,  0.9997]]]), 2, -1, 180)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[2, -1, 180]' is invalid for input of size 14112
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_____________ test_real_mnist_subset_trains_one_short_batch[True] ______________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-833/test_real_mnist_subset_trains_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12c53c7d0>
+ergodic = True
+
+    @pytest.mark.parametrize('ergodic', [False, True])
+    def test_real_mnist_subset_trains_one_short_batch(tmp_path, monkeypatch, ergodic):
+        import data, util, Models
+        root=Path(__file__).resolve().parents[1]
+        # Use rows from the real downloaded files; bound only this test's subset.
+        read_csv=data.pd.read_csv
+        monkeypatch.setattr(data.pd,'read_csv',lambda path,*a,**kw:read_csv(path,*a,nrows=32,**kw))
+        monkeypatch.setattr(util,'TheCompileBackend','none')
+        monkeypatch.setenv('BASIC_AUTOLOAD','false')
+        monkeypatch.setenv('BASIC_AUTOSAVE','false')
+        # The kept ergodic-only fixture already declares MNIST's 784/10 shape.
+        # mnist.xml's historical 1/1 dimensions remain a separate review issue.
+        path=tmp_path/'ergodic-only.xml'
+        path.write_text((root/'data/ergodic-only.xml').read_text().replace(
+            '<ergodic>true</ergodic>', f'<ergodic>{str(ergodic).lower()}</ergodic>',1))
+        util.init_config(path=str(path),defaults_path=str(root/'data/model.xml'))
+        data.TheData.load('mnist')
+        model,_=Models.BaseModel.from_config(str(path),data=data.TheData)
+        try:
+            assert model.ergodic is ergodic
+            assert len(data.TheData.train_input)==32
+            assert data.TheData.inputLength==784
+            optimizer=model.getOptimizer(lr=.001)
+            raw,target=next(iter(data.TheData.data_loader(split='train',num_streams=2)))
+            batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
+            before=[p.detach().clone() for g in optimizer.param_groups for p in g['params']]
+>           result,_=model.runBatch(train=True,batchSize=2,split='train',optimizer=optimizer,batch_override=batch)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_mnist.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14250: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14424: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14792: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9157: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10640: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8854: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8665: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23985: in _forward_per_stage
+    if sentence_state is not None else self._forward_head(body_sub))
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:17864: in _forward_head
+    result = self.outputSpace(sub)
+             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:22052: in forward
+    x = self.forwardBegin(vspace, returnVectors=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9018: in forwardBegin
+    x = x.reshape(x.shape[0], -1, _w if _w > 0 else self.nInputDim)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x1109d7620>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[ 0.0000,  0.0980,  0.9952,  ...,  1.0000,  0.0245,  0.9997],
+         [ 0.0000,  0.1011,  0.9949,  ...,  1.... ...,  1.0000,  0.0245,  0.9997],
+         [ 0.0000,  0.5982, -0.8014,  ...,  1.0000,  0.0245,  0.9997]]]), 2, -1, 180)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[2, -1, 180]' is invalid for input of size 14112
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+=========================== short test summary info ============================
+FAILED test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]
+FAILED test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]
+2 failed, 1 passed in 4.70s

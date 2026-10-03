@@ -1,0 +1,75 @@
+...............s..ssssssssssss.........................................s [ 66%]
+s............FFFF...................                                     [100%]
+=================================== FAILURES ===================================
+_ test_nested_observation_writers_retain_children_without_certifying_them[forward] _
+test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them
+    store = _write_selected_observation(language, registry, entry, path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:122: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20936: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20823: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_nested_observation_writers_retain_children_without_certifying_them[batch_eval] _
+test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them
+    store = _write_selected_observation(language, registry, entry, path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:122: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20936: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20823: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_ test_nested_observation_writers_retain_children_without_certifying_them[packed] _
+test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them
+    store = _write_selected_observation(language, registry, entry, path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:122: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20936: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20823: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+__________ test_10_packed_pending_and_eager_ends_write_identical_rows __________
+test/test_selected_nested_meaning.py:65: in test_10_packed_pending_and_eager_ends_write_identical_rows
+    stores = [_write_selected_observation(language, registry, entry, path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:122: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20936: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20823: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+=============================== warnings summary ===============================
+test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]
+FAILED test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows
+4 failed, 89 passed, 15 skipped, 1 warning in 7.64s

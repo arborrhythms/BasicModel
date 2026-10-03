@@ -1,0 +1,2602 @@
+{
+  "complete": {
+    "source_matched": true,
+    "seconds": 877.2652532909997
+  },
+  "ownership_counts": {
+    "reconstruction": {
+      "parameters": 82,
+      "elements": 27503612,
+      "reached_parameters": 30,
+      "reached_elements": 18896746
+    },
+    "expectation": {
+      "parameters": 50,
+      "elements": 54322180,
+      "reached_parameters": 0,
+      "reached_elements": 0
+    },
+    "output": {
+      "parameters": 19,
+      "elements": 25078641,
+      "reached_parameters": 14,
+      "reached_elements": 24806176
+    }
+  },
+  "ownership_conflicts": 0,
+  "backward_steps": 3,
+  "terms": [
+    {
+      "scope": "evaluation.batch",
+      "name": "answer.what",
+      "value": {
+        "n": 1,
+        "min": 5.963294982910156,
+        "median": 5.963294982910156,
+        "mean": 5.963294982910156,
+        "max": 5.963294982910156
+      },
+      "raw": {
+        "n": 1,
+        "min": 0.37270593643188477,
+        "median": 0.37270593643188477,
+        "mean": 0.37270593643188477,
+        "max": 0.37270593643188477
+      },
+      "baseline": {
+        "n": 1,
+        "min": 0.0625,
+        "median": 0.0625,
+        "mean": 0.0625,
+        "max": 0.0625
+      },
+      "weighted": {
+        "n": 1,
+        "min": 4.174306488037109,
+        "median": 4.174306488037109,
+        "mean": 4.174306488037109,
+        "max": 4.174306488037109
+      },
+      "active_entries": {
+        "n": 1,
+        "min": 256.0,
+        "median": 256.0,
+        "mean": 256.0,
+        "max": 256.0
+      },
+      "weight": [
+        0.7
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "relative"
+      ],
+      "objective": [
+        "output"
+      ],
+      "category": [
+        "prediction"
+      ],
+      "trained": [
+        true
+      ]
+    },
+    {
+      "scope": "evaluation.batch",
+      "name": "output",
+      "value": {
+        "n": 1,
+        "min": 0.26089414954185486,
+        "median": 0.26089414954185486,
+        "mean": 0.26089414954185486,
+        "max": 0.26089414954185486
+      },
+      "weighted": {
+        "n": 1,
+        "min": 0.26089414954185486,
+        "median": 0.26089414954185486,
+        "mean": 0.26089414954185486,
+        "max": 0.26089414954185486
+      },
+      "weight": [
+        1.0
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "penalty"
+      ],
+      "objective": [
+        "prediction"
+      ],
+      "category": [
+        "prediction"
+      ],
+      "trained": [
+        false
+      ]
+    },
+    {
+      "scope": "evaluation.batch",
+      "name": "reconstruction",
+      "value": {
+        "n": 1,
+        "min": 1.7247672080993652,
+        "median": 1.7247672080993652,
+        "mean": 1.7247672080993652,
+        "max": 1.7247672080993652
+      },
+      "weighted": {
+        "n": 1,
+        "min": 1.7247672080993652,
+        "median": 1.7247672080993652,
+        "mean": 1.7247672080993652,
+        "max": 1.7247672080993652
+      },
+      "weight": [
+        1.0
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "penalty"
+      ],
+      "objective": [
+        "reconstruction"
+      ],
+      "category": [
+        "reconstruction"
+      ],
+      "trained": [
+        false
+      ]
+    },
+    {
+      "scope": "evaluation.batch",
+      "name": "reconstruction.bytes",
+      "value": {
+        "n": 1,
+        "min": 0.31103914976119995,
+        "median": 0.31103914976119995,
+        "mean": 0.31103914976119995,
+        "max": 0.31103914976119995
+      },
+      "raw": {
+        "n": 1,
+        "min": 1.7247672080993652,
+        "median": 1.7247672080993652,
+        "mean": 1.7247672080993652,
+        "max": 1.7247672080993652
+      },
+      "baseline": {
+        "n": 1,
+        "min": 5.545177459716797,
+        "median": 5.545177459716797,
+        "mean": 5.545177459716797,
+        "max": 5.545177459716797
+      },
+      "weighted": {
+        "n": 1,
+        "min": 0.15551957488059998,
+        "median": 0.15551957488059998,
+        "mean": 0.15551957488059998,
+        "max": 0.15551957488059998
+      },
+      "active_entries": {
+        "n": 1,
+        "min": 16.0,
+        "median": 16.0,
+        "mean": 16.0,
+        "max": 16.0
+      },
+      "weight": [
+        0.5
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "relative"
+      ],
+      "objective": [
+        "reconstruction"
+      ],
+      "category": [
+        "reconstruction"
+      ],
+      "trained": [
+        true
+      ]
+    },
+    {
+      "scope": "evaluation.batch",
+      "name": "reconstruction_unavailable_sentences",
+      "value": {
+        "n": 1,
+        "min": 0.0,
+        "median": 0.0,
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "weighted": {
+        "n": 1,
+        "min": 0.0,
+        "median": 0.0,
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "weight": [
+        1.0
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "penalty"
+      ],
+      "objective": [
+        "count"
+      ],
+      "category": [
+        "count"
+      ],
+      "trained": [
+        false
+      ]
+    },
+    {
+      "scope": "evaluation.trial",
+      "name": "reconstruction.bytes",
+      "value": {
+        "n": 1,
+        "min": 0.31103914976119995,
+        "median": 0.31103914976119995,
+        "mean": 0.31103914976119995,
+        "max": 0.31103914976119995
+      },
+      "raw": {
+        "n": 1,
+        "min": 1.7247672080993652,
+        "median": 1.7247672080993652,
+        "mean": 1.7247672080993652,
+        "max": 1.7247672080993652
+      },
+      "baseline": {
+        "n": 1,
+        "min": 5.545177459716797,
+        "median": 5.545177459716797,
+        "mean": 5.545177459716797,
+        "max": 5.545177459716797
+      },
+      "weighted": {
+        "n": 1,
+        "min": 0.15551957488059998,
+        "median": 0.15551957488059998,
+        "mean": 0.15551957488059998,
+        "max": 0.15551957488059998
+      },
+      "active_entries": {
+        "n": 1,
+        "min": 16.0,
+        "median": 16.0,
+        "mean": 16.0,
+        "max": 16.0
+      },
+      "weight": [
+        0.5
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "relative"
+      ],
+      "objective": [
+        "reconstruction"
+      ],
+      "category": [
+        "reconstruction"
+      ],
+      "trained": [
+        true
+      ]
+    },
+    {
+      "scope": "train.batch",
+      "name": "answer.what",
+      "value": {
+        "n": 1,
+        "min": 9.655096054077148,
+        "median": 9.655096054077148,
+        "mean": 9.655096054077148,
+        "max": 9.655096054077148
+      },
+      "raw": {
+        "n": 1,
+        "min": 0.6034435033798218,
+        "median": 0.6034435033798218,
+        "mean": 0.6034435033798218,
+        "max": 0.6034435033798218
+      },
+      "baseline": {
+        "n": 1,
+        "min": 0.0625,
+        "median": 0.0625,
+        "mean": 0.0625,
+        "max": 0.0625
+      },
+      "weighted": {
+        "n": 1,
+        "min": 6.758567237854003,
+        "median": 6.758567237854003,
+        "mean": 6.758567237854003,
+        "max": 6.758567237854003
+      },
+      "active_entries": {
+        "n": 1,
+        "min": 448.0,
+        "median": 448.0,
+        "mean": 448.0,
+        "max": 448.0
+      },
+      "weight": [
+        0.7
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "relative"
+      ],
+      "objective": [
+        "output"
+      ],
+      "category": [
+        "prediction"
+      ],
+      "trained": [
+        true
+      ]
+    },
+    {
+      "scope": "train.batch",
+      "name": "concept_readout_l1",
+      "value": {
+        "n": 1,
+        "min": 0.0,
+        "median": 0.0,
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "weighted": {
+        "n": 1,
+        "min": 0.0,
+        "median": 0.0,
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "weight": [
+        0.01
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "penalty"
+      ],
+      "objective": [
+        "reg"
+      ],
+      "category": [
+        "reg"
+      ],
+      "trained": [
+        false
+      ]
+    },
+    {
+      "scope": "train.batch",
+      "name": "output",
+      "value": {
+        "n": 1,
+        "min": 0.4224104583263397,
+        "median": 0.4224104583263397,
+        "mean": 0.4224104583263397,
+        "max": 0.4224104583263397
+      },
+      "weighted": {
+        "n": 1,
+        "min": 0.4224104583263397,
+        "median": 0.4224104583263397,
+        "mean": 0.4224104583263397,
+        "max": 0.4224104583263397
+      },
+      "weight": [
+        1.0
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "penalty"
+      ],
+      "objective": [
+        "prediction"
+      ],
+      "category": [
+        "prediction"
+      ],
+      "trained": [
+        false
+      ]
+    },
+    {
+      "scope": "train.batch",
+      "name": "reconstruction",
+      "value": {
+        "n": 1,
+        "min": 0.16413967311382294,
+        "median": 0.16413967311382294,
+        "mean": 0.16413967311382294,
+        "max": 0.16413967311382294
+      },
+      "weighted": {
+        "n": 1,
+        "min": 0.16413967311382294,
+        "median": 0.16413967311382294,
+        "mean": 0.16413967311382294,
+        "max": 0.16413967311382294
+      },
+      "weight": [
+        1.0
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "penalty"
+      ],
+      "objective": [
+        "reconstruction"
+      ],
+      "category": [
+        "reconstruction"
+      ],
+      "trained": [
+        false
+      ]
+    },
+    {
+      "scope": "train.batch",
+      "name": "reconstruction.bytes",
+      "value": {
+        "n": 1,
+        "min": 0.029600437730550766,
+        "median": 0.029600437730550766,
+        "mean": 0.029600437730550766,
+        "max": 0.029600437730550766
+      },
+      "raw": {
+        "n": 1,
+        "min": 0.16413967311382294,
+        "median": 0.16413967311382294,
+        "mean": 0.16413967311382294,
+        "max": 0.16413967311382294
+      },
+      "baseline": {
+        "n": 1,
+        "min": 5.545177459716797,
+        "median": 5.545177459716797,
+        "mean": 5.545177459716797,
+        "max": 5.545177459716797
+      },
+      "weighted": {
+        "n": 1,
+        "min": 0.014800218865275383,
+        "median": 0.014800218865275383,
+        "mean": 0.014800218865275383,
+        "max": 0.014800218865275383
+      },
+      "active_entries": {
+        "n": 1,
+        "min": 28.0,
+        "median": 28.0,
+        "mean": 28.0,
+        "max": 28.0
+      },
+      "weight": [
+        0.5
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "relative"
+      ],
+      "objective": [
+        "reconstruction"
+      ],
+      "category": [
+        "reconstruction"
+      ],
+      "trained": [
+        true
+      ]
+    },
+    {
+      "scope": "train.batch",
+      "name": "reconstruction_unavailable_sentences",
+      "value": {
+        "n": 1,
+        "min": 0.0,
+        "median": 0.0,
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "weighted": {
+        "n": 1,
+        "min": 0.0,
+        "median": 0.0,
+        "mean": 0.0,
+        "max": 0.0
+      },
+      "weight": [
+        1.0
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "penalty"
+      ],
+      "objective": [
+        "count"
+      ],
+      "category": [
+        "count"
+      ],
+      "trained": [
+        false
+      ]
+    },
+    {
+      "scope": "train.trial",
+      "name": "answer.what",
+      "value": {
+        "n": 2,
+        "min": 2.362626314163208,
+        "median": 2.3636527061462402,
+        "mean": 2.3636527061462402,
+        "max": 2.3646790981292725
+      },
+      "raw": {
+        "n": 2,
+        "min": 0.1476641446352005,
+        "median": 0.14772829413414001,
+        "mean": 0.14772829413414001,
+        "max": 0.14779244363307953
+      },
+      "baseline": {
+        "n": 2,
+        "min": 0.0625,
+        "median": 0.0625,
+        "mean": 0.0625,
+        "max": 0.0625
+      },
+      "weighted": {
+        "n": 2,
+        "min": 1.6538384199142455,
+        "median": 1.654556894302368,
+        "mean": 1.654556894302368,
+        "max": 1.6552753686904906
+      },
+      "active_entries": {
+        "n": 2,
+        "min": 448.0,
+        "median": 448.0,
+        "mean": 448.0,
+        "max": 448.0
+      },
+      "weight": [
+        0.7
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "relative"
+      ],
+      "objective": [
+        "output"
+      ],
+      "category": [
+        "prediction"
+      ],
+      "trained": [
+        true
+      ]
+    },
+    {
+      "scope": "train.trial",
+      "name": "concept_readout_l1",
+      "value": {
+        "n": 2,
+        "min": 1.0833333730697632,
+        "median": 1.0833333730697632,
+        "mean": 1.0833333730697632,
+        "max": 1.0833333730697632
+      },
+      "weighted": {
+        "n": 2,
+        "min": 0.010833333730697631,
+        "median": 0.010833333730697631,
+        "mean": 0.010833333730697631,
+        "max": 0.010833333730697631
+      },
+      "weight": [
+        0.01
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "penalty"
+      ],
+      "objective": [
+        "reg"
+      ],
+      "category": [
+        "reg"
+      ],
+      "trained": [
+        false
+      ]
+    },
+    {
+      "scope": "train.trial",
+      "name": "reconstruction.bytes",
+      "value": {
+        "n": 2,
+        "min": 0.029600435867905617,
+        "median": 0.03251420985907316,
+        "mean": 0.03251420985907316,
+        "max": 0.03542798385024071
+      },
+      "raw": {
+        "n": 2,
+        "min": 0.16413967311382294,
+        "median": 0.18029706180095673,
+        "mean": 0.18029706180095673,
+        "max": 0.19645445048809052
+      },
+      "baseline": {
+        "n": 2,
+        "min": 5.545177459716797,
+        "median": 5.545177459716797,
+        "mean": 5.545177459716797,
+        "max": 5.545177459716797
+      },
+      "weighted": {
+        "n": 2,
+        "min": 0.014800217933952808,
+        "median": 0.01625710492953658,
+        "mean": 0.01625710492953658,
+        "max": 0.017713991925120354
+      },
+      "active_entries": {
+        "n": 2,
+        "min": 28.0,
+        "median": 28.0,
+        "mean": 28.0,
+        "max": 28.0
+      },
+      "weight": [
+        0.5
+      ],
+      "context_weight": [
+        1.0
+      ],
+      "kind": [
+        "relative"
+      ],
+      "objective": [
+        "reconstruction"
+      ],
+      "category": [
+        "reconstruction"
+      ],
+      "trained": [
+        true
+      ]
+    }
+  ],
+  "selection": {
+    "reconstruction": {
+      "compared": 28,
+      "kept_worse": 0,
+      "positive_difference": {
+        "n": 0
+      },
+      "all_difference": {
+        "n": 28,
+        "min": -0.08158566334168427,
+        "median": 0.0,
+        "mean": -0.0029137736907744382,
+        "max": 0.0
+      }
+    },
+    "expectation": {
+      "compared": 0,
+      "kept_worse": 0,
+      "positive_difference": {
+        "n": 0
+      },
+      "all_difference": {
+        "n": 0
+      }
+    },
+    "supplied_answer": {
+      "compared": 28,
+      "kept_worse": 0,
+      "positive_difference": {
+        "n": 0
+      },
+      "all_difference": {
+        "n": 28,
+        "min": -0.04023289680480957,
+        "median": 0.0,
+        "mean": -0.0014368891716003418,
+        "max": 0.0
+      }
+    },
+    "total": {
+      "compared": 28,
+      "kept_worse": 0,
+      "positive_difference": {
+        "n": 0
+      },
+      "all_difference": {
+        "n": 28,
+        "min": -0.12181854248046875,
+        "median": 0.0,
+        "mean": -0.0043506622314453125,
+        "max": 0.0
+      }
+    }
+  },
+  "selection_rule": {
+    "explore_kept": 0,
+    "reconstruction_violations": 0,
+    "total_violations": 0
+  },
+  "selection_rows": [
+    {
+      "pair": 0,
+      "row": 0,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00018672115402296185,
+        "other": 0.00018672115402296185,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.080282688140869,
+        "other": 2.080282688140869,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.0804693698883057,
+        "other": 2.0804693698883057,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 1,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.0002704749640543014,
+        "other": 0.0002704749640543014,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 1.3113621473312378,
+        "other": 1.3113621473312378,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 1.3116326332092285,
+        "other": 1.3116326332092285,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 2,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00018672115402296185,
+        "other": 0.00018672115402296185,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.080282688140869,
+        "other": 2.080282688140869,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.0804693698883057,
+        "other": 2.0804693698883057,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 3,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00017628874047659338,
+        "other": 0.00017628874047659338,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 1.993503212928772,
+        "other": 1.993503212928772,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 1.9936795234680176,
+        "other": 1.9936795234680176,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 4,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00582429114729166,
+        "other": 0.00582429114729166,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 0.7187155485153198,
+        "other": 0.7187155485153198,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 0.7245398163795471,
+        "other": 0.7245398163795471,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 5,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00020939735986758024,
+        "other": 0.00020939735986758024,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 0.6961376070976257,
+        "other": 0.6961376070976257,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 0.6963469982147217,
+        "other": 0.6963469982147217,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 6,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00582429114729166,
+        "other": 0.00582429114729166,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 0.7187155485153198,
+        "other": 0.7187155485153198,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 0.7245398163795471,
+        "other": 0.7245398163795471,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 7,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 1.1971536878263578e-05,
+        "other": 1.1971536878263578e-05,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.124619245529175,
+        "other": 2.124619245529175,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.12463116645813,
+        "other": 2.12463116645813,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 8,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.05070330947637558,
+        "other": 0.05070330947637558,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.0080535411834717,
+        "other": 2.0080535411834717,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.0587568283081055,
+        "other": 2.0587568283081055,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 9,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 1.2652392797463108e-05,
+        "other": 1.2652392797463108e-05,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.037933826446533,
+        "other": 2.037933826446533,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.0379464626312256,
+        "other": 2.0379464626312256,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 10,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.0002312853466719389,
+        "other": 0.0002312853466719389,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.0433287620544434,
+        "other": 2.0433287620544434,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.043560028076172,
+        "other": 2.043560028076172,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 11,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.04616736248135567,
+        "other": 0.04616736248135567,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.051292657852173,
+        "other": 2.051292657852173,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.0974600315093994,
+        "other": 2.0974600315093994,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 12,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 1.1971536878263578e-05,
+        "other": 1.1971536878263578e-05,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.124619245529175,
+        "other": 2.124619245529175,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.12463116645813,
+        "other": 2.12463116645813,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 13,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00020939735986758024,
+        "other": 0.00020939735986758024,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 0.6961376070976257,
+        "other": 0.6961376070976257,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 0.6963469982147217,
+        "other": 0.6963469982147217,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 14,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00045743052032776177,
+        "other": 0.00045743052032776177,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 1.326197862625122,
+        "other": 1.326197862625122,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 1.3266552686691284,
+        "other": 1.3266552686691284,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 15,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.0003765012079384178,
+        "other": 0.0003765012079384178,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 1.365770697593689,
+        "other": 1.365770697593689,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 1.3661471605300903,
+        "other": 1.3661471605300903,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 16,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.0002167793281842023,
+        "other": 0.08180244266986847,
+        "difference": -0.08158566334168427
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.030548334121704,
+        "other": 2.0707812309265137,
+        "difference": -0.04023289680480957
+      },
+      "total": {
+        "kept": 2.0307650566101074,
+        "other": 2.152583599090576,
+        "difference": -0.12181854248046875
+      }
+    },
+    {
+      "pair": 0,
+      "row": 17,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.04129825904965401,
+        "other": 0.04129825904965401,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 1.5701394081115723,
+        "other": 1.5701394081115723,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 1.6114376783370972,
+        "other": 1.6114376783370972,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 18,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00045418081572279334,
+        "other": 0.00045418081572279334,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 1.4668296575546265,
+        "other": 1.4668296575546265,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 1.467283844947815,
+        "other": 1.467283844947815,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 19,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00045418081572279334,
+        "other": 0.00045418081572279334,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 1.4668296575546265,
+        "other": 1.4668296575546265,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 1.467283844947815,
+        "other": 1.467283844947815,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 20,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.15884704887866974,
+        "other": 0.15884704887866974,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.044447898864746,
+        "other": 2.044447898864746,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.2032949924468994,
+        "other": 2.2032949924468994,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 21,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00031138857593759894,
+        "other": 0.00031138857593759894,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.0466363430023193,
+        "other": 2.0466363430023193,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.046947717666626,
+        "other": 2.046947717666626,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 22,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.0002704749640543014,
+        "other": 0.0002704749640543014,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 1.3113621473312378,
+        "other": 1.3113621473312378,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 1.3116326332092285,
+        "other": 1.3116326332092285,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 23,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 8.816332410788164e-06,
+        "other": 8.816332410788164e-06,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 1.9631824493408203,
+        "other": 1.9631824493408203,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 1.963191270828247,
+        "other": 1.963191270828247,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 24,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.0001681177382124588,
+        "other": 0.0001681177382124588,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 0.725341796875,
+        "other": 0.725341796875,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 0.7255099415779114,
+        "other": 0.7255099415779114,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 25,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.05070330947637558,
+        "other": 0.05070330947637558,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.0080535411834717,
+        "other": 2.0080535411834717,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.0587568283081055,
+        "other": 2.0587568283081055,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 26,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.00021108874352648854,
+        "other": 0.00021108874352648854,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.0480995178222656,
+        "other": 2.0480995178222656,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.0483105182647705,
+        "other": 2.0483105182647705,
+        "difference": 0.0
+      }
+    },
+    {
+      "pair": 0,
+      "row": 27,
+      "kept": "exploit",
+      "reconstruction": {
+        "kept": 0.050602395087480545,
+        "other": 0.050602395087480545,
+        "difference": 0.0
+      },
+      "expectation": null,
+      "supplied_answer": {
+        "kept": 2.249053478240967,
+        "other": 2.249053478240967,
+        "difference": 0.0
+      },
+      "total": {
+        "kept": 2.2996559143066406,
+        "other": 2.2996559143066406,
+        "difference": 0.0
+      }
+    }
+  ],
+  "activated_word_ranking": {
+    "train": {
+      "words": 168,
+      "with_activated_candidate": 0,
+      "activated_outranks_own": 0
+    },
+    "evaluation": {
+      "words": 48,
+      "with_activated_candidate": 0,
+      "activated_outranks_own": 0
+    }
+  },
+  "gradient_snapshots": [
+    {
+      "scope": "trial",
+      "trial": "exploit",
+      "pair": 0,
+      "batch": 0,
+      "version_sha256": "d2917b28b141eb4899da96081225fd461564dd70481af6723ad2146dd88fde28",
+      "costs": {
+        "reconstruction": 0.014800217933952808,
+        "expectation": null,
+        "supplied_answer": 1.6538385152816772
+      },
+      "groups": {
+        "perception": {
+          "norms": {
+            "reconstruction": 4.812483256342531e-25,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [
+              "perceptualSpace._owned_bases.what.W",
+              "conceptualSpaces.0.layers.4.coefficients"
+            ],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "codes": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "chooser": {
+          "norms": {
+            "reconstruction": 0.00011157072217512007,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.tool_embedding",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.weight",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.bias",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.weight",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.bias",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.operand_order.weight",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.copy_order.weight",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.what_projection.weight"
+            ],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "operators_and_tied_inverses": {
+          "norms": {
+            "reconstruction": 0.024799028172837686,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [
+              "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L",
+              "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.d",
+              "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_U",
+              "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.biasWeight",
+              "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.weight",
+              "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.bias",
+              "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_L",
+              "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_U",
+              "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.biasWeight",
+              "conceptualSpaces.3.syntacticLayer.layers.24.marker_map.weight",
+              "conceptualSpaces.3.syntacticLayer.layers.24.marker_map.bias",
+              "perceptualSpace._owned_bases.what.W",
+              "wholeSpaces.3._owned_bases.what.W",
+              "conceptualSpaces.0.layers.4.coefficients"
+            ],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "generate": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "reading_map": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 66.3895813658587
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": [
+              "answer_record_reader.weight"
+            ]
+          }
+        },
+        "expectation_predictor": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "other": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        }
+      },
+      "rng_unchanged": true
+    },
+    {
+      "scope": "trial",
+      "trial": "explore",
+      "pair": 0,
+      "batch": 0,
+      "version_sha256": "d2917b28b141eb4899da96081225fd461564dd70481af6723ad2146dd88fde28",
+      "costs": {
+        "reconstruction": 0.017713991925120354,
+        "expectation": null,
+        "supplied_answer": 1.6552753448486328
+      },
+      "groups": {
+        "perception": {
+          "norms": {
+            "reconstruction": 5.732340861289844e-25,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [
+              "perceptualSpace._owned_bases.what.W",
+              "conceptualSpaces.0.layers.4.coefficients"
+            ],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "codes": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "chooser": {
+          "norms": {
+            "reconstruction": 0.00010082527291531265,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.tool_embedding",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.weight",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.bias",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.weight",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.bias",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.operand_order.weight",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.copy_order.weight",
+              "symbolSpace.subspace.layers.0.operation_layer.chooser.what_projection.weight"
+            ],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "operators_and_tied_inverses": {
+          "norms": {
+            "reconstruction": 0.024842901147741205,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [
+              "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L",
+              "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.d",
+              "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_U",
+              "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.biasWeight",
+              "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.weight",
+              "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.bias",
+              "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_L",
+              "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_U",
+              "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.biasWeight",
+              "conceptualSpaces.3.syntacticLayer.layers.24.marker_map.weight",
+              "conceptualSpaces.3.syntacticLayer.layers.24.marker_map.bias",
+              "perceptualSpace._owned_bases.what.W",
+              "wholeSpaces.3._owned_bases.what.W",
+              "conceptualSpaces.0.layers.4.coefficients"
+            ],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "generate": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "reading_map": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 66.27623716437574
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": [
+              "answer_record_reader.weight"
+            ]
+          }
+        },
+        "expectation_predictor": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "other": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        }
+      },
+      "rng_unchanged": true
+    },
+    {
+      "scope": "batch",
+      "trial": null,
+      "pair": 1,
+      "batch": 0,
+      "version_sha256": "61b4371c5a4a05f6090b2c30110ffb2afc638c5959d89cfd50521112bb04f4cd",
+      "costs": {
+        "reconstruction": 0.014800218865275383,
+        "expectation": null,
+        "supplied_answer": 6.7585673332214355
+      },
+      "groups": {
+        "perception": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 11.41026643875757
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": [
+              "perceptualSpace.synthesis_layer.raw_L",
+              "perceptualSpace.synthesis_layer.d",
+              "perceptualSpace.synthesis_layer.raw_U",
+              "perceptualSpace.synthesis_layer.biasWeight"
+            ]
+          }
+        },
+        "codes": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "chooser": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "operators_and_tied_inverses": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "generate": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 25.45583695462975
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": [
+              "question_conditioners.1032.weight",
+              "conceptualSpaces.3.synthesis_layer.raw_L",
+              "conceptualSpaces.3.synthesis_layer.d",
+              "conceptualSpaces.3.synthesis_layer.raw_U",
+              "conceptualSpaces.3.synthesis_layer.biasWeight",
+              "perceptualSpace.synthesis_layer.raw_L",
+              "perceptualSpace.synthesis_layer.d",
+              "perceptualSpace.synthesis_layer.raw_U",
+              "perceptualSpace.synthesis_layer.biasWeight",
+              "inputSpace.outputSpace.percept_adapter.raw_L",
+              "inputSpace.outputSpace.percept_adapter.d",
+              "inputSpace.outputSpace.percept_adapter.raw_U",
+              "inputSpace.outputSpace.percept_adapter.biasWeight"
+            ]
+          }
+        },
+        "reading_map": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 154.40017003687464
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": [
+              "inputSpace.outputSpace.percept_adapter.raw_L",
+              "inputSpace.outputSpace.percept_adapter.d",
+              "inputSpace.outputSpace.percept_adapter.raw_U",
+              "inputSpace.outputSpace.percept_adapter.biasWeight",
+              "answer_record_reader.weight",
+              "question_conditioners.1032.weight",
+              "conceptualSpaces.3.synthesis_layer.raw_L",
+              "conceptualSpaces.3.synthesis_layer.d",
+              "conceptualSpaces.3.synthesis_layer.raw_U",
+              "conceptualSpaces.3.synthesis_layer.biasWeight",
+              "perceptualSpace.synthesis_layer.raw_L",
+              "perceptualSpace.synthesis_layer.d",
+              "perceptualSpace.synthesis_layer.raw_U",
+              "perceptualSpace.synthesis_layer.biasWeight"
+            ]
+          }
+        },
+        "expectation_predictor": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        },
+        "other": {
+          "norms": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "supplied_answer": 0.0
+          },
+          "cosines": {
+            "reconstruction__expectation": null,
+            "reconstruction__supplied_answer": null,
+            "expectation__supplied_answer": null
+          },
+          "nonzero_parameters": {
+            "reconstruction": [],
+            "expectation": [],
+            "supplied_answer": []
+          }
+        }
+      },
+      "rng_unchanged": true
+    }
+  ],
+  "endpoint": {
+    "training_batches": 1,
+    "evaluation_batches": 1,
+    "receipt_added_endpoint": false,
+    "last_training_trials": {
+      "exploit": {
+        "pair": 0,
+        "trial": "exploit",
+        "train": true,
+        "scope": "batch",
+        "batch": 0,
+        "sid": 0,
+        "active": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "weighted": {
+          "reconstruction": [
+            0.00018672115402296185,
+            0.0002704749640543014,
+            0.00018672115402296185,
+            0.00017628874047659338,
+            0.00582429114729166,
+            0.00020939735986758024,
+            0.00582429114729166,
+            1.1971536878263578e-05,
+            0.05070330947637558,
+            1.2652392797463108e-05,
+            0.0002312853466719389,
+            0.04616736248135567,
+            1.1971536878263578e-05,
+            0.00020939735986758024,
+            0.00045743052032776177,
+            0.0003765012079384178,
+            0.0002167793281842023,
+            0.04129825904965401,
+            0.00045418081572279334,
+            0.00045418081572279334,
+            0.15884704887866974,
+            0.00031138857593759894,
+            0.0002704749640543014,
+            8.816332410788164e-06,
+            0.0001681177382124588,
+            0.05070330947637558,
+            0.00021108874352648854,
+            0.050602395087480545
+          ],
+          "expectation": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "supplied_answer": [
+            2.080282688140869,
+            1.3113621473312378,
+            2.080282688140869,
+            1.993503212928772,
+            0.7187155485153198,
+            0.6961376070976257,
+            0.7187155485153198,
+            2.124619245529175,
+            2.0080535411834717,
+            2.037933826446533,
+            2.0433287620544434,
+            2.051292657852173,
+            2.124619245529175,
+            0.6961376070976257,
+            1.326197862625122,
+            1.365770697593689,
+            2.030548334121704,
+            1.5701394081115723,
+            1.4668296575546265,
+            1.4668296575546265,
+            2.044447898864746,
+            2.0466363430023193,
+            1.3113621473312378,
+            1.9631824493408203,
+            0.725341796875,
+            2.0080535411834717,
+            2.0480995178222656,
+            2.249053478240967
+          ],
+          "total": [
+            2.0804693698883057,
+            1.3116326332092285,
+            2.0804693698883057,
+            1.9936795234680176,
+            0.7245398163795471,
+            0.6963469982147217,
+            0.7245398163795471,
+            2.12463116645813,
+            2.0587568283081055,
+            2.0379464626312256,
+            2.043560028076172,
+            2.0974600315093994,
+            2.12463116645813,
+            0.6963469982147217,
+            1.3266552686691284,
+            1.3661471605300903,
+            2.0307650566101074,
+            1.6114376783370972,
+            1.467283844947815,
+            1.467283844947815,
+            2.2032949924468994,
+            2.046947717666626,
+            1.3116326332092285,
+            1.963191270828247,
+            0.7255099415779114,
+            2.0587568283081055,
+            2.0483105182647705,
+            2.2996559143066406
+          ]
+        },
+        "terms": {
+          "reconstruction.bytes": {
+            "weight": 0.5,
+            "value": 0.029600435867905617,
+            "weighted": 0.014800217933952808,
+            "space": null,
+            "category": "reconstruction",
+            "count": 1,
+            "kind": "relative",
+            "objective": "reconstruction",
+            "trained": true,
+            "context_weight": 1.0,
+            "row_values": [
+              0.0003734423080459237,
+              0.0005409499281086028,
+              0.0003734423080459237,
+              0.00035257748095318675,
+              0.01164858229458332,
+              0.00041879471973516047,
+              0.01164858229458332,
+              2.3943073756527156e-05,
+              0.10140661895275116,
+              2.5304785594926216e-05,
+              0.0004625706933438778,
+              0.09233472496271133,
+              2.3943073756527156e-05,
+              0.00041879471973516047,
+              0.0009148610406555235,
+              0.0007530024158768356,
+              0.0004335586563684046,
+              0.08259651809930801,
+              0.0009083616314455867,
+              0.0009083616314455867,
+              0.3176940977573395,
+              0.0006227771518751979,
+              0.0005409499281086028,
+              1.7632664821576327e-05,
+              0.0003362354764249176,
+              0.10140661895275116,
+              0.0004221774870529771,
+              0.10120479017496109
+            ],
+            "raw": 0.16413967311382294,
+            "baseline": 5.545177459716797,
+            "active_entries": 28.0
+          },
+          "answer.what": {
+            "weight": 0.7,
+            "value": 2.362626314163208,
+            "weighted": 1.6538384199142455,
+            "space": null,
+            "category": "prediction",
+            "count": 1,
+            "kind": "relative",
+            "objective": "output",
+            "trained": true,
+            "context_weight": 1.0,
+            "row_values": [
+              2.971832513809204,
+              1.8733744621276855,
+              2.971832513809204,
+              2.8478617668151855,
+              1.0267364978790283,
+              0.9944822788238525,
+              1.0267364978790283,
+              3.035170316696167,
+              2.868648052215576,
+              2.9113340377807617,
+              2.919041156768799,
+              2.930418014526367,
+              3.035170316696167,
+              0.9944822788238525,
+              1.8945683240890503,
+              1.9511010646820068,
+              2.9007835388183594,
+              2.243056297302246,
+              2.095470905303955,
+              2.095470905303955,
+              2.920639991760254,
+              2.9237661361694336,
+              1.8733744621276855,
+              2.804546356201172,
+              1.0362025499343872,
+              2.868648052215576,
+              2.925856590270996,
+              3.2129335403442383
+            ],
+            "raw": 0.1476641446352005,
+            "baseline": 0.0625,
+            "active_entries": 448.0
+          },
+          "concept_readout_l1": {
+            "weight": 0.01,
+            "value": 1.0833333730697632,
+            "weighted": 0.010833333730697631,
+            "space": null,
+            "category": "reg",
+            "count": 1,
+            "kind": "penalty",
+            "objective": "reg",
+            "trained": false,
+            "context_weight": 1.0
+          }
+        },
+        "evaluation_supplied_answer": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "reconstruction_enabled": true
+      },
+      "explore": {
+        "pair": 0,
+        "trial": "explore",
+        "train": true,
+        "scope": "batch",
+        "batch": 0,
+        "sid": 0,
+        "active": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "weighted": {
+          "reconstruction": [
+            0.00018672115402296185,
+            0.0002704749640543014,
+            0.00018672115402296185,
+            0.00017628874047659338,
+            0.00582429114729166,
+            0.00020939735986758024,
+            0.00582429114729166,
+            1.1971536878263578e-05,
+            0.05070330947637558,
+            1.2652392797463108e-05,
+            0.0002312853466719389,
+            0.04616736248135567,
+            1.1971536878263578e-05,
+            0.00020939735986758024,
+            0.00045743052032776177,
+            0.0003765012079384178,
+            0.08180244266986847,
+            0.04129825904965401,
+            0.00045418081572279334,
+            0.00045418081572279334,
+            0.15884704887866974,
+            0.00031138857593759894,
+            0.0002704749640543014,
+            8.816332410788164e-06,
+            0.0001681177382124588,
+            0.05070330947637558,
+            0.00021108874352648854,
+            0.050602395087480545
+          ],
+          "expectation": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "supplied_answer": [
+            2.080282688140869,
+            1.3113621473312378,
+            2.080282688140869,
+            1.993503212928772,
+            0.7187155485153198,
+            0.6961376070976257,
+            0.7187155485153198,
+            2.124619245529175,
+            2.0080535411834717,
+            2.037933826446533,
+            2.0433287620544434,
+            2.051292657852173,
+            2.124619245529175,
+            0.6961376070976257,
+            1.326197862625122,
+            1.365770697593689,
+            2.0707812309265137,
+            1.5701394081115723,
+            1.4668296575546265,
+            1.4668296575546265,
+            2.044447898864746,
+            2.0466363430023193,
+            1.3113621473312378,
+            1.9631824493408203,
+            0.725341796875,
+            2.0080535411834717,
+            2.0480995178222656,
+            2.249053478240967
+          ],
+          "total": [
+            2.0804693698883057,
+            1.3116326332092285,
+            2.0804693698883057,
+            1.9936795234680176,
+            0.7245398163795471,
+            0.6963469982147217,
+            0.7245398163795471,
+            2.12463116645813,
+            2.0587568283081055,
+            2.0379464626312256,
+            2.043560028076172,
+            2.0974600315093994,
+            2.12463116645813,
+            0.6963469982147217,
+            1.3266552686691284,
+            1.3661471605300903,
+            2.152583599090576,
+            1.6114376783370972,
+            1.467283844947815,
+            1.467283844947815,
+            2.2032949924468994,
+            2.046947717666626,
+            1.3116326332092285,
+            1.963191270828247,
+            0.7255099415779114,
+            2.0587568283081055,
+            2.0483105182647705,
+            2.2996559143066406
+          ]
+        },
+        "terms": {
+          "reconstruction.bytes": {
+            "weight": 0.5,
+            "value": 0.03542798385024071,
+            "weighted": 0.017713991925120354,
+            "space": null,
+            "category": "reconstruction",
+            "count": 1,
+            "kind": "relative",
+            "objective": "reconstruction",
+            "trained": true,
+            "context_weight": 1.0,
+            "row_values": [
+              0.0003734423080459237,
+              0.0005409499281086028,
+              0.0003734423080459237,
+              0.00035257748095318675,
+              0.01164858229458332,
+              0.00041879471973516047,
+              0.01164858229458332,
+              2.3943073756527156e-05,
+              0.10140661895275116,
+              2.5304785594926216e-05,
+              0.0004625706933438778,
+              0.09233472496271133,
+              2.3943073756527156e-05,
+              0.00041879471973516047,
+              0.0009148610406555235,
+              0.0007530024158768356,
+              0.16360488533973694,
+              0.08259651809930801,
+              0.0009083616314455867,
+              0.0009083616314455867,
+              0.3176940977573395,
+              0.0006227771518751979,
+              0.0005409499281086028,
+              1.7632664821576327e-05,
+              0.0003362354764249176,
+              0.10140661895275116,
+              0.0004221774870529771,
+              0.10120479017496109
+            ],
+            "raw": 0.19645445048809052,
+            "baseline": 5.545177459716797,
+            "active_entries": 28.0
+          },
+          "answer.what": {
+            "weight": 0.7,
+            "value": 2.3646790981292725,
+            "weighted": 1.6552753686904906,
+            "space": null,
+            "category": "prediction",
+            "count": 1,
+            "kind": "relative",
+            "objective": "output",
+            "trained": true,
+            "context_weight": 1.0,
+            "row_values": [
+              2.971832513809204,
+              1.8733744621276855,
+              2.971832513809204,
+              2.8478617668151855,
+              1.0267364978790283,
+              0.9944822788238525,
+              1.0267364978790283,
+              3.035170316696167,
+              2.868648052215576,
+              2.9113340377807617,
+              2.919041156768799,
+              2.930418014526367,
+              3.035170316696167,
+              0.9944822788238525,
+              1.8945683240890503,
+              1.9511010646820068,
+              2.958259105682373,
+              2.243056297302246,
+              2.095470905303955,
+              2.095470905303955,
+              2.920639991760254,
+              2.9237661361694336,
+              1.8733744621276855,
+              2.804546356201172,
+              1.0362025499343872,
+              2.868648052215576,
+              2.925856590270996,
+              3.2129335403442383
+            ],
+            "raw": 0.14779244363307953,
+            "baseline": 0.0625,
+            "active_entries": 448.0
+          },
+          "concept_readout_l1": {
+            "weight": 0.01,
+            "value": 1.0833333730697632,
+            "weighted": 0.010833333730697631,
+            "space": null,
+            "category": "reg",
+            "count": 1,
+            "kind": "penalty",
+            "objective": "reg",
+            "trained": false,
+            "context_weight": 1.0
+          }
+        },
+        "evaluation_supplied_answer": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "reconstruction_enabled": true
+      }
+    },
+    "last_batch": {
+      "raw": {
+        "totalLoss": 4.3298258781433105
+      },
+      "terms": {
+        "output": {
+          "weight": 1.0,
+          "value": 0.26089414954185486,
+          "weighted": 0.26089414954185486,
+          "space": "OutputSpace",
+          "category": "prediction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "prediction",
+          "trained": false,
+          "context_weight": 1.0
+        },
+        "answer.what": {
+          "weight": 0.7,
+          "value": 5.963294982910156,
+          "weighted": 4.174306488037109,
+          "space": null,
+          "category": "prediction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "output",
+          "trained": true,
+          "context_weight": 1.0,
+          "raw": 0.37270593643188477,
+          "baseline": 0.0625,
+          "active_entries": 256.0
+        },
+        "reconstruction": {
+          "weight": 1.0,
+          "value": 1.7247672080993652,
+          "weighted": 1.7247672080993652,
+          "space": "InputSpace",
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": false,
+          "context_weight": 1.0
+        },
+        "reconstruction.bytes": {
+          "weight": 0.5,
+          "value": 0.31103914976119995,
+          "weighted": 0.15551957488059998,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "raw": 1.7247672080993652,
+          "baseline": 5.545177459716797,
+          "active_entries": 16.0
+        },
+        "reconstruction_unavailable_sentences": {
+          "weight": 1.0,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "count",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "count",
+          "trained": false,
+          "context_weight": 1.0
+        }
+      },
+      "objective_costs": {
+        "reconstruction": 0.15551957488059998,
+        "expectation": null,
+        "output": 4.174306392669678
+      },
+      "train": false,
+      "split": "test"
+    }
+  }
+}

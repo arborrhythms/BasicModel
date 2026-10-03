@@ -1,0 +1,56 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding] _
+test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar
+    assert BasicModel._understanding_reconstruction_scope(model) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_understanding_reconstruction_scope'
+_ test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar] _
+test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar
+    assert BasicModel._understanding_reconstruction_scope(model) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_understanding_reconstruction_scope'
+_ test_reconstruction_scope_follows_live_reading_and_grammar[radix-meronomy-True-exempt: old reading mode] _
+test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar
+    assert BasicModel._understanding_reconstruction_scope(model) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_understanding_reconstruction_scope'
+_ test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-byte-True-exempt: old reading mode] _
+test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar
+    assert BasicModel._understanding_reconstruction_scope(model) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_understanding_reconstruction_scope'
+_ test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones _
+test/test_reconstruction_scope.py:29: in test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones
+    validate()
+test/test_reconstruction_bank_contract.py:25: in <lambda>
+    return lambda: BasicModel._validate_reconstruction_bank(model), isp
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12257: in _validate_reconstruction_bank
+    torch._assert_async(
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction
+____________ test_missing_candidate_cost_is_zero_with_zero_gradient ____________
+test/test_reconstruction_scope.py:45: in test_missing_candidate_cost_is_zero_with_zero_gradient
+    assert torch.equal(cost, torch.zeros_like(cost))
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10a3dd3a0>(tensor([5.5452, 5.5452], grad_fn=<DivBackward0>), tensor([0., 0.]))
+E    +    where <built-in method equal of type object at 0x10a3dd3a0> = torch.equal
+E    +    and   tensor([0., 0.]) = <built-in method zeros_like of type object at 0x10a3dd3a0>(tensor([5.5452, 5.5452], grad_fn=<DivBackward0>))
+E    +      where <built-in method zeros_like of type object at 0x10a3dd3a0> = torch.zeros_like
+=============================== warnings summary ===============================
+test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]
+FAILED test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]
+FAILED test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[radix-meronomy-True-exempt: old reading mode]
+FAILED test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-byte-True-exempt: old reading mode]
+FAILED test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones
+FAILED test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient
+6 failed, 1 warning in 2.79s

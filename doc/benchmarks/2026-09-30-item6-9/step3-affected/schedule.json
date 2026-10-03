@@ -1,0 +1,61 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/result.json": "01d894812921ae59fd3e6fd9cc9596bee316a99331f13632c65b75edfcc37e97"
+  },
+  "aggregate_bytes": 25769803776,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 15,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_every_serial_word_runs_interpret_before_composition"
+      ],
+      "estimated_seconds": 304.9980107501615,
+      "reserved_bytes": 3050647168.8
+    },
+    {
+      "nodes": [
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+        "test/test_item7_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+        "test/test_item7_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+        "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity",
+        "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+        "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+        "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+        "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct"
+      ],
+      "estimated_seconds": 0.40128821041435003,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_item9b_interpret.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+        "test/test_item9b_interpret.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field"
+      ],
+      "estimated_seconds": 0.03052591602317989,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    }
+  ]
+}

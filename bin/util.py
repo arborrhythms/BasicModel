@@ -1487,28 +1487,13 @@ class XMLConfig:
     def _apply_legacy_renames(data, source_path):
         """Rewrite retired element names in a parsed config dict.
 
-        Currently handles ``<reverseScale>`` -> ``<reconstructionScale>``
-        (rename done 2026-05-14 alongside the maskedPrediction retirement;
-        see basicmodel/doc/Training.md).  Emits a single deprecation
-        warning per affected file so test churn stays bounded.
+        Retired architecture knobs are rejected at ingestion.
         """
         architecture = data.get("architecture", {}) or {}
         for retired in ('subsymbolicNoop', 'conceptualWidth'):
             if retired in architecture:
                 raise ValueError(f'{source_path}: <{retired}> is retired; '
                                  'subsymbolicLoop selects attention passes without perceptual folds')
-        training = architecture.get("training", {})
-        if not isinstance(training, dict):
-            return
-        if "reverseScale" in training and "reconstructionScale" not in training:
-            import warnings
-            warnings.warn(
-                f"{source_path}: <reverseScale> is deprecated; "
-                "rename to <reconstructionScale>.",
-                DeprecationWarning, stacklevel=3)
-            training["reconstructionScale"] = training.pop("reverseScale")
-        elif "reverseScale" in training:
-            training.pop("reverseScale")
 
     def reload(self):
         """Re-parse all previously loaded sources in order.

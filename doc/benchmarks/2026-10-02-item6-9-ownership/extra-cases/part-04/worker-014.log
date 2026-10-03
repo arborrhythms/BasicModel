@@ -1,0 +1,100 @@
+FFFFF.                                                                   [100%]
+=================================== FAILURES ===================================
+________________________ test_leaf_distill_default_off _________________________
+test/test_word_store.py:630: in test_leaf_distill_default_off
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store0/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store0/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store0/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_________________ test_leaf_distill_trains_root_toward_leaves __________________
+test/test_word_store.py:661: in test_leaf_distill_trains_root_toward_leaves
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store1/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store1/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store1/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________________ test_percept_concept_reverse_index_and_row __________________
+test/test_word_store.py:697: in test_percept_concept_reverse_index_and_row
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store2/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store2/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store2/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_____________ test_concept_row_content_lights_up_the_resolved_row ______________
+test/test_word_store.py:730: in test_concept_row_content_lights_up_the_resolved_row
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store3/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store3/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store3/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_________ test_concept_index_read_sizes_inventory_by_explicit_nvectors _________
+test/test_word_store.py:759: in test_concept_index_read_sizes_inventory_by_explicit_nvectors
+    with open(cfg) as f:
+         ^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: '/Users/arogers/github/WikiOracle/basicmodel/data/matrix/MM_20M_grammar_wordstore.xml'
+=============================== warnings summary ===============================
+test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_word_store.py::test_leaf_distill_default_off - ValueError: X...
+FAILED test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves
+FAILED test/test_word_store.py::test_percept_concept_reverse_index_and_row - ...
+FAILED test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row
+FAILED test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors
+5 failed, 1 passed, 1 warning in 164.79s (0:02:44)

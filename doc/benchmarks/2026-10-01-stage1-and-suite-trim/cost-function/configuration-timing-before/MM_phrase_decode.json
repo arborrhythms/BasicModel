@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_phrase_decode.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 6.038711499997589,
+  "batch": 12,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 4.737314750003861,
+  "output_loss": 0.09864576160907745,
+  "reconstruction_loss": 0.0028573148883879185,
+  "completed": true,
+  "total_seconds": 10.776033166999696
+}

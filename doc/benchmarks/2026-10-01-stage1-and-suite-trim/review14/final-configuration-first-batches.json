@@ -1,0 +1,1909 @@
+{
+  "source_matched": true,
+  "counts": {
+    "exception": 18,
+    "completed": 32,
+    "memory": 1
+  },
+  "configurations": 51,
+  "seconds": 528.6638317920006,
+  "rows": [
+    {
+      "config": "data/HeadEmission.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/HeadEmission.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/HeadEmission.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/HeadEmission.json"
+        ],
+        "pid": 63035,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 403063936,
+        "elapsed_seconds": 3.707968542003073,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/HeadEmission.log"
+      },
+      "measurement": {
+        "config": "data/HeadEmission.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "ValueError('unresolved generate rule: S -> C')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 128, in _build_model\n    model, _ = BaseModel.from_config(config_path, data=TheData)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1824, in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7027, in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1924, in create_from_config\n    self.create(\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7047, in create\n    return self._create_per_stage(\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17342, in _create_per_stage\n    self.symbolSpace = SymbolSpace(\n                       ^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py\", line 14048, in __init__\n    self.languageSpace = LanguageSpace(self)\n                         ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py\", line 12663, in __init__\n    raise ValueError(f\"unresolved generate rule: {rule.canonical}\")\nValueError: unresolved generate rule: S -> C\n",
+        "total_seconds": 1.5657395419984823
+      }
+    },
+    {
+      "config": "data/LM_5M.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/LM_5M.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/LM_5M.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/LM_5M.json"
+        ],
+        "pid": 63059,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2986986592,
+        "elapsed_seconds": 7.366284707997693,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/LM_5M.log"
+      },
+      "measurement": {
+        "config": "data/LM_5M.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.634552875009831,
+        "batch": 128,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 3.430249166995054,
+        "output_loss": 0.17483331263065338,
+        "reconstruction_loss": 0.004162642173469067,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 5.065600125002675
+      }
+    },
+    {
+      "config": "data/LM_5M_IR.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/LM_5M_IR.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/LM_5M_IR.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/LM_5M_IR.json"
+        ],
+        "pid": 63064,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 401556608,
+        "elapsed_seconds": 3.723763208006858,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/LM_5M_IR.log"
+      },
+      "measurement": {
+        "config": "data/LM_5M_IR.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 128, in _build_model\n    model, _ = BaseModel.from_config(config_path, data=TheData)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1824, in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7027, in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1854, in create_from_config\n    ModelFactory.validate_config(cfg)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 25124, in validate_config\n    raise ValueError(\nValueError: XML config inconsistencies:\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).\n",
+        "total_seconds": 1.5944452499970794
+      }
+    },
+    {
+      "config": "data/MM_400M.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_400M.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_400M.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_400M.json"
+        ],
+        "pid": 63079,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7810603440,
+        "elapsed_seconds": 56.37129945799825,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_400M.log"
+      },
+      "measurement": {
+        "config": "data/MM_400M.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 12.77934287500102,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 41.344988416996785,
+        "output_loss": 0.0,
+        "reconstruction_loss": 0.0,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 54.124952875004965
+      }
+    },
+    {
+      "config": "data/MM_5M_AR.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/MM_5M_AR.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_5M_AR.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_5M_AR.json"
+        ],
+        "pid": 63085,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 404554904,
+        "elapsed_seconds": 3.732966542011127,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_5M_AR.log"
+      },
+      "measurement": {
+        "config": "data/MM_5M_AR.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 128, in _build_model\n    model, _ = BaseModel.from_config(config_path, data=TheData)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1824, in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7027, in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1854, in create_from_config\n    ModelFactory.validate_config(cfg)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 25124, in validate_config\n    raise ValueError(\nValueError: XML config inconsistencies:\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).\n",
+        "total_seconds": 1.5363552500057267
+      }
+    },
+    {
+      "config": "data/MM_5M_IR.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/MM_5M_IR.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_5M_IR.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_5M_IR.json"
+        ],
+        "pid": 63099,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 402474112,
+        "elapsed_seconds": 3.703944416003651,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_5M_IR.log"
+      },
+      "measurement": {
+        "config": "data/MM_5M_IR.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 128, in _build_model\n    model, _ = BaseModel.from_config(config_path, data=TheData)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1824, in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7027, in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1854, in create_from_config\n    ModelFactory.validate_config(cfg)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 25124, in validate_config\n    raise ValueError(\nValueError: XML config inconsistencies:\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).\n",
+        "total_seconds": 1.5407474579988047
+      }
+    },
+    {
+      "config": "data/MM_add.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/MM_add.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_add.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_add.json"
+        ],
+        "pid": 63111,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 517375152,
+        "elapsed_seconds": 4.25931079100701,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_add.log"
+      },
+      "measurement": {
+        "config": "data/MM_add.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.743573459010804,
+        "batch": 32,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "completed": false,
+        "error": "RuntimeError('occurrence exceeds its configured where-space capacity')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 36, in child\n    output_loss, recon_loss, _, _ = model.runEpoch(\n                                    ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16437, in runEpoch\n    result, _ = self.runBatch(\n                ^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14279, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14461, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14831, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 9198, in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10681, in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8895, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8707, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24085, in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13825, in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12345, in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 11782, in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12226, in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 42, in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: occurrence exceeds its configured where-space capacity\n",
+        "total_seconds": 2.155700750008691
+      }
+    },
+    {
+      "config": "data/MM_add_verb.xml",
+      "status": "memory",
+      "process": {
+        "config": "data/MM_add_verb.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_add_verb.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_add_verb.json"
+        ],
+        "pid": 63125,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 9133940368,
+        "elapsed_seconds": 15.664988167001866,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_add_verb.log"
+      },
+      "measurement": {}
+    },
+    {
+      "config": "data/MM_boolean.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_boolean.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_boolean.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_boolean.json"
+        ],
+        "pid": 63171,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 764888576,
+        "elapsed_seconds": 5.349409499991452,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_boolean.log"
+      },
+      "measurement": {
+        "config": "data/MM_boolean.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6786098750017118,
+        "batch": 16,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 1.2020922499941662,
+        "output_loss": 0.16998519003391266,
+        "reconstruction_loss": 0.8191378116607666,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 2.8812166660063667
+      }
+    },
+    {
+      "config": "data/MM_decode.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_decode.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_decode.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_decode.json"
+        ],
+        "pid": 63188,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5041361432,
+        "elapsed_seconds": 12.418155000006664,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_decode.log"
+      },
+      "measurement": {
+        "config": "data/MM_decode.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.466844124995987,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 3.487917958991602,
+        "output_loss": 0.17499999701976776,
+        "reconstruction_loss": 0.0,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 9.955510333995335
+      }
+    },
+    {
+      "config": "data/MM_global.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_global.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_global.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_global.json"
+        ],
+        "pid": 63228,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5114745416,
+        "elapsed_seconds": 10.705322624999098,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_global.log"
+      },
+      "measurement": {
+        "config": "data/MM_global.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.404014458996244,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 2.1139062080037547,
+        "output_loss": 0.174997478723526,
+        "reconstruction_loss": 0.00013805422349832952,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 8.518775958989863
+      }
+    },
+    {
+      "config": "data/MM_grammar.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_grammar.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_grammar.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_grammar.json"
+        ],
+        "pid": 63257,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 541017408,
+        "elapsed_seconds": 4.180957374992431,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_grammar.log"
+      },
+      "measurement": {
+        "config": "data/MM_grammar.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.5228709999937564,
+        "batch": 64,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 0.5623708329949295,
+        "output_loss": 0.1686592549085617,
+        "reconstruction_loss": 0.8822516798973083,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 2.085964708006941
+      }
+    },
+    {
+      "config": "data/MM_init_scale.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_init_scale.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_init_scale.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_init_scale.json"
+        ],
+        "pid": 63266,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 437421328,
+        "elapsed_seconds": 4.183491916992352,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_init_scale.log"
+      },
+      "measurement": {
+        "config": "data/MM_init_scale.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.5678748329955852,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 0.34732383300433867,
+        "output_loss": 0.17503556609153748,
+        "reconstruction_loss": 0.0001401276676915586,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 1.9158281249983702
+      }
+    },
+    {
+      "config": "data/MM_ltm_consolidation_fixture.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/MM_ltm_consolidation_fixture.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_ltm_consolidation_fixture.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_fixture.json"
+        ],
+        "pid": 63276,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 449234072,
+        "elapsed_seconds": 4.191301709011896,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_fixture.log"
+      },
+      "measurement": {
+        "config": "data/MM_ltm_consolidation_fixture.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.5172981250070734,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "completed": false,
+        "error": "ValueError('TruthSet input did not produce a selected grammatical closing')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 36, in child\n    output_loss, recon_loss, _, _ = model.runEpoch(\n                                    ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16078, in runEpoch\n    self.provision_ltm()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7400, in provision_ltm\n    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7439, in _ltm_ingest_truth_texts\n    raise ValueError('TruthSet input did not produce a selected grammatical closing')\nValueError: TruthSet input did not produce a selected grammatical closing\n",
+        "total_seconds": 1.8295684580079978
+      }
+    },
+    {
+      "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_ltm_consolidation_serial_fixture.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_serial_fixture.json"
+        ],
+        "pid": 63281,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 556434776,
+        "elapsed_seconds": 4.191338250006083,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_serial_fixture.log"
+      },
+      "measurement": {
+        "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.5709439580095932,
+        "batch": 64,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 0.703440416007652,
+        "output_loss": 0.17817001044750214,
+        "reconstruction_loss": 0.0,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 4,
+        "total_seconds": 2.2750806660042144
+      }
+    },
+    {
+      "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_ltm_consolidation_stateful_fixture.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_stateful_fixture.json"
+        ],
+        "pid": 63293,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 444368048,
+        "elapsed_seconds": 4.19996766600525,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_stateful_fixture.log"
+      },
+      "measurement": {
+        "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.5228672500088578,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "completed": false,
+        "error": "ValueError('TruthSet input did not produce a selected grammatical closing')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 36, in child\n    output_loss, recon_loss, _, _ = model.runEpoch(\n                                    ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16078, in runEpoch\n    self.provision_ltm()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7400, in provision_ltm\n    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7439, in _ltm_ingest_truth_texts\n    raise ValueError('TruthSet input did not produce a selected grammatical closing')\nValueError: TruthSet input did not produce a selected grammatical closing\n",
+        "total_seconds": 1.8348875829979079
+      }
+    },
+    {
+      "config": "data/MM_masked_semantic.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_masked_semantic.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_masked_semantic.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_masked_semantic.json"
+        ],
+        "pid": 63298,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5833069584,
+        "elapsed_seconds": 10.647717332991306,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_masked_semantic.log"
+      },
+      "measurement": {
+        "config": "data/MM_masked_semantic.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.2152289590012515,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 2.249359125009505,
+        "output_loss": 0.17499424517154694,
+        "reconstruction_loss": 0.00014530985208693892,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 8.465261208999436
+      }
+    },
+    {
+      "config": "data/MM_math.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/MM_math.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_math.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_math.json"
+        ],
+        "pid": 63308,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 520750280,
+        "elapsed_seconds": 4.275001041998621,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_math.log"
+      },
+      "measurement": {
+        "config": "data/MM_math.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6295625419879798,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "completed": false,
+        "error": "RuntimeError('occurrence exceeds its configured where-space capacity')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 36, in child\n    output_loss, recon_loss, _, _ = model.runEpoch(\n                                    ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16437, in runEpoch\n    result, _ = self.runBatch(\n                ^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14279, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14461, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14831, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 9198, in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10681, in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8895, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8707, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24085, in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13825, in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12345, in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 11782, in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12226, in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 42, in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: occurrence exceeds its configured where-space capacity\n",
+        "total_seconds": 1.9760679169994546
+      }
+    },
+    {
+      "config": "data/MM_mereology.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_mereology.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_mereology.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_mereology.json"
+        ],
+        "pid": 63334,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5040165352,
+        "elapsed_seconds": 10.160713165998459,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_mereology.log"
+      },
+      "measurement": {
+        "config": "data/MM_mereology.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.35671325000294,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 1.7485363750020042,
+        "output_loss": 0.17499865591526031,
+        "reconstruction_loss": 0.00014544319128617644,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 8.106065959000262
+      }
+    },
+    {
+      "config": "data/MM_mereology_serial.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_mereology_serial.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_mereology_serial.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_mereology_serial.json"
+        ],
+        "pid": 63346,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 6822483704,
+        "elapsed_seconds": 18.323161708991393,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_mereology_serial.log"
+      },
+      "measurement": {
+        "config": "data/MM_mereology_serial.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.336163958010729,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 9.568793208003626,
+        "output_loss": 0.17499998211860657,
+        "reconstruction_loss": 0.0,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 15.905633166010375
+      }
+    },
+    {
+      "config": "data/MM_meronomy_smoke.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_meronomy_smoke.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_meronomy_smoke.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_meronomy_smoke.json"
+        ],
+        "pid": 63366,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 8352947304,
+        "elapsed_seconds": 16.160916249995353,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_meronomy_smoke.log"
+      },
+      "measurement": {
+        "config": "data/MM_meronomy_smoke.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.6444496659969445,
+        "batch": 12,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 7.121269249997567,
+        "output_loss": 0.09677506983280182,
+        "reconstruction_loss": 0.8871825337409973,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 13.766746458000853
+      }
+    },
+    {
+      "config": "data/MM_overlap_tiling.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_overlap_tiling.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_overlap_tiling.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_overlap_tiling.json"
+        ],
+        "pid": 63412,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4959523280,
+        "elapsed_seconds": 10.162474292010302,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_overlap_tiling.log"
+      },
+      "measurement": {
+        "config": "data/MM_overlap_tiling.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.443111833999865,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 1.7530518749990733,
+        "output_loss": 0.17500141263008118,
+        "reconstruction_loss": 0.0001530460867797956,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 8.196871167005156
+      }
+    },
+    {
+      "config": "data/MM_phrase_decode.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_phrase_decode.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_phrase_decode.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_phrase_decode.json"
+        ],
+        "pid": 63426,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 8351226960,
+        "elapsed_seconds": 15.60802466700261,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_phrase_decode.log"
+      },
+      "measurement": {
+        "config": "data/MM_phrase_decode.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.401579708006466,
+        "batch": 12,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 7.260372208998888,
+        "output_loss": 0.08285548537969589,
+        "reconstruction_loss": 0.30970320105552673,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 13.662812166992808
+      }
+    },
+    {
+      "config": "data/MM_qa.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/MM_qa.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_qa.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_qa.json"
+        ],
+        "pid": 63446,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 3360247000,
+        "elapsed_seconds": 10.723148124990985,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_qa.log"
+      },
+      "measurement": {
+        "config": "data/MM_qa.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.63612949999515,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "completed": false,
+        "error": "ValueError('TruthSet input did not produce a selected grammatical closing')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 36, in child\n    output_loss, recon_loss, _, _ = model.runEpoch(\n                                    ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16078, in runEpoch\n    self.provision_ltm()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7400, in provision_ltm\n    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7439, in _ltm_ingest_truth_texts\n    raise ValueError('TruthSet input did not produce a selected grammatical closing')\nValueError: TruthSet input did not produce a selected grammatical closing\n",
+        "total_seconds": 7.5012890419893665
+      }
+    },
+    {
+      "config": "data/MM_query_reasoning.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/MM_query_reasoning.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_query_reasoning.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_query_reasoning.json"
+        ],
+        "pid": 63477,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 894928312,
+        "elapsed_seconds": 4.8110760420095176,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_query_reasoning.log"
+      },
+      "measurement": {
+        "config": "data/MM_query_reasoning.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.78109033301007,
+        "batch": 6,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "completed": false,
+        "error": "ValueError('a TruthSet cannot assert an interrogative clause')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 36, in child\n    output_loss, recon_loss, _, _ = model.runEpoch(\n                                    ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16078, in runEpoch\n    self.provision_ltm()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7400, in provision_ltm\n    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7435, in _ltm_ingest_truth_texts\n    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14279, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14461, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14831, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 9198, in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10681, in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8895, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8707, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24102, in _forward_per_stage\n    body_result = self._forward_body(\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 18031, in _forward_body\n    return self._forward_body_per_word(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22511, in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 22040, in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 21234, in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20964, in _commit_sentence\n    row = _append_observed_meaning(store, view['clauses'][b],\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 163, in _append_observed_meaning\n    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseRow.py\", line 246, in write_clause\n    raise ValueError('a TruthSet cannot assert an interrogative clause')\nValueError: a TruthSet cannot assert an interrogative clause\n",
+        "total_seconds": 2.4532626250002068
+      }
+    },
+    {
+      "config": "data/MM_reading.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_reading.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_reading.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_reading.json"
+        ],
+        "pid": 63479,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5079913008,
+        "elapsed_seconds": 10.161926082990249,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_reading.log"
+      },
+      "measurement": {
+        "config": "data/MM_reading.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.263870666996809,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 1.8495069170021452,
+        "output_loss": 0.17499899864196777,
+        "reconstruction_loss": 0.00013235901133157313,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 8.114096167002572
+      }
+    },
+    {
+      "config": "data/MM_sequence_predict.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_sequence_predict.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_sequence_predict.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sequence_predict.json"
+        ],
+        "pid": 63515,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7198038304,
+        "elapsed_seconds": 398.1141453750024,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sequence_predict.log"
+      },
+      "measurement": {
+        "config": "data/MM_sequence_predict.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.778389041995979,
+        "batch": 4,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 393.9137234160007,
+        "output_loss": 0.03382953628897667,
+        "reconstruction_loss": 2.886943817138672,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 395.6928729999927
+      }
+    },
+    {
+      "config": "data/MM_shamatha.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_shamatha.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_shamatha.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_shamatha.json"
+        ],
+        "pid": 63530,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 540116264,
+        "elapsed_seconds": 4.275188625004375,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_shamatha.log"
+      },
+      "measurement": {
+        "config": "data/MM_shamatha.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.645773708994966,
+        "batch": 64,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 0.5356202089897124,
+        "output_loss": 0.16582556068897247,
+        "reconstruction_loss": 0.0008568769553676248,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 2.1818354169954546
+      }
+    },
+    {
+      "config": "data/MM_sparse_concept.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_sparse_concept.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_sparse_concept.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sparse_concept.json"
+        ],
+        "pid": 63544,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5846979624,
+        "elapsed_seconds": 10.769761333998758,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sparse_concept.log"
+      },
+      "measurement": {
+        "config": "data/MM_sparse_concept.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.51068912500341,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 2.273582666995935,
+        "output_loss": 0.17499959468841553,
+        "reconstruction_loss": 0.00013805287017021328,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 8.78497204199084
+      }
+    },
+    {
+      "config": "data/MM_symbol_tower.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_symbol_tower.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_symbol_tower.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_symbol_tower.json"
+        ],
+        "pid": 63588,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4392521712,
+        "elapsed_seconds": 9.686656167003093,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_symbol_tower.log"
+      },
+      "measurement": {
+        "config": "data/MM_symbol_tower.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 6.549738583009457,
+        "batch": 12,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 0.9088007919926895,
+        "output_loss": 0.17499525845050812,
+        "reconstruction_loss": 0.00013892124115955085,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 7.459241832999396
+      }
+    },
+    {
+      "config": "data/MM_symbolic_iter.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_symbolic_iter.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_symbolic_iter.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_symbolic_iter.json"
+        ],
+        "pid": 63617,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 582878552,
+        "elapsed_seconds": 4.262700958992355,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_symbolic_iter.log"
+      },
+      "measurement": {
+        "config": "data/MM_symbolic_iter.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.705449959001271,
+        "batch": 4,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 0.4138944579899544,
+        "output_loss": 0.175013467669487,
+        "reconstruction_loss": 0.00011324624210828915,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 2.119978499991703
+      }
+    },
+    {
+      "config": "data/MM_xor.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_xor.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_xor.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor.json"
+        ],
+        "pid": 63642,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 544277776,
+        "elapsed_seconds": 4.269931999995606,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor.log"
+      },
+      "measurement": {
+        "config": "data/MM_xor.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6556594580033561,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 0.3855188330053352,
+        "output_loss": 0.1749974936246872,
+        "reconstruction_loss": 9.242341911885887e-05,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 2.0418534579948755
+      }
+    },
+    {
+      "config": "data/MM_xor_fixture.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_xor_fixture.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_xor_fixture.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_fixture.json"
+        ],
+        "pid": 63659,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 544064832,
+        "elapsed_seconds": 4.272001334000379,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_fixture.log"
+      },
+      "measurement": {
+        "config": "data/MM_xor_fixture.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6470107500063023,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 0.3861692090140423,
+        "output_loss": 0.17500220239162445,
+        "reconstruction_loss": 4.4848591642221436e-05,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 2.0338844580110162
+      }
+    },
+    {
+      "config": "data/MM_xor_loopback.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_xor_loopback.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_xor_loopback.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_loopback.json"
+        ],
+        "pid": 63673,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 534070592,
+        "elapsed_seconds": 4.264598707988625,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_loopback.log"
+      },
+      "measurement": {
+        "config": "data/MM_xor_loopback.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6469029579893686,
+        "batch": 4,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 0.5378064590040594,
+        "output_loss": 0.17459268867969513,
+        "reconstruction_loss": 0.9222001433372498,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 2.185159415996168
+      }
+    },
+    {
+      "config": "data/MM_xor_step3.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_xor_step3.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_xor_step3.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_step3.json"
+        ],
+        "pid": 63685,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 538281232,
+        "elapsed_seconds": 4.265237374987919,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_step3.log"
+      },
+      "measurement": {
+        "config": "data/MM_xor_step3.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6489543750067241,
+        "batch": 64,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 0.5497757919947617,
+        "output_loss": 0.16417227685451508,
+        "reconstruction_loss": 0.0006653582095168531,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 2.199199458002113
+      }
+    },
+    {
+      "config": "data/MM_xor_step4.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MM_xor_step4.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MM_xor_step4.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_step4.json"
+        ],
+        "pid": 63699,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 541017384,
+        "elapsed_seconds": 4.2657696249953005,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_step4.log"
+      },
+      "measurement": {
+        "config": "data/MM_xor_step4.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.66036012499535,
+        "batch": 64,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 0.5805091250076657,
+        "output_loss": 0.1691192090511322,
+        "reconstruction_loss": 0.0006529498496092856,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 2.241570583995781
+      }
+    },
+    {
+      "config": "data/MentalModel.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/MentalModel.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/MentalModel.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MentalModel.json"
+        ],
+        "pid": 63711,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 797066776,
+        "elapsed_seconds": 4.821764375010389,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MentalModel.log"
+      },
+      "measurement": {
+        "config": "data/MentalModel.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6980770000081975,
+        "batch": 64,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 1.0142094589973567,
+        "output_loss": 0.17318543791770935,
+        "reconstruction_loss": 0.0001152878103312105,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 2.7128997500112746
+      }
+    },
+    {
+      "config": "data/POS_smoke.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/POS_smoke.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/POS_smoke.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/POS_smoke.json"
+        ],
+        "pid": 63728,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 781813248,
+        "elapsed_seconds": 4.803271666998626,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/POS_smoke.log"
+      },
+      "measurement": {
+        "config": "data/POS_smoke.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6544237499911105,
+        "batch": 16,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 1.1293675000051735,
+        "output_loss": 0.16987302899360657,
+        "reconstruction_loss": 1.6456369161605835,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 7,
+        "total_seconds": 2.784278541992535
+      }
+    },
+    {
+      "config": "data/RamsifiedModel.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/RamsifiedModel.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/RamsifiedModel.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/RamsifiedModel.json"
+        ],
+        "pid": 63755,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 750274048,
+        "elapsed_seconds": 4.820273207995342,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/RamsifiedModel.log"
+      },
+      "measurement": {
+        "config": "data/RamsifiedModel.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.712417667004047,
+        "batch": 64,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 0.8783901249989867,
+        "output_loss": 0.1747775673866272,
+        "reconstruction_loss": 0.00022864561469759792,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 2.5914889169944217
+      }
+    },
+    {
+      "config": "data/XOR_grammar.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/XOR_grammar.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/XOR_grammar.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_grammar.json"
+        ],
+        "pid": 63034,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 533955856,
+        "elapsed_seconds": 5.266282541997498,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_grammar.log"
+      },
+      "measurement": {
+        "config": "data/XOR_grammar.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.5713514169910923,
+        "batch": 64,
+        "scope": "understanding",
+        "reconstruct_in_loop": true,
+        "training_seconds": 0.5240248749905732,
+        "output_loss": 0.1685156375169754,
+        "reconstruction_loss": 0.0012177039170637727,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": 0,
+        "total_seconds": 2.0958862919942476
+      }
+    },
+    {
+      "config": "data/XOR_pos.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/XOR_pos.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/XOR_pos.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_pos.json"
+        ],
+        "pid": 63772,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 531563840,
+        "elapsed_seconds": 4.254579582993756,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_pos.log"
+      },
+      "measurement": {
+        "config": "data/XOR_pos.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6458252090087626,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 0.3771393749921117,
+        "output_loss": 0.17501616477966309,
+        "reconstruction_loss": 6.847524491604418e-05,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 2.0236113750142977
+      }
+    },
+    {
+      "config": "data/XOR_recon.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/XOR_recon.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/XOR_recon.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_recon.json"
+        ],
+        "pid": 63784,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 403834008,
+        "elapsed_seconds": 3.7239740420045564,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_recon.log"
+      },
+      "measurement": {
+        "config": "data/XOR_recon.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "ValueError('Config requirement failed: WholeSpace requires WS event width == CS width (got CS width=8, WS event width=10). Fix: set <WholeSpace><nDim> to match <ConceptualSpace><nOutputDim> if present, else <ConceptualSpace><nDim>.')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 128, in _build_model\n    model, _ = BaseModel.from_config(config_path, data=TheData)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1824, in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7027, in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 1854, in create_from_config\n    ModelFactory.validate_config(cfg)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 25133, in validate_config\n    TheXMLConfig.validate()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/util.py\", line 1586, in validate\n    raise ValueError(\nValueError: Config requirement failed: WholeSpace requires WS event width == CS width (got CS width=8, WS event width=10). Fix: set <WholeSpace><nDim> to match <ConceptualSpace><nOutputDim> if present, else <ConceptualSpace><nDim>.\n",
+        "total_seconds": 1.6286498750123428
+      }
+    },
+    {
+      "config": "data/XOR_spaces.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/XOR_spaces.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/XOR_spaces.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_spaces.json"
+        ],
+        "pid": 63798,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 464766128,
+        "elapsed_seconds": 4.27575462499226,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_spaces.log"
+      },
+      "measurement": {
+        "config": "data/XOR_spaces.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6446386669995263,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "completed": false,
+        "error": "RuntimeError('occurrence exceeds its configured where-space capacity')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 36, in child\n    output_loss, recon_loss, _, _ = model.runEpoch(\n                                    ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16437, in runEpoch\n    result, _ = self.runBatch(\n                ^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14279, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14461, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14831, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 9198, in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10681, in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8895, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8707, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24085, in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13825, in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12345, in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 11782, in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12226, in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 42, in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: occurrence exceeds its configured where-space capacity\n",
+        "total_seconds": 1.9641897499968763
+      }
+    },
+    {
+      "config": "data/ergodic-only.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/ergodic-only.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/ergodic-only.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/ergodic-only.json"
+        ],
+        "pid": 63810,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 443810968,
+        "elapsed_seconds": 3.7015783340029884,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/ergodic-only.log"
+      },
+      "measurement": {
+        "config": "data/ergodic-only.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "TypeError(\"can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\")",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 120, in _build_model\n    TheData.load(\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 764, in load\n    self.loadMNist()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 1171, in loadMNist\n    self.train_input  = torch.tensor(train[:, 1:]/255.0, dtype=torch.float)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nTypeError: can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\n",
+        "total_seconds": 1.826674665993778
+      }
+    },
+    {
+      "config": "data/ergodic.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/ergodic.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/ergodic.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/ergodic.json"
+        ],
+        "pid": 63825,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 456426696,
+        "elapsed_seconds": 3.7298523749923334,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/ergodic.log"
+      },
+      "measurement": {
+        "config": "data/ergodic.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "TypeError(\"can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\")",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 120, in _build_model\n    TheData.load(\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 764, in load\n    self.loadMNist()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 1171, in loadMNist\n    self.train_input  = torch.tensor(train[:, 1:]/255.0, dtype=torch.float)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nTypeError: can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\n",
+        "total_seconds": 1.8122797919932054
+      }
+    },
+    {
+      "config": "data/idempotent.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/idempotent.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/idempotent.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/idempotent.json"
+        ],
+        "pid": 63837,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 491259152,
+        "elapsed_seconds": 4.268975459010107,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/idempotent.log"
+      },
+      "measurement": {
+        "config": "data/idempotent.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.647655417007627,
+        "batch": 1,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 0.34887100000923965,
+        "output_loss": 0.1751161366701126,
+        "reconstruction_loss": 0.00013470686099026352,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 1.9970186249993276
+      }
+    },
+    {
+      "config": "data/mnist.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/mnist.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/mnist.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/mnist.json"
+        ],
+        "pid": 63851,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 456197320,
+        "elapsed_seconds": 3.719033000001218,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/mnist.log"
+      },
+      "measurement": {
+        "config": "data/mnist.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "TypeError(\"can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\")",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 120, in _build_model\n    TheData.load(\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 764, in load\n    self.loadMNist()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 1171, in loadMNist\n    self.train_input  = torch.tensor(train[:, 1:]/255.0, dtype=torch.float)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nTypeError: can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\n",
+        "total_seconds": 1.815096624995931
+      }
+    },
+    {
+      "config": "data/simple.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/simple.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/simple.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/simple.json"
+        ],
+        "pid": 63867,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 451724512,
+        "elapsed_seconds": 3.7221642909862567,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/simple.log"
+      },
+      "measurement": {
+        "config": "data/simple.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "TypeError(\"can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\")",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 120, in _build_model\n    TheData.load(\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 764, in load\n    self.loadMNist()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 1171, in loadMNist\n    self.train_input  = torch.tensor(train[:, 1:]/255.0, dtype=torch.float)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nTypeError: can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\n",
+        "total_seconds": 1.8255164159927517
+      }
+    },
+    {
+      "config": "data/stream_smoke.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/stream_smoke.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/stream_smoke.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/stream_smoke.json"
+        ],
+        "pid": 63879,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 522192072,
+        "elapsed_seconds": 4.2767117920011515,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/stream_smoke.log"
+      },
+      "measurement": {
+        "config": "data/stream_smoke.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.83895920800569,
+        "batch": 4,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "completed": false,
+        "error": "RuntimeError('occurrence exceeds its configured where-space capacity')",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 36, in child\n    output_loss, recon_loss, _, _ = model.runEpoch(\n                                    ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16437, in runEpoch\n    result, _ = self.runBatch(\n                ^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14279, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14461, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14831, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 9198, in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10681, in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8895, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 154, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8707, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24085, in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13825, in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12345, in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 11782, in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py\", line 12226, in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 27, in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/WhereRegistry.py\", line 42, in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: occurrence exceeds its configured where-space capacity\n",
+        "total_seconds": 2.153931624998222
+      }
+    },
+    {
+      "config": "data/tomatoes.xml",
+      "status": "exception",
+      "process": {
+        "config": "data/tomatoes.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/tomatoes.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/tomatoes.json"
+        ],
+        "pid": 63893,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 404489416,
+        "elapsed_seconds": 4.793453417005367,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/tomatoes.log"
+      },
+      "measurement": {
+        "config": "data/tomatoes.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "completed": false,
+        "error": "HfUriError(\"Invalid HF URI 'hf://datasets/rotten_tomatoes@aa13bc287fa6fcab6daf52f0dfb9994269ffea28/.huggingface.yaml'. Repository id must be 'namespace/name', got 'rotten_tomatoes'.\")",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 30, in child\n    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py\", line 120, in _build_model\n    TheData.load(\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 778, in load\n    self.loadTomatoes()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/data.py\", line 1576, in loadTomatoes\n    data = load_dataset(\"rotten_tomatoes\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/load.py\", line 1696, in load_dataset\n    builder_instance = load_dataset_builder(\n                       ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/load.py\", line 1323, in load_dataset_builder\n    dataset_module = dataset_module_factory(\n                     ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/load.py\", line 1215, in dataset_module_factory\n    raise e1 from None\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/load.py\", line 1190, in dataset_module_factory\n    ).get_module()\n      ^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/load.py\", line 608, in get_module\n    standalone_yaml_path = cached_path(\n                           ^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/utils/file_utils.py\", line 180, in cached_path\n    ).resolve_path(url_or_filename)\n      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/huggingface_hub/hf_file_system.py\", line 307, in resolve_path\n    parsed = parse_hf_uri(f\"{constants.HF_PROTOCOL}{path}\")\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_hf_uris.py\", line 319, in parse_hf_uri\n    return _parse_repo_body(location, type_, raw=raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_hf_uris.py\", line 617, in _parse_repo_body\n    raise HfUriError(uri=raw, msg=f\"Repository id must be 'namespace/name', got '{repo_id}'.\")\nhuggingface_hub.errors.HfUriError: Invalid HF URI 'hf://datasets/rotten_tomatoes@aa13bc287fa6fcab6daf52f0dfb9994269ffea28/.huggingface.yaml'. Repository id must be 'namespace/name', got 'rotten_tomatoes'.\n",
+        "total_seconds": 2.561470125001506
+      }
+    },
+    {
+      "config": "data/xor.xml",
+      "status": "completed",
+      "process": {
+        "config": "data/xor.xml",
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+          "--child",
+          "--config",
+          "data/xor.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/xor.json"
+        ],
+        "pid": 63908,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 529352000,
+        "elapsed_seconds": 4.271217833011178,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/xor.log"
+      },
+      "measurement": {
+        "config": "data/xor.xml",
+        "seed": null,
+        "backend": "none",
+        "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+        "guard_gib": 8,
+        "build_seconds": 1.6432940420054365,
+        "batch": 64,
+        "scope": "perception: no grammar",
+        "reconstruct_in_loop": false,
+        "training_seconds": 0.37589516599837225,
+        "output_loss": 0.1750088632106781,
+        "reconstruction_loss": 0.00020240580488462,
+        "completed": true,
+        "missing_surface_sentences_at_last_boundary": null,
+        "total_seconds": 2.0196004579920555
+      }
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+  ],
+  "completed": [
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots"
+  ],
+  "slow_selected": [
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 89.88081950000196,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 12.50%)\r\nbatch = 8 (\u0394=2.775s, 15.62%)\r\nbatch = 16 (\u0394=2.536s, 18.75%)\r\nbatch = 24 (\u0394=2.550s, 21.88%)\r\nbatch = 32 (\u0394=2.596s, 25.00%)\r\nbatch = 40 (\u0394=2.532s, 28.12%)\r\nbatch = 48 (\u0394=2.648s, 31.25%)\r\nbatch = 56 (\u0394=2.636s, 34.38%)\r\nbatch = 64 (\u0394=2.541s, 37.50%)\r\nbatch = 72 (\u0394=2.520s, 40.62%)\r\nbatch = 80 (\u0394=2.657s, 43.75%)\r\nbatch = 88 (\u0394=2.564s, 46.88%)\r\nbatch = 96 (\u0394=2.585s, 50.00%)\r\nbatch = 104 (\u0394=2.609s, 53.12%)\r\nbatch = 112 (\u0394=2.597s, 56.25%)\r\nbatch = 120 (\u0394=2.628s, 59.38%)\r\nbatch = 128 (\u0394=2.754s, 62.50%)\r\nbatch = 136 (\u0394=2.646s, 65.62%)\r\nbatch = 144 (\u0394=2.625s, 68.75%)\r\nbatch = 152 (\u0394=2.696s, 71.88%)\r\nbatch = 160 (\u0394=2.584s, 75.00%)\r\nbatch = 168 (\u0394=2.628s, 78.12%)\r\nbatch = 176 (\u0394=2.723s, 81.25%)\r\nbatch = 184 (\u0394=2.601s, 84.38%)\r\nbatch = 192 (\u0394=2.702s, 87.50%)\r\nbatch = 200 (\u0394=2.605s, 90.62%)\r\nbatch = 208 (\u0394=2.607s, 93.75%)\r\nbatch = 216 (\u0394=2.696s, 96.88%)\r\nbatch = 224 (\u0394=2.608s, 100.00%)\r\nbatch = 232 (\u0394=2.634s, 100.00%)\r\nbatch = 240 (\u0394=2.747s, 100.00%)\r\nbatch = 248 (\u0394=2.612s, 100.00%)\r\nTraining throughput: 32 batches in 84.484s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=4.974s, 100.00%)\r\nTraining throughput: 1 batches in 5.119s; word units 86.5% of 192 words (letters-only 100.0% of 64).\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.856547542003682,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 2.608s; word units 83.3% of 24 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 208.82220774999587,
+      "message": "test/test_reconstruction_roundtrip.py:484: in test_mm20m_grammar_free_derivation_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.0 == 1.0\nE    +  where 0.0 = RunRecord(config='data/MM_ladder.xml', seed=1860931855, epochs=3, wall_s_per_epoch=65.99333074999595, output_loss=0.04...n ModelLoss and not exposed on the model', 'epoch_times_s': [72.48562849999871, 66.71799199999077, 65.26866950000112]}).exact_match_rate",
+      "stdout": "batch = 0 (warm-up, 12.50%)\r\nbatch = 8 (\u0394=2.666s, 15.62%)\r\nbatch = 16 (\u0394=2.474s, 18.75%)\r\nbatch = 24 (\u0394=2.502s, 21.88%)\r\nbatch = 32 (\u0394=2.360s, 25.00%)\r\nbatch = 40 (\u0394=2.396s, 28.12%)\r\nbatch = 48 (\u0394=2.410s, 31.25%)\r\nbatch = 56 (\u0394=2.509s, 34.38%)\r\nbatch = 64 (\u0394=2.174s, 37.50%)\r\nbatch = 72 (\u0394=2.142s, 40.62%)\r\nbatch = 80 (\u0394=2.159s, 43.75%)\r\nbatch = 88 (\u0394=2.145s, 46.88%)\r\nbatch = 96 (\u0394=2.147s, 50.00%)\r\nbatch = 104 (\u0394=2.337s, 53.12%)\r\nbatch = 112 (\u0394=2.241s, 56.25%)\r\nbatch = 120 (\u0394=2.259s, 59.38%)\r\nbatch = 128 (\u0394=2.187s, 62.50%)\r\nbatch = 136 (\u0394=2.098s, 65.62%)\r\nbatch = 144 (\u0394=2.139s, 68.75%)\r\nbatch = 152 (\u0394=2.206s, 71.88%)\r\nbatch = 160 (\u0394=2.165s, 75.00%)\r\nbatch = 168 (\u0394=2.206s, 78.12%)\r\nbatch = 176 (\u0394=2.199s, 81.25%)\r\nbatch = 184 (\u0394=2.300s, 84.38%)\r\nbatch = 192 (\u0394=2.253s, 87.50%)\r\nbatch = 200 (\u0394=2.121s, 90.62%)\r\nbatch = 208 (\u0394=2.029s, 93.75%)\r\nbatch = 216 (\u0394=2.046s, 96.88%)\r\nbatch = 224 (\u0394=2.074s, 100.00%)\r\nbatch = 232 (\u0394=2.096s, 100.00%)\r\nbatch = 240 (\u0394=2.272s, 100.00%)\r\nbatch = 248 (\u0394=2.345s, 100.00%)\r\nTraining throughput: 32 batches in 72.485s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=2.189s, 12.50%)\r\nbatch = 8 (\u0394=2.048s, 15.62%)\r\nbatch = 16 (\u0394=2.043s, 18.75%)\r\nbatch = 24 (\u0394=2.046s, 21.88%)\r\nbatch = 32 (\u0394=2.248s, 25.00%)\r\nbatch = 40 (\u0394=2.098s, 28.12%)\r\nbatch = 48 (\u0394=2.240s, 31.25%)\r\nbatch = 56 (\u0394=2.212s, 34.38%)\r\nbatch = 64 (\u0394=2.070s, 37.50%)\r\nbatch = 72 (\u0394=2.141s, 40.62%)\r\nbatch = 80 (\u0394=2.083s, 43.75%)\r\nbatch = 88 (\u0394=2.020s, 46.88%)\r\nbatch = 96 (\u0394=2.047s, 50.00%)\r\nbatch = 104 (\u0394=2.071s, 53.12%)\r\nbatch = 112 (\u0394=2.089s, 56.25%)\r\nbatch = 120 (\u0394=2.090s, 59.38%)\r\nbatch = 128 (\u0394=2.153s, 62.50%)\r\nbatch = 136 (\u0394=2.032s, 65.62%)\r\nbatch = 144 (\u0394=2.068s, 68.75%)\r\nbatch = 152 (\u0394=2.025s, 71.88%)\r\nbatch = 160 (\u0394=2.124s, 75.00%)\r\nbatch = 168 (\u0394=2.071s, 78.12%)\r\nbatch = 176 (\u0394=2.063s, 81.25%)\r\nbatch = 184 (\u0394=2.189s, 84.38%)\r\nbatch = 192 (\u0394=2.049s, 87.50%)\r\nbatch = 200 (\u0394=2.023s, 90.62%)\r\nbatch = 208 (\u0394=2.026s, 93.75%)\r\nbatch = 216 (\u0394=2.021s, 96.88%)\r\nbatch = 224 (\u0394=2.011s, 100.00%)\r\nbatch = 232 (\u0394=1.987s, 100.00%)\r\nbatch = 240 (\u0394=2.105s, 100.00%)\r\nbatch = 248 (\u0394=2.037s, 100.00%)\r\nTraining throughput: 32 batches in 66.717s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=2.079s, 12.50%)\r\nbatch = 8 (\u0394=2.018s, 15.62%)\r\nbatch = 16 (\u0394=1.998s, 18.75%)\r\nbatch = 24 (\u0394=2.009s, 21.88%)\r\nbatch = 32 (\u0394=2.070s, 25.00%)\r\nbatch = 40 (\u0394=2.137s, 28.12%)\r\nbatch = 48 (\u0394=2.023s, 31.25%)\r\nbatch = 56 (\u0394=2.033s, 34.38%)\r\nbatch = 64 (\u0394=2.008s, 37.50%)\r\nbatch = 72 (\u0394=2.005s, 40.62%)\r\nbatch = 80 (\u0394=2.040s, 43.75%)\r\nbatch = 88 (\u0394=2.036s, 46.88%)\r\nbatch = 96 (\u0394=2.184s, 50.00%)\r\nbatch = 104 (\u0394=2.021s, 53.12%)\r\nbatch = 112 (\u0394=2.002s, 56.25%)\r\nbatch = 120 (\u0394=2.010s, 59.38%)\r\nbatch = 128 (\u0394=2.032s, 62.50%)\r\nbatch = 136 (\u0394=2.027s, 65.62%)\r\nbatch = 144 (\u0394=2.061s, 68.75%)\r\nbatch = 152 (\u0394=2.113s, 71.88%)\r\nbatch = 160 (\u0394=2.019s, 75.00%)\r\nbatch = 168 (\u0394=2.044s, 78.12%)\r\nbatch = 176 (\u0394=2.056s, 81.25%)\r\nbatch = 184 (\u0394=2.018s, 84.38%)\r\nbatch = 192 (\u0394=1.990s, 87.50%)\r\nbatch = 200 (\u0394=2.002s, 90.62%)\r\nbatch = 208 (\u0394=2.135s, 93.75%)\r\nbatch = 216 (\u0394=2.033s, 96.88%)\r\nbatch = 224 (\u0394=2.044s, 100.00%)\r\nbatch = 232 (\u0394=2.015s, 100.00%)\r\nbatch = 240 (\u0394=2.005s, 100.00%)\r\nbatch = 248 (\u0394=2.002s, 100.00%)\r\nTraining throughput: 32 batches in 65.268s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=3.962s, 100.00%)\r\nTraining throughput: 1 batches in 4.097s; word units 86.5% of 192 words (letters-only 100.0% of 64).\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.418898874995648,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.645s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.627s, 100.00%)\r\nTraining throughput: 1 batches in 0.576s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.579s, 100.00%)\r\nTraining throughput: 1 batches in 0.575s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.584s, 100.00%)\r\nTraining throughput: 1 batches in 0.499s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    }
+  ],
+  "recycled": true,
+  "active": null,
+  "device": "cpu"
+}

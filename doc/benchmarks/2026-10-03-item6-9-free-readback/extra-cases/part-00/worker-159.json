@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section"
+  ],
+  "completed": [
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section"
+  ],
+  "slow_selected": [
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08210591701208614,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

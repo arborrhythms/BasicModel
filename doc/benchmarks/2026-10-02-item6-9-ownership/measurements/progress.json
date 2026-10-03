@@ -1,0 +1,1267 @@
+{
+  "done": [
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 1,
+      "name": "gate-05-trial-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-01",
+          "--gate",
+          "5"
+        ],
+        "pid": 26228,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 692553744,
+        "elapsed_seconds": 108.99004625000816,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-01/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 2,
+      "name": "gate-05-trial-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-02",
+          "--gate",
+          "5"
+        ],
+        "pid": 26229,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1185385328,
+        "elapsed_seconds": 197.49051858299936,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-02/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 3,
+      "name": "gate-05-trial-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-03",
+          "--gate",
+          "5"
+        ],
+        "pid": 26230,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1176914824,
+        "elapsed_seconds": 198.4998120419914,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-03/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 4,
+      "name": "gate-05-trial-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-04",
+          "--gate",
+          "5"
+        ],
+        "pid": 26640,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1170328408,
+        "elapsed_seconds": 194.85924483300187,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-04/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 5,
+      "name": "gate-05-trial-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-05",
+          "--gate",
+          "5"
+        ],
+        "pid": 26936,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1176898416,
+        "elapsed_seconds": 196.17867320901132,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-05/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 6,
+      "name": "gate-05-trial-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-06",
+          "--gate",
+          "5"
+        ],
+        "pid": 26937,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1170410376,
+        "elapsed_seconds": 197.18720374999975,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-06/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 7,
+      "name": "gate-05-trial-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-07",
+          "--gate",
+          "5"
+        ],
+        "pid": 27331,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1186040664,
+        "elapsed_seconds": 196.02664508399903,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-07/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 8,
+      "name": "gate-05-trial-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-08",
+          "--gate",
+          "5"
+        ],
+        "pid": 27619,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1169116016,
+        "elapsed_seconds": 195.02410470800532,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-08/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 9,
+      "name": "gate-05-trial-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-09",
+          "--gate",
+          "5"
+        ],
+        "pid": 27620,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1167018936,
+        "elapsed_seconds": 196.5768572090019,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-09/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 5,
+      "trial": 10,
+      "name": "gate-05-trial-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-10",
+          "--gate",
+          "5"
+        ],
+        "pid": 28012,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1178094448,
+        "elapsed_seconds": 193.46389987500152,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-05-trial-10/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 1,
+      "name": "gate-06-trial-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-01",
+          "--gate",
+          "6"
+        ],
+        "pid": 28377,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1178684224,
+        "elapsed_seconds": 194.923580415998,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-01/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 2,
+      "name": "gate-06-trial-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-02",
+          "--gate",
+          "6"
+        ],
+        "pid": 28382,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1149832024,
+        "elapsed_seconds": 194.37950954199187,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-02/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 3,
+      "name": "gate-06-trial-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-03",
+          "--gate",
+          "6"
+        ],
+        "pid": 28699,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1171524464,
+        "elapsed_seconds": 194.92819891599356,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-03/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 4,
+      "name": "gate-06-trial-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-04",
+          "--gate",
+          "6"
+        ],
+        "pid": 29007,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1179208536,
+        "elapsed_seconds": 194.08457262499724,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-04/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 5,
+      "name": "gate-06-trial-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-05",
+          "--gate",
+          "6"
+        ],
+        "pid": 29008,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1170459480,
+        "elapsed_seconds": 196.17485333299555,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-05/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 6,
+      "name": "gate-06-trial-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-06",
+          "--gate",
+          "6"
+        ],
+        "pid": 29337,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1172736880,
+        "elapsed_seconds": 193.9487554160005,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-06/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 7,
+      "name": "gate-06-trial-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-07",
+          "--gate",
+          "6"
+        ],
+        "pid": 29631,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1173736328,
+        "elapsed_seconds": 193.82555929099908,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-07/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 8,
+      "name": "gate-06-trial-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-08",
+          "--gate",
+          "6"
+        ],
+        "pid": 29643,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1187711832,
+        "elapsed_seconds": 195.44942791700305,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-08/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 9,
+      "name": "gate-06-trial-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-09",
+          "--gate",
+          "6"
+        ],
+        "pid": 29953,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1165429592,
+        "elapsed_seconds": 194.42634141699818,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-09/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 1,
+      "name": "sum-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-01"
+        ],
+        "pid": 30254,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 879855704,
+        "elapsed_seconds": 125.86375095800031,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-01/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 6,
+      "trial": 10,
+      "name": "gate-06-trial-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-10",
+          "--gate",
+          "6"
+        ],
+        "pid": 30234,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1163332440,
+        "elapsed_seconds": 197.18452341599914,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-06-trial-10/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 2,
+      "name": "sum-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-02"
+        ],
+        "pid": 30575,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 866813992,
+        "elapsed_seconds": 127.48992995799927,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-02/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 3,
+      "name": "sum-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-03"
+        ],
+        "pid": 30659,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 883034224,
+        "elapsed_seconds": 126.4471857919998,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-03/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 4,
+      "name": "sum-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-04"
+        ],
+        "pid": 30866,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 864028712,
+        "elapsed_seconds": 126.41069179199985,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-04/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 5,
+      "name": "sum-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-05"
+        ],
+        "pid": 30962,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 879577152,
+        "elapsed_seconds": 128.0066584590095,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-05/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 6,
+      "name": "sum-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-06"
+        ],
+        "pid": 31040,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 877611024,
+        "elapsed_seconds": 126.37715962500079,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-06/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 7,
+      "name": "sum-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-07"
+        ],
+        "pid": 31235,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 878479400,
+        "elapsed_seconds": 126.9411584999907,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-07/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 8,
+      "name": "sum-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-08"
+        ],
+        "pid": 31334,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 875186264,
+        "elapsed_seconds": 126.50092495800345,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-08/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 9,
+      "name": "sum-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-09"
+        ],
+        "pid": 31406,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 862947392,
+        "elapsed_seconds": 127.08013641700381,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-09/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 0,
+      "trial": 1,
+      "name": "gate-00",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-00",
+          "--gate",
+          "0"
+        ],
+        "pid": 31919,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 482805560,
+        "elapsed_seconds": 35.61563449999085,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-00/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 1,
+      "trial": 1,
+      "name": "gate-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-01",
+          "--gate",
+          "1"
+        ],
+        "pid": 32024,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1228982720,
+        "elapsed_seconds": 65.88974437500292,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-01/driver.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "gate": null,
+      "trial": 10,
+      "name": "sum-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "sum",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-10"
+        ],
+        "pid": 31789,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 878708800,
+        "elapsed_seconds": 126.39337045799766,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/sum-10/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 3,
+      "trial": 1,
+      "name": "gate-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-03",
+          "--gate",
+          "3"
+        ],
+        "pid": 32314,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1194938064,
+        "elapsed_seconds": 42.57735791700543,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-03/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 4,
+      "trial": 1,
+      "name": "gate-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-04",
+          "--gate",
+          "4"
+        ],
+        "pid": 32321,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1193512680,
+        "elapsed_seconds": 42.577668583006016,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-04/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 8,
+      "trial": 1,
+      "name": "gate-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-08",
+          "--gate",
+          "8"
+        ],
+        "pid": 32455,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4702425912,
+        "elapsed_seconds": 14.475577124991105,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-08/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 9,
+      "trial": 1,
+      "name": "gate-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-09",
+          "--gate",
+          "9"
+        ],
+        "pid": 32460,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4703802120,
+        "elapsed_seconds": 14.466608791000908,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-09/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 10,
+      "trial": 1,
+      "name": "gate-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-10",
+          "--gate",
+          "10"
+        ],
+        "pid": 32517,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4704310096,
+        "elapsed_seconds": 14.480682167006307,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-10/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 11,
+      "trial": 1,
+      "name": "gate-11",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-11",
+          "--gate",
+          "11"
+        ],
+        "pid": 32523,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4417294968,
+        "elapsed_seconds": 13.944923292001477,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-11/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 12,
+      "trial": 1,
+      "name": "gate-12",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-12",
+          "--gate",
+          "12"
+        ],
+        "pid": 32588,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4892578760,
+        "elapsed_seconds": 15.60311087500304,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-12/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 13,
+      "trial": 1,
+      "name": "gate-13",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-13",
+          "--gate",
+          "13"
+        ],
+        "pid": 32589,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4892906464,
+        "elapsed_seconds": 16.611935499997344,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-13/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 14,
+      "trial": 1,
+      "name": "gate-14",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-14",
+          "--gate",
+          "14"
+        ],
+        "pid": 32675,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 4810068960,
+        "elapsed_seconds": 106.64340524999716,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-14/driver.log"
+      }
+    },
+    {
+      "kind": "gate",
+      "gate": 2,
+      "trial": 1,
+      "name": "gate-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "gate",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-02",
+          "--gate",
+          "2"
+        ],
+        "pid": 32072,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2223083096,
+        "elapsed_seconds": 328.8028011669958,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/gate-02/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 1,
+      "name": "mm-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-01"
+        ],
+        "pid": 32676,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2165443584,
+        "elapsed_seconds": 557.5521248330042,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-01/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 2,
+      "name": "mm-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-02"
+        ],
+        "pid": 33075,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2134658072,
+        "elapsed_seconds": 543.9256805420009,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-02/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 3,
+      "name": "mm-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-03"
+        ],
+        "pid": 33332,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2234092616,
+        "elapsed_seconds": 552.1740654580062,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-03/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 4,
+      "name": "mm-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-04"
+        ],
+        "pid": 34539,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2216348840,
+        "elapsed_seconds": 553.4097363329929,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-04/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 5,
+      "name": "mm-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-05"
+        ],
+        "pid": 34809,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2186366048,
+        "elapsed_seconds": 549.1651347919978,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-05/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 6,
+      "name": "mm-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-06"
+        ],
+        "pid": 35086,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2181041224,
+        "elapsed_seconds": 544.3619671670021,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-06/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 7,
+      "name": "mm-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-07"
+        ],
+        "pid": 36234,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2176191632,
+        "elapsed_seconds": 547.0359229580063,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-07/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 8,
+      "name": "mm-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-08"
+        ],
+        "pid": 36524,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2199456840,
+        "elapsed_seconds": 548.6891933330044,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-08/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 9,
+      "name": "mm-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-09"
+        ],
+        "pid": 36773,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2297629744,
+        "elapsed_seconds": 539.9146193750057,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-09/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "gate": null,
+      "trial": 10,
+      "name": "mm-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measure.py",
+          "child",
+          "--kind",
+          "mm",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-10"
+        ],
+        "pid": 37946,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2209451032,
+        "elapsed_seconds": 483.6066101250035,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/measurements/mm-10/driver.log"
+      }
+    }
+  ],
+  "pending": 0,
+  "seconds": 3980.7429974159895,
+  "active": []
+}

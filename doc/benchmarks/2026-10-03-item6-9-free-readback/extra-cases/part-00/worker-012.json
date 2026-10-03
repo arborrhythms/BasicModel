@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space"
+  ],
+  "completed": [
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space"
+  ],
+  "slow_selected": [
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.619500874978257,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

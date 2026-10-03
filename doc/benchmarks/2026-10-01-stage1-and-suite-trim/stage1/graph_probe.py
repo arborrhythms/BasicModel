@@ -1,0 +1,57 @@
+"""Capture the first language graph, then stop before executing it or training."""
+import json
+import math
+import os
+from pathlib import Path
+import runpy
+import sys
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[3]
+sys.path.insert(0,str(ROOT/'test'))
+import bounded_tests as bounded
+
+if len(sys.argv) > 1:
+    out = Path(sys.argv[1])
+    os.environ.update(BASICMODEL_DEVICE='cpu', MODEL_COMPILE='eager')
+    import torch
+    from torch._dynamo.backends import registry
+    original = registry.lookup_backend('eager')
+    serial = 0
+    def capture(gm, examples, **kwargs):
+        global serial
+        serial += 1
+        def tensors(value):
+            if isinstance(value, torch.Tensor):
+                shape=[d if isinstance(d,int) else str(d) for d in value.shape]
+                hints=[d if isinstance(d,int) else d.node.hint for d in value.shape]
+                size=math.prod(hints)*value.element_size() if all(isinstance(d,int) for d in hints) else None
+                return [dict(shape=shape,hints=hints,dtype=str(value.dtype),bytes=size)]
+            if isinstance(value,(list,tuple)):
+                return [a for x in value for a in tensors(x)]
+            return []
+        nodes=[dict(name=n.name,op=n.op,target=str(n.target),
+                    values=tensors(n.meta.get('example_value',n.meta.get('val'))),
+                    stack=n.meta.get('stack_trace','')) for n in gm.graph.nodes]
+        is_language=any('stage_cs_lang' in n['stack'] for n in nodes)
+        path=out/f'graph-{serial:03}'
+        path.with_suffix('.json').write_text(json.dumps(dict(language=is_language,nodes=nodes),indent=2)+'\n')
+        path.with_suffix('.py.txt').write_text(gm.code)
+        if is_language:
+            print('Captured first language graph; intentionally stopping before execution.',flush=True)
+            raise SystemExit(73)
+        return original(gm, examples, **kwargs)
+    registry._COMPILER_FNS['eager']=capture
+    sys.argv=[str(ROOT/'test/objective_conflicts_probe.py'),'--config',
+              'BasicModel_answers_tied_benchmark','--arm','step5a','--output',str(out)]
+    runpy.run_path(sys.argv[0],run_name='__main__')
+else:
+    out=HERE/'graph-diagnostic';out.mkdir(exist_ok=False)
+    source=bounded.source_snapshot(ROOT)
+    env=bounded.worker_environment(ROOT);env.pop('BASIC_SEED',None)
+    env.update(BASICMODEL_DEVICE='cpu',RUN_SLOW='1')
+    result=bounded.run_guarded([sys.executable,str(__file__),str(out)],cwd=ROOT,env=env,
+        log_path=out/'run.log',memory_bytes=12*bounded.GIB,timeout=1800)
+    bounded.write_json(out/'process.json',result)
+    assert source==bounded.source_snapshot(ROOT)
+    print(json.dumps(result))

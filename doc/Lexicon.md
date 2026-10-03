@@ -135,6 +135,6 @@ backward compatibility, see
 - [Spaces.md](Spaces.md) --- full per-space geometry discussion, including
   the contrast between PartSpace's projective Lexicon and
   ConceptualSpace's unit-direction codebook.
-- [test/tools/bench_codebook_lookup.py](../test/tools/bench_codebook_lookup.py) ---
-  performance comparison of the broadcast, matmul, pole-aligned, and
-  chunked-wrap forms.
+- The historical `test/tools/bench_codebook_lookup.py` compared broadcast,
+  matmul, pole-aligned and chunked-wrap forms. It was retired with its
+  configuration in item 6.9 (§15.6); its source remains at `d679df2b`.

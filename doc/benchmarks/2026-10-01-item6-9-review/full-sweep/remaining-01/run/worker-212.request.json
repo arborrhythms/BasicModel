@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-212.recycle.json"
+}

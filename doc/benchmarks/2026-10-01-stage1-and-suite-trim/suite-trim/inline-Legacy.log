@@ -1,0 +1,9 @@
+........../Users/arogers/github/WikiOracle/basicmodel/bin/Legacy.py:490: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+  plt.show(block=False)
+./Users/arogers/github/WikiOracle/basicmodel/bin/Legacy.py:767: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+  plt.show(block=False)
+........
+----------------------------------------------------------------------
+Ran 19 tests in 0.067s
+
+OK

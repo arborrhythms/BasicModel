@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam"
+  ],
+  "pid": 23375,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1191233408,
+  "elapsed_seconds": 6.959995291006635,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/recent-answer-probe-before.log"
+}

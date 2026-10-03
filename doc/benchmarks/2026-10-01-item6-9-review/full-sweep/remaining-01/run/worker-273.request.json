@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-273.recycle.json"
+}

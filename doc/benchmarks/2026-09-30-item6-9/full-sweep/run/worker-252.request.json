@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_discourse_space.py::TestBackCompatShims::test_predictive_loss_alias_is_no_op"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-252.recycle.json"
+}

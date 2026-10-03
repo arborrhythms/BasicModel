@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_chain_trace_rendered"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-238.recycle.json"
+}

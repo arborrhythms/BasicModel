@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

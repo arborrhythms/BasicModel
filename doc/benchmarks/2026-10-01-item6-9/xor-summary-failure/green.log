@@ -1,0 +1,2 @@
+expected: class 1/4
+actual: | test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy | failed; peak 0.59 GiB | class 1/4; MSE 0.245640850716; answers [0.5009260773658752, 0.592328667640686, 0.4954391419887543, 0.5575472116470337] |

@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point"
+  ],
+  "completed": [
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020082909977645613,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

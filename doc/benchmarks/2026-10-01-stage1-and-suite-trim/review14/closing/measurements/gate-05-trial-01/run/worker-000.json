@@ -1,0 +1,26 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "completed": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "slow_selected": [
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 179.7813485420047,
+      "message": "test/test_explicit_dimensions.py:275: in test_xor_class_accuracy\n    self.assertLess(\nE   AssertionError: 0.06813022494316101 not less than 0.05 : XOR_grammar requires MSE <0.05, got 0.06813022494316101: [0.2899348735809326, 0.7822690010070801, 0.7248805165290833, 0.25565826892852783]",
+      "stdout": ".0491, reconstruction=0.0139\r\nEpoch [384/400]\r\nbatch = 0 (\u0394=0.269s, 100.00%)\r\nTraining throughput: 1 batches in 0.268s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0492, reconstruction=0.0141\r\nEpoch [385/400]\r\nbatch = 0 (\u0394=0.255s, 100.00%)\r\nTraining throughput: 1 batches in 0.255s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0370, reconstruction=0.0142\r\nEpoch [386/400]\r\nbatch = 0 (\u0394=0.305s, 100.00%)\r\nTraining throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0486, reconstruction=0.0144\r\nEpoch [387/400]\r\nbatch = 0 (\u0394=0.255s, 100.00%)\r\nTraining throughput: 1 batches in 0.255s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0482, reconstruction=0.0145\r\nEpoch [388/400]\r\nbatch = 0 (\u0394=0.262s, 100.00%)\r\nTraining throughput: 1 batches in 0.261s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0483, reconstruction=0.0145\r\nEpoch [389/400]\r\nbatch = 0 (\u0394=0.260s, 100.00%)\r\nTraining throughput: 1 batches in 0.259s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0489, reconstruction=0.0142\r\nEpoch [390/400]\r\nbatch = 0 (\u0394=0.255s, 100.00%)\r\nTraining throughput: 1 batches in 0.255s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0495, reconstruction=0.0137\r\nEpoch [391/400]\r\nbatch = 0 (\u0394=0.260s, 100.00%)\r\nTraining throughput: 1 batches in 0.259s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0500, reconstruction=0.0132\r\nEpoch [392/400]\r\nbatch = 0 (\u0394=0.257s, 100.00%)\r\nTraining throughput: 1 batches in 0.257s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0498, reconstruction=0.0128\r\nEpoch [393/400]\r\nbatch = 0 (\u0394=0.256s, 100.00%)\r\nTraining throughput: 1 batches in 0.256s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0498, reconstruction=0.0122\r\nEpoch [394/400]\r\nbatch = 0 (\u0394=0.256s, 100.00%)\r\nTraining throughput: 1 batches in 0.255s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0501, reconstruction=0.0117\r\nEpoch [395/400]\r\nbatch = 0 (\u0394=0.255s, 100.00%)\r\nTraining throughput: 1 batches in 0.254s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0504, reconstruction=0.0115\r\nEpoch [396/400]\r\nbatch = 0 (\u0394=0.256s, 100.00%)\r\nTraining throughput: 1 batches in 0.256s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0499, reconstruction=0.0112\r\nEpoch [397/400]\r\nbatch = 0 (\u0394=0.265s, 100.00%)\r\nTraining throughput: 1 batches in 0.265s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0491, reconstruction=0.0107\r\nEpoch [398/400]\r\nbatch = 0 (\u0394=0.252s, 100.00%)\r\nTraining throughput: 1 batches in 0.251s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0483, reconstruction=0.0104\r\nEpoch [399/400]\r\nbatch = 0 (\u0394=0.258s, 100.00%)\r\nTraining throughput: 1 batches in 0.258s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0475, reconstruction=0.0102\r\nEpoch [400/400]\r\nbatch = 0 (\u0394=0.253s, 100.00%)\r\nTraining throughput: 1 batches in 0.252s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nTrain Loss: output=0.0475, reconstruction=0.0100\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\nbatch = 0 (\u0394=25.828s, 100.00%)\r\nTraining throughput: 1 batches in 25.770s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='hello world' -> reconstructed='hello ' label=0.0000 predicted=0.2899 MISMATCH\r\n  row[1] input='hello there' -> reconstructed='hello ' label=1.0000 predicted=0.7823 MISMATCH\r\n  row[2] input='loving world' -> reconstructed='loving ' label=1.0000 predicted=0.7249 MISMATCH\r\n  row[3] input='loving there' -> reconstructed='loving ' label=0.0000 predicted=0.2557 MISMATCH\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

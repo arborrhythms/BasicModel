@@ -1,0 +1,22 @@
+...F....                                                                 [100%]
+=================================== FAILURES ===================================
+_____________ test_reconstruction_and_output_are_order_independent _____________
+test/test_output_synthesis.py:144: in test_reconstruction_and_output_are_order_independent
+    assert torch.allclose(rev_first, rev_after)     # same understanding, either order
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert False
+E    +  where False = <built-in method allclose of type object at 0x10a3093a0>(tensor([[[0.0000e+00, 0.0000e+00, 0.0000e+00, 1.7369e-02, 2.0452e-03,\n          1.1318e-03, 9.8017e-02, 9.9518e-01, 1.....0364e-03, 1.8304e-01, 9.8311e-01, 3.5990e-01, 9.3299e-01,\n          0.0000e+00, 1.0000e+00, 0.0000e+00, 1.0000e+00]]]), tensor([[[0.0000e+00, 0.0000e+00, 0.0000e+00, 1.7369e-02, 2.0452e-03,\n          1.1318e-03, 9.8017e-02, 9.9518e-01, 1.....4105e-02, 1.8304e-01, 9.8311e-01, 3.5990e-01, 9.3299e-01,\n          0.0000e+00, 1.0000e+00, 0.0000e+00, 1.0000e+00]]]))
+E    +    where <built-in method allclose of type object at 0x10a3093a0> = torch.allclose
+=============================== warnings summary ===============================
+test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7565: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent
+1 failed, 7 passed, 2 warnings in 3.06s

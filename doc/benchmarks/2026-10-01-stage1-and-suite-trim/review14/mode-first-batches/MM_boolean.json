@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_boolean.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.627587750001112,
+  "batch": 16,
+  "scope": "understanding",
+  "reconstruct_in_loop": true,
+  "training_seconds": 1.2939977920032106,
+  "output_loss": 0.16680142283439636,
+  "reconstruction_loss": 1.1324235200881958,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": 0,
+  "total_seconds": 2.9220314169942867
+}

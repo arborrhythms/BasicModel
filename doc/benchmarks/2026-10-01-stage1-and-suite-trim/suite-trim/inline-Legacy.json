@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/bin/Legacy.py"
+  ],
+  "pid": 81458,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 468681904,
+  "elapsed_seconds": 3.588167500005511,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/inline-Legacy.log"
+}

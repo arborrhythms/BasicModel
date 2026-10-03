@@ -124,17 +124,20 @@ def test_byte_fidelity_is_zero_on_the_row_and_positive_off_it(tmp_path):
     reference = m._tensor_pushed_ideas
     B, W = int(reference.shape[0]), int(reference.shape[1])
     ready, bytes_bwp, valid_bwp = m._byte_tables(B, W)
-    snap, bank_n, bank_bytes, bank_valid = m._snapshot_tables(reference)
+    m._prime_sentence_symbols(0)
+    bank = m._sentence_primed_bank
+    snap = bank is not None
+    bank_n, bank_bytes, bank_valid = bank.codes, bank.bytes, bank.byte_valid
     assert ready and snap and int(bank_n.shape[1]) >= W
     n_active = int(active[0].sum())
     own, swapped = [], []
     for w in range(n_active):
         idx = torch.tensor(w)
         own.append(float(m._byte_word_cost(
-            reference[:, w], idx, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True)[0]))
+            reference[:, w], idx, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True, priming=bank.weights)[0]))
         other = (w + 3) % n_active
         swapped.append(float(m._byte_word_cost(
-            reference[:, other], idx, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True)[0]))
+            reference[:, other], idx, bank_n, bank_bytes, bank_valid, bytes_bwp, valid_bwp, True, priming=bank.weights)[0]))
     assert max(own) < 1e-2
     assert min(swapped) > max(own) + 0.5
     m.End(); m.symbolSpace.soft_reset()
@@ -253,7 +256,8 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
                 candidate, torch.full_like(state[1], 2),
                 torch.ones_like(state[1]), torch.zeros_like(state[1]),
                 retain, candidate.new_ones(state[1].shape),
-                torch.full_like(state[1], operation.r_reduce), retain)
+                torch.full_like(state[1], operation.r_reduce), retain,
+                torch.zeros_like(retain))
             return LanguageOperationChoice(*(torch.where(
                 retain[:, None] if a.ndim == 2 else retain, a, b)
                 for a, b in zip(unary, choice)))
@@ -284,6 +288,26 @@ def test_packed_trace_records_pre_fold_operand_rows_at_every_binary(tmp_path, mo
         m.symbolSpace.soft_reset()
 
 
+def _compiled_record_reconstruction(model, records):
+    """Compile the current numerical boundary with identical saved evidence.
+
+    The old test reread the input, promoted new percepts, and bypassed the
+    eager sentence boundary in the second arm. It did not compare one state.
+    The host sentence/optimizer boundary is now outside the compiled brick.
+    """
+    torch._dynamo.reset()
+    torch._dynamo.utils.counters.clear()
+    def reconstruct(record):
+        return model._reconstruct_sentences(record.root, record.word_values,
+            record.roots, record.depths, record.end_slots, record.end_depth,
+            record.sentence, understanding=record, keep_ideas=True)
+    compiled = torch.compile(reconstruct, backend='eager', fullgraph=True, dynamic=False)
+    with torch.no_grad():
+        results = [compiled(record) for record in records]
+    assert int(torch._dynamo.utils.counters['stats']['unique_graphs']) == 1
+    return torch.stack([r[0] for r in results]).sum(0), torch.stack([r[4] for r in results]).sum(0)
+
+
 @pytest.mark.slow
 def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
     """Requirement 3: one traversal per completed sentence; packed rows keep
@@ -301,7 +325,7 @@ def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
     # Sampling a different path is not a reconstruction parity failure.
     _select_completed_binary_path(m)
     _stage_packed(m, [["12 plus 1", "3 plus 4"], ["ab cd"]])
-    with torch.no_grad():
+    with torch.no_grad(), m._sentence_run():
         out = m._forward_with_compiled_sentence_state(None)
     m._publish_compiled_sentence_state(out)
     isp = m.inputSpace
@@ -317,21 +341,11 @@ def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
     # Row 1 has one sentence: its second slot carries no cost.
     assert float(costs[1, 1]) == 0.0
     eager_ideas, eager_costs = m._recon_ideas.clone(), costs.clone()
-    m.End(); m.symbolSpace.soft_reset()
-    # The outer sentence loop nests inside the compiled sentence graph.
-    torch._dynamo.reset()
-    torch._dynamo.utils.counters.clear()
-    compiled = torch.compile(
-        lambda _u: m._forward_with_compiled_sentence_state(None),
-        backend="eager", fullgraph=True)
+    records = list(m._sentence_understandings.values())
     try:
-        _stage_packed(m, [["12 plus 1", "3 plus 4"], ["ab cd"]])
-        with torch.no_grad():
-            out = compiled(None)
-        m._publish_compiled_sentence_state(out)
-        assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
-        assert torch.allclose(m._recon_sentence_costs, eager_costs, atol=1e-4)
-        assert torch.allclose(m._recon_ideas, eager_ideas, atol=1e-4)
+        compiled_ideas, compiled_costs = _compiled_record_reconstruction(m, records)
+        assert torch.allclose(compiled_costs, eager_costs, atol=1e-4)
+        assert torch.allclose(compiled_ideas, eager_ideas, atol=1e-4)
     finally:
         torch._dynamo.reset()
         m.End(); m.symbolSpace.soft_reset()
@@ -340,19 +354,14 @@ def test_packed_rows_reconstruct_each_sentence_separately(tmp_path):
 @pytest.mark.slow
 def test_traversal_compiles_into_the_one_sentence_graph(tmp_path):
     m = _traversal_model(tmp_path)
-    eager = _run(m, ["12 plus 1", "3 plus 4"])
+    with m._sentence_run():
+        _run(m, ["12 plus 1", "3 plus 4"])
     eager_ideas, eager_cost = m._recon_ideas.clone(), m._recon_cost.clone()
-    m.End(); m.symbolSpace.soft_reset()
-    torch._dynamo.reset()
-    torch._dynamo.utils.counters.clear()
-    compiled = torch.compile(
-        lambda _u: m._forward_with_compiled_sentence_state(None),
-        backend="eager", fullgraph=True)
+    records = list(m._sentence_understandings.values())
     try:
-        _run(m, ["12 plus 1", "3 plus 4"], fn=compiled)
-        assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
-        assert torch.allclose(m._recon_cost, eager_cost, atol=1e-4)
-        assert torch.allclose(m._recon_ideas, eager_ideas, atol=1e-4)
+        compiled_ideas, compiled_costs = _compiled_record_reconstruction(m, records)
+        assert torch.allclose(compiled_costs.sum(-1), eager_cost, atol=1e-4)
+        assert torch.allclose(compiled_ideas, eager_ideas, atol=1e-4)
     finally:
         torch._dynamo.reset()
         m.End(); m.symbolSpace.soft_reset()
@@ -521,15 +530,17 @@ def test_closing_chain_of_chunks_unwinds_to_the_words(tmp_path):
     end = torch.cat((S.unsqueeze(1), torch.zeros(B, 2, D)), dim=1)
     m._recon_keep_ideas = True
     rec, idea, byte_c, trunc, _per = m._reconstruct_sentences(
-        S, reference, roots, torch.ones(B, 1, dtype=torch.long), end, torch.ones(B, dtype=torch.long))
+        S, reference, roots, torch.ones(B, 1, dtype=torch.long), end, torch.ones(B, dtype=torch.long),
+        candidate_basis=(torch.stack((a, b, c, b+c), 1), torch.ones(B, 4, dtype=torch.bool)))
     assert not bool(trunc.any())
     for w, want in enumerate((a, b, c)):
         assert torch.allclose(rec[:, w], want, atol=1e-4), (w, float((rec[:, w] - want).abs().max()))
     assert float(idea.max()) < 1e-6
     # Compound operand (the reviewer's (a+b)+c): a per-word fold joined a
     # and b when b was pushed, then one closing joined the composite (left)
-    # with c (right).  The recorded operand rows route the residuals: the
-    # closing's known word is on the right, the per-word fold's on the right.
+    # with c (right). Each synthetic bank contains its actual intermediate
+    # compound. References are not inverse operands; the free search must
+    # find both constituents in this bank.
     rows = torch.arange(3).reshape(1, 3).expand(B, 3).clone() + 100     # symbol rows a, b, c
     object.__setattr__(isp, "_ar_word_concept_rows", torch.full((B, W), -1, dtype=torch.long))
     object.__setattr__(isp, "_ar_word_object_rows", torch.full((B, W), -1, dtype=torch.long))
@@ -546,7 +557,8 @@ def test_closing_chain_of_chunks_unwinds_to_the_words(tmp_path):
     S2 = (a + b) + c
     end2 = torch.cat((S2.unsqueeze(1), torch.zeros(B, 2, D)), dim=1)
     rec2, idea2, _bc, trunc2, _p = m._reconstruct_sentences(
-        S2, reference, roots, torch.ones(B, 1, dtype=torch.long), end2, torch.ones(B, dtype=torch.long))
+        S2, reference, roots, torch.ones(B, 1, dtype=torch.long), end2, torch.ones(B, dtype=torch.long),
+        candidate_basis=(torch.stack((a, b, a+b, c), 1), torch.ones(B, 4, dtype=torch.bool)))
     assert not bool(trunc2.any())
     for w, want in enumerate((a, b, c)):
         assert torch.allclose(rec2[:, w], want, atol=1e-4), ("compound", w, float((rec2[:, w] - want).abs().max()))

@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_marker_replay_canonical.py::test_opaque_marker_id_never_interpolated"
+  ],
+  "completed": [
+    "test/test_marker_replay_canonical.py::test_opaque_marker_id_never_interpolated"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_marker_replay_canonical.py::test_opaque_marker_id_never_interpolated",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004196660011075437,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

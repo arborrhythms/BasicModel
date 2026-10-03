@@ -1,0 +1,19 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-09-30-item6-9/native_parity.py",
+    "--mode",
+    "packed",
+    "--checkpoint",
+    "output/item69-parity-after.ckpt",
+    "--create",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/parity-after-packed/measurement.json"
+  ],
+  "pid": 65929,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 404554904,
+  "elapsed_seconds": 4.384267082903534,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/parity-after-packed/driver.log"
+}

@@ -19,7 +19,7 @@ space[i+1].nInputDim`` directly comparable for handoff validation.
 parts, wholes and symbol occurrences. Its periods derive from the total
 registry capacity; the shared `.when` ladder derives from LTM capacity.
 The endpoint-sum bracket is
-retired from the muxed band (the analyzer's EndpointSumWhere keeps it).
+retired from the muxed band; the standalone endpoint-sum analyzer is retired too.
 
 The TWO principled exceptions stay ``(0, 0)``: there is no positional
 encoding BEFORE the input or AFTER the output. OutputSpace (the terminal

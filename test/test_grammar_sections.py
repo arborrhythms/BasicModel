@@ -70,8 +70,6 @@ def test_old_wholespace_section_no_longer_loads_symbolic_rules():
                    for r in G.rules_upward)
 
 
-def test_normalization_layer_removed():
-    assert not hasattr(L, '_normalize_grammar_dict')
 
 
 def test_legacy_flat_form_still_works():

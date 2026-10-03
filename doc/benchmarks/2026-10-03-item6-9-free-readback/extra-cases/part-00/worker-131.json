@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state"
+  ],
+  "completed": [
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state"
+  ],
+  "slow_selected": [
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 13.207852416991955,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

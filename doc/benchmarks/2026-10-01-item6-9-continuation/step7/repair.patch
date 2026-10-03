@@ -1,0 +1,428 @@
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -2435,6 +2435,7 @@
+ class NotLayer(GrammarLayer):
+     """Self-inverse negation of a concept code, or an explicit pole pair."""
+     rule_name  = "not"
++    inverse_rule_name = "not"
+     arity      = 1
+     invertible = True
+     space_role       = 'CS'
+@@ -2464,6 +2465,7 @@
+ class NonLayer(GrammarLayer):
+     """Self-inverse ``non(S)``: complement each leading bivector pole."""
+     rule_name  = "non"
++    inverse_rule_name = "non"
+     arity      = 1
+     invertible = True
+     space_role       = 'CS'
+@@ -7393,6 +7395,11 @@
+         self.ops = nn.ModuleList(ops)
+         self.unary_ops = nn.ModuleList(unary_ops)
+         self.r_reduce, self.r_apply = len(self.ops), len(self.unary_ops)
++        declared = tuple(getattr(op, 'gl', op) for op in self.unary_ops)
++        self._unary_inverse_pairs = tuple(tuple(
++            getattr(candidate, 'inverse_rule_name', None) is not None
++            and getattr(candidate, 'inverse_rule_name', None) == getattr(previous, 'rule_name', None)
++            for candidate in declared) for previous in declared)
+         require_opaque_mlp((*self.ops, *self.unary_ops), chooser)
+         self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
+         self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
+@@ -7425,7 +7432,8 @@
+     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
+                 masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+                 grammar_context=None, replay_action=None, allowance=None,
+-                rounds_left=None, load_depth=None, reference_data=None):
++                rounds_left=None, load_depth=None, reference_data=None,
++                previous_unary=None):
+         B, N, D = x.shape
+         if N < 1:
+             raise ValueError("compose needs a nonempty static slab")
+@@ -7477,6 +7485,11 @@
+             unary_scores = unary_scores.masked_fill(~reference_data['unary_valid'], -torch.inf)
+         binary_scores = binary_scores.masked_fill(~live[:, 1:, None], -torch.inf)
+         unary_scores = unary_scores.masked_fill(~live[..., None] | deadline[:, None, None], -torch.inf)
++        if previous_unary is not None and self.r_apply:
++            inverse = torch.tensor(self._unary_inverse_pairs, device=x.device, dtype=torch.bool)
++            excluded = inverse[previous_unary.clamp(0, self.r_apply - 1)]
++            excluded = excluded & (previous_unary >= 0)[..., None]
++            unary_scores = unary_scores.masked_fill(excluded, -torch.inf)
+         stop = (stop_scores.squeeze(-1) * live).sum(-1) / depth.clamp_min(1)
+         limit = torch.as_tensor(slots, device=x.device)
+         # In a small STM a relative row can fit while the next-word slot is
+@@ -7493,6 +7506,10 @@
+             ids = torch.arange(logits.shape[-1], device=x.device)[None, :]
+             selection_logits = selection_logits.masked_fill(
+                 ids == masked_action[:, None], -torch.inf)
++            # A different earlier sampled choice can leave this round only
++            # one legal operation. Do not manufacture an illegal alternative.
++            selection_logits = torch.where(torch.isfinite(selection_logits).any(-1, keepdim=True),
++                                            selection_logits, logits)
+         flags = (self.structural_ops * (N - 1)
+                  + self.unary_structural_ops * N + (True,))
+         action = structural_argmax(selection_logits, flags)
+@@ -7541,6 +7558,12 @@
+                        stopped=active & (kind == 0), valid=active,
+                        binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, self.r_reduce),
+                        unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, self.r_apply))
++        history = (torch.full((B, N), -1, device=x.device, dtype=torch.long)
++                   if previous_unary is None else previous_unary)
++        history = history.gather(1, source.clamp_max(N - 1))
++        history = torch.where(selected, torch.where(is_unary, local_op, -1)[:, None], history)
++        routing['previous_unary'] = torch.where(positions < next_depth[:, None], history, -1)
++        routing['alternatives'] = active & (torch.isfinite(logits).sum(-1) > 1)
+         if reference_data is not None:
+             b_operands = torch.stack((reference_data['left'], reference_data['right']), -2)
+             u_operands = torch.stack(
+@@ -7558,15 +7581,24 @@
+         return hard, path, routing
+ 
+     def derive(self, x, *, slots=1, rounds, depth=None, exploit=None, greedy=False,
+-               cat_ctx=None, what_ctx=None, grammar_context=None):
++               cat_ctx=None, what_ctx=None, grammar_context=None, allow_identical=False):
+         B, N, _ = x.shape
+         depth = (torch.full((B,), N, dtype=torch.long, device=x.device)
+                  if depth is None else depth)
+         active = depth > 0
+         used = torch.zeros_like(depth)
+         actions, traces = [], []
+-        forced = (torch.floor(torch.rand(B, device=x.device) * exploit['used']).long()
+-                  if exploit is not None else torch.full_like(depth, -1))
++        history = torch.full((B, N), -1, device=x.device, dtype=torch.long)
++        if exploit is not None:
++            eligible = exploit['alternatives']
++            if not allow_identical:
++                torch._assert_async(eligible.any(-1).all(),
++                    'compose has no legal alternative to this derivation')
++            rank = (torch.rand(B, device=x.device) * eligible.sum(-1)).long()
++            selected = eligible & (eligible.long().cumsum(-1) == rank[:, None] + 1)
++            forced = torch.where(eligible.any(-1), selected.long().argmax(-1), -1)
++        else:
++            forced = torch.full_like(depth, -1)
+         for i in range(int(rounds)):
+             mask = (torch.where(forced == i, exploit['actions'][:, i], -1)
+                     if exploit is not None else None)
+@@ -7576,22 +7608,25 @@
+                 x, depth=depth, slots=slots, active=active,
+                 sample=not greedy, masked_action=mask, replay_action=replay,
+                 cat_ctx=cat_ctx if i == 0 else None, what_ctx=what_ctx,
+-                grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i)
++                grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i,
++                previous_unary=history)
+             actions.append(torch.where(active & route['valid'], route['action'], -1))
+             used = used + (active & route['valid']).long()
+             depth = route['depth']
++            history = route['previous_unary']
+             active = active & route['valid'] & ~route['stopped']
+             traces.append(route)
+         return dict(value=x, depth=depth, actions=torch.stack(actions, 1), used=used,
+                     complete=depth <= torch.as_tensor(slots, device=x.device),
+-                    forced_round=forced, traces=traces)
++                    forced_round=forced, traces=traces,
++                    alternatives=torch.stack([route['alternatives'] for route in traces], 1))
+ 
+     def derive_pair(self, x, *, slots=1, rounds, depth=None, **kwargs):
+         exploit = self.derive(x, slots=slots, rounds=rounds, depth=depth, **kwargs)
+         if not self.training:
+             return exploit, None
+         explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+-                              exploit=exploit, **kwargs)
++                              exploit=exploit, allow_identical=True, **kwargs)
+         explore['different'] = (explore['actions'] != exploit['actions']).any(-1)
+         return exploit, explore
+ 
+@@ -8393,6 +8428,7 @@
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
++        self._choice_explorable = None
+         self._unary_rule_map = None
+         self._binary_rule_map = None
+         self._forward_losses = None
+@@ -8417,6 +8453,7 @@
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
++        self._choice_explorable = None
+         self._forward_losses = None
+         self._forward_loss_mask = None
+ 
+@@ -8440,6 +8477,7 @@
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
++        self._choice_explorable = None
+         self._unary_rule_map = None
+         self._binary_rule_map = None
+         self._forward_losses = None
+@@ -8518,6 +8556,8 @@
+             self._choice_rule_ids[s:e] = -1
+             self._choice_arities[s:e] = 0
+             self._choice_attempted[s:e] = False
++            if torch.is_tensor(self._choice_explorable):
++                self._choice_explorable[s:e] = False
+             for name in ("_choice_left_rows", "_choice_right_rows", "_choice_positions", "_choice_actions"):
+                 slab = getattr(self, name, None)
+                 if torch.is_tensor(slab) and int(slab.shape[0]) >= e:
+@@ -8644,6 +8684,7 @@
+         self._choice_positions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+         self._choice_actions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+         self._choice_attempted = torch.zeros((batch, max_steps), dtype=torch.bool, device=device)
++        self._choice_explorable = torch.zeros_like(self._choice_attempted)
+         self._choice_arities = torch.zeros(
+             batch, max_steps, dtype=torch.int8, device=device)
+         self._choice_mask = torch.zeros(
+@@ -8704,6 +8745,7 @@
+         self._choice_positions[:, slot].copy_(torch.where(active,
+             torch.as_tensor(position, device=active.device), -1))
+         self._choice_attempted[:, slot].copy_(active)
++        self._choice_explorable[:, slot].copy_(active)
+         for name, value in (("_choice_left_rows", left_row),
+                             ("_choice_right_rows", right_row)):
+             slab = getattr(self, name, None)
+@@ -13490,7 +13532,8 @@
+ 
+     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
+                          sample=True, masked_action=None, replay_action=None,
+-                         allowance=None, rounds_left=None, reference_scope=None):
++                         allowance=None, rounds_left=None, reference_scope=None,
++                         previous_unary=None):
+         """The shared compose layer with the two newest occupied STM slots."""
+         buffer, depth = state[:2]
+         B, K, D = buffer.shape
+@@ -13519,19 +13562,38 @@
+             active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
+             replay_action=replay_action, allowance=slots if allowance is None else allowance,
+             rounds_left=rounds_left, load_depth=depth,
++            previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
+             op_prior=op_prior, grammar_context=self._structural_context(
+                 phase='compose', input_stream=buffer), reference_data=references)
+         position = (window_depth - 1 - route['position']).clamp_min(0)
+         choice = LanguageOperationChoice(
+             route['candidate'], route['kind'], position, route['op'],
+             route['valid'] & (route['kind'] != 0), route['probability'],
+-            route['action'], route['valid'])
++            route['action'], route['valid'], route['alternatives'])
+         if reference_scope is None:
+             return choice
+         selected = buffer.gather(1, position[:, None, None].expand(B, 1, D))[:, 0]
+         originals = torch.stack((torch.where((choice.kind == 1)[:, None], buffer[:, min(1, K - 1)], selected),
+                                  torch.where((choice.kind == 1)[:, None], buffer[:, 0], torch.zeros_like(selected))), 1)
+         return choice, route['refs'], route['relations'], route['operands'], (route['operands'] - originals).detach()
++
++    @staticmethod
++    def push_unary_history(history, active):
++        """Move each slot's last unary with the newest-first STM push."""
++        pushed = torch.cat((torch.full_like(history[:, :1], -1), history[:, :-1]), 1)
++        return torch.where(active.reshape(-1, 1), pushed, history)
++
++    @staticmethod
++    def update_unary_history(history, choice):
++        """A binary result has no last unary; an untouched slot keeps its own."""
++        binary = choice.applied & (choice.kind == 1)
++        folded = torch.cat((torch.full_like(history[:, :1], -1), history[:, 2:],
++                            torch.full_like(history[:, :1], -1)), 1)[:, :history.shape[1]]
++        history = torch.where(binary[:, None], folded, history)
++        unary = choice.applied & (choice.kind == 2)
++        position = torch.arange(history.shape[1], device=history.device)[None]
++        return torch.where(unary[:, None] & (position == choice.position[:, None]),
++                           choice.local_op[:, None], history)
+ 
+ 
+     @torch.compiler.disable
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -14252,13 +14252,16 @@
+ 
+ 
+     def _exploration_constraints(self):
+-        """One uniformly selected used round per row-owned sentence."""
++        """One uniformly selected branchable round per row-owned sentence."""
+         trace = self._reconstruction_stack()
+         actions = getattr(trace, '_choice_actions', None)
+         attempted = getattr(trace, '_choice_attempted', None)
+         if not torch.is_tensor(actions) or not torch.is_tensor(attempted):
+             return None, None, None
+         actions, attempted = actions.detach().clone(), attempted.detach().clone()
++        explorable = getattr(trace, "_choice_explorable", None)
++        if torch.is_tensor(explorable):
++            attempted &= explorable
+         B, T = actions.shape
+         owners, ids, _ = self._compose_round_owners(actions)
+         forced = torch.zeros_like(attempted)
+@@ -18701,12 +18704,25 @@
+         B = state[0].shape[0]
+         gate = (state[1] > 0 if row_gate is None else row_gate.reshape(B).bool())
+         slots = 1 if protect_depth is None else protect_depth
++        history = getattr(stm, "_last_unary", None)
++        if history is None or history.shape != state[0].shape[:2]:
++            history = torch.full_like(state[2], -1)
++        else:
++            previous_depth = stm._unary_history_depth
++            pushed = (state[1] - previous_depth).clamp_min(0)
++            positions = torch.arange(history.shape[1], device=history.device)[None]
++            source = positions - pushed[:, None]
++            history = torch.where((source >= 0) & (state[1] >= previous_depth)[:, None],
++                history.gather(1, source.clamp_min(0)), -1)
+         choice = self.languageSpace.choose_operation(
+             state, gate, slots=slots, allowance=allowance, rounds_left=rounds_left,
++            previous_unary=history,
+             masked_action=self._compose_masked_action(trace_slot, state[1]),
+             replay_action=self._compose_replayed_action(trace_slot, state[1]),
+             op_prior=self._chunk_structural_prior(stm.ensure_whole_state(), B, state[0]))
+         next_state = self.conceptualSpace.apply_language_choice(state, choice)
++        stm._last_unary = self.languageSpace.update_unary_history(history, choice)
++        stm._unary_history_depth = next_state[1]
+         scope = self.languageSpace.clause_scope
+         stm._clause_state, closing_kind = scope.apply(stm.ensure_clause_state(), choice,
+             torch.as_tensor(0 if trace_slot is None else trace_slot, device=state[0].device))
+@@ -18818,6 +18834,7 @@
+         trace._choice_positions[:, slot] = choice.position
+         trace._choice_actions[:, slot] = choice.action
+         trace._choice_attempted[:, slot] = choice.valid
++        trace._choice_explorable[:, slot] = (choice.valid if choice.alternatives is None else choice.alternatives)
+         trace._choice_left_rows, trace._choice_right_rows = self._tensor_record_operands(
+             trace._choice_left_rows, trace._choice_right_rows,
+             torch.as_tensor(slot, device=state[0].device), state,
+@@ -19082,6 +19099,9 @@
+                       if in_event is not None and torch.is_tensor(in_event)
+                       else None)
+             stm.begin_forward(B_in, device=dev_in)
++            stm._last_unary = torch.full(stm._buffer.shape[:2], -1,
++                                         dtype=torch.long, device=stm._buffer.device)
++            stm._unary_history_depth = stm._depth.clone()
+ 
+         # MPHF pre-warm (Dynamo-unfriendly build path).
+         ps = self.perceptualSpace
+@@ -20568,6 +20588,8 @@
+         (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+          stm._concept_rows, stm._concept_activations) = current_stm
+         stm._clause_state = lang[20]
++        stm._last_unary = lang[26]
++        stm._unary_history_depth = current_stm[1]
+         stm._wholes = lang[10]
+         trace = self._reconstruction_stack()
+         for name, value in zip(('_choice_rule_ids', '_choice_arities', '_choice_mask',
+@@ -20581,6 +20603,7 @@
+         trace._choice_refs = lang[23]
+         trace._choice_reference_offsets = lang[24]
+         trace._choice_ref_relations = lang[25]
++        trace._choice_explorable = lang[27]
+         self._packed_sentence_roots = lang[9]
+         self._tensor_sentence_roots_live = lang[13]
+         self._tensor_sentence_roots_depth = lang[14]
+@@ -20796,9 +20819,9 @@
+         """After both trials train, discard their operations at the closing."""
+         stm, lang, feedback = state
+         lang = list(lang)
+-        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25):
++        for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27):
+             value = lang[index]
+-            blank = torch.full_like(value, -1) if index in (4, 5, 15, 16, 17, 18, 23) else torch.zeros_like(value)
++            blank = torch.full_like(value, -1) if index in (4, 5, 15, 16, 17, 18, 23, 26) else torch.zeros_like(value)
+             mask = active.reshape(active.shape[0], *((1,) * (value.ndim - 1)))
+             lang[index] = torch.where(mask, blank, value)
+         return stm, tuple(lang), feedback
+@@ -21061,7 +21084,8 @@
+                     owners, _, _ = self._compose_round_owners(path[1][18])
+                     rounds = (owners == sid) & (self._compose_exploit_actions >= 0)
+                     different = ((self._compose_exploit_actions != path[1][18]) & rounds).any(-1)
+-                    if not bool((different | ~present).all()):
++                    branchable = self._compose_forced_slots.any(-1)
++                    if not bool((different | ~present | ~branchable).all()):
+                         raise RuntimeError('exploration repeated an exploit sentence derivation')
+                 cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                 if self._sentence_training and self.legacy_prediction_enabled:
+@@ -21389,6 +21413,8 @@
+             torch.full((B, choices[0].shape[1], 2), -1, dtype=torch.long, device=words.device),
+             words.new_zeros(B, choices[0].shape[1], 2 * concept_dim),
+             torch.zeros(B, choices[0].shape[1], 2, dtype=torch.bool, device=words.device),
++            torch.full((B, capacity), -1, dtype=torch.long, device=words.device),
++            torch.zeros_like(choices[2]),
+         )
+         empty_cs_sub = (
+             zero_concept.clone(),
+@@ -21638,6 +21664,8 @@
+             operation_refs = current_cs_lang[23]
+             reference_offsets = current_cs_lang[24]
+             reference_relations = current_cs_lang[25]
++            unary_history = language.push_unary_history(current_cs_lang[26], commit)
++            explorable_slab = current_cs_lang[27]
+             round_active = commit.reshape(B)
+             post_op = unary_op = torch.full_like(current_stm[1], -1)
+             post_valid = unary_valid = torch.zeros_like(round_active)
+@@ -21652,8 +21680,13 @@
+                     masked_action=self._compose_masked_action(slot, before[1]),
+                     replay_action=self._compose_replayed_action(slot, before[1]),
+                     op_prior=self._chunk_structural_prior(wholes, B, before[0]),
+-                    reference_scope=clause_state if sentence_transactions else None)
++                    reference_scope=clause_state if sentence_transactions else None,
++                    previous_unary=unary_history)
+                 choice = proposal[0] if sentence_transactions else proposal
++                unary_history = language.update_unary_history(unary_history, choice)
++                eligible = choice.valid if choice.alternatives is None else choice.alternatives
++                explorable_slab = self._tensor_record_selected_values(
++                    explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                 if sentence_transactions:
+                     _, refs, relative, operands, offsets = proposal
+                     clause_state = scope.resolve(clause_state, choice, refs, relative)
+@@ -21732,8 +21765,13 @@
+                     masked_action=self._compose_masked_action(slot, pre_closing[1]),
+                     replay_action=self._compose_replayed_action(slot, pre_closing[1]),
+                     op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
+-                    reference_scope=clause_state if sentence_transactions else None)
++                    reference_scope=clause_state if sentence_transactions else None,
++                    previous_unary=unary_history)
+                 choice = proposal[0] if sentence_transactions else proposal
++                unary_history = language.update_unary_history(unary_history, choice)
++                eligible = choice.valid if choice.alternatives is None else choice.alternatives
++                explorable_slab = self._tensor_record_selected_values(
++                    explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                 if sentence_transactions:
+                     _, refs, relative, operands, offsets = proposal
+                     clause_state = scope.resolve(clause_state, choice, refs, relative)
+@@ -21808,7 +21846,8 @@
+                 wholes, chunk_slab, chunk_count, next_live_roots,
+                 next_live_depth, left_rows, right_rows, position_slab, action_slab, attempted_slab,
+                 clause_state, closing_events, operation_values, operation_refs,
+-                reference_offsets, reference_relations)
++                reference_offsets, reference_relations,
++                torch.where(reset[:, None], -1, unary_history), explorable_slab)
+             language_feedback = language.feedback_from_local_choices(
+                 (pre_op, post_op), (pre_valid, post_valid),
+                 unary_op, unary_valid, like=word_idea)
+@@ -21981,7 +22020,10 @@
+             trace._choice_refs = final_cs_lang[23].clone()
+             trace._choice_reference_offsets = final_cs_lang[24].clone()
+             trace._choice_ref_relations = final_cs_lang[25].clone()
++            trace._choice_explorable = final_cs_lang[27].clone()
+         stm._clause_state = final_cs_lang[20].clone()
++        stm._last_unary = final_cs_lang[26].clone()
++        stm._unary_history_depth = stm._depth.clone()
+         sentence_roots = final_cs_lang[9].clone()
+         final_wholes = final_cs_lang[10].clone()
+         final_prop_slab = final_cs_lang[11].clone()
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -71,7 +71,8 @@
+ 
+ 
+ LanguageOperationChoice = namedtuple(
+-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid")
++    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives",
++    defaults=(None,))
+ """One immutable operation/location choice; only ConceptualSpace applies it."""
+ 
+ 
+--- a/test/test_reverse_traversal.py
++++ b/test/test_reverse_traversal.py
+@@ -253,7 +253,8 @@
+                 candidate, torch.full_like(state[1], 2),
+                 torch.ones_like(state[1]), torch.zeros_like(state[1]),
+                 retain, candidate.new_ones(state[1].shape),
+-                torch.full_like(state[1], operation.r_reduce), retain)
++                torch.full_like(state[1], operation.r_reduce), retain,
++                torch.zeros_like(retain))
+             return LanguageOperationChoice(*(torch.where(
+                 retain[:, None] if a.ndim == 2 else retain, a, b)
+                 for a, b in zip(unary, choice)))

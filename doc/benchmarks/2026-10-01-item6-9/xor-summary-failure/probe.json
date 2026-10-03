@@ -1,0 +1,20 @@
+{
+  "observed_legacy_accuracy": [
+    0.0
+  ],
+  "answers": [
+    0.5009260773658752,
+    0.592328667640686,
+    0.4954391419887543,
+    0.5575472116470337
+  ],
+  "targets": [
+    0.0,
+    1.0,
+    1.0,
+    0.0
+  ],
+  "correct": 1,
+  "expected_summary": "class 1/4",
+  "source": "repaired-xor/candidate/gate-05/observations.jsonl"
+}

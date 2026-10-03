@@ -1,0 +1,13 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-c",
+    "import json,pytest; from pathlib import Path; p=Path(\"doc/benchmarks/2026-10-02-item6-9-reconstruction/extra-selectors-preflight.json\"); raise SystemExit(pytest.main([\"--collect-only\",\"-q\",\"-m\",\"slow\",*json.loads(p.read_text())]))"
+  ],
+  "pid": 89151,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 446104920,
+  "elapsed_seconds": 4.7299112920009065,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/extra-collection/output.log"
+}

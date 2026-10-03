@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_dataset.py::test_data_what_supervised_returns_the_onehot_answer"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-344.recycle.json"
+}

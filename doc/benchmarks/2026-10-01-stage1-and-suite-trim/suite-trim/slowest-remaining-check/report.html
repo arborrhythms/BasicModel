@@ -1,0 +1,41 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 12/12 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.021646624998538755</pre></td><td><pre>test/test_compiled_word_chunk.py:433: in test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks
+    legacy = _tiny_canonical_model(tmp_path, monkeypatch, input_width=16, word_buckets=&quot;8&quot;,
+test/test_compiled_word_chunk.py:396: in _tiny_canonical_model
+    model, _ = Models.BasicModel.from_config(
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7111: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1838: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:25340: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - serialObjectMeta field/workspace mismatch: PartSpace.nOutput=8 and ConceptualSpace.nOutput=8 must both equal stmCapacity=3. The independent outer sentence limit belongs in &lt;serialWordCapacity&gt;.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.5498594169985154</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.04343229199730558</pre></td><td><pre>test/test_sentence_compose.py:79: in test_real_packed_ends_train_before_the_next_sentence
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets=&#x27;8&#x27;,
+test/test_compiled_word_chunk.py:396: in _tiny_canonical_model
+    model, _ = Models.BasicModel.from_config(
+bin/Models.py:1808: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7111: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1838: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:25340: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - serialObjectMeta field/workspace mismatch: PartSpace.nOutput=8 and ConceptualSpace.nOutput=8 must both equal stmCapacity=3. The independent outer sentence limit belongs in &lt;serialWordCapacity&gt;.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.001194082993606571</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0009695419939816929</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.3212156660010805</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.3772151670054882</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.31873445800010813</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.7160231250018114</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+generation-gradient-evidence {&quot;output_loop&quot;: true, &quot;initialization&quot;: &quot;ambient RNG&quot;, &quot;output_loss&quot;: 0.05638092756271362, &quot;stepped_shared_groups&quot;: [], &quot;conclusion_gradient&quot;: 0}
+</pre></td></tr><tr><td><pre>test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.2790259579996928</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.3447779589987476</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.478829208004754</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+</pre></td></tr></table></body></html>

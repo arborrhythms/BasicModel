@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]"
+  ],
+  "completed": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.3370763340026315,
+      "message": "test/test_grammar_separator.py:61: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert not bool(unavailable.any())\nE   assert not True\nE    +  where True = bool(tensor(True))\nE    +    where tensor(True) = <built-in method any of Tensor object at 0x1244f2f30>()\nE    +      where <built-in method any of Tensor object at 0x1244f2f30> = tensor([True, True, True, True]).any",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

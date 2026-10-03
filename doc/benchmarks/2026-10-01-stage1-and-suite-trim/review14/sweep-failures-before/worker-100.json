@@ -1,0 +1,24 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "completed": [
+    "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.005026667000493035,
+      "message": "test/test_compose_deadline.py:18: in test_shared_stack_contract_allows_unary_until_the_deadline\n    test_shared_operation_writes_the_caller_owned_stack(_xor_model)\ntest/test_subspace_what_stm_contract.py:1309: in test_shared_operation_writes_the_caller_owned_stack\n    assert bool((out[0][:, 0].abs().sum(-1) > 0).all())\nE   assert False\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method all of Tensor object at 0x120a01ae0>()\nE    +      where <built-in method all of Tensor object at 0x120a01ae0> = tensor([0.], grad_fn=<SumBackward1>) > 0.all\nE    +        where tensor([0.], grad_fn=<SumBackward1>) = <built-in method sum of Tensor object at 0x1209e6300>(-1)\nE    +          where <built-in method sum of Tensor object at 0x1209e6300> = tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]],\\n       grad_fn=<AbsBackward0>).sum\nE    +            where tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]],\\n       grad_fn=<AbsBackward0>) = <built-in method abs of Tensor object at 0x1209e72f0>()\nE    +              where <built-in method abs of Tensor object at 0x1209e72f0> = tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]],\\n       grad_fn=<SelectBackward0>).abs",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

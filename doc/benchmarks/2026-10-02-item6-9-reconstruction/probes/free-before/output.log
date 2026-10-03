@@ -1,0 +1,74 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___________ test_readback_uses_signed_activation_cosine_and_priming ____________
+
+    def test_readback_uses_signed_activation_cosine_and_priming():
+>       from SentenceUnderstanding import readback_scores
+E       ImportError: cannot import name 'readback_scores' from 'SentenceUnderstanding' (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceUnderstanding.py)
+
+test/test_free_reconstruction.py:6: ImportError
+_ test_readback_error_reaches_true_and_competing_codes_without_unit_constraint _
+
+    def test_readback_error_reaches_true_and_competing_codes_without_unit_constraint():
+>       from SentenceUnderstanding import readback_scores
+E       ImportError: cannot import name 'readback_scores' from 'SentenceUnderstanding' (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceUnderstanding.py)
+
+test/test_free_reconstruction.py:17: ImportError
+______ test_free_trial_uses_no_reference_or_offsets_and_keeps_both_terms _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x121495fd0>
+
+    def test_free_trial_uses_no_reference_or_offsets_and_keeps_both_terms(monkeypatch):
+        from pathlib import Path
+        import Models, util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+        original = model._reconstruct_sentences
+        calls=[]
+        def observe(*args, **kw):
+            if kw.get('free', False):
+                record = kw['understanding']
+                assert record.primed.codes.requires_grad
+                # Changing only the retained leaf values and witnesses must not
+                # change free reconstruction. Reuse the exact root and derivation.
+                from dataclasses import replace
+                result=original(*args, **kw)
+                changed=replace(record, word_values=record.word_values+19,
+                                witness_offsets=record.witness_offsets+23)
+                altered=original(args[0], changed.word_values, *args[2:],
+                                 **(kw|{'understanding':changed}))
+                torch.testing.assert_close(result[0], altered[0])
+                torch.testing.assert_close(result[2], altered[2])
+                calls.append('free')
+                return result
+            calls.append('witnessed')
+            return original(*args, **kw)
+        monkeypatch.setattr(model, '_reconstruct_sentences', observe)
+        optimizer=model.getOptimizer(lr=.01)
+        try:
+            raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
+            model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
+                batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+>           assert calls.count('free') == calls.count('witnessed') == 2
+E           AssertionError: assert 0 == 2
+E            +  where 0 = <built-in method count of list object at 0x12161fac0>('free')
+E            +    where <built-in method count of list object at 0x12161fac0> = ['witnessed', 'witnessed'].count
+E            +  and   2 = <built-in method count of list object at 0x12161fac0>('witnessed')
+E            +    where <built-in method count of list object at 0x12161fac0> = ['witnessed', 'witnessed'].count
+
+test/test_free_reconstruction.py:60: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_keeps_both_terms
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_free_reconstruction.py::test_readback_uses_signed_activation_cosine_and_priming
+FAILED test/test_free_reconstruction.py::test_readback_error_reaches_true_and_competing_codes_without_unit_constraint
+FAILED test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_keeps_both_terms
+3 failed, 1 warning in 2.70s

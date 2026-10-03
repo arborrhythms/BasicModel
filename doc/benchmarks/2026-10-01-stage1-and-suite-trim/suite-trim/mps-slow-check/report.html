@@ -1,0 +1,85 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 3/3 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>1.981744583004911</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.6669620419997955</pre></td><td><pre>torch._dynamo.exc.ObservedRuntimeError: raised exception RuntimeError(&#x27;no grad anchor for mps:0 torch.float32: call _ensure_grad_anchors before compiling&#x27;)
+
+The above exception was the direct cause of the following exception:
+test/test_compiled_word_chunk.py:916: in test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke
+    result = model._publish_compiled_sentence_state(compiled(raw))
+                                                    ^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.Unsupported: Observed exception
+E     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.
+E     Hint: Your code may result in an error when running in eager. Please double check that your code doesn&#x27;t contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance(&quot;force_eager&quot;)`. 
+E     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+E   
+E     Developer debug context: raised exception RuntimeError(&#x27;no grad anchor for mps:0 torch.float32: call _ensure_grad_anchors before compiling&#x27;)
+E   
+E    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html
+E   
+E   from user code:
+E      File &quot;/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py&quot;, line 903, in &lt;lambda&gt;
+E       model._forward_with_compiled_sentence_state(None))
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 150, in masked
+E       return method(self, *args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 8179, in _forward_with_compiled_sentence_state
+E       return self._forward_per_stage(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 24318, in _forward_per_stage
+E       body_result = self._forward_body(
+E                     ^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 18026, in _forward_body
+E       return self._forward_body_per_word(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 22501, in _forward_body_per_word
+E       self._run_tensor_peer_word_pipeline(N_words))
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 22046, in _run_tensor_peer_word_pipeline
+E       TensorPeerWhilePipeline().run_cs_lanes_banked(
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 1304, in run_cs_lanes_banked
+E       result = torch.while_loop(cond, body, _carries_with_grad(initial))
+E                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 423, in _carries_with_grad
+E       raise RuntimeError(
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you&#x27;re reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=&quot;+dynamo&quot;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>1.568358166005055</pre></td><td><pre>torch._dynamo.exc.ObservedRuntimeError: raised exception RuntimeError(&#x27;no grad anchor for mps:0 torch.float32: call _ensure_grad_anchors before compiling&#x27;)
+
+The above exception was the direct cause of the following exception:
+test/test_compiled_word_chunk.py:916: in test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke
+    result = model._publish_compiled_sentence_state(compiled(raw))
+                                                    ^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.Unsupported: Observed exception
+E     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.
+E     Hint: Your code may result in an error when running in eager. Please double check that your code doesn&#x27;t contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance(&quot;force_eager&quot;)`. 
+E     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+E   
+E     Developer debug context: raised exception RuntimeError(&#x27;no grad anchor for mps:0 torch.float32: call _ensure_grad_anchors before compiling&#x27;)
+E   
+E    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html
+E   
+E   from user code:
+E      File &quot;/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py&quot;, line 903, in &lt;lambda&gt;
+E       model._forward_with_compiled_sentence_state(None))
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 150, in masked
+E       return method(self, *args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 8179, in _forward_with_compiled_sentence_state
+E       return self._forward_per_stage(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 24318, in _forward_per_stage
+E       body_result = self._forward_body(
+E                     ^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 18026, in _forward_body
+E       return self._forward_body_per_word(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 22501, in _forward_body_per_word
+E       self._run_tensor_peer_word_pipeline(N_words))
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 22046, in _run_tensor_peer_word_pipeline
+E       TensorPeerWhilePipeline().run_cs_lanes_banked(
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 1304, in run_cs_lanes_banked
+E       result = torch.while_loop(cond, body, _carries_with_grad(initial))
+E                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File &quot;/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py&quot;, line 423, in _carries_with_grad
+E       raise RuntimeError(
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you&#x27;re reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=&quot;+dynamo&quot;</pre></td><td><pre></pre></td></tr></table></body></html>

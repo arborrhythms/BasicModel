@@ -1,0 +1,27 @@
+{
+  "selected": 5090,
+  "completed": 5090,
+  "attempted": 5090,
+  "counts": {
+    "passed": 4760,
+    "skipped": 318,
+    "failed": 11,
+    "xfailed": 1,
+    "process_failed": 0
+  },
+  "report_counts": {
+    "passed": 4764,
+    "skipped": 318,
+    "failed": 11,
+    "xfailed": 1,
+    "process_failed": 0
+  },
+  "minutes": 110.70001901388338,
+  "source_matched": true,
+  "worker_peak_gib": 7.23995067179203,
+  "baseline": {
+    "cases": 5219,
+    "wall_minutes": 122
+  },
+  "complete": true
+}

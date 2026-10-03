@@ -1,0 +1,70 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope"
+  ],
+  "completed": [
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope"
+  ],
+  "slow_selected": [
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0629309159994591,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_seen_bump_and_decay",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033445800363551825,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_desire_signed_floor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020708399824798107,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5077006250066916,
+      "message": "test/test_relevance_bases.py:90: in test_unconditional_integration_end_to_end\n    assert torch.is_tensor(b) and float(b.max()) > 1.0, (\nE   AssertionError: admitted rows must prime the surface unconditionally\nE   assert (True and 1.0 > 1.0)\nE    +  where True = <function is_tensor at 0x107d2f6a0>(tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]))\nE    +    where <function is_tensor at 0x107d2f6a0> = torch.is_tensor\nE    +  and   1.0 = float(tensor(1.))\nE    +    where tensor(1.) = <built-in method max of Tensor object at 0x13e72b110>()\nE    +      where <built-in method max of Tensor object at 0x13e72b110> = tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]).max",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.505s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_primed_reading_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000320875013130717,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

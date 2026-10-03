@@ -1,0 +1,80 @@
+.                                                                        [100%]
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py:7: UserWarning: Anomaly Detection has been enabled. This mode will increase the runtime and should only be enabled for debugging.
+    with torch.autograd.detect_anomaly():
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py:475: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:541: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:622: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:706: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:743: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:38: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:100: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:115: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:218: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:287: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:340: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:361: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:396: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:411: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:429: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:470: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:492: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:556: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 19 warnings in 4.50s

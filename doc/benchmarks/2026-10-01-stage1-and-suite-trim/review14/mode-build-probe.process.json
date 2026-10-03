@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_build_probe.py"
+  ],
+  "pid": 53198,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 405161112,
+  "elapsed_seconds": 3.6065940410044277,
+  "log": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-build-probe.log"
+}

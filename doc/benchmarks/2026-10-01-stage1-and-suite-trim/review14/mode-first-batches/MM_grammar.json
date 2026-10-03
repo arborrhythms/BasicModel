@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_grammar.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.615519665996544,
+  "batch": 64,
+  "scope": "understanding",
+  "reconstruct_in_loop": true,
+  "training_seconds": 0.8905851669987896,
+  "output_loss": 0.1750318557024002,
+  "reconstruction_loss": 6.215132713317871,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": 0,
+  "total_seconds": 2.506868124997709
+}

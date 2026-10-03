@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 6/6 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00011783299851231277</pre></td><td><pre>test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar
+    assert BasicModel._understanding_reconstruction_scope(model) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object &#x27;BasicModel&#x27; has no attribute &#x27;_understanding_reconstruction_scope&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00010066699906019494</pre></td><td><pre>test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar
+    assert BasicModel._understanding_reconstruction_scope(model) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object &#x27;BasicModel&#x27; has no attribute &#x27;_understanding_reconstruction_scope&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[radix-meronomy-True-exempt: old reading mode]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>9.025000326801091e-05</pre></td><td><pre>test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar
+    assert BasicModel._understanding_reconstruction_scope(model) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object &#x27;BasicModel&#x27; has no attribute &#x27;_understanding_reconstruction_scope&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-byte-True-exempt: old reading mode]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>8.662499749334529e-05</pre></td><td><pre>test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar
+    assert BasicModel._understanding_reconstruction_scope(model) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object &#x27;BasicModel&#x27; has no attribute &#x27;_understanding_reconstruction_scope&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.018412709003314376</pre></td><td><pre>test/test_reconstruction_scope.py:29: in test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones
+    validate()
+test/test_reconstruction_bank_contract.py:25: in &lt;lambda&gt;
+    return lambda: BasicModel._validate_reconstruction_bank(model), isp
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12257: in _validate_reconstruction_bank
+    torch._assert_async(
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.31079200000385754</pre></td><td><pre>test/test_reconstruction_scope.py:45: in test_missing_candidate_cost_is_zero_with_zero_gradient
+    assert torch.equal(cost, torch.zeros_like(cost))
+E   assert False
+E    +  where False = &lt;built-in method equal of type object at 0x10a3dd3a0&gt;(tensor([5.5452, 5.5452], grad_fn=&lt;DivBackward0&gt;), tensor([0., 0.]))
+E    +    where &lt;built-in method equal of type object at 0x10a3dd3a0&gt; = torch.equal
+E    +    and   tensor([0., 0.]) = &lt;built-in method zeros_like of type object at 0x10a3dd3a0&gt;(tensor([5.5452, 5.5452], grad_fn=&lt;DivBackward0&gt;))
+E    +      where &lt;built-in method zeros_like of type object at 0x10a3dd3a0&gt; = torch.zeros_like</pre></td><td><pre></pre></td></tr></table></body></html>

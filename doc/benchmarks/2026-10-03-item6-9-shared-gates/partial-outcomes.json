@@ -1,0 +1,584 @@
+{
+  "native": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements"
+    ],
+    "pid": 69147,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 23399522856,
+    "elapsed_seconds": 778.696436875005,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/native-driver/driver.log"
+  },
+  "xor_runs": [
+    {
+      "gate": "xor",
+      "run": 1,
+      "answers": [
+        0.5003535151481628,
+        0.5006370544433594,
+        0.5001711845397949,
+        0.5004547238349915
+      ],
+      "mse": 0.25000019172230914,
+      "error_band": "at 1/4",
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "recovered": 4,
+      "reconstruction_bar": true,
+      "both_bar": false,
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "contrast": 0.0,
+      "same_model": true,
+      "consumers": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "shared_gate_consumer",
+          "model_identity": 5353958256,
+          "gate": 5
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "shared_gate_consumer",
+          "model_identity": 5353958256,
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-01"
+        ],
+        "pid": 69582,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1213909944,
+        "elapsed_seconds": 214.57526120799594,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-01/driver.log"
+      }
+    },
+    {
+      "gate": "xor",
+      "run": 2,
+      "answers": [
+        -0.004016220569610596,
+        1.000240445137024,
+        0.9976508021354675,
+        -0.0007156133651733398
+      ],
+      "mse": 5.554668655705086e-06,
+      "error_band": "at 0",
+      "correct": 4,
+      "class_bar": true,
+      "read_backs": [
+        "world hello",
+        "hello there",
+        "world loving",
+        "loving there"
+      ],
+      "recovered": 4,
+      "reconstruction_bar": true,
+      "both_bar": true,
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "contrast": -2.0026230812072754,
+      "same_model": true,
+      "consumers": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4567202512,
+          "gate": 5
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4567202512,
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-02"
+        ],
+        "pid": 69583,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1164561264,
+        "elapsed_seconds": 206.6245136250218,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-02/driver.log"
+      }
+    },
+    {
+      "gate": "xor",
+      "run": 3,
+      "answers": [
+        0.00210002064704895,
+        0.9988417625427246,
+        1.0051813125610352,
+        0.0058622658252716064
+      ],
+      "mse": 1.6740940296688933e-05,
+      "error_band": "at 0",
+      "correct": 4,
+      "class_bar": true,
+      "read_backs": [
+        "world world",
+        "there there",
+        "world loving",
+        "there loving"
+      ],
+      "recovered": 2,
+      "reconstruction_bar": false,
+      "both_bar": false,
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "contrast": -1.9960607886314392,
+      "same_model": true,
+      "consumers": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4533137248,
+          "gate": 5
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4533137248,
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-03"
+        ],
+        "pid": 69584,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1158286216,
+        "elapsed_seconds": 208.1707232919871,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-03/driver.log"
+      }
+    },
+    {
+      "gate": "xor",
+      "run": 4,
+      "answers": [
+        0.0002975761890411377,
+        0.9998747110366821,
+        1.0005288124084473,
+        0.0001748502254486084
+      ],
+      "mse": 1.0361601932018516e-07,
+      "error_band": "at 0",
+      "correct": 4,
+      "class_bar": true,
+      "read_backs": [
+        "hello hello",
+        "there there",
+        "world world",
+        "there there"
+      ],
+      "recovered": 0,
+      "reconstruction_bar": false,
+      "both_bar": false,
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "contrast": -1.9999310970306396,
+      "same_model": true,
+      "consumers": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4918643792,
+          "gate": 5
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4918643792,
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-04"
+        ],
+        "pid": 70262,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1153665880,
+        "elapsed_seconds": 208.45443929199246,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-04/driver.log"
+      }
+    },
+    {
+      "gate": "xor",
+      "run": 5,
+      "answers": [
+        -1.7642974853515625e-05,
+        0.9999268651008606,
+        0.9993030428886414,
+        -0.0007401108741760254
+      ],
+      "mse": 2.597933272951991e-07,
+      "error_band": "at 0",
+      "correct": 4,
+      "class_bar": true,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world world",
+        "there there"
+      ],
+      "recovered": 2,
+      "reconstruction_bar": false,
+      "both_bar": false,
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "contrast": -1.9999876618385315,
+      "same_model": true,
+      "consumers": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "shared_gate_consumer",
+          "model_identity": 5309554256,
+          "gate": 5
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "shared_gate_consumer",
+          "model_identity": 5309554256,
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-05"
+        ],
+        "pid": 70270,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1153076056,
+        "elapsed_seconds": 207.91719270902104,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-05/driver.log"
+      }
+    },
+    {
+      "gate": "xor",
+      "run": 6,
+      "answers": [
+        -0.003109753131866455,
+        0.9968320727348328,
+        0.9978868961334229,
+        -0.0060002803802490234
+      ],
+      "mse": 1.5043725072771963e-05,
+      "error_band": "at 0",
+      "correct": 4,
+      "class_bar": true,
+      "read_backs": [
+        "hello world",
+        "there hello",
+        "world loving",
+        "loving there"
+      ],
+      "recovered": 4,
+      "reconstruction_bar": true,
+      "both_bar": true,
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "contrast": -2.003829002380371,
+      "same_model": true,
+      "consumers": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4544609216,
+          "gate": 5
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4544609216,
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-06"
+        ],
+        "pid": 70296,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1237421008,
+        "elapsed_seconds": 207.38776004200918,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-06/driver.log"
+      }
+    },
+    {
+      "gate": "xor",
+      "run": 7,
+      "answers": [
+        3.93986701965332e-05,
+        0.9957135915756226,
+        1.0043138265609741,
+        0.0010700225830078125
+      ],
+      "mse": 9.53222434052492e-06,
+      "error_band": "at 0",
+      "correct": 4,
+      "class_bar": true,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world world",
+        "loving loving"
+      ],
+      "recovered": 2,
+      "reconstruction_bar": false,
+      "both_bar": false,
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "contrast": -1.9989179968833923,
+      "same_model": true,
+      "consumers": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4576935040,
+          "gate": 5
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4576935040,
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-07"
+        ],
+        "pid": 70943,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1159170904,
+        "elapsed_seconds": 210.0182309160009,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-07/driver.log"
+      }
+    },
+    {
+      "gate": "xor",
+      "run": 8,
+      "answers": [
+        -0.011174559593200684,
+        1.0183347463607788,
+        0.9734855890274048,
+        0.021667033433914185
+      ],
+      "mse": 0.00040837700831652946,
+      "error_band": "at 0",
+      "correct": 4,
+      "class_bar": true,
+      "read_backs": [
+        "world world",
+        "there there",
+        "world world",
+        "there there"
+      ],
+      "recovered": 0,
+      "reconstruction_bar": false,
+      "both_bar": false,
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "contrast": -1.98132786154747,
+      "same_model": true,
+      "consumers": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4566040304,
+          "gate": 5
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4566040304,
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-08"
+        ],
+        "pid": 70944,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1160055640,
+        "elapsed_seconds": 208.46915162500227,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-08/driver.log"
+      }
+    },
+    {
+      "gate": "xor",
+      "run": 9,
+      "answers": [
+        6.765127182006836e-06,
+        0.9999995231628418,
+        1.0000107288360596,
+        1.1980533599853516e-05
+      ],
+      "mse": 7.615885699863156e-11,
+      "error_band": "at 0",
+      "correct": 4,
+      "class_bar": true,
+      "read_backs": [
+        "world world",
+        "hello hello",
+        "world world",
+        "there there"
+      ],
+      "recovered": 0,
+      "reconstruction_bar": false,
+      "both_bar": false,
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "contrast": -1.9999915063381195,
+      "same_model": true,
+      "consumers": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4532140944,
+          "gate": 5
+        },
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
+          "kind": "shared_gate_consumer",
+          "model_identity": 4532140944,
+          "gate": 5
+        }
+      ],
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-09"
+        ],
+        "pid": 70981,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1154140992,
+        "elapsed_seconds": 207.3282093750022,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-09/driver.log"
+      }
+    }
+  ],
+  "counts": {
+    "observed": 9,
+    "class": 8,
+    "reconstruction": 3,
+    "both": 2
+  },
+  "note": "Partial first outcomes retained after user cancelled remeasurement; not a ten-run campaign and not a new baseline."
+}

@@ -1,0 +1,3 @@
+OWNERS <class 'Layers.RadixLayer'> <class 'Spaces.Codebook'> <class 'NoneType'> <class 'NoneType'>
+PARAMS [('W', (256, 6))]
+STORE <class 'Layers.RadixLayer'> True

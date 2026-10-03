@@ -149,12 +149,6 @@ def test_conceptual_attention_empty_union_is_absent():
 
 # -- concept relation store (moved off SparseLayer onto ConceptualAttentionLayer)
 
-def test_concept_store_absent_from_generic_sparse_layer():
-    # The generic substrate must NOT carry the concept record API.
-    ly = SparseLayer(4, 3)
-    for m in ("ensure_row_key", "embed_pair", "constituents",
-              "row_is_identity", "assign_row", "hebbian_strengthen_row"):
-        assert not hasattr(ly, m), f"SparseLayer should not expose {m}"
 
 
 def test_concept_store_embed_pair_and_identity():

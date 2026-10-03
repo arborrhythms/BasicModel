@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_xor_step3.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 1.4773984999992535,
+  "batch": 64,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 0.43716170900006546,
+  "output_loss": 0.1768631488084793,
+  "reconstruction_loss": 0.354595422744751,
+  "completed": true,
+  "total_seconds": 1.9145642499934183
+}

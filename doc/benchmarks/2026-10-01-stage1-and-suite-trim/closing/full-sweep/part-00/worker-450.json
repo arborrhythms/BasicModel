@@ -1,0 +1,54 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+    "test/test_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+    "test/test_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+    "test/test_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]"
+  ],
+  "completed": [
+    "test/test_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+    "test/test_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+    "test/test_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+    "test/test_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_occurrence_coordinates.py::test_d3_scores_content_and_position_without_repeated_time_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.024101750008412637,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008901250112103298,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010342919995309785,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_occurrence_coordinates.py::test_detached_word_teacher_also_excludes_field_time[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011874579940922558,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

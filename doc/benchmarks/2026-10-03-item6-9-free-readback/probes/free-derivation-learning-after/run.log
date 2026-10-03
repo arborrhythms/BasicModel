@@ -1,0 +1,133 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_mm20m_grammar_free_derivation_roundtrip _________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1186/test_mm20m_grammar_free_deriva0')
+
+    @pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1",
+                        reason="~40s (build + 3 epochs + decode) -- RUN_SLOW gates it")
+    def test_mm20m_grammar_free_derivation_roundtrip(tmp_path):
+        """Free derivation should recover the input; a measured zero is a gap.
+    
+        The old assertion required the seed-0 failure (exact match == 0). Its
+        historical measurement is not a correctness contract or a ceiling.
+        """
+        rec = run_config("data/MM_ladder.xml", epochs=3, seed=None,
+                         out_dir=str(tmp_path), blind=False, free_derivation=True)
+>       assert rec.exact_match_rate == 1.0
+E       AssertionError: assert 0.0 == 1.0
+E        +  where 0.0 = RunRecord(config='data/MM_ladder.xml', seed=1807882285, epochs=3, wall_s_per_epoch=47.272038124501705, output_loss=0.0... ModelLoss and not exposed on the model', 'epoch_times_s': [47.608525541989366, 46.87712016599835, 47.66695608300506]}).exact_match_rate
+
+test/test_reconstruction_roundtrip.py:459: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 12.50%)
+batch = 8 (Δ=1.624s, 15.62%)
+batch = 16 (Δ=1.492s, 18.75%)
+batch = 24 (Δ=1.438s, 21.88%)
+batch = 32 (Δ=1.520s, 25.00%)
+batch = 40 (Δ=1.445s, 28.12%)
+batch = 48 (Δ=1.451s, 31.25%)
+batch = 56 (Δ=1.519s, 34.38%)
+batch = 64 (Δ=1.429s, 37.50%)
+batch = 72 (Δ=1.436s, 40.62%)
+batch = 80 (Δ=1.522s, 43.75%)
+batch = 88 (Δ=1.415s, 46.88%)
+batch = 96 (Δ=1.543s, 50.00%)
+batch = 104 (Δ=1.441s, 53.12%)
+batch = 112 (Δ=1.450s, 56.25%)
+batch = 120 (Δ=1.523s, 59.38%)
+batch = 128 (Δ=1.418s, 62.50%)
+batch = 136 (Δ=1.448s, 65.62%)
+batch = 144 (Δ=1.527s, 68.75%)
+batch = 152 (Δ=1.440s, 71.88%)
+batch = 160 (Δ=1.440s, 75.00%)
+batch = 168 (Δ=1.519s, 78.12%)
+batch = 176 (Δ=1.417s, 81.25%)
+batch = 184 (Δ=1.493s, 84.38%)
+batch = 192 (Δ=1.428s, 87.50%)
+batch = 200 (Δ=1.423s, 90.62%)
+batch = 208 (Δ=1.537s, 93.75%)
+batch = 216 (Δ=1.424s, 96.88%)
+batch = 224 (Δ=1.425s, 100.00%)
+batch = 232 (Δ=1.520s, 100.00%)
+batch = 240 (Δ=1.456s, 100.00%)
+batch = 248 (Δ=1.461s, 100.00%)
+Training throughput: 32 batches in 47.607s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=1.507s, 12.50%)
+batch = 8 (Δ=1.413s, 15.62%)
+batch = 16 (Δ=1.550s, 18.75%)
+batch = 24 (Δ=1.515s, 21.88%)
+batch = 32 (Δ=1.517s, 25.00%)
+batch = 40 (Δ=1.522s, 28.12%)
+batch = 48 (Δ=1.454s, 31.25%)
+batch = 56 (Δ=1.423s, 34.38%)
+batch = 64 (Δ=1.519s, 37.50%)
+batch = 72 (Δ=1.422s, 40.62%)
+batch = 80 (Δ=1.420s, 43.75%)
+batch = 88 (Δ=1.505s, 46.88%)
+batch = 96 (Δ=1.431s, 50.00%)
+batch = 104 (Δ=1.511s, 53.12%)
+batch = 112 (Δ=1.426s, 56.25%)
+batch = 120 (Δ=1.432s, 59.38%)
+batch = 128 (Δ=1.505s, 62.50%)
+batch = 136 (Δ=1.441s, 65.62%)
+batch = 144 (Δ=1.419s, 68.75%)
+batch = 152 (Δ=1.505s, 71.88%)
+batch = 160 (Δ=1.424s, 75.00%)
+batch = 168 (Δ=1.422s, 78.12%)
+batch = 176 (Δ=1.502s, 81.25%)
+batch = 184 (Δ=1.427s, 84.38%)
+batch = 192 (Δ=1.418s, 87.50%)
+batch = 200 (Δ=1.515s, 90.62%)
+batch = 208 (Δ=1.419s, 93.75%)
+batch = 216 (Δ=1.534s, 96.88%)
+batch = 224 (Δ=1.424s, 100.00%)
+batch = 232 (Δ=1.411s, 100.00%)
+batch = 240 (Δ=1.506s, 100.00%)
+batch = 248 (Δ=1.439s, 100.00%)
+Training throughput: 32 batches in 46.876s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=1.435s, 9.38%)
+batch = 8 (Δ=1.508s, 15.62%)
+batch = 16 (Δ=1.422s, 18.75%)
+batch = 24 (Δ=1.420s, 21.88%)
+batch = 32 (Δ=1.513s, 25.00%)
+batch = 40 (Δ=1.428s, 28.12%)
+batch = 48 (Δ=1.531s, 31.25%)
+batch = 56 (Δ=1.441s, 34.38%)
+batch = 64 (Δ=1.433s, 37.50%)
+batch = 72 (Δ=1.525s, 40.62%)
+batch = 80 (Δ=1.418s, 43.75%)
+batch = 88 (Δ=1.435s, 46.88%)
+batch = 96 (Δ=1.507s, 50.00%)
+batch = 104 (Δ=1.411s, 53.12%)
+batch = 112 (Δ=1.450s, 56.25%)
+batch = 120 (Δ=1.569s, 59.38%)
+batch = 128 (Δ=1.439s, 62.50%)
+batch = 136 (Δ=1.440s, 65.62%)
+batch = 144 (Δ=1.523s, 68.75%)
+batch = 152 (Δ=1.433s, 71.88%)
+batch = 160 (Δ=1.531s, 75.00%)
+batch = 168 (Δ=1.454s, 78.12%)
+batch = 176 (Δ=1.528s, 81.25%)
+batch = 184 (Δ=1.653s, 84.38%)
+batch = 192 (Δ=1.509s, 87.50%)
+batch = 200 (Δ=1.494s, 90.62%)
+batch = 208 (Δ=1.591s, 93.75%)
+batch = 216 (Δ=1.501s, 96.88%)
+batch = 224 (Δ=1.507s, 100.00%)
+batch = 232 (Δ=1.605s, 100.00%)
+batch = 240 (Δ=1.500s, 100.00%)
+batch = 248 (Δ=1.507s, 100.00%)
+Training throughput: 32 batches in 47.666s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=2.162s, 100.00%)
+Training throughput: 1 batches in 2.256s; word units 86.5% of 192 words (letters-only 100.0% of 64).
+=============================== warnings summary ===============================
+test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip
+1 failed, 1 warning in 146.98s (0:02:26)

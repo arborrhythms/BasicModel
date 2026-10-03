@@ -1,0 +1,15 @@
+{
+  "config": "data/LM_5M.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 1.6080160000055912,
+  "batch": 128,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 2.343710207998811,
+  "output_loss": 0.2779693603515625,
+  "reconstruction_loss": 1990.232666015625,
+  "completed": true,
+  "total_seconds": 3.95173091700417
+}

@@ -1,0 +1,64 @@
+data/BasicModel.xml:157:      <detachedReverse>false</detachedReverse>
+bin/bench_training_step.py:40:                     "detached_reverse": bool(getattr(self, "detached_reverse", False))}
+bin/Language.py:8741:class ReverseConstructionChooser(nn.Module):
+bin/Language.py:10159:        self.detached_reverse = bool(TheXMLConfig.training(
+bin/Language.py:10160:            "detachedReverse", False)) and not (
+bin/Language.py:10164:        self.reverse_chooser = None
+bin/Language.py:10165:        if self.detached_reverse:
+bin/Language.py:10176:            self.reverse_chooser = ReverseConstructionChooser(
+bin/Language.py:10180:            for p in self.reverse_chooser.parameters():
+data/BasicModel_output_tied_benchmark.xml:50:      <detachedReverse>false</detachedReverse>
+test/test_word_store.py:669:def test_reverse_chooser_picks_fold_op_by_roundtrip(tmp_path_factory):
+test/test_concept_readout_l1.py:244:@pytest.mark.parametrize("detached_reverse", [False, True])
+test/test_concept_readout_l1.py:246:        tmp_path, monkeypatch, detached_reverse):
+test/test_concept_readout_l1.py:252:        detached_reverse=detached_reverse, input_width=32, word_buckets="8",
+test/test_concept_readout_l1.py:256:    assert model.reconstruct_in_loop and not model.detached_reverse
+bin/Models.py:2566:        # Stable construction/reconstruction split.  With detachedReverse the
+bin/Models.py:2573:        self.detached_reverse = bool(
+bin/Models.py:2574:            TheXMLConfig.training("detachedReverse", False)) and not live_reconstruction
+bin/Models.py:2600:        if self.reconstruct_in_loop and self.detached_reverse:
+bin/Models.py:2602:                "reconstructInLoop and detachedReverse are mutually "
+bin/Models.py:5179:        # reverse direction (a tied checkpoint under <detachedReverse>)
+bin/Models.py:5182:            _student = [k for k in state if ".reverse_chooser." in k
+bin/Models.py:5183:                        or k.startswith("reverse_chooser.")]
+bin/Models.py:14511:                and not self.detached_reverse and self.loss.reconstruction_scale > 0))
+bin/Models.py:15174:                    self, "detached_reverse", False):
+bin/Models.py:15176:                    self._detached_reverse_construction_loss())
+bin/Models.py:15179:                        "detachedReverse is enabled, but the idea-only reverse "
+bin/Models.py:15181:                input_errors.merge(self.symbolSpace.reverse_chooser._last_errors)
+bin/Models.py:15209:                # On detachedReverse this is rule/arity/exact-leaf supervision
+bin/Models.py:15492:                    and not getattr(self, "detached_reverse", False) \
+bin/Models.py:24031:    def _detached_reverse_construction_loss(self):
+bin/Models.py:24034:        ``ReverseConstructionChooser`` receives ``stopgrad(S)`` internally.
+bin/Models.py:24043:                          "reverse_chooser", None)
+bin/Models.py:24069:        object.__setattr__(self, "_detached_reverse_terms", terms)
+data/BasicModel_answers_benchmark.xml:50:      <detachedReverse>true</detachedReverse>
+data/MM_grammar_wording.xml:49:      <detachedReverse>false</detachedReverse>
+data/BasicModel_expectation_benchmark.xml:49:      <detachedReverse>true</detachedReverse>
+test/test_occurrence_coordinates.py:205:    from Language import ReconstructionStack, ReverseConstructionChooser
+test/test_occurrence_coordinates.py:206:    chooser = ReverseConstructionChooser(idea_dim=8, n_rules=2, max_words=2,
+bin/bench_sentence_expectation.py:421:        "detached_reverse": bool(model.detached_reverse),
+test/test_compiled_word_chunk.py:335:        detached_reverse=False, concept_rows=64, dimension=16,
+test/test_compiled_word_chunk.py:382:    if detached_reverse:
+test/test_compiled_word_chunk.py:385:        _set("./architecture/training/detachedReverse", True)
+test/test_compiled_word_chunk.py:950:def test_tiny_canonical_detached_reverse_stops_at_root(tmp_path, monkeypatch):
+test/test_compiled_word_chunk.py:954:        tmp_path, monkeypatch, forward_grammar_weight=0.25, detached_reverse=True)
+test/test_compiled_word_chunk.py:955:    assert model.detached_reverse
+test/test_compiled_word_chunk.py:956:    chooser = model.symbolSpace.reverse_chooser
+test/test_compiled_word_chunk.py:965:    loss, _metric = model._detached_reverse_construction_loss()
+test/test_compiled_word_chunk.py:976:def test_tiny_canonical_detached_reverse_train_step_is_finite(
+test/test_compiled_word_chunk.py:980:    model = _tiny_canonical_model(tmp_path, monkeypatch, detached_reverse=True)
+test/test_compiled_word_chunk.py:981:    chooser = model.symbolSpace.reverse_chooser
+test/test_reverse_traversal.py:369:    assert not any(".reverse_chooser." in n or n.startswith("reverse_chooser.")
+test/test_tied_reconstruction_objective.py:61:    assert training.findtext("detachedReverse") == "false"
+test/test_tied_reconstruction_objective.py:71:         "<detachedReverse>true</detachedReverse>")])
+test/test_tied_reconstruction_objective.py:74:        student = legacy.symbolSpace.reverse_chooser
+test/test_tied_reconstruction_objective.py:95:        assert any("reverse_chooser." in key for key in saved["state_dict"])
+test/test_tied_reconstruction_objective.py:100:        assert fresh.symbolSpace.reverse_chooser is None
+data/model.xsd:873:      <xs:element name="detachedReverse" type="xs:boolean" minOccurs="0"/>
+test/test_detached_reverse_objective.py:8:    ReverseConstructionChooser,
+test/test_detached_reverse_objective.py:54:    chooser = ReverseConstructionChooser(
+test/test_detached_reverse_objective.py:76:    chooser = ReverseConstructionChooser(
+test/objective_conflicts_probe.py:408:                   'reconstruct_in_loop','detached_reverse','answer_synthesis','legacy_prediction_enabled',
+data/BasicModel_long_tied_benchmark.xml:51:      <detachedReverse>false</detachedReverse>
+data/BasicModel_answers_tied_benchmark.xml:52:      <detachedReverse>false</detachedReverse>

@@ -1,0 +1,60 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_________________ test_answer_record_has_no_derivation_fields __________________
+
+    def test_answer_record_has_no_derivation_fields():
+        from SentenceUnderstanding import SentenceUnderstanding
+>       assert not ({'rule_ids', 'arities', 'rule_valid', 'operand_positions',
+                     'journal_columns', 'witness_offsets'} & {f.name for f in fields(SentenceUnderstanding)})
+E       AssertionError: assert not ({'arities', 'journal_columns', 'operand_positions', 'rule_ids', 'rule_valid', 'witness_offsets'} & {'arities', 'depths', 'end_depth', 'end_slots', 'operand_positions', 'primed', ...})
+
+test/test_echoic_decoder.py:10: AssertionError
+___________ test_antipode_aligns_selected_and_repels_all_other_codes ___________
+
+    def test_antipode_aligns_selected_and_repels_all_other_codes():
+>       from embed import conceptual_antipode_loss_codes
+E       ImportError: cannot import name 'conceptual_antipode_loss_codes' from 'embed' (/Users/arogers/github/WikiOracle/basicmodel/bin/embed.py). Did you mean: 'conceptual_sbow_loss_codes'?
+
+test/test_echoic_decoder.py:15: ImportError
+___________________ test_generate_unary_calls_generate_face ____________________
+
+    def test_generate_unary_calls_generate_face():
+        from Language import LanguageSpace
+        class Unary:
+            def generate(self, value):
+                return -value
+            def reverse(self, value):
+                raise AssertionError('decoder must use the generate face')
+        language = SimpleNamespace(_generate_unary_ops=[Unary()])
+        x = torch.tensor([[1., 2.], [3., 4.]])
+>       y, unavailable = LanguageSpace.generate_unary_step(language, x, torch.zeros(2, dtype=torch.long),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            torch.tensor([True, False]), return_status=True)
+E       AttributeError: type object 'LanguageSpace' has no attribute 'generate_unary_step'. Did you mean: 'reverse_unary_step'?
+
+test/test_echoic_decoder.py:41: AttributeError
+_______________ test_generate_chooser_belongs_to_reconstruction ________________
+
+    def test_generate_chooser_belongs_to_reconstruction():
+        from Models import BasicModel
+        policy = torch.nn.Linear(2, 3)
+        reader = torch.nn.Linear(2, 1)
+        language = SimpleNamespace(generate_policy=policy)
+        model = SimpleNamespace(languageSpace=language, outputSpace=reader,
+            synthesis_parameters=lambda: tuple(policy.parameters()), conceptualSpaces=())
+        optimizer = SimpleNamespace(param_groups=[{'params': [*policy.parameters(), *reader.parameters()]}])
+        owners = BasicModel.objective_parameter_groups(model, optimizer)
+>       assert {id(p) for p in policy.parameters()} <= {id(p) for p in owners['reconstruction']}
+E       assert {4574954512, 5001634080} <= set()
+E         
+E         Extra items in the left set:
+E         4574954512
+E         5001634080
+
+test/test_echoic_decoder.py:56: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_echoic_decoder.py::test_answer_record_has_no_derivation_fields
+FAILED test/test_echoic_decoder.py::test_antipode_aligns_selected_and_repels_all_other_codes
+FAILED test/test_echoic_decoder.py::test_generate_unary_calls_generate_face
+FAILED test/test_echoic_decoder.py::test_generate_chooser_belongs_to_reconstruction
+4 failed in 2.09s

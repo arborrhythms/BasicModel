@@ -1,0 +1,84 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- RamsifiedModel: MentalModel with subsymbolicOrder=2.
+       Used by test_reasoning.py::TestWriteMask::test_partition_isolation. -->
+  <architecture>
+    <subsymbolicOrder>2</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <symbolicOrder>1</symbolicOrder>
+    <weightsPath>RamsifiedModel.ckpt</weightsPath>
+    <data>
+      <dataType>embedding</dataType>
+      <shardDir>data/fineweb</shardDir>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numEpochs>2</numEpochs>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>BACKPROP</trainEmbedding>
+      <autoload>false</autoload>
+    </training>
+
+  </architecture>
+
+  <SymbolSpace>
+    <language>
+      <grammar>
+        <!-- Per the 2026-05-07 rollback: explicit per-tier natural
+             folds (sigma at P / S, pi at C). -->
+        <P>sigma(P)</P>
+        <C>pi(C)</C>
+        <S>sigma(S)</S>
+        <S>true(S)</S>
+        <S>swap(S, S)</S>
+        <S>isEqual(S, S)</S>
+        <S>part(S, S)</S>
+        <S>non(S)</S>
+        <S>not(S)</S>
+        <S>intersection(S, S)</S>
+        <S>union(S, S)</S>
+        <S>lower(S, S)</S>
+        <S>lift(S, S)</S>
+        <S>lift(S, S, S)</S>
+      </grammar>
+    </language>
+  </SymbolSpace>
+
+  <InputSpace>
+    <nDim>104</nDim>
+    <nVectors>128</nVectors>
+    <nOutput>128</nOutput>
+    <codebook>quantize</codebook>
+  </InputSpace>
+
+  <PartSpace>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>256</nVectors>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>128</nVectors>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>sentence</analysis>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>128</nVectors>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>100</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+</model>

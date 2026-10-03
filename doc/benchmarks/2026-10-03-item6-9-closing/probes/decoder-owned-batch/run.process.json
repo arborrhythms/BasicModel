@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_free_reconstruction.py",
+    "test/test_objective_ownership.py",
+    "test/test_understanding_readout.py"
+  ],
+  "pid": 76620,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 617711104,
+  "elapsed_seconds": 6.464947583997855,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-closing/probes/decoder-owned-batch/run.log"
+}

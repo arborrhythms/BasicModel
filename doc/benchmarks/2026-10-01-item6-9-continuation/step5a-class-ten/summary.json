@@ -1,0 +1,639 @@
+{
+  "rows": [
+    {
+      "gate": 5,
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-00",
+          "--gate",
+          "5"
+        ],
+        "pid": 34796,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 649332728,
+        "elapsed_seconds": 80.86775124999986,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-00/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            -0.003157675266265869,
+            0.9880145192146301,
+            0.9917789101600647,
+            0.006202042102813721
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            "loving loving"
+          ],
+          "gate_reconstructions": [
+            "              loving",
+            "               ",
+            "              loving",
+            "                      loving"
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 6.491857678625479e-05,
+      "correct": 4,
+      "settled_bar": true
+    },
+    {
+      "gate": 5,
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-01",
+          "--gate",
+          "5"
+        ],
+        "pid": 34797,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 645040072,
+        "elapsed_seconds": 83.71502666699962,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-01/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            0.059029579162597656,
+            1.060196042060852,
+            0.9503860473632812,
+            0.3851715326309204
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            "hello x"
+          ],
+          "gate_reconstructions": [
+            "                                                                                                                                                                                                                                                                                                                                                                                                                            hello",
+            "                                                                                                                                                                                                                                                                                                                                                      x",
+            "                                                                                                                                                                                                                                                                                                                                                                                                                                                hello",
+            "                                                                                                                                                   hello"
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 0.039481677135349,
+      "correct": 4,
+      "settled_bar": true
+    },
+    {
+      "gate": 5,
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-02",
+          "--gate",
+          "5"
+        ],
+        "pid": 34798,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 649627664,
+        "elapsed_seconds": 82.41755595799987,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-02/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            -0.042268991470336914,
+            1.038285493850708,
+            0.9638605117797852,
+            0.524323582649231
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            ""
+          ],
+          "gate_reconstructions": [
+            "                                                           \u0000",
+            "                                                                                                                                                                                                                                                                                                                                                                                                                          there",
+            "                         loving",
+            "                                                                                                                                                                                                                                                                                       loving"
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 0.069868432152564,
+      "correct": 3,
+      "settled_bar": false
+    },
+    {
+      "gate": 5,
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-03",
+          "--gate",
+          "5"
+        ],
+        "pid": 35173,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 646301664,
+        "elapsed_seconds": 80.78785874999994,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-03/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            0.008627206087112427,
+            0.9811493158340454,
+            0.9999223351478577,
+            0.016056746244430542
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            "> >"
+          ],
+          "gate_reconstructions": [
+            "                                                        >",
+            "                                                                                                                                                                                                                                                                                                                                                                       >",
+            "                                                                                                                                                                                                                                                                                                                        >",
+            "                                                                                                                                                                                                                                                                             world"
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 0.00017190052754534335,
+      "correct": 4,
+      "settled_bar": true
+    },
+    {
+      "gate": 5,
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-04",
+          "--gate",
+          "5"
+        ],
+        "pid": 35187,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 654051320,
+        "elapsed_seconds": 84.14638770800047,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-04/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            -0.047696590423583984,
+            1.020168662071228,
+            0.8855875730514526,
+            0.10634711384773254
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            "world hello"
+          ],
+          "gate_reconstructions": [
+            "                                                                                                                                                                                                                                                                                                                   world",
+            "                                                                                                                                                                                                                                                                                                                                                                                                                                                   hello",
+            "                                                                           world",
+            "                                                                                                                                                                                                                                 there"
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 0.006770412932944447,
+      "correct": 4,
+      "settled_bar": true
+    },
+    {
+      "gate": 5,
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-05",
+          "--gate",
+          "5"
+        ],
+        "pid": 35207,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 648890360,
+        "elapsed_seconds": 83.89623716699862,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-05/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            -0.0011971592903137207,
+            1.0017329454421997,
+            0.9985072612762451,
+            0.006712466478347778
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            "world loving"
+          ],
+          "gate_reconstructions": [
+            "                                                                                                                                                                                                                                                                                                                                                         world",
+            "                                                                                                                                                                                                                                                                                                                                               loving",
+            "                                                                                                                                                                                                                                                                                                                                                          \u0000",
+            "                                                                                                                                                                                                                                                                                        \u0000"
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 1.2930441348091293e-05,
+      "correct": 4,
+      "settled_bar": true
+    },
+    {
+      "gate": 5,
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-06",
+          "--gate",
+          "5"
+        ],
+        "pid": 35470,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 658655200,
+        "elapsed_seconds": 83.40856850000091,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-06/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            -0.010849237442016602,
+            1.002319574356079,
+            1.017977237701416,
+            0.012526184320449829
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            "loving loving"
+          ],
+          "gate_reconstructions": [
+            "                                                                                                                                                                                                                                                                                                                                                                                                                                                      loving",
+            "                                         ",
+            "                                                                                                                                                                                                                                                                                loving",
+            "                                                                                                                   f"
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 0.0001507931868174328,
+      "correct": 4,
+      "settled_bar": true
+    },
+    {
+      "gate": 5,
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-07",
+          "--gate",
+          "5"
+        ],
+        "pid": 35502,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 656541688,
+        "elapsed_seconds": 84.46731824999915,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-07/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            -0.011835575103759766,
+            0.9820058345794678,
+            1.2195053100585938,
+            0.6629294157028198
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            ""
+          ],
+          "gate_reconstructions": [
+            "                                                       \u0000",
+            "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              hello",
+            "                                                                                                                                                                                                                                             there",
+            "                                                                                                                                                                                                                                                                                               \u0000"
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 0.12203046554380492,
+      "correct": 3,
+      "settled_bar": false
+    },
+    {
+      "gate": 5,
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-08",
+          "--gate",
+          "5"
+        ],
+        "pid": 35503,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 651528184,
+        "elapsed_seconds": 81.60822929200003,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-08/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            -0.002126753330230713,
+            0.9763150215148926,
+            0.9888508319854736,
+            0.003967911005020142
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            ""
+          ],
+          "gate_reconstructions": [
+            "",
+            "                                        world",
+            "",
+            ""
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 0.00017638738768188666,
+      "correct": 4,
+      "settled_bar": true
+    },
+    {
+      "gate": 5,
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/measure.py",
+          "group",
+          "--root",
+          "/Users/arogers/github/WikiOracle/basicmodel",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-09",
+          "--gate",
+          "5"
+        ],
+        "pid": 35845,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 654510048,
+        "elapsed_seconds": 75.07364979200065,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-class-ten/gate-05-trial-09/supervisor.log"
+      },
+      "observations": [
+        {
+          "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "kind": "grammar",
+          "accuracy": [
+            0.0
+          ],
+          "predictions": [
+            -0.024803638458251953,
+            0.8720917701721191,
+            0.9831159710884094,
+            0.10263478755950928
+          ],
+          "targets": [
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "inputs": [
+            "hello world",
+            "hello there",
+            "loving world",
+            "loving there"
+          ],
+          "reconstructions": [
+            "hello hello"
+          ],
+          "gate_reconstructions": [
+            "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         hello",
+            "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             hello",
+            "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       world",
+            "   hello"
+          ],
+          "gate": 5
+        }
+      ],
+      "mse": 0.006948676447035673,
+      "correct": 4,
+      "settled_bar": true
+    }
+  ],
+  "all_ten_class_runs_meet_bar": false,
+  "class_successes": 8,
+  "decision": "Continue through steps 6\u20139 regardless of the class count (Alec, October 1).",
+  "seconds": 320.52596774999984,
+  "peak_memory_bytes": 4587890648
+}

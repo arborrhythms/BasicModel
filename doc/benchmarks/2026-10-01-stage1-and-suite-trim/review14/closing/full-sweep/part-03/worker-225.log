@@ -1,0 +1,81 @@
+FFFFFFs                                                                  [100%]
+=================================== FAILURES ===================================
+____________________ test_live_default_on_divides_punct_run ____________________
+test/test_within_whole_division.py:94: in test_live_default_on_divides_punct_run
+    ws = _whole_space()
+         ^^^^^^^^^^^^^^
+test/test_within_whole_division.py:63: in _whole_space
+    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20771: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+__________________ test_live_attested_whole_stays_one_concept __________________
+test/test_within_whole_division.py:109: in test_live_attested_whole_stays_one_concept
+    ws = _whole_space()
+         ^^^^^^^^^^^^^^
+test/test_within_whole_division.py:63: in _whole_space
+    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20771: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+___________________ test_live_no_complete_tiling_keeps_span ____________________
+test/test_within_whole_division.py:125: in test_live_no_complete_tiling_keeps_span
+    ws_on = _whole_space()
+            ^^^^^^^^^^^^^^
+test/test_within_whole_division.py:63: in _whole_space
+    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20771: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+_______________ test_live_seeded_bytes_alone_do_not_divide_words _______________
+test/test_within_whole_division.py:141: in test_live_seeded_bytes_alone_do_not_divide_words
+    ws = _whole_space()
+         ^^^^^^^^^^^^^^
+test/test_within_whole_division.py:63: in _whole_space
+    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20771: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+___________________ test_live_knob_off_restores_pre_t3_spans ___________________
+test/test_within_whole_division.py:150: in test_live_knob_off_restores_pre_t3_spans
+    ws = _whole_space(divideWithinWhole=False)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_within_whole_division.py:63: in _whole_space
+    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20771: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+_________________________ test_live_no_store_is_inert __________________________
+test/test_within_whole_division.py:159: in test_live_no_store_is_inert
+    ws = _whole_space()
+         ^^^^^^^^^^^^^^
+test/test_within_whole_division.py:63: in _whole_space
+    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:20771: in __init__
+    raise ValueError("WholeSpace.analysis must be meronomy; old reading modes are retired")
+E   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired
+=============================== warnings summary ===============================
+test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span
+test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words
+test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans
+test/test_within_whole_division.py::test_live_no_store_is_inert
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1739: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+FAILED test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+FAILED test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span
+FAILED test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words
+FAILED test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans
+FAILED test/test_within_whole_division.py::test_live_no_store_is_inert - Valu...
+6 failed, 1 skipped, 6 warnings in 3.00s

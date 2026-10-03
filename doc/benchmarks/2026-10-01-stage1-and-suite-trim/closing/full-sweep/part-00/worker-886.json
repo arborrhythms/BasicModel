@@ -1,0 +1,54 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+    "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+    "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction"
+  ],
+  "completed": [
+    "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+    "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+    "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014845900295767933,
+      "message": "",
+      "stdout": "Starting with dynamic 18-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\n"
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020316698646638542,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009021250007208437,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007306659972527996,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

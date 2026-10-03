@@ -1,0 +1,35 @@
+........................................................................ [ 21%]
+.....F.................................................................. [ 42%]
+........................................................................ [ 63%]
+........................................................................ [ 84%]
+.................................................F....                   [100%]
+=================================== FAILURES ===================================
+____ test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md] ____
+test/test_doc_links.py:51: in test_relative_links_resolve
+    assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"
+E   AssertionError: doc/benchmarks/2026-09-27-item7/README.md: unresolved ['../../../test/test_context_rotation.py']
+E   assert not ['../../../test/test_context_rotation.py']
+______________ test_property_priming_projects_direct_surface_rows ______________
+test/test_primitive_properties.py:138: in test_property_priming_projects_direct_surface_rows
+    cs.interpret.define(102, 101, description=dict(
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:145: in define
+    raise ValueError('DEF requires distinct, live native identities')
+E   ValueError: DEF requires distinct, live native identities
+=============================== warnings summary ===============================
+test/test_training_diagnostic_contracts.py::test_diagnostic_failure_does_not_abort_real_training
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]
+FAILED test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows
+2 failed, 340 passed, 2 warnings in 7.87s

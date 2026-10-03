@@ -14,41 +14,12 @@ def _meaning():
     return ConceptualMeaning(torch.ones(3, 8, requires_grad=True), torch.ones(3, dtype=torch.bool), mode="interrogative")
 
 
-def test_legacy_credit_begin_cannot_replace_an_active_ordinary_episode():
-    memory = WhatInteractionMemory(capacity=32, detach_mode="episode")
-    memory.begin_thought_episode(_meaning(), work_budget=4)
-    with pytest.raises(RuntimeError, match="ordinary|episode"):
-        memory.begin_what_episode()
-    assert len(memory._episode_live[0]) == 1
 
 
-def test_legacy_credit_reservation_can_end_before_forward_establishes_batch():
-    memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
-    memory.begin_what_episode(b=1)
-    assert memory.in_episode(b=1)
-    assert memory.end_what_episode(b=1) == 0
-    assert not memory.in_episode(b=1)
 
 
-def test_legacy_adapter_detaches_complete_meanings_at_the_credit_boundary():
-    memory = WhatInteractionMemory(capacity=32, detach_mode="episode")
-    memory.begin_what_episode()
-    meaning = _meaning()
-    memory.append_what_slot(LTMSlot(input=meaning, output=meaning))
-    assert memory.get_what_slots()[0].input.roles.requires_grad
-    memory.end_what_episode()
-    assert not memory.get_what_slots()[0].input.roles.requires_grad
-    assert meaning.roles.requires_grad
 
 
-def test_checkpoint_snapshot_detaches_legacy_values_without_detaching_the_live_owner():
-    memory = WhatInteractionMemory(capacity=32, detach_mode="episode")
-    memory.begin_what_episode()
-    value = torch.ones(8, requires_grad=True)
-    memory.append_what_slot(LTMSlot(input=value, closure_pressure=3.5))
-    extra = memory.thought_extras()
-    assert not extra["rows"][0][0]["legacy"].input.requires_grad
-    assert memory.get_what_slots()[0].input.requires_grad
 
 
 def test_legacy_checkpoint_replay_preserves_open_context_pressure():

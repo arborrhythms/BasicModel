@@ -1,0 +1,43 @@
+--- a/test/test_explicit_dimensions.py
++++ b/test/test_explicit_dimensions.py
+@@ -42,6 +42,7 @@
+ import unittest
+ 
+ import pytest
++import torch
+ 
+ _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+ 
+@@ -245,15 +246,23 @@
+     @unittest.skipIf(not _RUN_SLOW, "slow (~60s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
+     def test_xor_class_accuracy(self):
+         model = _run_xor_grammar_in_process()
+-        self.assertGreaterEqual(
+-            model.rCorrect[0], 0.5,
+-            f"Expected >=0.5 accuracy on class 0 from an unselected initialization, "
+-            f"got {model.rCorrect[0]}",
+-        )
+-        self.assertGreaterEqual(
+-            model.rCorrect[1], 0.5,
+-            f"Expected >=0.5 accuracy on class 1 from an unselected initialization, "
+-            f"got {model.rCorrect[1]}",
++        # Read the answers saved by the final evaluation. Another forward
++        # would advance the clock; rCorrect is an embedding-report placeholder.
++        data = model.inputSpace.data
++        answers = torch.stack(data.reconstructed_output).reshape(-1)
++        targets = torch.stack(data.test_output).reshape(-1).to(answers)
++        self.assertEqual(answers.numel(), 4)
++        self.assertEqual(targets.numel(), 4)
++        self.assertTrue(bool(torch.isfinite(answers).all()))
++        correct = (answers > 0.5) == (targets > 0.5)
++        mse = torch.mean((answers - targets).square()).item()
++        self.assertTrue(
++            bool(correct.all()),
++            f"XOR_grammar requires all four answers correct: {answers.tolist()}",
++        )
++        self.assertLess(
++            mse, 0.05,
++            f"XOR_grammar requires MSE <0.05, got {mse}: {answers.tolist()}",
+         )
+ 
+ 

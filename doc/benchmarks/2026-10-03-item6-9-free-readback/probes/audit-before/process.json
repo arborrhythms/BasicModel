@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-item6-9-free-readback/instrumentation_probe.py",
+    "test/test_grammar_reconstruction_gate.py",
+    "test/test_subspace_what_stm_contract.py"
+  ],
+  "pid": 42659,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 619939328,
+  "elapsed_seconds": 4.891432957985671,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/audit-before/run.log"
+}

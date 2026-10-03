@@ -1,0 +1,3 @@
+test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row
+
+1 test collected in 2.05s

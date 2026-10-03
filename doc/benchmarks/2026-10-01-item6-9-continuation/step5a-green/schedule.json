@@ -1,0 +1,94 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/result.json": "01d894812921ae59fd3e6fd9cc9596bee316a99331f13632c65b75edfcc37e97"
+  },
+  "aggregate_bytes": 25769803776,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 12,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_item7_lesson_gradients.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "estimated_seconds": 0.0006386660970747471,
+      "reserved_bytes": 1206092196.8000002
+    },
+    {
+      "nodes": [
+        "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-1]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-3]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-1]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-3]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    }
+  ]
+}

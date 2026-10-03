@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_input_word_cursor.py::test_bpe_word_mask_is_the_validity_signal_when_present"
+  ],
+  "completed": [
+    "test/test_input_word_cursor.py::test_bpe_word_mask_is_the_validity_signal_when_present"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_bpe_word_mask_is_the_validity_signal_when_present",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036133299727225676,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

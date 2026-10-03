@@ -1,0 +1,11 @@
+{
+  "source_files": 669,
+  "source_matched": true,
+  "head_unchanged": true,
+  "environment_unchanged": true,
+  "full_port_pairs": 5,
+  "unchanged_gate_assertions": true,
+  "focused_runner_checks": 35,
+  "measurement_cancelled_by_user": true,
+  "full_sweep_not_repeated": true
+}

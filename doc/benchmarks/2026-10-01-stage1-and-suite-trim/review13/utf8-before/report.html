@@ -1,0 +1,8 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.04018529099994339</pre></td><td><pre>test/test_mixing_reconstruction_bank.py:18: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+    model._lex_embed_stem(raw)
+bin/Models.py:13905: in _lex_embed_stem
+    self._validate_reconstruction_bank()
+bin/Models.py:12225: in _validate_reconstruction_bank
+    raise RuntimeError(&quot;tied reconstruction bank requires staged word and sentence masks&quot;)
+E   RuntimeError: tied reconstruction bank requires staged word and sentence masks</pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+</pre></td></tr></table></body></html>

@@ -1,0 +1,64 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras",
+    "test/test_lexicon_ownership.py::test_inputspace_has_lex_batch",
+    "test/test_lexicon_ownership.py::test_perceptualspace_lex_and_embed_renamed_to_embed",
+    "test/test_lexicon_ownership.py::test_what_encoding_roundtrip",
+    "test/test_lexicon_ownership.py::test_what_encoding_truncates_oversized_tokens"
+  ],
+  "completed": [
+    "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras",
+    "test/test_lexicon_ownership.py::test_inputspace_has_lex_batch",
+    "test/test_lexicon_ownership.py::test_perceptualspace_lex_and_embed_renamed_to_embed",
+    "test/test_lexicon_ownership.py::test_what_encoding_roundtrip",
+    "test/test_lexicon_ownership.py::test_what_encoding_truncates_oversized_tokens"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.055070249989512376,
+      "message": "78089136, 3215547070, 2957081333,  261867514,\nE          1488378256, 1327347946,  626174582, 2667053721, 3942357581,\nE          3008787905, 2265974660, 4048695155, 2995015618, 1462176848,\nE          3105396252, 1064246990, 2701007272,  721175787,  209253900,\nE           742929193, 3284831276, 2063668214, 3886953802, 3076339260,\nE          4187476705,  335201901, 3446048050, 2130793504, 4142109413,\nE          2417347682,  475743903, 4190996332, 1313301073, 2103427656,\nE          2042766326, 1180527164, 3477498848, 3229714294, 1993039983,\nE          1133237226, 3816904119, 3188242591, 3538629375, 1643819483,\nE          1527532490, 1135603416, 3791807622, 4207262052, 2991709319,\nE          3553459674, 1367541879,  525289006,  153590337, 1361160662,\nE           233789323, 4275948476,   73864337, 3821767772, 1834056325,\nE          2842224201, 2024304430, 3694669903, 3076666662, 1100774205,\nE          2920580482, 3840629756,  682873095, 2087297544, 1257052363,\nE           628786317, 1354522264, 4110749540,  213756171, 1771391234,\nE          2045654650, 3644630301,  292060974, 1209154917, 2085040707,\nE          1680872337,  847854815, 2626538650,  565635266,  929024574,\nE          1618346128, 2459177059, 1753061785, 3841618843, 3586029000,\nE           797573149, 4214205563,  901657759, 1034168482, 1643505538,\nE          2388694948, 2896998413, 1269992100,  725828180, 3581402179,\nE          3111695129, 3451995239, 1503504490, 3941703509, 2706919225,\nE           369065673, 3533058561,  235938052, 3087193635, 1071524376,\nE          3843039847,  506895282, 2722513895, 3884295251, 3916624229,\nE          3632238731, 2941960251, 4013447006, 3935221881, 3215599310,\nE          3021809532, 2793186186, 1629106317, 1826404872, 1799652965,\nE          2332350338, 4165054006,  122013185, 4256853275, 1830158720,\nE          3287788256, 3507968419,  226669027, 3353276664, 3380054656,\nE          4240708064, 3153111953, 1301826350, 3387933560, 2907296733,\nE          1990599815, 1564257914, 1010461517, 1141823754, 1813150131,\nE           559885833, 3855835076, 2030649725, 3812440156, 1103152166,\nE          1910152493, 1172088120, 3407363705, 3422883187,  371003274,\nE          2506969913, 3644343833,  825223977, 1535802365, 1752371383,\nE          3912258449, 1864658226, 1743170801, 3388330433, 3854615969,\nE          1448545521, 2221690779, 4137321022,  776757805, 4143561423,\nE          4173656659, 1029825397, 2144367601, 1298353061,  702634134,\nE          2025151537, 4293820495, 1368823104,  150794987,  311326074,\nE          3761679703,  519886746,  727406508,  416882877, 2832466357,\nE          2913569631, 2855162297,  611443109, 3453685498, 1735125741,\nE          1790778058, 2250974831, 3332368446,  947829224,  344020886,\nE          1793318231, 1054975104, 3902005429, 3452719163,  211574968,\nE          2764163744, 1274015833,  586993259, 3299182897,  974375474,\nE           236874328, 3155737967, 1436699046, 4128851384, 4225900468,\nE          3528574534, 2601098365,  784523171, 4209208325, 2877203849,\nE           468157443, 2145201340, 3221064075, 2637522594, 3573809232,\nE          2474225240, 2228096968, 3698417158, 4238789474,  417022074,\nE          3784668803, 2810905244, 4218895427, 2581489599, 1862422692,\nE          3703812404, 2343458826, 3369118385, 3797181282, 2613313364,\nE          1519679360, 3286460866, 1834837659, 4229150564,  165096019,\nE          3479509700, 2192481144, 1634874725, 4061414624], dtype=uint32), 623, 0, 0.0), 'cuda_rng_state_all': None, 'mps_rng_state': tensor([  1,   0,   0,   0,   1,   0,   0,   0,   1,   0,   0,   0,   1,   0,\nE             0,   0,   1,   0,   0,   0,  27, 163, 119, 190, 212,  69, 139,  85,\nE            27, 163, 119, 190, 212,  69, 139,  85,   0,   0,   0,   0,   0,   0,\nE             0,   0], dtype=torch.uint8), 'data_manifest': {'dataset': 'xor', 'content_sha256': 'f6ae3b92e25052d47c9ba82d0e37a08341cb45236a96b04c4d4df675965b94cd'}}, 'checkpoint_schema': {'version': 2, 'whole_space_role': 'property_basis'}}",
+      "stdout": "[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp7myuwcqd/weights.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_inputspace_has_lex_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003979583008913323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_perceptualspace_lex_and_embed_renamed_to_embed",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00019562500528991222,
+      "message": "test/test_lexicon_ownership.py:334: in test_perceptualspace_lex_and_embed_renamed_to_embed\n    assert hasattr(Spaces.PartSpace, '_embed'), \\\nE   AssertionError: _embed must exist after Task 4 rename\nE   assert False\nE    +  where False = hasattr(<class 'bin.Spaces.PartSpace'>, '_embed')\nE    +    where <class 'bin.Spaces.PartSpace'> = <module 'bin.Spaces' from '/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py'>.PartSpace",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_what_encoding_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017249998927582055,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lexicon_ownership.py::test_what_encoding_truncates_oversized_tokens",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001220419944729656,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

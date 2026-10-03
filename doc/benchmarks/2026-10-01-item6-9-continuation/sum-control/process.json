@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/sum_control.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/sum-control/XOR_grammar_sum_control.xml"
+  ],
+  "pid": 37676,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 719701456,
+  "elapsed_seconds": 64.87949383399973,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/sum-control/worker.log"
+}

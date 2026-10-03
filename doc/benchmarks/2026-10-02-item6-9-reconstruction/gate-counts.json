@@ -1,0 +1,10 @@
+{
+  "5": {
+    "passed": 0,
+    "observed": 10
+  },
+  "6": {
+    "passed": 2,
+    "observed": 10
+  }
+}

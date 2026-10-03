@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_live_query_occurrences.py::test_thought_occurrences_cannot_read_another_batch_row"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-269.recycle.json"
+}

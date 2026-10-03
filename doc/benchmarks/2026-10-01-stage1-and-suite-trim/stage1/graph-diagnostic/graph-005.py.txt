@@ -1,0 +1,236 @@
+
+
+
+def forward(self, L_cs_sub_payload_8_ : torch.Tensor, L_cs_sub_payload_0_ : torch.Tensor, L_cs_sub_payload_2_ : torch.Tensor, L_cs_sub_payload_4_ : torch.Tensor, L_cs_sub_payload_1_ : torch.Tensor, L_lookup_rows_ : torch.Tensor, L_lookup_atoms_ : torch.Tensor, L_current_cs_sym_0_ : torch.Tensor, L_index_ : torch.Tensor, L_sentence_ids_ : torch.Tensor, L_feedback_0_ : torch.Tensor, L_feedback_1_ : torch.Tensor):
+    l_cs_sub_payload_8_ = L_cs_sub_payload_8_
+    l_cs_sub_payload_0_ = L_cs_sub_payload_0_
+    l_cs_sub_payload_2_ = L_cs_sub_payload_2_
+    l_cs_sub_payload_4_ = L_cs_sub_payload_4_
+    l_cs_sub_payload_1_ = L_cs_sub_payload_1_
+    l_lookup_rows_ = L_lookup_rows_
+    l_lookup_atoms_ = L_lookup_atoms_
+    l_current_cs_sym_0_ = L_current_cs_sym_0_
+    l_index_ = L_index_
+    l_sentence_ids_ = L_sentence_ids_
+    l_feedback_0_ = L_feedback_0_
+    l_feedback_1_ = L_feedback_1_
+    reshape = l_cs_sub_payload_8_.reshape(28)
+    reshape_1 = l_cs_sub_payload_2_.reshape(28);  reshape_1 = None
+    reshape_2 = reshape.reshape(28);  reshape = None
+    active = reshape_2.to(device = device(type='cpu'), dtype = torch.bool);  reshape_2 = None
+    reshape_3 = l_cs_sub_payload_2_.reshape(28, 1)
+    expand = reshape_3.expand(28, 8);  reshape_3 = None
+    rows = expand.to(device = device(type='cpu'), dtype = torch.int64);  expand = None
+    reshape_4 = active.reshape(28, 1);  active = None
+    ge = rows.ge(0)
+    valid = torch.logical_and(reshape_4, ge);  reshape_4 = ge = None
+    full_like = torch.full_like(rows, -1)
+    rows_1 = torch.where(valid, rows, full_like);  rows = full_like = None
+    zeros_like = torch.zeros_like(l_cs_sub_payload_4_)
+    activations = torch.where(valid, l_cs_sub_payload_4_, zeros_like);  zeros_like = None
+    bands = l_cs_sub_payload_0_[(Ellipsis, slice(1032, None, None))]
+    unsqueeze = valid.unsqueeze(-1)
+    zeros_like_1 = torch.zeros_like(bands)
+    bands_1 = torch.where(unsqueeze, bands, zeros_like_1);  unsqueeze = bands = zeros_like_1 = None
+    full_like_1 = torch.full_like(l_cs_sub_payload_1_, -1)
+    orders = torch.where(valid, l_cs_sub_payload_1_, full_like_1);  l_cs_sub_payload_1_ = full_like_1 = None
+    unsqueeze_1 = activations.unsqueeze(1);  activations = None
+    unsqueeze_2 = bands_1.unsqueeze(1);  bands_1 = unsqueeze_2 = None
+    valid_1 = rows_1.ge(0);  valid_1 = None
+    staged_rows = l_lookup_rows_.to(device = device(type='cpu'), dtype = torch.int64)
+    unsqueeze_3 = rows_1.unsqueeze(-1);  rows_1 = None
+    unsqueeze_4 = staged_rows.unsqueeze(1)
+    matches = unsqueeze_3.__eq__(unsqueeze_4);  unsqueeze_3 = unsqueeze_4 = None
+    unsqueeze_5 = staged_rows.unsqueeze(1);  staged_rows = None
+    ge_2 = unsqueeze_5.ge(0);  unsqueeze_5 = None
+    matches_1 = torch.logical_and(matches, ge_2);  matches = ge_2 = None
+    found = matches_1.any(dim = -1)
+    to_3 = matches_1.to(dtype = torch.int64);  matches_1 = None
+    positions = to_3.argmax(dim = -1);  to_3 = None
+    unsqueeze_6 = positions.unsqueeze(-1);  positions = None
+    gather_index = unsqueeze_6.expand(28, 8, 1032);  unsqueeze_6 = None
+    atoms = l_lookup_atoms_.gather(1, gather_index);  gather_index = None
+    atom_what = atoms[(Ellipsis, slice(None, 1032, None))];  atoms = None
+    unsqueeze_7 = found.unsqueeze(1);  found = None
+    to_4 = unsqueeze_7.to(torch.float32);  unsqueeze_7 = None
+    active_1 = unsqueeze_1.mul(to_4);  unsqueeze_1 = to_4 = None
+    unsqueeze_8 = active_1.unsqueeze(-1);  active_1 = None
+    unsqueeze_9 = atom_what.unsqueeze(1);  atom_what = None
+    decoded_what = unsqueeze_8.mul(unsqueeze_9);  unsqueeze_8 = unsqueeze_9 = None
+    decoded = decoded_what[(slice(None, None, None), 0)];  decoded_what = None
+    valid_2 = valid.to(device = device(type='cpu'), dtype = torch.bool);  valid = None
+    unsqueeze_10 = valid_2.unsqueeze(-1)
+    event = torch.where(unsqueeze_10, decoded, l_cs_sub_payload_0_);  unsqueeze_10 = decoded = l_cs_sub_payload_0_ = None
+    add = orders.add(1)
+    raised = torch.where(valid_2, add, orders);  valid_2 = add = orders = None
+    reshape_5 = l_cs_sub_payload_8_.reshape(28)
+    reshape_6 = l_cs_sub_payload_2_.reshape(28);  reshape_6 = None
+    reshape_7 = reshape_5.reshape(28);  reshape_5 = None
+    active_2 = reshape_7.to(device = device(type='cpu'), dtype = torch.bool);  reshape_7 = None
+    reshape_8 = l_cs_sub_payload_2_.reshape(28, 1)
+    expand_2 = reshape_8.expand(28, 8);  reshape_8 = None
+    rows_2 = expand_2.to(device = device(type='cpu'), dtype = torch.int64);  expand_2 = None
+    reshape_9 = active_2.reshape(28, 1);  active_2 = None
+    ge_3 = rows_2.ge(0)
+    valid_3 = torch.logical_and(reshape_9, ge_3);  reshape_9 = ge_3 = None
+    full_like_2 = torch.full_like(rows_2, -1)
+    rows_3 = torch.where(valid_3, rows_2, full_like_2);  rows_2 = full_like_2 = None
+    zeros_like_2 = torch.zeros_like(l_cs_sub_payload_4_)
+    activations_1 = torch.where(valid_3, l_cs_sub_payload_4_, zeros_like_2);  zeros_like_2 = None
+    bands_2 = event[(Ellipsis, slice(1032, None, None))]
+    unsqueeze_11 = valid_3.unsqueeze(-1)
+    zeros_like_3 = torch.zeros_like(bands_2)
+    bands_3 = torch.where(unsqueeze_11, bands_2, zeros_like_3);  unsqueeze_11 = bands_2 = zeros_like_3 = None
+    full_like_3 = torch.full_like(raised, -1)
+    orders_1 = torch.where(valid_3, raised, full_like_3);  raised = full_like_3 = None
+    unsqueeze_12 = activations_1.unsqueeze(1);  activations_1 = None
+    unsqueeze_13 = bands_3.unsqueeze(1);  bands_3 = unsqueeze_13 = None
+    valid_4 = rows_3.ge(0);  valid_4 = None
+    staged_rows_1 = l_lookup_rows_.to(device = device(type='cpu'), dtype = torch.int64)
+    unsqueeze_14 = rows_3.unsqueeze(-1);  rows_3 = None
+    unsqueeze_15 = staged_rows_1.unsqueeze(1)
+    matches_2 = unsqueeze_14.__eq__(unsqueeze_15);  unsqueeze_14 = unsqueeze_15 = None
+    unsqueeze_16 = staged_rows_1.unsqueeze(1);  staged_rows_1 = None
+    ge_5 = unsqueeze_16.ge(0);  unsqueeze_16 = None
+    matches_3 = torch.logical_and(matches_2, ge_5);  matches_2 = ge_5 = None
+    found_1 = matches_3.any(dim = -1)
+    to_9 = matches_3.to(dtype = torch.int64);  matches_3 = None
+    positions_1 = to_9.argmax(dim = -1);  to_9 = None
+    unsqueeze_17 = positions_1.unsqueeze(-1);  positions_1 = None
+    gather_index_1 = unsqueeze_17.expand(28, 8, 1032);  unsqueeze_17 = None
+    atoms_1 = l_lookup_atoms_.gather(1, gather_index_1);  gather_index_1 = None
+    atom_what_1 = atoms_1[(Ellipsis, slice(None, 1032, None))];  atoms_1 = None
+    unsqueeze_18 = found_1.unsqueeze(1);  found_1 = None
+    to_10 = unsqueeze_18.to(torch.float32);  unsqueeze_18 = None
+    active_3 = unsqueeze_12.mul(to_10);  unsqueeze_12 = to_10 = None
+    unsqueeze_19 = active_3.unsqueeze(-1);  active_3 = None
+    unsqueeze_20 = atom_what_1.unsqueeze(1);  atom_what_1 = None
+    decoded_what_1 = unsqueeze_19.mul(unsqueeze_20);  unsqueeze_19 = unsqueeze_20 = None
+    decoded_1 = decoded_what_1[(slice(None, None, None), 0)];  decoded_what_1 = None
+    valid_5 = valid_3.to(device = device(type='cpu'), dtype = torch.bool);  valid_3 = None
+    unsqueeze_21 = valid_5.unsqueeze(-1)
+    event_1 = torch.where(unsqueeze_21, decoded_1, event);  unsqueeze_21 = decoded_1 = event = None
+    add_1 = orders_1.add(1)
+    raised_1 = torch.where(valid_5, add_1, orders_1);  valid_5 = add_1 = orders_1 = None
+    reshape_10 = l_cs_sub_payload_8_.reshape(28)
+    reshape_11 = l_cs_sub_payload_2_.reshape(28);  reshape_11 = None
+    reshape_12 = reshape_10.reshape(28);  reshape_10 = None
+    active_4 = reshape_12.to(device = device(type='cpu'), dtype = torch.bool);  reshape_12 = None
+    reshape_13 = l_cs_sub_payload_2_.reshape(28, 1)
+    expand_4 = reshape_13.expand(28, 8);  reshape_13 = None
+    rows_4 = expand_4.to(device = device(type='cpu'), dtype = torch.int64);  expand_4 = None
+    reshape_14 = active_4.reshape(28, 1);  active_4 = None
+    ge_6 = rows_4.ge(0)
+    valid_6 = torch.logical_and(reshape_14, ge_6);  reshape_14 = ge_6 = None
+    full_like_4 = torch.full_like(rows_4, -1)
+    rows_5 = torch.where(valid_6, rows_4, full_like_4);  rows_4 = full_like_4 = None
+    zeros_like_4 = torch.zeros_like(l_cs_sub_payload_4_)
+    activations_2 = torch.where(valid_6, l_cs_sub_payload_4_, zeros_like_4);  zeros_like_4 = None
+    bands_4 = event_1[(Ellipsis, slice(1032, None, None))]
+    unsqueeze_22 = valid_6.unsqueeze(-1)
+    zeros_like_5 = torch.zeros_like(bands_4)
+    bands_5 = torch.where(unsqueeze_22, bands_4, zeros_like_5);  unsqueeze_22 = bands_4 = zeros_like_5 = None
+    full_like_5 = torch.full_like(raised_1, -1)
+    orders_2 = torch.where(valid_6, raised_1, full_like_5);  raised_1 = full_like_5 = None
+    unsqueeze_23 = activations_2.unsqueeze(1);  activations_2 = None
+    unsqueeze_24 = bands_5.unsqueeze(1);  bands_5 = unsqueeze_24 = None
+    valid_7 = rows_5.ge(0);  valid_7 = None
+    staged_rows_2 = l_lookup_rows_.to(device = device(type='cpu'), dtype = torch.int64)
+    unsqueeze_25 = rows_5.unsqueeze(-1);  rows_5 = None
+    unsqueeze_26 = staged_rows_2.unsqueeze(1)
+    matches_4 = unsqueeze_25.__eq__(unsqueeze_26);  unsqueeze_25 = unsqueeze_26 = None
+    unsqueeze_27 = staged_rows_2.unsqueeze(1);  staged_rows_2 = None
+    ge_8 = unsqueeze_27.ge(0);  unsqueeze_27 = None
+    matches_5 = torch.logical_and(matches_4, ge_8);  matches_4 = ge_8 = None
+    found_2 = matches_5.any(dim = -1)
+    to_15 = matches_5.to(dtype = torch.int64);  matches_5 = None
+    positions_2 = to_15.argmax(dim = -1);  to_15 = None
+    unsqueeze_28 = positions_2.unsqueeze(-1);  positions_2 = None
+    gather_index_2 = unsqueeze_28.expand(28, 8, 1032);  unsqueeze_28 = None
+    atoms_2 = l_lookup_atoms_.gather(1, gather_index_2);  gather_index_2 = None
+    atom_what_2 = atoms_2[(Ellipsis, slice(None, 1032, None))];  atoms_2 = None
+    unsqueeze_29 = found_2.unsqueeze(1);  found_2 = None
+    to_16 = unsqueeze_29.to(torch.float32);  unsqueeze_29 = None
+    active_5 = unsqueeze_23.mul(to_16);  unsqueeze_23 = to_16 = None
+    unsqueeze_30 = active_5.unsqueeze(-1);  active_5 = None
+    unsqueeze_31 = atom_what_2.unsqueeze(1);  atom_what_2 = None
+    decoded_what_2 = unsqueeze_30.mul(unsqueeze_31);  unsqueeze_30 = unsqueeze_31 = None
+    decoded_2 = decoded_what_2[(slice(None, None, None), 0)];  decoded_what_2 = None
+    valid_8 = valid_6.to(device = device(type='cpu'), dtype = torch.bool);  valid_6 = None
+    unsqueeze_32 = valid_8.unsqueeze(-1)
+    event_2 = torch.where(unsqueeze_32, decoded_2, event_1);  unsqueeze_32 = decoded_2 = event_1 = None
+    add_2 = orders_2.add(1)
+    raised_2 = torch.where(valid_8, add_2, orders_2);  valid_8 = add_2 = orders_2 = None
+    reshape_15 = l_cs_sub_payload_8_.reshape(28)
+    reshape_16 = l_cs_sub_payload_2_.reshape(28);  reshape_16 = None
+    reshape_17 = reshape_15.reshape(28);  reshape_15 = None
+    active_6 = reshape_17.to(device = device(type='cpu'), dtype = torch.bool);  reshape_17 = None
+    reshape_18 = l_cs_sub_payload_2_.reshape(28, 1);  l_cs_sub_payload_2_ = None
+    expand_6 = reshape_18.expand(28, 8);  reshape_18 = None
+    rows_6 = expand_6.to(device = device(type='cpu'), dtype = torch.int64);  expand_6 = None
+    reshape_19 = active_6.reshape(28, 1);  active_6 = None
+    ge_9 = rows_6.ge(0)
+    valid_9 = torch.logical_and(reshape_19, ge_9);  reshape_19 = ge_9 = None
+    full_like_6 = torch.full_like(rows_6, -1)
+    rows_7 = torch.where(valid_9, rows_6, full_like_6);  rows_6 = full_like_6 = None
+    zeros_like_6 = torch.zeros_like(l_cs_sub_payload_4_)
+    activations_3 = torch.where(valid_9, l_cs_sub_payload_4_, zeros_like_6);  l_cs_sub_payload_4_ = zeros_like_6 = None
+    bands_6 = event_2[(Ellipsis, slice(1032, None, None))]
+    unsqueeze_33 = valid_9.unsqueeze(-1)
+    zeros_like_7 = torch.zeros_like(bands_6)
+    bands_7 = torch.where(unsqueeze_33, bands_6, zeros_like_7);  unsqueeze_33 = bands_6 = zeros_like_7 = None
+    full_like_7 = torch.full_like(raised_2, -1)
+    orders_3 = torch.where(valid_9, raised_2, full_like_7);  raised_2 = full_like_7 = None
+    unsqueeze_34 = activations_3.unsqueeze(1);  activations_3 = None
+    unsqueeze_35 = bands_7.unsqueeze(1);  bands_7 = unsqueeze_35 = None
+    valid_10 = rows_7.ge(0);  valid_10 = None
+    staged_rows_3 = l_lookup_rows_.to(device = device(type='cpu'), dtype = torch.int64);  l_lookup_rows_ = None
+    unsqueeze_36 = rows_7.unsqueeze(-1);  rows_7 = None
+    unsqueeze_37 = staged_rows_3.unsqueeze(1)
+    matches_6 = unsqueeze_36.__eq__(unsqueeze_37);  unsqueeze_36 = unsqueeze_37 = None
+    unsqueeze_38 = staged_rows_3.unsqueeze(1);  staged_rows_3 = None
+    ge_11 = unsqueeze_38.ge(0);  unsqueeze_38 = None
+    matches_7 = torch.logical_and(matches_6, ge_11);  matches_6 = ge_11 = None
+    found_3 = matches_7.any(dim = -1)
+    to_21 = matches_7.to(dtype = torch.int64);  matches_7 = None
+    positions_3 = to_21.argmax(dim = -1);  to_21 = None
+    unsqueeze_39 = positions_3.unsqueeze(-1);  positions_3 = None
+    gather_index_3 = unsqueeze_39.expand(28, 8, 1032);  unsqueeze_39 = None
+    atoms_3 = l_lookup_atoms_.gather(1, gather_index_3);  l_lookup_atoms_ = gather_index_3 = None
+    atom_what_3 = atoms_3[(Ellipsis, slice(None, 1032, None))];  atoms_3 = None
+    unsqueeze_40 = found_3.unsqueeze(1);  found_3 = None
+    to_22 = unsqueeze_40.to(torch.float32);  unsqueeze_40 = None
+    active_7 = unsqueeze_34.mul(to_22);  unsqueeze_34 = to_22 = None
+    unsqueeze_41 = active_7.unsqueeze(-1);  active_7 = None
+    unsqueeze_42 = atom_what_3.unsqueeze(1);  atom_what_3 = None
+    decoded_what_3 = unsqueeze_41.mul(unsqueeze_42);  unsqueeze_41 = unsqueeze_42 = None
+    decoded_3 = decoded_what_3[(slice(None, None, None), 0)];  decoded_what_3 = None
+    valid_11 = valid_9.to(device = device(type='cpu'), dtype = torch.bool);  valid_9 = None
+    unsqueeze_43 = valid_11.unsqueeze(-1)
+    event_3 = torch.where(unsqueeze_43, decoded_3, event_2);  unsqueeze_43 = decoded_3 = event_2 = None
+    add_3 = orders_3.add(1)
+    raised_3 = torch.where(valid_11, add_3, orders_3);  valid_11 = add_3 = orders_3 = None
+    unsqueeze_44 = l_cs_sub_payload_8_.unsqueeze(-1);  l_cs_sub_payload_8_ = None
+    next_sym = torch.where(unsqueeze_44, event_3, l_current_cs_sym_0_);  unsqueeze_44 = l_current_cs_sym_0_ = None
+    clamp = l_index_.clamp(0, 255)
+    safe = clamp.reshape(1);  clamp = None
+    index_select = torch.index_select(l_sentence_ids_, 1, safe);  safe = None
+    current_sentence = index_select.reshape(28);  index_select = None
+    sub = l_index_.sub(2)
+    feedback_source_index = sub.clamp(0, 255);  sub = None
+    clamp_2 = feedback_source_index.clamp(0, 255);  feedback_source_index = None
+    safe_1 = clamp_2.reshape(1);  clamp_2 = None
+    index_select_1 = torch.index_select(l_sentence_ids_, 1, safe_1);  l_sentence_ids_ = safe_1 = None
+    feedback_sentence = index_select_1.reshape(28);  index_select_1 = None
+    ge_12 = l_index_.ge(2);  l_index_ = None
+    ge_13 = current_sentence.ge(0)
+    eq_4 = current_sentence.__eq__(feedback_sentence);  current_sentence = feedback_sentence = None
+    logical_and_8 = torch.logical_and(ge_13, eq_4);  ge_13 = eq_4 = None
+    same_sentence = torch.logical_and(ge_12, logical_and_8);  ge_12 = logical_and_8 = None
+    reshape_24 = same_sentence.reshape(28, 1)
+    zeros_like_8 = torch.zeros_like(l_feedback_0_)
+    routed_feedback = torch.where(reshape_24, l_feedback_0_, zeros_like_8);  reshape_24 = l_feedback_0_ = zeros_like_8 = None
+    reshape_25 = same_sentence.reshape(28, 1);  same_sentence = None
+    routed_valid = torch.logical_and(l_feedback_1_, reshape_25);  l_feedback_1_ = reshape_25 = None
+    return (event_3, raised_3, routed_feedback, routed_valid, next_sym)
+    

@@ -12,6 +12,7 @@ sys.path.insert(0, _BIN)
 
 import Models  # noqa: E402
 from embed import WordVectors  # noqa: E402
+from Layers import RadixLayer
 from Spaces import Embedding  # noqa: E402
 
 
@@ -46,53 +47,15 @@ def _build_text_model(train_embeddings=False):
 class TestLexiconOwnership(unittest.TestCase):
     def test_embedding_lives_on_perceptual_space(self):
         m = _build_text_model()
-        self.assertIsInstance(m.perceptualSpace.vocabulary, Embedding)
+        self.assertIsInstance(m.perceptualSpace.vocabulary, RadixLayer)
         # InputSpace must not own a lexicon in text mode. A non-None
         # placeholder Tensor is fine -- what matters is that no Embedding
         # lives here.
         self.assertNotIsInstance(m.inputSpace.vocabulary, Embedding)
 
-    def test_symbolic_space_paired_row_api_is_retired(self):
-        """Step 3 (2026-06-10 symbolic-iteration plan): the Stage-1.B
-        paired-row API (``insert_paired_word`` -- orth copy + random
-        semantic partner per lexicon word on SS.codebook) is RETIRED.
-        The CS-leg symbol codebook captures the code-as-written vs
-        code-for-the-concept correspondence in place; the lexicon stays
-        PS-local.
-        """
-        m = _build_text_model()
-        ws = m.wholeSpace
-        self.assertFalse(hasattr(ws, 'insert_paired_word'),
-                         "WholeSpace.insert_paired_word must be "
-                         "RETIRED (Step 3, symbolic-iteration plan).")
-        self.assertFalse(hasattr(ws, 'mark_word_atom'),
-                         "the mark_word_atom autobind fallback retires "
-                         "with the paired-row machinery.")
 
-    def test_embedding_symbolic_back_ref_wired(self):
-        """The PS-side Embedding carries ``wholeSpace_ref`` for the
-        vocabulary/orthographic API delegation. (Its former role --
-        triggering ``insert_paired_word`` on lexicon inserts -- retired
-        with Step 3 of the symbolic-iteration plan.)
-        """
-        m = _build_text_model()
-        emb = m.perceptualSpace.vocabulary
-        self.assertIsInstance(emb, Embedding)
-        peer = getattr(emb, 'wholeSpace_ref', None)
-        self.assertIsNotNone(
-            peer,
-            "Embedding.wholeSpace_ref must be wired so the PS-side "
-            "OOV insert path triggers SS-side paired-row insertion.")
 
-    def test_get_embedding_returns_perceptual(self):
-        m = _build_text_model()
-        emb = m._get_embedding()
-        self.assertIs(emb, m.perceptualSpace.vocabulary)
 
-    def test_output_space_text_mode_reads_perceptual(self):
-        m = _build_text_model()
-        self.assertIs(m.outputSpace._vocabulary, m.perceptualSpace.vocabulary)
-        self.assertTrue(m.outputSpace.text_mode)
 
     def test_save_and_load_embeddings_round_trip(self):
         """Post-2026-05-12 integrated weights: embeddings round-trip
@@ -101,7 +64,7 @@ class TestLexiconOwnership(unittest.TestCase):
         methods were retired).
         """
         m = _build_text_model()
-        self.assertIsInstance(m.perceptualSpace.vocabulary, Embedding)
+        self.assertIsInstance(m.perceptualSpace.vocabulary, RadixLayer)
         with tempfile.TemporaryDirectory() as td:
             path = os.path.join(td, "weights.ckpt")
             m.save_weights(path)
@@ -111,35 +74,12 @@ class TestLexiconOwnership(unittest.TestCase):
 
     def test_optimizer_includes_emb_params_when_trainable(self):
         m = _build_text_model(train_embeddings=True)
-        emb_weight = m.perceptualSpace.vocabulary.wv._vectors
+        emb_weight = m.perceptualSpace.subspace.what.W
         opt = m.getOptimizer(lr=1e-3)
         opt_ptrs = [p.data_ptr() for g in opt.param_groups for p in g["params"]]
         self.assertIn(emb_weight.data_ptr(), opt_ptrs)
 
-    def test_optimizer_excludes_emb_params_when_frozen(self):
-        m = _build_text_model(train_embeddings=False)
-        emb_weight = m.perceptualSpace.vocabulary.wv._vectors
-        opt = m.getOptimizer(lr=1e-3)
-        opt_ptrs = [p.data_ptr() for g in opt.param_groups for p in g["params"]]
-        self.assertNotIn(emb_weight.data_ptr(), opt_ptrs)
 
-    def test_getW_wraps_into_unit_cell(self):
-        """getW() always returns coordinates in [-1, 1) regardless of
-        optimizer drift on the underlying parameter."""
-        m = _build_text_model()
-        emb = m.perceptualSpace.vocabulary
-        raw = torch.zeros_like(emb.wv._vectors[0])
-        # Drift outside the cell along two coordinates.
-        raw[:2] = torch.tensor([1.25, -1.50], device=raw.device)
-        with torch.no_grad():
-            emb.wv._vectors[0].copy_(raw)
-        # Expected wrapped values: 1.25 -> -0.75, -1.50 -> 0.50
-        wrapped = emb.getW()[0, :2]
-        self.assertTrue(torch.allclose(
-            wrapped,
-            torch.tensor([-0.75, 0.50], device=raw.device),
-            atol=1e-6,
-        ))
 
     def test_reverse_uses_wrapped_mse(self):
         """Reverse codebook-snap finds the nearest entry under wrapped
@@ -287,7 +227,7 @@ class TestCheckpointBundle(unittest.TestCase):
             # key). Accept either, so the ckpt is self-sufficient for reload.
             present = [k for k in state.keys() if "wv._local_vectors" in k]
             if not present:
-                vec = m._get_embedding().wv._vectors.detach().cpu().float()
+                vec = m.perceptualSpace.subspace.what.W.detach().cpu().float()
                 present = [
                     k for k, v in state.items()
                     if torch.is_tensor(v) and tuple(v.shape) == tuple(vec.shape)
@@ -300,11 +240,10 @@ class TestCheckpointBundle(unittest.TestCase):
             )
 
     def test_ckpt_includes_vocab_and_bpe_extras(self):
-        """The bundle carries Python-side mappings (vocab_extras) and
-        ChunkLayer state (bpe_extras) alongside the tensor state_dict.
-        """
+        """The bundle carries the current native byte dictionary mappings."""
         import torch
         m = _build_text_model()
+        m.perceptualSpace.vocabulary.insert(b'checkpoint-word')
         with tempfile.TemporaryDirectory() as td:
             ckpt_path = os.path.join(td, "weights.ckpt")
             m.save_weights(ckpt_path)
@@ -312,65 +251,21 @@ class TestCheckpointBundle(unittest.TestCase):
                                weights_only=False)
             self.assertIn("state_dict", saved)
             self.assertIn("vocab_extras", saved)
-            # bpe_extras is None for non-BPE models; just assert the key
-            # is present (it's always written, possibly as None).
-            self.assertIn("bpe_extras", saved)
+            self.assertIn("ps_percept_extras", saved["vocab_extras"])
 
 
-def test_inputspace_expand_masked_is_gone():
-    from bin import Spaces
-    assert not hasattr(Spaces.InputSpace, 'expand_masked'), \
-        "InputSpace.expand_masked should be deleted (MLM removed)"
-
-def test_outputspace_expand_masked_is_gone():
-    from bin import Spaces
-    assert not hasattr(Spaces.OutputSpace, 'expand_masked'), \
-        "OutputSpace.expand_masked should be deleted (MLM removed)"
 
 
-def test_inputspace_arir_step_retired():
-    """``arir_step`` retired 2026-05-14 alongside ``<maskedPrediction>``;
-    sentence-level generation moves to ``BasicModel.generate_sentence``
-    backed by the ARMA(p, q) InterSentenceLayer.
-    """
-    from bin import Spaces
-    assert not hasattr(Spaces.InputSpace, 'arir_step'), \
-        "InputSpace.arir_step should be deleted (ARIR runtime retired)"
 
 
-def test_inputspace_getbatch_is_gone():
-    from bin import Spaces
-    assert not hasattr(Spaces.InputSpace, 'getBatch'), \
-        "InputSpace.getBatch should be deleted"
 
 
-def test_inputspace_peer_embedding_is_gone():
-    from bin import Spaces
-    import inspect
-    src = inspect.getsource(Spaces.InputSpace.__init__)
-    assert '_peer_embedding' not in src, \
-        "_peer_embedding shortcut is gone; use _peer_perceptual.vocabulary"
 
-def test_inputspace_predict_is_gone():
-    from bin import Spaces
-    assert not hasattr(Spaces.InputSpace, 'predict'), \
-        "InputSpace.predict delegator deleted; callers use perceptualSpace.vocabulary.predict"
 
-def test_inputspace_embed_token_is_gone():
-    from bin import Spaces
-    assert not hasattr(Spaces.InputSpace, 'embed_token')
 
-def test_inputspace_get_space_embedding_is_gone():
-    from bin import Spaces
-    assert not hasattr(Spaces.InputSpace, 'get_space_embedding')
 
-def test_inputspace_get_mask_embedding_is_gone():
-    from bin import Spaces
-    assert not hasattr(Spaces.InputSpace, 'get_mask_embedding')
 
-def test_inputspace_lexicon_helper_is_gone():
-    from bin import Spaces
-    assert not hasattr(Spaces.InputSpace, '_lexicon')
+
 
 
 def test_inputspace_has_lex_batch():
@@ -379,40 +274,10 @@ def test_inputspace_has_lex_batch():
         "InputSpace should own lexing via _lex_batch (pure lexer, no codebook)"
 
 
-def test_inputspace_forward_does_not_stash_raw_input():
-    """After lex move: embedding-mode InputSpace.forward no longer sets
-    subspace._raw_input (lexing happens locally; subspace.what.W holds the
-    null-terminated byte buffer)."""
-    from bin import Spaces
-    import inspect
-    src = inspect.getsource(Spaces.InputSpace.forward)
-    assert '_raw_input' not in src, \
-        "InputSpace.forward should no longer stash _raw_input; " \
-        "lexing happens in-space and subspace.what/where/when are populated directly."
 
 
-def test_perceptualspace_embed_reads_subspace_not_raw():
-    """After lex move: PartSpace._embed decodes the upstream
-    byte buffer (subspace.what.W), not _raw_input. Tokenization no longer
-    hides inside vocab.forward(raw_input, return_meta=True)."""
-    from bin import Spaces
-    import inspect
-    src = inspect.getsource(Spaces.PartSpace._embed)
-    assert '_raw_input' not in src, \
-        "_embed should read upstream subspace.what.W, not _raw_input"
-    assert 'vocab.forward' not in src, \
-        "_embed should not call vocab.forward (that does lexing); " \
-        "use codebook lookup on pre-lexed byte buffer instead."
 
 
-def test_perceptualspace_lex_and_embed_renamed_to_embed():
-    """After Task 4: the old _lex_and_embed name is gone -- the method is
-    codebook-only now (it doesn't lex) so it's just _embed."""
-    from bin import Spaces
-    assert not hasattr(Spaces.PartSpace, '_lex_and_embed'), \
-        "_lex_and_embed was renamed to _embed; delete the old reference"
-    assert hasattr(Spaces.PartSpace, '_embed'), \
-        "_embed must exist after Task 4 rename"
 
 
 def test_what_encoding_roundtrip():

@@ -1,0 +1,90 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_retired_names.py::test_retired_names_remain_absent"
+  ],
+  "completed": [
+    "test/test_retired_names.py::test_retired_names_remain_absent"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/retired-guard-check/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/retired-guard-check/worker-000.json"
+      ],
+      "pid": 82287,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 3379793304,
+      "elapsed_seconds": 8.68941679099953,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/retired-guard-check/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_retired_names.py::test_retired_names_remain_absent"
+      ],
+      "completed": [
+        "test/test_retired_names.py::test_retired_names_remain_absent"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_retired_names.py::test_retired_names_remain_absent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.058442499997909,
+          "message": "",
+          "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nStarting with dynamic 6-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nStarting with dynamic 1016-dim embedding (words added at runtime)\n[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_legacy.ckpt, starting fresh\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/retired-guard-check",
+  "elapsed_seconds": 10.392206040996825,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 3379793304,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/retired-guard-check/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/retired-guard-check/collect.json"
+    ],
+    "pid": 82269,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 48497216,
+    "elapsed_seconds": 1.3013647499974468,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/retired-guard-check/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_retired_names.py::test_retired_names_remain_absent"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

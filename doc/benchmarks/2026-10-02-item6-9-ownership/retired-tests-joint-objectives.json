@@ -1,0 +1,7 @@
+[
+  {
+    "file": "test/test_joint_objectives.py",
+    "test": "test_joint_learning_selects_a_predictive_encoding_with_exact_reconstruction",
+    "reason": "\u00a715.4 explicitly retires prediction gradient into the encoding. Predictor learning and exact tied inversion remain tested."
+  }
+]

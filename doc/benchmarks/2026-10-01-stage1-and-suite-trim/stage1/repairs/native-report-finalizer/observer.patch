@@ -1,0 +1,20 @@
+--- observer-before
++++ observer-after
+@@ -484,6 +484,17 @@
+     '        _objective_probe.truth_return(locals())\n        return total_loss\n')
+ instrument(Language.SymbolSubSpace,'truth_modulated_loss','\n    return total_loss\n',
+     '\n    _objective_probe.truth_return(locals())\n    return total_loss\n')
++if args.config == 'BasicModel_answers_tied_benchmark':
++    # Keep the production endpoint pass and its predictions. Its optional
++    # console rendering scans the concept bank for every padded position;
++    # that rendering is not an objective measurement or an optimizer step.
++    instrument(Models.BaseModel, '_reconstructionReport',
++        '    if not isinstance(allIn, torch.Tensor) or allIn.numel() == 0:',
++        '    if isinstance(allOut, torch.Tensor):\n'
++        '        data.reconstructed_output = [x.detach().cpu() for x in allOut]\n'
++        '    _objective_probe.log("endpoint_predictions_saved", split=split, rows=n_rows, console_rendering=False)\n'
++        '    return\n\n'
++        '    if not isinstance(allIn, torch.Tensor) or allIn.numel() == 0:')
+ (OUT/'instrumentation.patch').write_text(''.join(patches))
+ original_pair=SentenceCompose.sentence_pair
+ def paired(cache,compose,score,step,*,active,training=True):

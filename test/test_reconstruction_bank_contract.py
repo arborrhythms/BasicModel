@@ -120,19 +120,26 @@ def test_staging_rejects_missing_or_unusable_reconstruction_bank(tmp_path, monke
 
     monkeypatch.setattr(model, "_stage_snapshot_bytes", broken_stage)
     try:
-        with pytest.raises(RuntimeError, match="reconstruction.*(bank|candidate|ownership|surface)"):
+        if fault == 'second_sentence_empty':
             _stage(model)
+            assert int(model.inputSpace._reconstruction_missing_sentence_count) == 1
+            assert not bool(model.inputSpace._reconstruction_sentence_available[0, 1])
+            assert bool(model.inputSpace._reconstruction_sentence_available[:, 0].all())
+        else:
+            with pytest.raises(RuntimeError, match="reconstruction.*(bank|candidate|ownership|surface)"):
+                _stage(model)
     finally:
         model.End()
         model.symbolSpace.soft_reset()
 
 
-def test_failed_first_sight_admission_cannot_become_null_reconstruction(tmp_path, monkeypatch):
+def test_failed_first_sight_admission_counts_each_unavailable_reconstruction(tmp_path, monkeypatch):
     model = build_model(tmp_path)
     monkeypatch.setattr(model._concept_owner(), "interpret_word", lambda *a, **k: None)
     try:
-        with pytest.raises(RuntimeError, match="reconstruction.*(admission|candidate)"):
-            _stage(model)
+        _stage(model)
+        assert int(model.inputSpace._reconstruction_missing_sentence_count) == 3
+        assert not bool(model.inputSpace._reconstruction_sentence_available.any())
     finally:
         model.End()
         model.symbolSpace.soft_reset()

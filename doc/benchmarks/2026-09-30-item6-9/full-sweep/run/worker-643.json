@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_masked_semantic.py::test_reconstruction_uses_category_evidence"
+  ],
+  "completed": [
+    "test/test_masked_semantic.py::test_reconstruction_uses_category_evidence"
+  ],
+  "slow_selected": [
+    "test/test_masked_semantic.py::test_reconstruction_uses_category_evidence"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_masked_semantic.py::test_reconstruction_uses_category_evidence",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010462501086294651,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_masked_semantic.py', 171, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

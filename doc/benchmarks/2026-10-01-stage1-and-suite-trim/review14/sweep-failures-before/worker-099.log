@@ -1,0 +1,10 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_tiny_canonical_detached_reverse_train_step_is_finite ___________
+test/test_compiled_word_chunk.py:982: in test_tiny_canonical_detached_reverse_train_step_is_finite
+    before = [p.detach().clone() for p in chooser.parameters()]
+                                          ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'parameters'
+=========================== short test summary info ============================
+FAILED test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite
+1 failed, 1 passed in 2.55s

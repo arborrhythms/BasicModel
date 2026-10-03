@@ -1,0 +1,236 @@
+--- accepted-candidate/Models.py
++++ repaired/Models.py
+@@ -12478,6 +12478,7 @@
+         if reference_offsets is None:
+             reference_offsets = reference.new_zeros(B, rule_ids.shape[1], 2 * D)
+         reference_offsets = reference_offsets.detach()
++        journal_columns = getattr(trace, '_choice_journal_columns', None)
+         binary_map = trace.rule_map(2)
+         unary_map = trace.rule_map(1)
+         active = isp._word_active_mask.to(dtype=torch.bool)
+@@ -12623,6 +12624,9 @@
+         malformed = malformed.clone()
+ 
+         def _reference_offsets(slot_b):
++            if journal_columns is not None:
++                slot_b = journal_columns.gather(1,
++                    slot_b.clamp(0, journal_columns.shape[1] - 1).reshape(B, 1)).reshape(B)
+             index = slot_b.clamp(
+                 0, reference_offsets.shape[1] - 1).reshape(B, 1, 1).expand(B, 1, 2 * D)
+             return reference_offsets.gather(1, index).reshape(B, 2, D)
+@@ -13398,6 +13402,9 @@
+         journal = getattr(self._reconstruction_stack(), "_choice_values", None)
+         addresses = getattr(self._reconstruction_stack(), "_choice_refs", None)
+         relations = getattr(self._reconstruction_stack(), "_choice_ref_relations", None)
++        journal_columns = getattr(self._reconstruction_stack(), "_choice_journal_columns", None)
++        if journal_columns is not None:
++            columns = journal_columns.gather(1, columns.clamp(0, journal_columns.shape[1] - 1))
+         entries = []
+         for b in range(int(positions.shape[0])):
+             pos = positions[b]
+@@ -20500,6 +20507,30 @@
+                 right_slab.scatter(1, column, torch.where(active[:, None], right[:, None], right_slab.gather(1, column))))
+ 
+     @staticmethod
++    def _sentence_journal_layout(active, sentence_ids, closing_width, trace_width):
++        """Map row-wide trace addresses to one open sentence's numerical frames.
++
++        Endings train and discard these frames before the next sentence.
++        Structural choices retain their row-wide addresses; only their bulky
++        operands/results, references and offsets reuse sentence-local storage.
++        Called at the eager sentence boundary, before compiling word bricks.
++        """
++        B, W = active.shape
++        positions = torch.arange(W, device=active.device).expand(B, -1)
++        # Count actual words, so an inactive column inside a sentence
++        # neither consumes a frame nor makes its next word alias the first.
++        ordinal = active.long().cumsum(dim=1) - 1
++        owners = sentence_ids.clamp(0, W - 1)
++        starts = torch.full_like(positions, W).scatter_reduce(
++            1, owners, torch.where(active, ordinal, W), reduce='amin')
++        local = torch.where(active, ordinal - starts.gather(1, owners), 0)
++        words = max(1, int(torch.where(active, local + 1, 0).amax().item()))
++        rounds = (3 * local[..., None] + torch.arange(3, device=active.device)).flatten(1)
++        endings = (3 * words + torch.arange(trace_width - 3 * W,
++                                            device=active.device) % closing_width)
++        return torch.cat((rounds, endings[None].expand(B, -1)), dim=1), 3 * words + closing_width
++
++    @staticmethod
+     def _tensor_record_selected_values(journal, slot, value, active):
+         B = journal.shape[0]
+         column = slot.reshape(-1, 1, 1).expand(B, 1,
+@@ -20668,6 +20699,7 @@
+             setattr(trace, name, value)
+         trace._choice_ends = lang[21]
+         trace._choice_values = lang[22]
++        trace._choice_journal_columns = getattr(self, '_sentence_journal_columns', None)
+         trace._choice_refs = lang[23]
+         trace._choice_reference_offsets = lang[24]
+         trace._choice_ref_relations = lang[25]
+@@ -21360,6 +21392,14 @@
+                 torch.zeros(
+                     B, trace_width, dtype=torch.bool, device=words.device),
+             )
++        record_columns = None
++        record_width = int(choices[0].shape[1])
++        if sentence_transactions:
++            record_columns, record_width = self._sentence_journal_layout(
++                active, sentence_ids, closing_trace_width, record_width)
++        self._sentence_journal_columns = record_columns
++        if trace is not None:
++            trace._choice_journal_columns = record_columns
+         unary_map = (
+             trace.rule_map(1) if trace is not None
+             else language._cs_unary_rule_ids)
+@@ -21478,10 +21518,10 @@
+             torch.zeros_like(choices[2]),
+             language.clause_scope.empty(stm._buffer),
+             torch.zeros_like(choices[0]),
+-            words.new_zeros(B, choices[0].shape[1], 3 * concept_dim),
+-            torch.full((B, choices[0].shape[1], 2), -1, dtype=torch.long, device=words.device),
+-            words.new_zeros(B, choices[0].shape[1], 2 * concept_dim),
+-            torch.zeros(B, choices[0].shape[1], 2, dtype=torch.bool, device=words.device),
++            words.new_zeros(B, record_width, 3 * concept_dim),
++            torch.full((B, record_width, 2), -1, dtype=torch.long, device=words.device),
++            words.new_zeros(B, record_width, 2 * concept_dim),
++            torch.zeros(B, record_width, 2, dtype=torch.bool, device=words.device),
+             torch.full((B, capacity), -1, dtype=torch.long, device=words.device),
+             torch.zeros_like(choices[2]),
+         )
+@@ -21731,10 +21771,32 @@
+                         else torch.full_like(current_stm[1], -1))
+             clause_state = scope.push(current_cs_lang[20], commit.reshape(B), word_ids)
+             closing_events = current_cs_lang[21]
+-            operation_values = current_cs_lang[22]
+-            operation_refs = current_cs_lang[23]
+-            reference_offsets = current_cs_lang[24]
+-            reference_relations = current_cs_lang[25]
++            # Only this word's three choices and its bounded closing can
++            # change. Record their numerical frames locally, then publish each
++            # wide journal once. Re-scattering the entire [B, W*(3+2K), 3D]
++            # journal for every choice retains gigabyte-sized intermediates
++            # in a compiled production batch. Gather/scatter keeps the same
++            # values and autograd edges, including untouched prior frames.
++            closing_width = max(1, 2 * capacity)
++            syntactic_budget = int(getattr(self, 'syntacticOrder', 0) or 0)
++            closing_budget = min(closing_width, syntactic_budget) if syntactic_budget > 0 else closing_width
++            group = ((index + 1) % width).expand(B)
++            if sentence_transactions:
++                final = _gather_word(sentence_end_mask & ~intermediate_end_mask, index).reshape(B)
++                group = torch.where(final, 0, group)
++            journal_columns = torch.cat((
++                (3 * index + torch.arange(3, device=words.device))[None].expand(B, -1),
++                3 * width + group[:, None] * closing_width
++                + torch.arange(closing_budget, device=words.device)[None]), dim=1)
++            if record_columns is not None:
++                journal_columns = record_columns.gather(1, journal_columns)
++            value_columns = journal_columns[..., None].expand(-1, -1, 3 * concept_dim)
++            offset_columns = journal_columns[..., None].expand(-1, -1, 2 * concept_dim)
++            ref_columns = journal_columns[..., None].expand(-1, -1, 2)
++            operation_values = current_cs_lang[22].gather(1, value_columns)
++            operation_refs = current_cs_lang[23].gather(1, ref_columns)
++            reference_offsets = current_cs_lang[24].gather(1, offset_columns)
++            reference_relations = current_cs_lang[25].gather(1, ref_columns)
+             unary_history = language.push_unary_history(current_cs_lang[26], commit)
+             explorable_slab = current_cs_lang[27]
+             round_active = commit.reshape(B)
+@@ -21745,6 +21807,7 @@
+                     break
+                 before = final_stm
+                 slot = 3 * index + round_index
++                journal_slot = index.new_tensor(round_index)
+                 proposal = language.choose_operation(
+                     before, round_active, slots=scope.slots(clause_state, before[1]),
+                     allowance=capacity - 1, rounds_left=3 - round_index,
+@@ -21761,19 +21824,19 @@
+                 if sentence_transactions:
+                     _, refs, relative, operands, offsets = proposal
+                     clause_state = scope.resolve(clause_state, choice, refs, relative)
+-                    operation_values = self._tensor_record_selected_values(operation_values, slot,
++                    operation_values = self._tensor_record_selected_values(operation_values, journal_slot,
+                                                                            torch.cat((operands.flatten(1), choice.candidate), -1), choice.applied)
+                     operation_refs = self._tensor_record_selected_values(
+-                        operation_refs, slot, refs, choice.applied)
+-                    reference_offsets = self._tensor_record_selected_values(reference_offsets, slot,
++                        operation_refs, journal_slot, refs, choice.applied)
++                    reference_offsets = self._tensor_record_selected_values(reference_offsets, journal_slot,
+                                                                             offsets.flatten(1), choice.applied)
+                     reference_relations = self._tensor_record_selected_values(
+-                        reference_relations, slot, relative, choice.applied)
++                        reference_relations, journal_slot, relative, choice.applied)
+                 else:
+                     operation_refs = self._tensor_record_operation_refs(
+-                        operation_refs, slot, clause_state, choice)
++                        operation_refs, journal_slot, clause_state, choice)
+                     operation_values = self._tensor_record_operation_values(
+-                        operation_values, slot, before, choice)
++                        operation_values, journal_slot, before, choice)
+                 final_stm = cs.apply_language_choice(before, choice)
+                 clause_state, ended = scope.apply(clause_state, choice, slot)
+                 closing_events = record_clause_end(closing_events, slot, ended)
+@@ -21817,19 +21880,13 @@
+             intermediate_end = _gather_word(
+                 sentence_end_mask if sentence_transactions else intermediate_end_mask, index).reshape(B)
+             end_stm = final_stm
+-            closing_width = max(1, 2 * capacity)
+-            syntactic_budget = int(getattr(self, 'syntacticOrder', 0) or 0)
+-            closing_budget = min(closing_width, syntactic_budget) if syntactic_budget > 0 else closing_width
+             closing_active = intermediate_end
+             for closing_index in range(closing_budget):
+                 if not torch.compiler.is_compiling() and not bool(closing_active.any()):
+                     break
+                 pre_closing = end_stm
+-                group = ((index + 1) % width).expand(B)
+-                if sentence_transactions:
+-                    final = _gather_word(sentence_end_mask & ~intermediate_end_mask, index).reshape(B)
+-                    group = torch.where(final, 0, group)
+                 slot = 3 * width + group * closing_width + closing_index
++                journal_slot = index.new_tensor(3 + closing_index)
+                 proposal = language.choose_operation(
+                     pre_closing, closing_active, slots=scope.slots(clause_state, pre_closing[1]),
+                     allowance=scope.slots(clause_state, pre_closing[1]), rounds_left=closing_budget - closing_index,
+@@ -21846,19 +21903,19 @@
+                 if sentence_transactions:
+                     _, refs, relative, operands, offsets = proposal
+                     clause_state = scope.resolve(clause_state, choice, refs, relative)
+-                    operation_values = self._tensor_record_selected_values(operation_values, slot,
++                    operation_values = self._tensor_record_selected_values(operation_values, journal_slot,
+                                                                            torch.cat((operands.flatten(1), choice.candidate), -1), choice.applied)
+                     operation_refs = self._tensor_record_selected_values(
+-                        operation_refs, slot, refs, choice.applied)
+-                    reference_offsets = self._tensor_record_selected_values(reference_offsets, slot,
++                        operation_refs, journal_slot, refs, choice.applied)
++                    reference_offsets = self._tensor_record_selected_values(reference_offsets, journal_slot,
+                                                                             offsets.flatten(1), choice.applied)
+                     reference_relations = self._tensor_record_selected_values(
+-                        reference_relations, slot, relative, choice.applied)
++                        reference_relations, journal_slot, relative, choice.applied)
+                 else:
+                     operation_refs = self._tensor_record_operation_refs(
+-                        operation_refs, slot, clause_state, choice)
++                        operation_refs, journal_slot, clause_state, choice)
+                     operation_values = self._tensor_record_operation_values(
+-                        operation_values, slot, pre_closing, choice)
++                        operation_values, journal_slot, pre_closing, choice)
+                 end_stm = cs.apply_language_choice(pre_closing, choice)
+                 clause_state, ended = scope.apply(clause_state, choice, slot)
+                 closing_events = record_clause_end(closing_events, slot, ended)
+@@ -21872,6 +21929,10 @@
+                 left_rows, right_rows = self._tensor_record_operands(
+                     left_rows, right_rows, slot, pre_closing, binary)
+                 closing_active = closing_active & choice.applied
++            operation_values = current_cs_lang[22].scatter(1, value_columns, operation_values)
++            operation_refs = current_cs_lang[23].scatter(1, ref_columns, operation_refs)
++            reference_offsets = current_cs_lang[24].scatter(1, offset_columns, reference_offsets)
++            reference_relations = current_cs_lang[25].scatter(1, ref_columns, reference_relations)
+             end_depth = end_stm[1]
+             root_index = (end_depth - 1).clamp(
+                 min=0, max=capacity - 1)
+@@ -22088,6 +22149,7 @@
+             trace._choice_attempted = final_cs_lang[19].clone()
+             trace._choice_ends = final_cs_lang[21].clone()
+             trace._choice_values = final_cs_lang[22].clone()
++            trace._choice_journal_columns = record_columns
+             trace._choice_refs = final_cs_lang[23].clone()
+             trace._choice_reference_offsets = final_cs_lang[24].clone()
+             trace._choice_ref_relations = final_cs_lang[25].clone()

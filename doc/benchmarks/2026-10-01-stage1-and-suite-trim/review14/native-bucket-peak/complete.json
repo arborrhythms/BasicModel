@@ -1,0 +1,16 @@
+{
+  "source_matched": true,
+  "process": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/native_bucket_peak.py",
+      "--child"
+    ],
+    "pid": 49431,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 23069531296,
+    "elapsed_seconds": 695.4337428330036,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/native-bucket-peak/run.log"
+  }
+}

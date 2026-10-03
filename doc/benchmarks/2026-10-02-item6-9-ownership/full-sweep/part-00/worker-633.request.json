@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial",
+    "test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled",
+    "test/test_sentence_protocol.py::test_protocol_off_by_default_in_parallel",
+    "test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent",
+    "test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict",
+    "test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-633.recycle.json"
+}

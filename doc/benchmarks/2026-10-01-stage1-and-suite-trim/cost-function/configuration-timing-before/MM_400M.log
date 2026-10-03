@@ -1,0 +1,209 @@
+Loading text: 1 shard(s), max 10000 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 10000 docs -> 467796 sentences (376814 train, 47208 val, 43774 test)
+Starting with dynamic 1016-dim embedding (words added at runtime)
+  Building span table: 0/376814 docs
+  Building span table: 500/376814 docs
+  Building span table: 1000/376814 docs
+  Building span table: 1500/376814 docs
+  Building span table: 2000/376814 docs
+  Building span table: 2500/376814 docs
+  Building span table: 3000/376814 docs
+  Building span table: 3500/376814 docs
+  Building span table: 4000/376814 docs
+  Building span table: 4500/376814 docs
+  Building span table: 5000/376814 docs
+  Building span table: 5500/376814 docs
+  Building span table: 6000/376814 docs
+  Building span table: 6500/376814 docs
+  Building span table: 7000/376814 docs
+  Building span table: 7500/376814 docs
+  Building span table: 8000/376814 docs
+  Building span table: 8500/376814 docs
+  Building span table: 9000/376814 docs
+  Building span table: 9500/376814 docs
+  Building span table: 10000/376814 docs
+  Building span table: 10500/376814 docs
+  Building span table: 11000/376814 docs
+  Building span table: 11500/376814 docs
+  Building span table: 12000/376814 docs
+  Building span table: 12500/376814 docs
+  Building span table: 13000/376814 docs
+  Building span table: 13500/376814 docs
+  Building span table: 14000/376814 docs
+  Building span table: 14500/376814 docs
+  Building span table: 15000/376814 docs
+  Building span table: 15500/376814 docs
+  Building span table: 16000/376814 docs
+  Building span table: 16500/376814 docs
+  Building span table: 17000/376814 docs
+  Building span table: 17500/376814 docs
+  Building span table: 18000/376814 docs
+  Building span table: 18500/376814 docs
+  Building span table: 19000/376814 docs
+  Building span table: 19500/376814 docs
+  Building span table: 20000/376814 docs
+  Building span table: 20500/376814 docs
+  Building span table: 21000/376814 docs
+  Building span table: 21500/376814 docs
+  Building span table: 22000/376814 docs
+  Building span table: 22500/376814 docs
+  Building span table: 23000/376814 docs
+  Building span table: 23500/376814 docs
+  Building span table: 24000/376814 docs
+  Building span table: 24500/376814 docs
+  Building span table: 25000/376814 docs
+  Building span table: 25500/376814 docs
+  Building span table: 26000/376814 docs
+  Building span table: 26500/376814 docs
+  Building span table: 27000/376814 docs
+  Building span table: 27500/376814 docs
+  Building span table: 28000/376814 docs
+  Building span table: 28500/376814 docs
+  Building span table: 29000/376814 docs
+  Building span table: 29500/376814 docs
+  Building span table: 30000/376814 docs
+  Building span table: 30500/376814 docs
+  Building span table: 31000/376814 docs
+  Building span table: 31500/376814 docs
+  Building span table: 32000/376814 docs
+  Building span table: 32500/376814 docs
+  Building span table: 33000/376814 docs
+  Building span table: 33500/376814 docs
+  Building span table: 34000/376814 docs
+  Building span table: 34500/376814 docs
+  Building span table: 35000/376814 docs
+  Building span table: 35500/376814 docs
+  Building span table: 36000/376814 docs
+  Building span table: 36500/376814 docs
+  Building span table: 37000/376814 docs
+  Building span table: 37500/376814 docs
+  Building span table: 38000/376814 docs
+  Building span table: 38500/376814 docs
+  Building span table: 39000/376814 docs
+  Building span table: 39500/376814 docs
+  Building span table: 40000/376814 docs
+  Building span table: 40500/376814 docs
+  Building span table: 41000/376814 docs
+  Building span table: 41500/376814 docs
+  Building span table: 42000/376814 docs
+  Building span table: 42500/376814 docs
+  Building span table: 43000/376814 docs
+  Building span table: 43500/376814 docs
+  Building span table: 44000/376814 docs
+  Building span table: 44500/376814 docs
+  Building span table: 45000/376814 docs
+  Building span table: 45500/376814 docs
+  Building span table: 46000/376814 docs
+  Building span table: 46500/376814 docs
+  Building span table: 47000/376814 docs
+  Building span table: 47500/376814 docs
+  Building span table: 48000/376814 docs
+  Building span table: 48500/376814 docs
+  Building span table: 49000/376814 docs
+  Building span table: 49500/376814 docs
+  Building span table: 50000/376814 docs
+  Building span table: 50500/376814 docs
+  Building span table: 51000/376814 docs
+  Building span table: 51500/376814 docs
+  Building span table: 52000/376814 docs
+  Building span table: 52500/376814 docs
+  Building span table: 53000/376814 docs
+  Building span table: 53500/376814 docs
+  Building span table: 54000/376814 docs
+  Building span table: 54500/376814 docs
+  Building span table: 55000/376814 docs
+  Building span table: 55500/376814 docs
+  Building span table: 56000/376814 docs
+  Building span table: 56500/376814 docs
+  Building span table: 57000/376814 docs
+  Building span table: 57500/376814 docs
+  Building span table: 58000/376814 docs
+  Building span table: 58500/376814 docs
+  Building span table: 59000/376814 docs
+  Building span table: 59500/376814 docs
+  Building span table: 60000/376814 docs
+  Building span table: 60500/376814 docs
+  Building span table: 61000/376814 docs
+  Building span table: 61500/376814 docs
+  Building span table: 62000/376814 docs
+  Building span table: 62500/376814 docs
+  Building span table: 63000/376814 docs
+  Building span table: 63500/376814 docs
+  Building span table: 64000/376814 docs
+  Building span table: 64500/376814 docs
+  Building span table: 65000/376814 docs
+  Building span table: 65500/376814 docs
+  Building span table: 66000/376814 docs
+  Building span table: 66500/376814 docs
+  Building span table: 67000/376814 docs
+  Building span table: 67500/376814 docs
+  Building span table: 68000/376814 docs
+  Building span table: 68500/376814 docs
+  Building span table: 69000/376814 docs
+  Building span table: 69500/376814 docs
+  Building span table: 70000/376814 docs
+  Building span table: 70500/376814 docs
+  Building span table: 71000/376814 docs
+  Building span table: 71500/376814 docs
+  Building span table: 72000/376814 docs
+  Building span table: 72500/376814 docs
+  Building span table: 73000/376814 docs
+  Building span table: 73500/376814 docs
+  Building span table: 74000/376814 docs
+  Building span table: 74500/376814 docs
+  Building span table: 75000/376814 docs
+  Building span table: 75500/376814 docs
+  Building span table: 76000/376814 docs
+  Building span table: 76500/376814 docs
+  Building span table: 77000/376814 docs
+  Building span table: 77500/376814 docs
+  Building span table: 78000/376814 docs
+  Building span table: 78500/376814 docs
+  Building span table: 79000/376814 docs
+  Building span table: 79500/376814 docs
+  Building span table: 80000/376814 docs
+  Building span table: 80500/376814 docs
+  Building span table: 81000/376814 docs
+  Building span table: 81500/376814 docs
+  Building span table: 82000/376814 docs
+  Building span table: 82500/376814 docs
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py", line 52, in <module>
+    if a.worker:worker(a.worker,a.output)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py", line 13, in worker
+    model,device,lr,batch=recon_bench._build_model(str(ROOT/config))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py", line 128, in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1824, in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7127, in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1924, in create_from_config
+    self.create(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7147, in create
+    return self._create_per_stage(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 16995, in _create_per_stage
+    self.perceptualSpace = self._make_perceptual_space(
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7164, in _make_perceptual_space
+    return PartSpace(inputShape, spaceShape, outputShape)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 11130, in __init__
+    super().__init__(inputShape, spaceShape, outputShape)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 8427, in __init__
+    what=self._build_what_basis(),
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 11537, in _build_what_basis
+    basis.create(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 5406, in create
+    self.insert(token_text)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 5539, in insert
+    assert current_size < cap, (
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: Embedding.insert: lexicon is full (65536 >= capacity=65536); the where-space slice allocated for this Embedding only covers ``lexicon_capacity`` prototypes. Raise <nVectors> on the owning Space's XML (or the Embedding._LEXICON_DEFAULT_CAPACITY default) and reload.

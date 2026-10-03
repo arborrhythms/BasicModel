@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-697.recycle.json"
+}

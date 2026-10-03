@@ -1,0 +1,21 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_basicmodel.py::TestInputSpaceLexIntegration",
+    "test/test_basicmodel.py::TestInputSpaceTextRoundTrip",
+    "test/test_basicmodel.py::TestVocabSaveRestore",
+    "test/test_fineweb_preflight.py",
+    "test/test_truth_text.py",
+    "test/test_dimensional_governance.py",
+    "test/test_doc_links.py"
+  ],
+  "pid": 20572,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 712083112,
+  "elapsed_seconds": 6.205839917005505,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/configuration-ports-01.log"
+}

@@ -1,0 +1,221 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-001.json"
+      ],
+      "pid": 57265,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 257672152,
+      "elapsed_seconds": 2.413895749952644,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.43536995886825025,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py:23: in test_identical_second_trial_never_wins_and_both_use_original_parameters\n    assert observations == [2., 2.], observations\nE   AssertionError: [2.0, 1.600000023841858]\nE   assert [2.0, 1.600000023841858] == [2.0, 2.0]\nE     \nE     At index 1 diff: 1.600000023841858 != 2.0\nE     Use -v to get more diff",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-000.json"
+      ],
+      "pid": 57264,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 610747880,
+      "elapsed_seconds": 5.101215417031199,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+        "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+        "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted"
+      ],
+      "completed": [
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+        "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+        "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6391925839707255,
+          "message": "",
+          "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.33944449992850423,
+          "message": "",
+          "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.152s)\r\n"
+        },
+        {
+          "nodeid": "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00012375018559396267,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-003.json"
+      ],
+      "pid": 57277,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 611943912,
+      "elapsed_seconds": 4.638711665989831,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 2.356103917118162,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py:93: in test_replaying_real_greedy_derivation_ties_in_every_row\n    torch.testing.assert_close(costs[:, 0], costs[:, 1], rtol=0, atol=0)\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 4 / 4 (100.0%)\nE   Greatest absolute difference: 0.07769376039505005 at index (0,)\nE   Greatest relative difference: 0.23364409804344177 at index (0,)",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-002.json"
+      ],
+      "pid": 57266,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1952582584,
+      "elapsed_seconds": 240.13246033294126,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 234.8153176670894,
+          "message": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py:58: in test_sentence_trials_keep_their_own_perception_pullbacks\n    assert versions[0] == versions[1], 'an optimizer update separated the sentence trials'\nE   AssertionError: an optimizer update separated the sentence trials\nE   assert (0, 0, 0, 0, 0, 0, ...) == (0, 0, 0, 0, 0, 1, ...)\nE     \nE     At index 5 diff: 0 != 1\nE     Use -v to get more diff",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run",
+  "elapsed_seconds": 242.3448893749155,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1952582584,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/collect.json"
+    ],
+    "pid": 57243,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180618056,
+    "elapsed_seconds": 1.788981458870694,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-red/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+        "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+        "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

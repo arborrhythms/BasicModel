@@ -1,0 +1,23 @@
+.s...........................................................            [100%]
+=============================== warnings summary ===============================
+test/test_model_time_when.py::test_fresh_model_present_is_zero
+test/test_model_time_when.py::test_when_time_is_long_buffer_in_state_dict
+test/test_model_time_when.py::test_clock_increments_once_per_train_batch
+test/test_model_time_when.py::test_clock_increments_once_per_inference_batch
+test/test_model_time_when.py::test_clock_increments_on_runtime_inference_only
+test/test_model_time_when.py::test_when_time_syncs_to_live_encoders
+test/test_model_time_when.py::test_when_time_round_trips_through_save_load
+test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_model_time_when.py::test_clock_increments_once_per_train_batch
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_model_time_when.py::test_clock_increments_once_per_inference_batch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+60 passed, 1 skipped, 10 warnings in 7.35s

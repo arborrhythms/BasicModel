@@ -1,0 +1,173 @@
+{
+  "reason": "test_failure",
+  "outcomes": {
+    "passed": 4832,
+    "skipped": 322,
+    "failed": 6,
+    "xfailed": 1
+  },
+  "selected": 5161,
+  "completed": 5161,
+  "complete_unique_coverage": true,
+  "missing": [],
+  "duplicate_completed": {},
+  "unreported": [],
+  "failures": [
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+      "phase": "call",
+      "message": "test/test_item7_unindexed_relations.py:88: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows\n    assert model._word_symbol_concept_ids() is None\nE   assert tensor([[ 3, -1,  5, -1, -1, -1, -1, -1],\\n        [ 3, -1,  7, -1, -1, -1, -1, -1],\\n        [ 9, -1,  5, -1, -1, -1, -1, -1],\\n        [ 9, -1,  7, -1, -1, -1, -1, -1]]) is None\nE    +  where tensor([[ 3, -1,  5, -1, -1, -1, -1, -1],\\n        [ 3, -1,  7, -1, -1, -1, -1, -1],\\n        [ 9, -1,  5, -1, -1, -1, -1, -1],\\n        [ 9, -1,  7, -1, -1, -1, -1, -1]]) = _word_symbol_concept_ids()\nE    +    where _word_symbol_concept_ids = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...t(\\n    (0-2): 3 x _BodyStage()\\n  )\\n  (where_encoding): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n)._word_symbol_concept_ids",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-059.log"
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+      "phase": "call",
+      "message": "torch._dynamo.exc.ObservedRuntimeError: raised exception RuntimeError('a serial numeric answer requires a concluded understanding')\n\nThe above exception was the direct cause of the following exception:\ntest/test_output_walk.py:854: in test_compiled_understanding_captures_explicit_sentence_products\n    explicit = compiled(None)\n               ^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.Unsupported: Observed exception\nE     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.\nE     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance(\"force_eager\")`. \nE     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.\nE   \nE     Developer debug context: raised exception RuntimeError('a serial numeric answer requires a concluded understanding')\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 150, in masked\nE       return method(self, *args, **kwargs)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8179, in _forward_with_compiled_sentence_state\nE       return self._forward_per_stage(\nE              ^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24045, in _forward_per_stage\nE       head_sub = self._forward_head(body_sub)\nE                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17732, in _forward_head\nE       raise RuntimeError('a serial numeric answer requires a concluded understanding')\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-071.log"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+      "phase": "call",
+      "message": "test/test_item7_definition_integrity.py:161: in test_new_definitions_do_not_alias_later_sentence_identities\n    assert symbols.isdisjoint(store.row_ids[rows].tolist())\nE   assert False\nE    +  where False = <built-in method isdisjoint of set object at 0x145bad620>([3, 4611686018427387909, 4611686018427387911])\nE    +    where <built-in method isdisjoint of set object at 0x145bad620> = {2, 3, 4, 5, 6, 7, ...}.isdisjoint\nE    +    and   [3, 4611686018427387909, 4611686018427387911] = <built-in method tolist of Tensor object at 0x145d05590>()\nE    +      where <built-in method tolist of Tensor object at 0x145d05590> = tensor([                  3, 4611686018427387909, 4611686018427387911]).tolist",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-075.log"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+      "phase": "call",
+      "message": "test/test_runtime_split_ingestion.py:109: in test_store_truths_idempotent_clear_then_record\n    torch.testing.assert_close(store.c_plus[rows], torch.zeros(1))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 1 / 1 (100.0%)\nE   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)\nE   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-084.log"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+      "phase": "call",
+      "message": "test/test_runtime_split_ingestion.py:97: in test_store_truths_records_truths\n    torch.testing.assert_close(store.c_plus[rows], torch.zeros(2))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 2 / 2 (100.0%)\nE   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)\nE   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-084.log"
+    },
+    {
+      "nodeid": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+      "phase": "call",
+      "message": "torch._dynamo.exc.ObservedRuntimeError: raised exception RuntimeError('a serial numeric answer requires a concluded understanding')\n\nThe above exception was the direct cause of the following exception:\ntest/test_query_phase_fullgraph.py:25: in test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths\n    first = model._publish_compiled_sentence_state(compiled(raw))\n                                                   ^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.Unsupported: Observed exception\nE     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.\nE     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance(\"force_eager\")`. \nE     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.\nE   \nE     Developer debug context: raised exception RuntimeError('a serial numeric answer requires a concluded understanding')\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_query_phase_fullgraph.py\", line 21, in <lambda>\nE       lambda unused: model._forward_with_compiled_sentence_state(None),\nE                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 150, in masked\nE       return method(self, *args, **kwargs)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8179, in _forward_with_compiled_sentence_state\nE       return self._forward_per_stage(\nE              ^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24045, in _forward_per_stage\nE       head_sub = self._forward_head(body_sub)\nE                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17732, in _forward_head\nE       raise RuntimeError('a serial numeric answer requires a concluded understanding')\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+      "worker_log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-112.log"
+    }
+  ],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "elapsed_seconds": 5985.718659291044,
+  "peak_worker_memory_bytes": 5370402432,
+  "peak_aggregate_memory_bytes": 19229876392,
+  "resource_stops": [],
+  "compile_cache_retries": [],
+  "changed_outcomes": [
+    {
+      "nodeid": "test/test_accessible_mind.py::test_normal_what_effect_enters_recency_and_detached_knowing",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+      "before": "failed",
+      "after": "passed"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths",
+      "before": "passed",
+      "after": "failed"
+    },
+    {
+      "nodeid": "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+      "before": "failed",
+      "after": "passed"
+    }
+  ],
+  "new_selectors": {
+    "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange": "passed",
+    "test/test_concept_not.py::test_not_reflects_a_full_concept_code": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/README.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/mm-table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/diagnostics/README.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/grammar-ten/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/native-comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/candidate/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/head/table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/mm-table.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/comparison.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/findings.md]": "passed",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md]": "passed",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]": "passed",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]": "passed",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]": "passed",
+    "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters": "passed",
+    "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row": "passed",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks": "passed",
+    "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently": "passed",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[1]": "passed",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[3]": "passed",
+    "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier": "passed"
+  },
+  "removed_selectors": [],
+  "source_matches_current": true
+}

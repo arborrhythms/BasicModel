@@ -1,0 +1,17 @@
+--- old/bin/Models.py
++++ new/bin/Models.py
+@@ -5,8 +5,12 @@
+         if self._stm_reducer() is None:
+             return torch.zeros_like(stm._depth, dtype=torch.bool)
+         stm.ensure_order_state(); stm.ensure_reference_state()
+-        state = (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
+-                 stm._concept_rows, stm._concept_activations)
++        # A compiled owner assignment may replay as copy_ into its prior
++        # storage. The choice backward needs this round's values after later
++        # rounds commit, so each operation owns an immutable input snapshot.
++        state = tuple(value.clone() for value in (
++            stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
++            stm._concept_rows, stm._concept_activations))
+         B = state[0].shape[0]
+         gate = (state[1] > 0 if row_gate is None else row_gate.reshape(B).bool())
+         slots = 1 if protect_depth is None else protect_depth

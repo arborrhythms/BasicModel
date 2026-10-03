@@ -36,11 +36,9 @@ class TestUnaryGrammarLayers(unittest.TestCase):
     """arity-1 grammar layers route compose -> forward, decompose -> reverse."""
 
     def test_not_compose_decompose_roundtrip(self):
-        layer = NotLayer()
-        # NotLayer operates on the materialized muxed event tensor
-        # [B, V, nWhat + nWhere + nWhen]; the .what bivector [pos, neg]
-        # is at [..., :2] and nWhere / nWhen channels follow. Negation
-        # swaps the bivector pair and passes through the rest.
+        layer = NotLayer(representation='poles')
+        # Explicit evidence has a leading [pos, neg] pair followed by
+        # occurrence channels. Its pole exchange preserves those channels.
         x = torch.randn(4, 3, 6)
         y = layer.compose(x)
         self.assertEqual(y.shape, x.shape)

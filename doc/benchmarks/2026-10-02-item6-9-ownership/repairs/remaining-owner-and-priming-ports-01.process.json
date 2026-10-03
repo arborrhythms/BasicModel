@@ -1,0 +1,17 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_joint_objectives.py",
+    "test/test_priming_energy.py",
+    "test/test_intent_priming.py"
+  ],
+  "pid": 20488,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1215318536,
+  "elapsed_seconds": 57.05088150000665,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/remaining-owner-and-priming-ports-01.log"
+}

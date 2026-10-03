@@ -1,0 +1,923 @@
+[
+  {
+    "id": "test/test_abstraction_order_canonical.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "line": 318,
+    "body": "def test_retired_wholespace_taxonomy_writer_is_absent():\n    from Spaces import WholeSpace\n    assert not hasattr(WholeSpace, \"insert_meta\")",
+    "args": [],
+    "assertions": [
+      "not hasattr(WholeSpace, 'insert_meta')"
+    ]
+  },
+  {
+    "id": "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "line": 338,
+    "body": "def test_retired_wholespace_taxonomy_writer_is_absent():\n    from Spaces import WholeSpace\n    assert not hasattr(WholeSpace, \"insert_meta\")",
+    "args": [],
+    "assertions": [
+      "not hasattr(WholeSpace, 'insert_meta')"
+    ]
+  },
+  {
+    "id": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+    "line": 61,
+    "body": "def test_perceptualspace_has_no_symbolicspace_ref(self):\n        m = _make_radix_model()\n        ps = m.perceptualSpace\n        self.assertFalse(\n            hasattr(ps, 'wholeSpace_ref'),\n            \"PartSpace must NOT hold a back-ref to WholeSpace \"\n            \"after Task G; the auto-bind cross-space hop moved to \"\n            \"ConceptualSpace.\",\n        )",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(ps, 'wholeSpace_ref'), 'PartSpace must NOT hold a back-ref to WholeSpace after Task G; the auto-bind cross-space hop moved to ConceptualSpace.')"
+    ]
+  },
+  {
+    "id": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+    "line": 71,
+    "body": "def test_perceptualspace_does_not_define_autobind(self):\n        from Spaces import PartSpace\n        self.assertFalse(\n            hasattr(PartSpace, '_maybe_autobind_words'),\n            \"PartSpace must NOT define _maybe_autobind_words after \"\n            \"Task G; the body moved to ConceptualSpace.\",\n        )",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(PartSpace, '_maybe_autobind_words'), 'PartSpace must NOT define _maybe_autobind_words after Task G; the body moved to ConceptualSpace.')"
+    ]
+  },
+  {
+    "id": "test/test_bounded_stm_fold.py::test_binary_reducer_is_space_role_free",
+    "line": 51,
+    "body": "def test_binary_reducer_is_space_role_free():\n    import inspect, Language\n    src = inspect.getsource(Language.OperationSelectionLayer)\n    assert \"op_space_role_idx\" not in src and \"position_space_role\" not in src, \"space_role machinery must be gone\"",
+    "args": [],
+    "assertions": [
+      "'op_space_role_idx' not in src and 'position_space_role' not in src"
+    ]
+  },
+  {
+    "id": "test/test_bounded_test_runner.py::test_bounded_workers_ignore_iteration_xdist_request",
+    "line": 160,
+    "body": "def test_bounded_workers_ignore_iteration_xdist_request(runner, tmp_path, monkeypatch):\n    monkeypatch.setenv(\"TEST_JOBS\", \"auto\")\n    environment = runner.worker_environment(tmp_path)\n    assert \"TEST_JOBS\" not in environment",
+    "args": [
+      "runner",
+      "tmp_path",
+      "monkeypatch"
+    ],
+    "assertions": [
+      "'TEST_JOBS' not in environment"
+    ]
+  },
+  {
+    "id": "test/test_compose_operations.py::test_tiling_and_per_position_unary_implementations_are_deleted",
+    "line": 85,
+    "body": "def test_tiling_and_per_position_unary_implementations_are_deleted():\n    for name in ('binary_tiling_soft_dp', 'binary_tiling_viterbi',\n                 'compact_hard', 'compact_soft', 'comparator_dp_kl',\n                 'UnaryStructuredLayer', 'BinaryStructuredReductionLayer'):\n        assert not hasattr(Language, name), name",
+    "args": [],
+    "assertions": [
+      "not hasattr(Language, name)"
+    ]
+  },
+  {
+    "id": "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+    "line": 153,
+    "body": "def test_flattened_temperature_driver_is_deleted():\n    import Models\n    assert not hasattr(Models.BasicModel, '_set_superposition_temperature')",
+    "args": [],
+    "assertions": [
+      "not hasattr(Models.BasicModel, '_set_superposition_temperature')"
+    ]
+  },
+  {
+    "id": "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layer_classes_parked_in_legacy",
+    "line": 120,
+    "body": "def test_layer_classes_parked_in_legacy(self):\n        # These ops were parked in bin/Legacy.py (2026-07-17): documented-\n        # dormant, dispatched by no live grammar. They must NOT be in the\n        # live registry; revival re-registers them in GRAMMAR_LAYER_CLASSES.\n        for name in ('area', 'luminosity', 'isaPart'):\n            self.assertNotIn(name, GRAMMAR_LAYER_CLASSES,\n                             f\"{name!r} should be parked in Legacy, not live\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn(name, GRAMMAR_LAYER_CLASSES, f'{name!r} should be parked in Legacy, not live')"
+    ]
+  },
+  {
+    "id": "test/test_conceptual_recurrence.py::test_combine_no_dropped_reverse",
+    "line": 345,
+    "body": "def test_combine_no_dropped_reverse():\n    # The dropped-augment reverse was RETIRED with the 2-stream bind (C-10):\n    # the carrier is the whole bind, so there is no augment to drop and no\n    # approximate regime -- reverse is exact by construction.\n    from Layers import ConceptualCombine\n    c = ConceptualCombine(content_dim=6, naive=False, sigma_pi_mode=\"full\")\n    assert not hasattr(c, \"reverse_dropped\"), (\n        \"reverse_dropped must be retired (the 2-stream bind has no augment)\")\n    assert not hasattr(c, \"aug_dim\"), (\n        \"aug_dim must be retired (the carrier IS the whole bind)\")",
+    "args": [],
+    "assertions": [
+      "not hasattr(c, 'reverse_dropped')",
+      "not hasattr(c, 'aug_dim')"
+    ]
+  },
+  {
+    "id": "test/test_conceptual_recurrence.py::test_no_comprehension_seed_interface",
+    "line": 433,
+    "body": "def test_no_comprehension_seed_interface():\n    from Models import BasicModel\n    from Spaces import ConceptualSpace\n    import inspect\n    assert not hasattr(BasicModel, \"_intersentence_seed\")\n    assert not hasattr(BasicModel, \"_consume_intersentence_seed\")\n    assert \"seed_payload\" not in inspect.signature(ConceptualSpace.bind_streams).parameters",
+    "args": [],
+    "assertions": [
+      "not hasattr(BasicModel, '_intersentence_seed')",
+      "not hasattr(BasicModel, '_consume_intersentence_seed')",
+      "'seed_payload' not in inspect.signature(ConceptualSpace.bind_streams).parameters"
+    ]
+  },
+  {
+    "id": "test/test_config_scoping.py::TestDefaultsXml::test_architecture_has_model_wide_only",
+    "line": 71,
+    "body": "def test_architecture_has_model_wide_only(self):\n        arch = self.cfg[\"architecture\"]\n        for old_key in [\"nInput\", \"nPercepts\", \"nConcepts\", \"nSymbols\", \"nOutput\",\n                        \"inputDim\", \"perceptDim\", \"conceptDim\", \"symbolDim\", \"outputDim\",\n                        \"perceptPassThrough\", \"symbolPassThrough\",\n                        \"perceptPrototypes\", \"conceptPrototypes\",\n                        \"perceptHasAttention\", \"conceptHasAttention\"]:\n            self.assertNotIn(old_key, arch,\n                             f\"'{old_key}' should be in a space section, not architecture\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn(old_key, arch, f\"'{old_key}' should be in a space section, not architecture\")"
+    ]
+  },
+  {
+    "id": "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_sigma_layers",
+    "line": 76,
+    "body": "def test_cs_has_no_sigma_layers(self):\n        m = _make_model()\n        for k, cs in enumerate(m.conceptualSpaces):\n            for attr in (\"sigma_in\", \"sigma_cs\", \"sigma\"):\n                self.assertFalse(\n                    hasattr(cs, attr),\n                    f\"ConceptualSpace[{k}].{attr} must be retired -- CS is \"\n                    f\"a pure bookkeeping carrier.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(cs, attr), f'ConceptualSpace[{k}].{attr} must be retired -- CS is a pure bookkeeping carrier.')"
+    ]
+  },
+  {
+    "id": "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_attribute_removed",
+    "line": 75,
+    "body": "def test_sigma_percept_attribute_removed(self):\n        model = _make_plain_model()\n        cs = model.conceptualSpace\n        self.assertFalse(\n            hasattr(cs, 'sigma_percept'),\n            \"ConceptualSpace.sigma_percept must be retired by \"\n            \"Stage 1.C (CS.forward is now STM bookkeeping).\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(cs, 'sigma_percept'), 'ConceptualSpace.sigma_percept must be retired by Stage 1.C (CS.forward is now STM bookkeeping).')"
+    ]
+  },
+  {
+    "id": "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_variants_removed",
+    "line": 83,
+    "body": "def test_sigma_percept_variants_removed(self):\n        model = _make_plain_model()\n        cs = model.conceptualSpace\n        self.assertFalse(\n            hasattr(cs, 'sigma_percept_1'),\n            \"ConceptualSpace.sigma_percept_1 (paired-sigma forward \"\n            \"alias) must be retired by Stage 1.C.\")\n        self.assertFalse(\n            hasattr(cs, 'sigma_percept_2'),\n            \"ConceptualSpace.sigma_percept_2 (paired-sigma reverse \"\n            \"alias) must be retired by Stage 1.C.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(cs, 'sigma_percept_1'), 'ConceptualSpace.sigma_percept_1 (paired-sigma forward alias) must be retired by Stage 1.C.')",
+      "self.assertFalse(hasattr(cs, 'sigma_percept_2'), 'ConceptualSpace.sigma_percept_2 (paired-sigma reverse alias) must be retired by Stage 1.C.')"
+    ]
+  },
+  {
+    "id": "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_reverse_helper_removed",
+    "line": 95,
+    "body": "def test_sigma_percept_reverse_helper_removed(self):\n        model = _make_plain_model()\n        cs = model.conceptualSpace\n        self.assertFalse(\n            hasattr(cs, '_sigma_percept_reverse'),\n            \"ConceptualSpace._sigma_percept_reverse helper must be \"\n            \"retired with ``sigma_percept``.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(cs, '_sigma_percept_reverse'), 'ConceptualSpace._sigma_percept_reverse helper must be retired with ``sigma_percept``.')"
+    ]
+  },
+  {
+    "id": "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_no_cross_space_reach",
+    "line": 53,
+    "body": "def test_forward_concept_to_symbol_no_cross_space_reach():\n    src = inspect.getsource(\n        Language.SymbolSpace.forward_concept_to_symbol)\n    head, _, rest = src.partition('\"\"\"')           # strip the docstring\n    code = head + rest.partition('\"\"\"')[2]\n    # no reach into WholeSpace / a stashed Space pointer\n    assert \"_model_symbolSpace\" not in code\n    assert \"_relation_store\" not in code\n    assert \"wholeSpace\" not in code and \"WholeSpace\" not in code",
+    "args": [],
+    "assertions": [
+      "'_model_symbolSpace' not in code",
+      "'_relation_store' not in code",
+      "'wholeSpace' not in code and 'WholeSpace' not in code"
+    ]
+  },
+  {
+    "id": "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective",
+    "line": 150,
+    "body": "def test_compose_has_no_auxiliary_local_policy_objective():\n    layer = OperationSelectionLayer(d_model=4, ops=[_BinaryMix(.5)],\n                                     unary_ops=[_UnaryScale(.5)])\n    assert not hasattr(layer, 'local_objective_enabled')\n    _, _, routing = layer(torch.ones(1, 2, 4))\n    assert 'local_structural_loss' not in routing",
+    "args": [],
+    "assertions": [
+      "not hasattr(layer, 'local_objective_enabled')",
+      "'local_structural_loss' not in routing"
+    ]
+  },
+  {
+    "id": "test/test_dimensional_governance.py::test_serial_relaxes_symbol_dim_passthrough",
+    "line": 63,
+    "body": "def test_serial_relaxes_symbol_dim_passthrough():\n    # Phase-3 relax (pulled forward, doc/specs/2026-06-05 sec.4/sec.6): in\n    # SERIAL mode the bounded-STM grammar fold bridges CS<->SS, so SS content\n    # may differ from CS content (the small symbol code). validate_config\n    # must NOT impose symbol_dim == concept_dim for a serial config.\n    # The fixture (the pre-Task-6 MM_20M_grammar shape, see _DEEP_CS_SERIAL_XML\n    # below) has SS content 8 != CS content 1024, so from_config must not\n    # raise the symbol_dim==concept pass-through ValueError. (MM_20M_grammar\n    # itself moved to equal widths with the 2026-07-04 meronomy switch.)\n    try:\n        _build_from_text(_DEEP_CS_SERIAL_XML, \"serial_relax\")\n    except ValueError as e:\n        assert \"symbol_dim\" not in str(e), str(e)",
+    "args": [],
+    "assertions": [
+      "'symbol_dim' not in str(e)"
+    ]
+  },
+  {
+    "id": "test/test_discourse_space.py::TestBackCompatShims::test_comprehension_priming_projection_is_removed",
+    "line": 243,
+    "body": "def test_comprehension_priming_projection_is_removed(self):\n        self.assertFalse(hasattr(self.layer, \"prime\"))\n        self.assertFalse(hasattr(self.layer, \"cast\"))",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(self.layer, 'prime'))",
+      "self.assertFalse(hasattr(self.layer, 'cast'))"
+    ]
+  },
+  {
+    "id": "test/test_grammar_sections.py::test_normalization_layer_removed",
+    "line": 73,
+    "body": "def test_normalization_layer_removed():\n    assert not hasattr(L, '_normalize_grammar_dict')",
+    "args": [],
+    "assertions": [
+      "not hasattr(L, '_normalize_grammar_dict')"
+    ]
+  },
+  {
+    "id": "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+    "line": 33,
+    "body": "def test_property_read_does_not_save_event_property_primitive_product():\n    primitive = PrimitiveProperties(513)\n    counts = torch.ones(2, 3, 256)\n    saved = []\n    def pack(value):\n        saved.append(tuple(value.shape))\n        return value\n    with torch.autograd.graph.saved_tensors_hooks(pack, lambda value: value):\n        primitive.on_counts(counts).sum().backward()\n    assert (2, 3, 513, 256) not in saved, saved",
+    "args": [],
+    "assertions": [
+      "(2, 3, 513, 256) not in saved"
+    ]
+  },
+  {
+    "id": "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+    "line": 193,
+    "body": "def test_sequence_concepts_are_retired_in_favor_of_ltm_references():\n    from Layers import ConceptAllocator\n    for name in ('conceptualize_chain', '_chain_missing_concepts',\n                 'create_joint_concept', '_automatic_joint_concept'):\n        assert not hasattr(ConceptualSpace, name)\n    for name in ('chain_idx', 'joint'):\n        assert not hasattr(ConceptAllocator(), name)",
+    "args": [],
+    "assertions": [
+      "not hasattr(ConceptualSpace, name)",
+      "not hasattr(ConceptAllocator(), name)"
+    ]
+  },
+  {
+    "id": "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "line": 58,
+    "body": "def test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined():\n    cs, _ = _operator()\n    with pytest.warns(UserWarning, match='WholeSpace.*taxonomy'):\n        cs.load_vocab_extras({'version': 1, 'taxonomy': {'1': [2, 3]},\n                             'taxonomy_parent': {'2': 1}, 'meta_trust': {'1': [1, 0, 0, 0]}})\n    assert 'legacy_whole_structure' not in cs.vocab_extras()\n    assert not hasattr(cs, '_legacy_whole_structure')",
+    "args": [],
+    "assertions": [
+      "'legacy_whole_structure' not in cs.vocab_extras()",
+      "not hasattr(cs, '_legacy_whole_structure')"
+    ]
+  },
+  {
+    "id": "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "line": 67,
+    "body": "def test_wholespace_has_no_taxonomy_or_truth_writer():\n    from Spaces import WholeSpace\n    for name in ('insert_meta', 'insert_relation', 'taxonomy_children', 'taxonomy_parent',\n                 '_migrate_signed_int_taxonomy', '_record_truth_activations'):\n        assert not hasattr(WholeSpace, name), name",
+    "args": [],
+    "assertions": [
+      "not hasattr(WholeSpace, name)"
+    ]
+  },
+  {
+    "id": "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "line": 58,
+    "body": "def test_interpret_replaces_the_host_triple_creation_api():\n    from Spaces import ConceptualSpace\n    assert not hasattr(ConceptualSpace, 'create_word_object_meta')\n    assert not hasattr(ConceptualSpace, '_automatic_word_object_meta')",
+    "args": [],
+    "assertions": [
+      "not hasattr(ConceptualSpace, 'create_word_object_meta')",
+      "not hasattr(ConceptualSpace, '_automatic_word_object_meta')"
+    ]
+  },
+  {
+    "id": "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted",
+    "line": 6,
+    "body": "def test_wholespace_word_taxonomy_mutators_are_deleted(name):\n    assert not hasattr(WholeSpace, name)",
+    "args": [
+      "name"
+    ],
+    "assertions": [
+      "not hasattr(WholeSpace, name)"
+    ]
+  },
+  {
+    "id": "test/test_learn_score_components.py::test_learn_score_components_are_deleted",
+    "line": 8,
+    "body": "def test_learn_score_components_are_deleted(name):\n    assert not hasattr(ConceptualSpace, name)",
+    "args": [
+      "name"
+    ],
+    "assertions": [
+      "not hasattr(ConceptualSpace, name)"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_expand_masked_is_gone",
+    "line": 320,
+    "body": "def test_inputspace_expand_masked_is_gone():\n    from bin import Spaces\n    assert not hasattr(Spaces.InputSpace, 'expand_masked'), \\\n        \"InputSpace.expand_masked should be deleted (MLM removed)\"",
+    "args": [],
+    "assertions": [
+      "not hasattr(Spaces.InputSpace, 'expand_masked')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_outputspace_expand_masked_is_gone",
+    "line": 325,
+    "body": "def test_outputspace_expand_masked_is_gone():\n    from bin import Spaces\n    assert not hasattr(Spaces.OutputSpace, 'expand_masked'), \\\n        \"OutputSpace.expand_masked should be deleted (MLM removed)\"",
+    "args": [],
+    "assertions": [
+      "not hasattr(Spaces.OutputSpace, 'expand_masked')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_arir_step_retired",
+    "line": 331,
+    "body": "def test_inputspace_arir_step_retired():\n    \"\"\"``arir_step`` retired 2026-05-14 alongside ``<maskedPrediction>``;\n    sentence-level generation moves to ``BasicModel.generate_sentence``\n    backed by the ARMA(p, q) InterSentenceLayer.\n    \"\"\"\n    from bin import Spaces\n    assert not hasattr(Spaces.InputSpace, 'arir_step'), \\\n        \"InputSpace.arir_step should be deleted (ARIR runtime retired)\"",
+    "args": [],
+    "assertions": [
+      "not hasattr(Spaces.InputSpace, 'arir_step')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_getbatch_is_gone",
+    "line": 341,
+    "body": "def test_inputspace_getbatch_is_gone():\n    from bin import Spaces\n    assert not hasattr(Spaces.InputSpace, 'getBatch'), \\\n        \"InputSpace.getBatch should be deleted\"",
+    "args": [],
+    "assertions": [
+      "not hasattr(Spaces.InputSpace, 'getBatch')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_peer_embedding_is_gone",
+    "line": 347,
+    "body": "def test_inputspace_peer_embedding_is_gone():\n    from bin import Spaces\n    import inspect\n    src = inspect.getsource(Spaces.InputSpace.__init__)\n    assert '_peer_embedding' not in src, \\\n        \"_peer_embedding shortcut is gone; use _peer_perceptual.vocabulary\"",
+    "args": [],
+    "assertions": [
+      "'_peer_embedding' not in src"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_predict_is_gone",
+    "line": 354,
+    "body": "def test_inputspace_predict_is_gone():\n    from bin import Spaces\n    assert not hasattr(Spaces.InputSpace, 'predict'), \\\n        \"InputSpace.predict delegator deleted; callers use perceptualSpace.vocabulary.predict\"",
+    "args": [],
+    "assertions": [
+      "not hasattr(Spaces.InputSpace, 'predict')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_embed_token_is_gone",
+    "line": 359,
+    "body": "def test_inputspace_embed_token_is_gone():\n    from bin import Spaces\n    assert not hasattr(Spaces.InputSpace, 'embed_token')",
+    "args": [],
+    "assertions": [
+      "not hasattr(Spaces.InputSpace, 'embed_token')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_get_space_embedding_is_gone",
+    "line": 363,
+    "body": "def test_inputspace_get_space_embedding_is_gone():\n    from bin import Spaces\n    assert not hasattr(Spaces.InputSpace, 'get_space_embedding')",
+    "args": [],
+    "assertions": [
+      "not hasattr(Spaces.InputSpace, 'get_space_embedding')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_get_mask_embedding_is_gone",
+    "line": 367,
+    "body": "def test_inputspace_get_mask_embedding_is_gone():\n    from bin import Spaces\n    assert not hasattr(Spaces.InputSpace, 'get_mask_embedding')",
+    "args": [],
+    "assertions": [
+      "not hasattr(Spaces.InputSpace, 'get_mask_embedding')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_lexicon_helper_is_gone",
+    "line": 371,
+    "body": "def test_inputspace_lexicon_helper_is_gone():\n    from bin import Spaces\n    assert not hasattr(Spaces.InputSpace, '_lexicon')",
+    "args": [],
+    "assertions": [
+      "not hasattr(Spaces.InputSpace, '_lexicon')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_forward_does_not_stash_raw_input",
+    "line": 382,
+    "body": "def test_inputspace_forward_does_not_stash_raw_input():\n    \"\"\"After lex move: embedding-mode InputSpace.forward no longer sets\n    subspace._raw_input (lexing happens locally; subspace.what.W holds the\n    null-terminated byte buffer).\"\"\"\n    from bin import Spaces\n    import inspect\n    src = inspect.getsource(Spaces.InputSpace.forward)\n    assert '_raw_input' not in src, \\\n        \"InputSpace.forward should no longer stash _raw_input; \" \\\n        \"lexing happens in-space and subspace.what/where/when are populated directly.\"",
+    "args": [],
+    "assertions": [
+      "'_raw_input' not in src"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_perceptualspace_embed_reads_subspace_not_raw",
+    "line": 394,
+    "body": "def test_perceptualspace_embed_reads_subspace_not_raw():\n    \"\"\"After lex move: PartSpace._embed decodes the upstream\n    byte buffer (subspace.what.W), not _raw_input. Tokenization no longer\n    hides inside vocab.forward(raw_input, return_meta=True).\"\"\"\n    from bin import Spaces\n    import inspect\n    src = inspect.getsource(Spaces.PartSpace._embed)\n    assert '_raw_input' not in src, \\\n        \"_embed should read upstream subspace.what.W, not _raw_input\"\n    assert 'vocab.forward' not in src, \\\n        \"_embed should not call vocab.forward (that does lexing); \" \\\n        \"use codebook lookup on pre-lexed byte buffer instead.\"",
+    "args": [],
+    "assertions": [
+      "'_raw_input' not in src",
+      "'vocab.forward' not in src"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_symbolic_space_paired_row_api_is_retired",
+    "line": 55,
+    "body": "def test_symbolic_space_paired_row_api_is_retired(self):\n        \"\"\"Step 3 (2026-06-10 symbolic-iteration plan): the Stage-1.B\n        paired-row API (``insert_paired_word`` -- orth copy + random\n        semantic partner per lexicon word on SS.codebook) is RETIRED.\n        The CS-leg symbol codebook captures the code-as-written vs\n        code-for-the-concept correspondence in place; the lexicon stays\n        PS-local.\n        \"\"\"\n        m = _build_text_model()\n        ws = m.wholeSpace\n        self.assertFalse(hasattr(ws, 'insert_paired_word'),\n                         \"WholeSpace.insert_paired_word must be \"\n                         \"RETIRED (Step 3, symbolic-iteration plan).\")\n        self.assertFalse(hasattr(ws, 'mark_word_atom'),\n                         \"the mark_word_atom autobind fallback retires \"\n                         \"with the paired-row machinery.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(ws, 'insert_paired_word'), 'WholeSpace.insert_paired_word must be RETIRED (Step 3, symbolic-iteration plan).')",
+      "self.assertFalse(hasattr(ws, 'mark_word_atom'), 'the mark_word_atom autobind fallback retires with the paired-row machinery.')"
+    ]
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_excludes_emb_params_when_frozen",
+    "line": 119,
+    "body": "def test_optimizer_excludes_emb_params_when_frozen(self):\n        m = _build_text_model(train_embeddings=False)\n        emb_weight = m.perceptualSpace.vocabulary.wv._vectors\n        opt = m.getOptimizer(lr=1e-3)\n        opt_ptrs = [p.data_ptr() for g in opt.param_groups for p in g[\"params\"]]\n        self.assertNotIn(emb_weight.data_ptr(), opt_ptrs)",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn(emb_weight.data_ptr(), opt_ptrs)"
+    ]
+  },
+  {
+    "id": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_lower_classes_no_substrate_borrow_in_source",
+    "line": 301,
+    "body": "def test_lift_lower_classes_no_substrate_borrow_in_source(self):\n        \"\"\"grep gate: ``PartSpace.sigma`` / ``ConceptualSpace.pi``\n        do not appear in LiftLayer / LowerLayer source.\n\n        (Stage 4 acceptance criterion in the master plan.)\n        \"\"\"\n        import inspect\n        from Layers import LiftLayer as _Lift\n        from Layers import LowerLayer as _Lower\n        for cls in (_Lift, _Lower):\n            try:\n                src = inspect.getsource(cls)\n            except (OSError, TypeError):\n                continue\n            # The retired pattern: substrate borrow from the named\n            # Space attributes. Stage 4 forbids these references\n            # inside the layer class bodies.\n            self.assertNotIn(\n                \"PartSpace.sigma\", src,\n                f\"{cls.__name__} must not borrow PartSpace.sigma \"\n                f\"after Stage 4 (substrate retirement).\")\n            self.assertNotIn(\n                \"ConceptualSpace.pi\", src,\n                f\"{cls.__name__} must not borrow ConceptualSpace.pi \"\n                f\"after Stage 4 (substrate retirement).\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn('PartSpace.sigma', src, f'{cls.__name__} must not borrow PartSpace.sigma after Stage 4 (substrate retirement).')",
+      "self.assertNotIn('ConceptualSpace.pi', src, f'{cls.__name__} must not borrow ConceptualSpace.pi after Stage 4 (substrate retirement).')"
+    ]
+  },
+  {
+    "id": "test/test_mereology.py::TestCopyLayer::test_copy_layer_parked_in_legacy",
+    "line": 222,
+    "body": "def test_copy_layer_parked_in_legacy(self):\n        # 'copy' was parked in bin/Legacy.py (2026-07-17): a retained\n        # utility, but dispatched by no live grammar, so it is no longer\n        # in the live registry.\n        self.assertNotIn('copy', GRAMMAR_LAYER_CLASSES)",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn('copy', GRAMMAR_LAYER_CLASSES)"
+    ]
+  },
+  {
+    "id": "test/test_mereology.py::TestCopyLayer::test_introspection_layers_parked_in_legacy",
+    "line": 234,
+    "body": "def test_introspection_layers_parked_in_legacy(self):\n        # ``area`` / ``luminosity`` / ``isaPart`` were parked in\n        # bin/Legacy.py (2026-07-17): documented-dormant, no live grammar\n        # dispatches them. The measures still live on the Mereology mixin;\n        # the wrapper layers are revivable from Legacy.\n        for name in ('area', 'luminosity', 'isaPart'):\n            self.assertNotIn(name, GRAMMAR_LAYER_CLASSES)",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn(name, GRAMMAR_LAYER_CLASSES)"
+    ]
+  },
+  {
+    "id": "test/test_mereology_raise.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "line": 99,
+    "body": "def test_retired_wholespace_taxonomy_writer_is_absent():\n    from Spaces import WholeSpace\n    assert not hasattr(WholeSpace, \"insert_meta\")",
+    "args": [],
+    "assertions": [
+      "not hasattr(WholeSpace, 'insert_meta')"
+    ]
+  },
+  {
+    "id": "test/test_no_eos_sync.py::test_batch_advances_sentence_property_removed",
+    "line": 41,
+    "body": "def test_batch_advances_sentence_property_removed():\n    \"\"\"The legacy stub property has been deleted.\n\n    The predecessor (per-row-AR-no-eos-sync) handoff introduced\n    ``batch_advances_sentence`` as a host-side gate replacing the\n    tensor-typed ``_end_of_stream.all().item()``. The rolling-cursor\n    handoff then moved Reset to the outer loop and stopped consulting\n    the property. With no remaining readers, the brick-vectorization\n    handoff deletes it outright. This test guards against accidental\n    resurrection.\n    \"\"\"\n    model = _model()\n    assert not hasattr(model.inputSpace, 'batch_advances_sentence'), (\n        \"batch_advances_sentence property should be deleted; the per-row \"\n        \"Reset cascade in the outer doc-streaming loop is the canonical \"\n        \"gate now (see plans/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md)\"\n    )",
+    "args": [],
+    "assertions": [
+      "not hasattr(model.inputSpace, 'batch_advances_sentence')"
+    ]
+  },
+  {
+    "id": "test/test_parthood_orders.py::TestMonotonicCodebookRequirement::test_allows_monotonic_without_cs_codebook",
+    "line": 164,
+    "body": "def test_allows_monotonic_without_cs_codebook(self):\n        import Models\n        cfg = self._cfg()\n        cfg[\"architecture\"][\"monotonic\"] = True\n        cfg.setdefault(\"ConceptualSpace\", {})[\"codebook\"] = False\n        try:\n            Models.ModelFactory.validate_config(cfg)\n            raised = \"\"\n        except Exception as e:  # unrelated config errors may exist; only our rule matters\n            raised = str(e)\n        assert \"architecture.monotonic=True requires\" not in raised",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "'architecture.monotonic=True requires' not in raised"
+    ]
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestForwardArityContract::test_sourced_input_and_read_event_removed",
+    "line": 115,
+    "body": "def test_sourced_input_and_read_event_removed(self):\n        import Spaces\n        for cls in (Spaces.PartSpace, Spaces.ConceptualSpace):\n            self.assertFalse(\n                hasattr(cls, '_sourced_input'),\n                f\"{cls.__name__}._sourced_input must be folded into \"\n                f\"forward and removed.\")\n            self.assertFalse(\n                hasattr(cls, '_read_event'),\n                f\"{cls.__name__}._read_event must be removed.\")\n        self.assertFalse(\n            hasattr(Spaces.ConceptualSpace, '_get_active_input_sibling'),\n            \"ConceptualSpace._get_active_input_sibling must be removed.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(Spaces.ConceptualSpace, '_get_active_input_sibling'), 'ConceptualSpace._get_active_input_sibling must be removed.')",
+      "self.assertFalse(hasattr(cls, '_sourced_input'), f'{cls.__name__}._sourced_input must be folded into forward and removed.')",
+      "self.assertFalse(hasattr(cls, '_read_event'), f'{cls.__name__}._read_event must be removed.')"
+    ]
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestForwardArityContract::test_forward_input_refs_removed",
+    "line": 129,
+    "body": "def test_forward_input_refs_removed(self):\n        \"\"\"conceptualSpace_ref / wholeSpace_ref / ConceptualSpace's\n        perceptualSpace_ref are no longer initialised in __init__.\"\"\"\n        import inspect\n        import Spaces\n        p_src = inspect.getsource(Spaces.PartSpace.__init__)\n        self.assertNotIn(\"self.conceptualSpace_ref = None\", p_src,\n                         \"PartSpace must not init conceptualSpace_ref \"\n                         \"(C\u2192P feedback is now an explicit forward arg).\")\n        c_src = inspect.getsource(Spaces.ConceptualSpace.__init__)\n        self.assertNotIn(\"self.wholeSpace_ref = None\", c_src)\n        self.assertNotIn(\"self.perceptualSpace_ref = None\", c_src,\n                         \"ConceptualSpace must not init the forward-input \"\n                         \"refs (PS/SS are explicit forward args).\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn('self.conceptualSpace_ref = None', p_src, 'PartSpace must not init conceptualSpace_ref (C\u2192P feedback is now an explicit forward arg).')",
+      "self.assertNotIn('self.wholeSpace_ref = None', c_src)",
+      "self.assertNotIn('self.perceptualSpace_ref = None', c_src, 'ConceptualSpace must not init the forward-input refs (PS/SS are explicit forward args).')"
+    ]
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestSubwholeSpaceRetired::test_subsymbolic_space_class_removed",
+    "line": 148,
+    "body": "def test_subsymbolic_space_class_removed(self):\n        import Spaces\n        self.assertFalse(hasattr(Spaces, 'SubwholeSpace'),\n                         \"SubwholeSpace should be removed; \"\n                         \"PartSpace is the subsymbolic substrate \"\n                         \"via the explicit C\u2192P forward arg.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(Spaces, 'SubwholeSpace'), 'SubwholeSpace should be removed; PartSpace is the subsymbolic substrate via the explicit C\u2192P forward arg.')"
+    ]
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestSubwholeSpaceRetired::test_subwholeSpace_ref_not_on_conceptual",
+    "line": 155,
+    "body": "def test_subwholeSpace_ref_not_on_conceptual(self):\n        import Spaces\n        import inspect\n        src = inspect.getsource(Spaces.ConceptualSpace.__init__)\n        self.assertNotIn(\"self.subwholeSpace_ref = None\", src,\n                         \"ConceptualSpace must not retain a \"\n                         \"subwholeSpace_ref attribute.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn('self.subwholeSpace_ref = None', src, 'ConceptualSpace must not retain a subwholeSpace_ref attribute.')"
+    ]
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestSubwholeSpaceRetired::test_subsymbolic_widen_dim_param_removed",
+    "line": 163,
+    "body": "def test_subsymbolic_widen_dim_param_removed(self):\n        import Spaces\n        import inspect\n        sig = inspect.signature(Spaces.ConceptualSpace.__init__)\n        self.assertNotIn(\"subsymbolic_widen_dim\", sig.parameters,\n                         \"ConceptualSpace.__init__ must not accept \"\n                         \"subsymbolic_widen_dim.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn('subsymbolic_widen_dim', sig.parameters, 'ConceptualSpace.__init__ must not accept subsymbolic_widen_dim.')"
+    ]
+  },
+  {
+    "id": "test/test_pi2_sigma2_folds.py::test_no_odds_transforms_on_the_new_path",
+    "line": 334,
+    "body": "def test_no_odds_transforms_on_the_new_path():\n    # The legacy odds embedding (1+x)/(1-x) is retired from the\n    # meronymic path: the new classes neither define nor inherit the\n    # odds helpers, and their compute methods never invoke them.\n    for cls in (PiLayer2, SigmaLayer2):\n        inst = cls(D, D)\n        for name in (\"_to_mult\", \"_from_mult\"):\n            assert name not in cls.__dict__\n            assert not hasattr(inst, name)\n        for meth in (\"forward\", \"reverse\", \"compose\"):\n            src = inspect.getsource(getattr(cls, meth))\n            for token in (\"_to_mult\", \"_from_mult\", \"atanh\", \"tanh\"):\n                assert token not in src, (\n                    f\"{cls.__name__}.{meth} touches the retired \"\n                    f\"odds/atanh path ({token})\")",
+    "args": [],
+    "assertions": [
+      "name not in cls.__dict__",
+      "not hasattr(inst, name)",
+      "token not in src"
+    ]
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_no_sigma_percept",
+    "line": 80,
+    "body": "def test_conceptual_no_sigma_percept(self):\n        # Post-Stage-1.C: CS no longer owns sigma_percept. The atomic\n        # forward C-space_role fold is retired; CS.forward is STM bookkeeping\n        # (see test_cs_stm_bookkeeping.py for the positive contract).\n        model = _make_plain_model()\n        self.assertFalse(\n            hasattr(model.conceptualSpace, 'sigma_percept'),\n            \"ConceptualSpace.sigma_percept must be retired by \"\n            \"Stage 1.C.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(model.conceptualSpace, 'sigma_percept'), 'ConceptualSpace.sigma_percept must be retired by Stage 1.C.')"
+    ]
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestOwnership::test_symbolic_has_no_sigma",
+    "line": 91,
+    "body": "def test_symbolic_has_no_sigma(self):\n        model = _make_plain_model()\n        self.assertFalse(hasattr(model.wholeSpace, 'sigma'),\n                         \"WholeSpace.sigma moved to PartSpace \"\n                         \"(Pi/Sigma swap); SS is pi-only (analysis).\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(model.wholeSpace, 'sigma'), 'WholeSpace.sigma moved to PartSpace (Pi/Sigma swap); SS is pi-only (analysis).')"
+    ]
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_has_no_bare_sigma",
+    "line": 97,
+    "body": "def test_conceptual_has_no_bare_sigma(self):\n        # Post-Stage-1.C: the bare ``sigma`` attribute (and\n        # ``sigma_percept``) is retired. Stage 10 reintroduces\n        # ``sigma_in`` / ``sigma_cs`` as the per-stage owned sigmas;\n        # the BARE ``sigma`` attribute is still retired (it never\n        # existed under either contract).\n        model = _make_plain_model()\n        self.assertFalse(hasattr(model.conceptualSpace, 'sigma'),\n                         \"ConceptualSpace must NOT own a bare ``sigma`` \"\n                         \"attribute; the atomic C-space_role fold is retired \"\n                         \"by Stage 1.C. Stage 10's sigma_in / sigma_cs \"\n                         \"are differently named.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(model.conceptualSpace, 'sigma'), \"ConceptualSpace must NOT own a bare ``sigma`` attribute; the atomic C-space_role fold is retired by Stage 1.C. Stage 10's sigma_in / sigma_cs are differently named.\")"
+    ]
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestOwnership::test_output_has_no_pilayer",
+    "line": 111,
+    "body": "def test_output_has_no_pilayer(self):\n        model = _make_plain_model()\n        self.assertFalse(hasattr(model.outputSpace, '_piLayer'),\n                         \"OutputSpace._piLayer is replaced by \"\n                         \"_linearLayer (InvertibleLinearLayer) under \"\n                         \"the ownership rule.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(model.outputSpace, '_piLayer'), 'OutputSpace._piLayer is replaced by _linearLayer (InvertibleLinearLayer) under the ownership rule.')"
+    ]
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_aliases_removed",
+    "line": 136,
+    "body": "def test_aliases_removed(self):\n        model = _make_plain_model()\n        cs = model.conceptualSpace\n        ws = model.wholeSpace\n        self.assertFalse(hasattr(cs, 'forwardPi'),\n                         \"ConceptualSpace.forwardPi alias removed\")\n        self.assertFalse(hasattr(cs, 'reversePi'),\n                         \"ConceptualSpace.reversePi alias removed\")\n        self.assertFalse(hasattr(ws, 'forwardSigma'),\n                         \"WholeSpace.forwardSigma alias removed\")\n        self.assertFalse(hasattr(ws, 'reverseSigma'),\n                         \"WholeSpace.reverseSigma alias removed\")\n        self.assertFalse(hasattr(ws, '_sigma_reverse'),\n                         \"WholeSpace._sigma_reverse removed with sigma\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(cs, 'forwardPi'), 'ConceptualSpace.forwardPi alias removed')",
+      "self.assertFalse(hasattr(cs, 'reversePi'), 'ConceptualSpace.reversePi alias removed')",
+      "self.assertFalse(hasattr(ws, 'forwardSigma'), 'WholeSpace.forwardSigma alias removed')",
+      "self.assertFalse(hasattr(ws, 'reverseSigma'), 'WholeSpace.reverseSigma alias removed')",
+      "self.assertFalse(hasattr(ws, '_sigma_reverse'), 'WholeSpace._sigma_reverse removed with sigma')"
+    ]
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_conceptual_no_sigma_percept_forward",
+    "line": 151,
+    "body": "def test_conceptual_no_sigma_percept_forward(self):\n        # Post-Stage-1.C: the ``sigma_percept`` SigmaLayer (and the\n        # ``_sigma_percept_reverse`` two-pass ergodic helper) are\n        # retired with the atomic C-space_role fold. CS.forward is now STM\n        # bookkeeping (see test_cs_stm_bookkeeping.py).\n        model = _make_plain_model()\n        cs = model.conceptualSpace\n        self.assertFalse(hasattr(cs, 'sigma_percept'),\n                         \"CS.sigma_percept retired by Stage 1.C.\")\n        self.assertFalse(hasattr(cs, '_sigma_percept_reverse'),\n                         \"CS._sigma_percept_reverse retired with \"\n                         \"``sigma_percept``.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(cs, 'sigma_percept'), 'CS.sigma_percept retired by Stage 1.C.')",
+      "self.assertFalse(hasattr(cs, '_sigma_percept_reverse'), 'CS._sigma_percept_reverse retired with ``sigma_percept``.')"
+    ]
+  },
+  {
+    "id": "test/test_property_tiling.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "line": 181,
+    "body": "def test_retired_wholespace_taxonomy_writer_is_absent():\n    from Spaces import WholeSpace\n    assert not hasattr(WholeSpace, \"insert_meta\")",
+    "args": [],
+    "assertions": [
+      "not hasattr(WholeSpace, 'insert_meta')"
+    ]
+  },
+  {
+    "id": "test/test_ps_reverse_e2e.py::test_grammar_has_no_and_token",
+    "line": 51,
+    "body": "def test_grammar_has_no_and_token():\n    \"\"\"The connective 'and' is NOT a grammar token anywhere (marker word\n    lists were deleted) -- it can only enter via a learned marker.\"\"\"\n    from Language import Grammar\n    g = Grammar()\n    g.load_from_grammar_file(\"complete.grammar\")\n    for r in g.rules:\n        toks = [c.strip() for c in str(r.lhs).split(\",\")] + list(r.rhs_symbols or ())\n        assert \"and\" not in toks and \"AND\" not in toks",
+    "args": [],
+    "assertions": [
+      "'and' not in toks and 'AND' not in toks"
+    ]
+  },
+  {
+    "id": "test/test_ps_single_arg_refactor.py::TestPSOwnsSingleLayers::test_ps_pi_attribute_retired",
+    "line": 79,
+    "body": "def test_ps_pi_attribute_retired(self):\n        \"\"\"Pi/Sigma swap (rev. 2026-06-09): ``self.pi`` on\n        PartSpace moved to WholeSpace (Pi is the top-down\n        analysis operator).\"\"\"\n        model = _make_plain_model()\n        ps = model.perceptualSpace\n        self.assertFalse(\n            hasattr(ps, 'pi'),\n            \"Pi/Sigma swap: PartSpace.pi must be gone (PS is \"\n            \"sigma-only -- synthesis). The pi lives on WholeSpace.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(ps, 'pi'), 'Pi/Sigma swap: PartSpace.pi must be gone (PS is sigma-only -- synthesis). The pi lives on WholeSpace.')"
+    ]
+  },
+  {
+    "id": "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_input_module_list_gone",
+    "line": 166,
+    "body": "def test_pi_input_module_list_gone(self):\n        model = _make_plain_model()\n        ps = model.perceptualSpace\n        self.assertFalse(\n            hasattr(ps, 'pi_input'),\n            \"PartSpace.pi_input ModuleList must be retired by \"\n            \"the Stage 1.A single-layer refactor.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(ps, 'pi_input'), 'PartSpace.pi_input ModuleList must be retired by the Stage 1.A single-layer refactor.')"
+    ]
+  },
+  {
+    "id": "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_concept_module_list_gone",
+    "line": 174,
+    "body": "def test_pi_concept_module_list_gone(self):\n        model = _make_plain_model()\n        ps = model.perceptualSpace\n        self.assertFalse(\n            hasattr(ps, 'pi_concept'),\n            \"PartSpace.pi_concept ModuleList must be retired by \"\n            \"the Stage 1.A single-layer refactor.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(ps, 'pi_concept'), 'PartSpace.pi_concept ModuleList must be retired by the Stage 1.A single-layer refactor.')"
+    ]
+  },
+  {
+    "id": "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_validation_has_no_mps_host_sync",
+    "line": 38,
+    "body": "def test_reconstruction_bank_validation_has_no_mps_host_sync():\n    validate, _ = _bank_fixture(\"mps\")\n    torch.mps.synchronize()\n    with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU]) as profile:\n        validate()\n    # Synchronize only outside the measured boundary to surface device errors.\n    torch.mps.synchronize()\n    events = {event.key for event in profile.key_averages()}\n    assert \"aten::_local_scalar_dense\" not in events\n    assert \"aten::item\" not in events",
+    "args": [],
+    "assertions": [
+      "'aten::_local_scalar_dense' not in events",
+      "'aten::item' not in events"
+    ]
+  },
+  {
+    "id": "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted",
+    "line": 9,
+    "body": "def test_wholespace_truth_and_taxonomy_writer_is_deleted(name):\n    assert not hasattr(WholeSpace, name)",
+    "args": [
+      "name"
+    ],
+    "assertions": [
+      "not hasattr(WholeSpace, name)"
+    ]
+  },
+  {
+    "id": "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted",
+    "line": 25,
+    "body": "def test_gated_relation_routes_are_deleted(name):\n    assert not hasattr(ConceptualSpace, name)",
+    "args": [
+      "name"
+    ],
+    "assertions": [
+      "not hasattr(ConceptualSpace, name)"
+    ]
+  },
+  {
+    "id": "test/test_role_collapsed_grammar.py::test_no_pos_or_category_state_names",
+    "line": 112,
+    "body": "def test_no_pos_or_category_state_names():\n    \"\"\"No POS / category / transitional-role state names survive.\"\"\"\n    g = _load()\n    for r in g.rules:\n        for tok in _rule_tokens(r):\n            assert tok not in _FORBIDDEN_STATE_TOKENS, (\n                f\"forbidden state name {tok!r} in rule {r.canonical!r}\")",
+    "args": [],
+    "assertions": [
+      "tok not in _FORBIDDEN_STATE_TOKENS"
+    ]
+  },
+  {
+    "id": "test/test_sparse_layer.py::test_concept_store_absent_from_generic_sparse_layer",
+    "line": 152,
+    "body": "def test_concept_store_absent_from_generic_sparse_layer():\n    # The generic substrate must NOT carry the concept record API.\n    ly = SparseLayer(4, 3)\n    for m in (\"ensure_row_key\", \"embed_pair\", \"constituents\",\n              \"row_is_identity\", \"assign_row\", \"hebbian_strengthen_row\"):\n        assert not hasattr(ly, m), f\"SparseLayer should not expose {m}\"",
+    "args": [],
+    "assertions": [
+      "not hasattr(ly, m)"
+    ]
+  },
+  {
+    "id": "test/test_stage_3_parser_cleanup.py::test_chart_class_no_longer_exists",
+    "line": 35,
+    "body": "def test_chart_class_no_longer_exists():\n    \"\"\"Importing ``Language.Chart`` should fail; the class is retired.\"\"\"\n    import Language\n    assert not hasattr(Language, \"Chart\"), (\n        \"Chart class still present in bin/Language.py; Stage 3 retires it.\"\n    )",
+    "args": [],
+    "assertions": [
+      "not hasattr(Language, 'Chart')"
+    ]
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAtConstruction::test_ws_cache_not_present_after_construction",
+    "line": 77,
+    "body": "def test_ws_cache_not_present_after_construction(self):\n        model = _make_plain_model()\n        self.assertFalse(\n            hasattr(model, '_ws_cache'),\n            \"BasicModel._ws_cache must be retired by Stage 1.F \"\n            \"(no per-stage forward caches; reverse reads terminal STM).\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(model, '_ws_cache'), 'BasicModel._ws_cache must be retired by Stage 1.F (no per-stage forward caches; reverse reads terminal STM).')"
+    ]
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAtConstruction::test_cs_cache_not_present_after_construction",
+    "line": 84,
+    "body": "def test_cs_cache_not_present_after_construction(self):\n        model = _make_plain_model()\n        self.assertFalse(\n            hasattr(model, '_cs_cache'),\n            \"BasicModel._cs_cache must be retired by Stage 1.F \"\n            \"(no per-stage forward caches; reverse reads terminal STM).\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(model, '_cs_cache'), 'BasicModel._cs_cache must be retired by Stage 1.F (no per-stage forward caches; reverse reads terminal STM).')"
+    ]
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_ws_cache_not_present_after_forward",
+    "line": 96,
+    "body": "def test_ws_cache_not_present_after_forward(self):\n        model = _make_plain_model()\n        x = _one_input(model)\n        with warnings.catch_warnings():\n            warnings.filterwarnings(\"ignore\")\n            with torch.no_grad():\n                model.forward(x)\n        self.assertFalse(\n            hasattr(model, '_ws_cache'),\n            \"BasicModel._ws_cache must remain absent after a forward \"\n            \"pass (Stage 1.F: no per-stage forward caches).\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(model, '_ws_cache'), 'BasicModel._ws_cache must remain absent after a forward pass (Stage 1.F: no per-stage forward caches).')"
+    ]
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_cs_cache_not_present_after_forward",
+    "line": 108,
+    "body": "def test_cs_cache_not_present_after_forward(self):\n        model = _make_plain_model()\n        x = _one_input(model)\n        with warnings.catch_warnings():\n            warnings.filterwarnings(\"ignore\")\n            with torch.no_grad():\n                model.forward(x)\n        self.assertFalse(\n            hasattr(model, '_cs_cache'),\n            \"BasicModel._cs_cache must remain absent after a forward \"\n            \"pass (Stage 1.F: no per-stage forward caches).\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(model, '_cs_cache'), 'BasicModel._cs_cache must remain absent after a forward pass (Stage 1.F: no per-stage forward caches).')"
+    ]
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_runBatch_reverse_path_does_not_depend_on_cs_cache",
+    "line": 189,
+    "body": "def test_runBatch_reverse_path_does_not_depend_on_cs_cache(self):\n        \"\"\"The reverse-pass reconstruction in ``runBatch`` (the consumer\n        at ``bin/Models.py:2925``) must not depend on ``_cs_cache``.\n        After Stage 1.F retires the cache, this path reads STM and\n        does not consult ``_cs_cache``.\n\n        We assert this indirectly: after a forward, ``hasattr(model,\n        '_cs_cache')`` is False, so the reverse path cannot be reading\n        from that attribute.\n        \"\"\"\n        model = _make_plain_model()\n        x = _one_input(model)\n        with warnings.catch_warnings():\n            warnings.filterwarnings(\"ignore\")\n            with torch.no_grad():\n                model.forward(x)\n        self.assertFalse(\n            hasattr(model, '_cs_cache'),\n            \"Reverse-path consumer at runBatch must not depend on \"\n            \"``_cs_cache`` (Stage 1.F retires it entirely).\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(model, '_cs_cache'), 'Reverse-path consumer at runBatch must not depend on ``_cs_cache`` (Stage 1.F retires it entirely).')"
+    ]
+  },
+  {
+    "id": "test/test_stm_residual_no_sync.py::test_no_comprehension_prediction_api",
+    "line": 5,
+    "body": "def test_no_comprehension_prediction_api():\n    for name in (\"stm_residual\", \"stm_residual_microbatch\", \"arm_stm\"):\n        assert not hasattr(SymbolSubSpace, name)",
+    "args": [],
+    "assertions": [
+      "not hasattr(SymbolSubSpace, name)"
+    ]
+  },
+  {
+    "id": "test/test_subspace_what_stm_contract.py::test_rule_codebook_does_not_determine_parent_vectors",
+    "line": 1285,
+    "body": "def test_rule_codebook_does_not_determine_parent_vectors():\n    from Language import RuleCodebook\n    rc = RuleCodebook(num_rules=1)\n    assert not hasattr(rc, 'forward_to_parent_what'), (\n        'RuleCodebook must not provide parent-vector lookup')",
+    "args": [],
+    "assertions": [
+      "not hasattr(rc, 'forward_to_parent_what')"
+    ]
+  },
+  {
+    "id": "test/test_subspace_what_stm_contract.py::test_stack_router_gate_is_retired",
+    "line": 1300,
+    "body": "def test_stack_router_gate_is_retired(_xor_model):\n    assert not hasattr(_xor_model.wholeSpace, 'use_stack_router')\n    assert not hasattr(_xor_model.wholeSpace, '_stack_route_forward')",
+    "args": [
+      "_xor_model"
+    ],
+    "assertions": [
+      "not hasattr(_xor_model.wholeSpace, 'use_stack_router')",
+      "not hasattr(_xor_model.wholeSpace, '_stack_route_forward')"
+    ]
+  },
+  {
+    "id": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_paired_row_api_is_retired",
+    "line": 58,
+    "body": "def test_paired_row_api_is_retired(self):\n        model = _make_plain_model()\n        ws = model.wholeSpace\n        self.assertFalse(\n            hasattr(ws, \"insert_paired_word\"),\n            \"WholeSpace.insert_paired_word was retired (Step 3 of the \"\n            \"2026-06-10 symbolic-iteration plan); the CS-leg symbol \"\n            \"codebook replaces the PS->SS reach-across.\")\n        self.assertFalse(\n            hasattr(ws, \"mark_word_atom\"),\n            \"WholeSpace.mark_word_atom (the autobind fallback) was \"\n            \"retired with the paired-row machinery.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(ws, 'insert_paired_word'), 'WholeSpace.insert_paired_word was retired (Step 3 of the 2026-06-10 symbolic-iteration plan); the CS-leg symbol codebook replaces the PS->SS reach-across.')",
+      "self.assertFalse(hasattr(ws, 'mark_word_atom'), 'WholeSpace.mark_word_atom (the autobind fallback) was retired with the paired-row machinery.')"
+    ]
+  },
+  {
+    "id": "test/test_train_compile_target.py::test_mlx_compile_target_does_not_set_training_compile_env",
+    "line": 65,
+    "body": "def test_mlx_compile_target_does_not_set_training_compile_env():\n    env = {}\n    train.apply_compile_target_env(_args(\"mlx\"), env)\n    assert \"BASICMODEL_DEVICE\" not in env\n    assert \"MODEL_COMPILE\" not in env",
+    "args": [],
+    "assertions": [
+      "'BASICMODEL_DEVICE' not in env",
+      "'MODEL_COMPILE' not in env"
+    ]
+  },
+  {
+    "id": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted",
+    "line": 12,
+    "body": "def test_content_gate_and_alternative_relation_writer_are_deleted(name):\n    assert not hasattr(ConceptualSpace, name)",
+    "args": [
+      "name"
+    ],
+    "assertions": [
+      "not hasattr(ConceptualSpace, name)"
+    ]
+  },
+  {
+    "id": "test/test_truth_layer_record_many.py::test_should_store_function_deleted",
+    "line": 30,
+    "body": "def test_should_store_function_deleted():\n    \"\"\"``TruthLayer.should_store`` was removed by \u00a76b.\n\n    Per-cell gating is no longer applied inside the brick; the codebook\n    nearest-neighbor lookup at compact time naturally dedupes near-zero\n    and near-duplicate vectors against the existing prototypes.\n    \"\"\"\n    tl = TruthLayer(nDim=8, max_truths=16)\n    assert not hasattr(tl, 'should_store'), (\n        \"should_store was deleted in \u00a76b; the per-cell gate is gone \"\n        \"and only record_batch / record / compact remain.\")",
+    "args": [],
+    "assertions": [
+      "not hasattr(tl, 'should_store')"
+    ]
+  },
+  {
+    "id": "test/test_two_codebook_meta_taxonomy.py::test_wholespace_has_no_meta_decode_or_persisted_taxonomy",
+    "line": 106,
+    "body": "def test_wholespace_has_no_meta_decode_or_persisted_taxonomy():\n    from Spaces import WholeSpace\n    for name in ('insert_percept', 'insert_whole', 'insert_meta', 'reverse_decode',\n                 'taxonomy_parent', 'taxonomy_children'):\n        assert not hasattr(WholeSpace, name)",
+    "args": [],
+    "assertions": [
+      "not hasattr(WholeSpace, name)"
+    ]
+  },
+  {
+    "id": "test/test_two_truth_stores.py::test_retired_relative_store_is_absent",
+    "line": 197,
+    "body": "def test_retired_relative_store_is_absent():\n    import Layers\n    assert not hasattr(Layers, 'RelativeTruthStore')",
+    "args": [],
+    "assertions": [
+      "not hasattr(Layers, 'RelativeTruthStore')"
+    ]
+  },
+  {
+    "id": "test/test_unified_lexicon_codebook.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "line": 951,
+    "body": "def test_retired_wholespace_taxonomy_writer_is_absent():\n    from Spaces import WholeSpace\n    assert not hasattr(WholeSpace, \"insert_meta\")",
+    "args": [],
+    "assertions": [
+      "not hasattr(WholeSpace, 'insert_meta')"
+    ]
+  },
+  {
+    "id": "test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_paired_insert_api_is_gone",
+    "line": 741,
+    "body": "def test_paired_insert_api_is_gone(self):\n        model = _make_plain_model()\n        ws = model.wholeSpace\n        self.assertFalse(\n            hasattr(ws, \"insert_paired_word\"),\n            \"WholeSpace.insert_paired_word must be RETIRED (Step 3 of \"\n            \"the 2026-06-10 symbolic-iteration plan).\")\n        self.assertFalse(\n            hasattr(ws, \"mark_word_atom\"),\n            \"the mark_word_atom autobind fallback retires with the \"\n            \"paired-row machinery.\")",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertFalse(hasattr(ws, 'insert_paired_word'), 'WholeSpace.insert_paired_word must be RETIRED (Step 3 of the 2026-06-10 symbolic-iteration plan).')",
+      "self.assertFalse(hasattr(ws, 'mark_word_atom'), 'the mark_word_atom autobind fallback retires with the paired-row machinery.')"
+    ]
+  },
+  {
+    "id": "test/test_when_encoding_v2.py::test_no_endpoint_bracket_api",
+    "line": 197,
+    "body": "def test_no_endpoint_bracket_api():\n    \"\"\"Endpoint-sum bracketing retires for .when: the v2 codec exposes no\n    decode_span, and encode takes ONE quantity (no end/D kwargs).\"\"\"\n    enc = _enc()\n    assert not hasattr(enc, \"decode_span\")\n    with pytest.raises(TypeError):\n        enc.encode(3, 7)\n    with pytest.raises(TypeError):\n        enc.encode(3, D=0.5)",
+    "args": [],
+    "assertions": [
+      "not hasattr(enc, 'decode_span')"
+    ]
+  },
+  {
+    "id": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_router_kind_is_signal",
+    "line": 84,
+    "body": "def test_router_kind_is_signal(self):\n        \"\"\"Stage 3: routerKind retired -- the signal router is the\n        canonical (and only) parser. The XML no longer carries the\n        knob; this test verifies the absence.\"\"\"\n        ss_cfg = self.cfg[\"SymbolSpace\"]\n        self.assertNotIn(\"routerKind\", ss_cfg)",
+    "args": [
+      "self"
+    ],
+    "assertions": [
+      "self.assertNotIn('routerKind', ss_cfg)"
+    ]
+  }
+]

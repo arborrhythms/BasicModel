@@ -1,0 +1,89 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/result.json": "01d894812921ae59fd3e6fd9cc9596bee316a99331f13632c65b75edfcc37e97"
+  },
+  "aggregate_bytes": 25769803776,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 13,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+      ],
+      "estimated_seconds": 61.15949941705912,
+      "reserved_bytes": 2414525292.8
+    },
+    {
+      "nodes": [
+        "test/test_compose_operations.py::test_forced_round_is_uniform_over_exploit_used_rounds",
+        "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop",
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary"
+      ],
+      "estimated_seconds": 0.006416957126930356,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_inverse_unary_exclusion.py::test_closing_does_not_spend_rounds_repeating_not_at_one_slot"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[False]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[True]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_inverse_unary_exclusion.py::test_single_legal_derivation_is_compared_without_inventing_an_alternative"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    }
+  ]
+}

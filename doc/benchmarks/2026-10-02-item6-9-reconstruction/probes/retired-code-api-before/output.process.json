@@ -1,0 +1,17 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_primitive_properties.py",
+    "test/test_row_local_concept_optimizer.py",
+    "--tb=short"
+  ],
+  "pid": 88771,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 687932952,
+  "elapsed_seconds": 4.415479457995389,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/retired-code-api-before/output.log"
+}

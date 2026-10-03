@@ -1,0 +1,20 @@
+{
+  "variants": [
+    "a",
+    "b",
+    "c"
+  ],
+  "runs_each": 10,
+  "mm_final_runs": 10,
+  "epochs": 400,
+  "seed": null,
+  "bar": {
+    "correct": 4,
+    "mse_less_than": 0.05
+  },
+  "max_workers": 3,
+  "worker_bytes": 8589934592,
+  "aggregate_bytes": 25769803776,
+  "timeout_seconds": 2150,
+  "started_at": 1790841644.9303029
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "file": "bin/Language.py",
+    "symbol": "NotLayer",
+    "old_body": "class NotLayer(GrammarLayer):\n    \"\"\"Self-inverse ``not(S)``: swap the leading ``[pos, neg]`` bivector.\"\"\"\n    rule_name  = \"not\"\n    arity      = 1\n    invertible = True\n    space_role       = 'CS'\n\n    def __init__(self):\n        \"\"\"Initialize the parameter-free operator.\"\"\"\n        super().__init__(0, 0)\n\n    def forward(self, x):\n        \"\"\"Swap the leading bivector channels.\"\"\"\n        self._check_bivector_shape(x)\n        bivector = x[..., :2].flip(dims=(-1,))\n        rest     = x[..., 2:]\n        if rest.shape[-1] == 0:\n            return bivector\n        return torch.cat([bivector, rest], dim=-1)\n\n    def reverse(self, y):\n        \"\"\"Apply the self-inverse swap.\"\"\"\n        return self.forward(y)\n",
+    "new_body": "class NotLayer(GrammarLayer):\n    \"\"\"Self-inverse negation of a concept code, or an explicit pole pair.\"\"\"\n    rule_name  = \"not\"\n    arity      = 1\n    invertible = True\n    space_role       = 'CS'\n\n    def __init__(self, *, representation='code'):\n        \"\"\"Concept slots carry full codes; evidence poles are explicit.\"\"\"\n        super().__init__(0, 0)\n        if representation not in ('code', 'poles'):\n            raise ValueError('not requires code or poles representation')\n        self.representation = representation\n\n    def forward(self, x):\n        \"\"\"Reflect the full code, or exchange the explicit evidence poles.\"\"\"\n        if self.representation == 'code':\n            return -x\n        self._check_bivector_shape(x)\n        bivector = x[..., :2].flip(dims=(-1,))\n        rest     = x[..., 2:]\n        if rest.shape[-1] == 0:\n            return bivector\n        return torch.cat([bivector, rest], dim=-1)\n\n    def reverse(self, y):\n        \"\"\"Both representations are their own inverse.\"\"\"\n        return self.forward(y)\n"
+  },
+  {
+    "file": "bin/Language.py",
+    "symbol": "NotLayer.__init__",
+    "old_body": "    def __init__(self):\n        \"\"\"Initialize the parameter-free operator.\"\"\"\n        super().__init__(0, 0)\n",
+    "new_body": "    def __init__(self, *, representation='code'):\n        \"\"\"Concept slots carry full codes; evidence poles are explicit.\"\"\"\n        super().__init__(0, 0)\n        if representation not in ('code', 'poles'):\n            raise ValueError('not requires code or poles representation')\n        self.representation = representation\n"
+  },
+  {
+    "file": "bin/Language.py",
+    "symbol": "NotLayer.forward",
+    "old_body": "    def forward(self, x):\n        \"\"\"Swap the leading bivector channels.\"\"\"\n        self._check_bivector_shape(x)\n        bivector = x[..., :2].flip(dims=(-1,))\n        rest     = x[..., 2:]\n        if rest.shape[-1] == 0:\n            return bivector\n        return torch.cat([bivector, rest], dim=-1)\n",
+    "new_body": "    def forward(self, x):\n        \"\"\"Reflect the full code, or exchange the explicit evidence poles.\"\"\"\n        if self.representation == 'code':\n            return -x\n        self._check_bivector_shape(x)\n        bivector = x[..., :2].flip(dims=(-1,))\n        rest     = x[..., 2:]\n        if rest.shape[-1] == 0:\n            return bivector\n        return torch.cat([bivector, rest], dim=-1)\n"
+  },
+  {
+    "file": "bin/Language.py",
+    "symbol": "NotLayer.reverse",
+    "old_body": "    def reverse(self, y):\n        \"\"\"Apply the self-inverse swap.\"\"\"\n        return self.forward(y)\n",
+    "new_body": "    def reverse(self, y):\n        \"\"\"Both representations are their own inverse.\"\"\"\n        return self.forward(y)\n"
+  }
+]

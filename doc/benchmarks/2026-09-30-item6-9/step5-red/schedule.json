@@ -1,0 +1,40 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/result.json": "01d894812921ae59fd3e6fd9cc9596bee316a99331f13632c65b75edfcc37e97"
+  },
+  "aggregate_bytes": 25769803776,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 6,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+        "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+        "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted"
+      ],
+      "estimated_seconds": 0.6019813749007881,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    }
+  ]
+}

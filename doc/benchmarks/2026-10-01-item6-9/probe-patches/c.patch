@@ -1,0 +1,59 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -14385,6 +14385,7 @@
+             )
+         batch = batch_override
+         inputTensor, outputTensor = batch
++        self._probe_supplied_answers = outputTensor
+         self._stage_expectation_documents(
+             split, source_rows, int(inputTensor.shape[0])
+             if isinstance(inputTensor, torch.Tensor) else len(inputTensor))
+@@ -17706,7 +17707,7 @@
+ 
+ 
+ 
+-    def _forward_head(self, sub, *, sentence_state=None):
++    def _forward_head(self, sub, *, sentence_state=None, detach_understanding=True):
+         """Read a concluded serial understanding without training its producer."""
+         if self.outputSpace.concept_ids:
+             sub = self._combine_last_cs_sub
+@@ -17737,7 +17738,7 @@
+             width = int(shape[0]) * int(shape[1])
+             torch._assert_async((occupied * D <= width).all(),
+                 'the answer map cannot hold the concluded understanding')
+-            value = slots.detach().reshape(B, 3 * D)
++            value = (slots.detach() if detach_understanding else slots).reshape(B, 3 * D)
+             value = F.pad(value, (0, max(0, width - 3 * D)))[:, :width]
+             sub = SubSpace.from_tensor(value.reshape(B, *shape),
+                 inputShape=shape, outputShape=shape,
+@@ -20605,7 +20606,30 @@
+             self._sentence_gradient_objectives = dict(
+                 reconstruction=reconstruction_cost, expectation=expectation_cost,
+                 output=output_cost)
++        answer_error = self._probe_trial_answer_error(state, sid)
++        if answer_error is not None:
++            cost = cost + answer_error
+         return cost, reconstruction, observation, pending
++
++    def _probe_trial_answer_error(self, state, sid):
++        """Measurement only: supplied numeric-answer MSE in output units."""
++        target = getattr(self, '_probe_supplied_answers', None)
++        if (not self._sentence_training or not torch.is_tensor(target)
++                or not target.numel() or not self.inputSpace.data.has_supervised_outputs):
++            return None
++        _stm, lang, _feedback = state
++        root = lang[9][:, sid]
++        slots = lang[13][:, sid].reshape(root.shape[0], 3, root.shape[-1])
++        depth = lang[14][:, sid]
++        answer = self._forward_head(None, sentence_state=(root, slots, depth), detach_understanding=False)
++        pred = self.normalizer.denormalize(answer.materialize(), which='output')
++        pred = self._align_output_pred(pred, target)
++        if pred is None:
++            raise RuntimeError('probe answer and supplied target do not align')
++        error = (pred - target.to(pred)).square().reshape(root.shape[0], -1).mean(-1)
++        self._probe_answer_component = error
++        return self._probe_answer_component
++
+ 
+     @staticmethod
+     def _clause_end_state(state, sid, clauses, row_ids):

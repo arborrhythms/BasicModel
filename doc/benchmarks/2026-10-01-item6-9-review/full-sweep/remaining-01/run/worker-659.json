@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "completed": [
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_reverse_off_path_unchanged",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001077089982572943,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode_d3.py', 96, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

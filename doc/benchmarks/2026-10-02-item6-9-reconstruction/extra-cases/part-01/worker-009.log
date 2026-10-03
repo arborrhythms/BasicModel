@@ -1,0 +1,19 @@
+.....F                                                                   [100%]
+=================================== FAILURES ===================================
+__________ test_two_phase_forward_cutover_stamps_terminal_activations __________
+test/test_sparse_concept_e2e.py:300: in test_two_phase_forward_cutover_stamps_terminal_activations
+    assert acts is not None and int(acts.shape[0]) == sum(cs0._field_caps())
+E   assert (tensor([[[[0., 0.]],\n\n         [[1., 1.]],\n\n         [[1., 1.]],\n\n         [[1., 1.]]],\n\n\n        [[[0., 0.]],\n\n      ...]]],\n\n\n        [[[0., 0.]],\n\n         [[0., 0.]],\n\n         [[0., 0.]],\n\n         [[0., 0.]]]], grad_fn=<CatBackward0>) is not None and 8 == 15)
+E    +  where 8 = int(8)
+E    +  and   15 = sum((8, 4, 2, 1))
+E    +    where (8, 4, 2, 1) = _field_caps()
+E    +      where _field_caps = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ... (concept_source_readout): SigmaConceptsFromPercepts(\n    (sigma): SigmaLayer(\n      (layer): LinearLayer()\n    )\n  )\n)._field_caps
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations
+1 failed, 5 passed, 1 warning in 3.23s

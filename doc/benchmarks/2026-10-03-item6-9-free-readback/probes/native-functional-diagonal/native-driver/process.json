@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements"
+  ],
+  "pid": 45432,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 11253887984,
+  "elapsed_seconds": 227.54655400000047,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/native-driver/driver.log"
+}

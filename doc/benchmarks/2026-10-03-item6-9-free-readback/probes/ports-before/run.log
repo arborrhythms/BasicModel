@@ -1,0 +1,995 @@
+F..F....F............FFFFF..........FFFFFFF.......FFFF                   [100%]
+=================================== FAILURES ===================================
+________ test_lower_total_explore_cannot_win_with_worse_reconstruction _________
+
+    def test_lower_total_explore_cannot_win_with_worse_reconstruction():
+        from SentenceCompose import sentence_pair
+        active = torch.tensor([True, True, True])
+        r = [torch.tensor([1., 2., 3.]), torch.tensor([2., 1., 3.])]
+        def compose(cache, prior):
+            return torch.zeros(3) if prior is None else torch.ones(3)
+        def score(path, alternative):
+            return torch.full((3,), 1. if alternative else 2.), path
+>       chosen, _, wins = sentence_pair(None, compose, score, lambda loss: None,
+            active=active, reconstruction=lambda state: r[int(state[0])])
+E       TypeError: sentence_pair() got an unexpected keyword argument 'reconstruction'
+
+test/test_reconstruction_precedence.py:14: TypeError
+______ test_free_trial_uses_no_reference_or_offsets_and_keeps_both_terms _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108185a60>
+
+    def test_free_trial_uses_no_reference_or_offsets_and_keeps_both_terms(monkeypatch):
+        from pathlib import Path
+        import Models, util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+        original = model._reconstruct_sentences
+        calls=[]
+        def observe(*args, **kw):
+            if kw.get('free', False):
+                record = kw['understanding']
+                assert record.primed.codes.requires_grad
+                # Changing only the retained leaf values and witnesses must not
+                # change free reconstruction. Reuse the exact root and derivation.
+                from dataclasses import replace
+                result=original(*args, **kw)
+                changed=replace(record, word_values=record.word_values+19,
+                                witness_offsets=record.witness_offsets+23)
+                altered=original(args[0], changed.word_values, *args[2:],
+                                 **(kw|{'understanding':changed}))
+                torch.testing.assert_close(result[0], altered[0])
+                torch.testing.assert_close(result[2], altered[2])
+                calls.append('free')
+                return result
+            calls.append('witnessed')
+            return original(*args, **kw)
+        monkeypatch.setattr(model, '_reconstruct_sentences', observe)
+        optimizer=model.getOptimizer(lr=.01)
+        try:
+            raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
+            model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
+                batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+>           assert calls.count('free') == calls.count('witnessed') == 2
+E           AssertionError: assert 0 == 2
+E            +  where 0 = <built-in method count of list object at 0x108188b00>('free')
+E            +    where <built-in method count of list object at 0x108188b00> = ['witnessed', 'witnessed'].count
+E            +  and   2 = <built-in method count of list object at 0x108188b00>('witnessed')
+E            +    where <built-in method count of list object at 0x108188b00> = ['witnessed', 'witnessed'].count
+
+test/test_free_reconstruction.py:60: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+_________ test_passback_scales_unknown_parts_without_erasing_location __________
+
+    def test_passback_scales_unknown_parts_without_erasing_location():
+        cs = SimpleNamespace(_field_caps=lambda: (2,), cs_percept_attribution=lambda *a, **k:
+            (torch.tensor([0]), torch.tensor([[[[1., 0.]]]]),
+             torch.tensor([[[0, 1], [1, 2]]])))
+        model = SimpleNamespace(subsymbolic_loop={1}, conceptualSpaces=[cs],
+            conceptualSpace=cs, _subsymbolic_field=torch.zeros(2, 1, 1, 2),
+            perceptualSpace=SimpleNamespace(nWhat=2, _forward_input={
+                'part_spans': torch.tensor([[[0, 1], [1, 2]]])}),
+            _staged_concepts_in=torch.tensor([[[65, 66]]]))
+        sub = Spaces.SubSpace(inputShape=(2, 4), outputShape=(2, 4), nInputDim=4, nOutputDim=4)
+        event = torch.tensor([[[.4, .8, -.2, .6], [.8, .4, .6, -.2]]])
+        sub.set_event(event)
+>       result = BasicModel._passback_scope_ps(model, 1, sub, None).materialize()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_definition_attribution.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(subsymbolic_loop={1}, conceptualSpaces=[namespace(_field_caps=<function test_passback_scales_unknown_parts_w...nWhat=2, _forward_input={'part_spans': tensor([[[0, 1],
+         [1, 2]]])}), _staged_concepts_in=tensor([[[65, 66]]]))
+pass_idx = 1
+ps_default = SubSpace(
+  (activeEncoding): ActiveEncoding()
+  (objectEncoding): EventEncoding()
+  (whatEncoding): WhatEncoding()
+  ...WordEncoding()
+  (activation): Tensor()
+  (event): Tensor()
+  (what): Tensor()
+  (where): Tensor()
+  (when): Tensor()
+)
+prevCS_forSS = None, prevPS_forPS = None
+
+    def _passback_scope_ps(self, pass_idx, ps_default, prevCS_forSS,
+                           prevPS_forPS=None):
+        """Retarget native perception through conceptual membership attribution.
+    
+        The request addresses native percept identities, which choose the
+        mereological units, and field brackets, which choose the region.
+        The source carrier is read-only.
+        """
+        if pass_idx not in self.subsymbolic_loop:
+            return ps_default
+>       owner = self._concept_owner()
+                ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_concept_owner'
+
+bin/Models.py:22846: AttributeError
+_______________ test_normal_batch_logs_owned_optimizer_gradients _______________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1174/test_normal_batch_logs_owned_o0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1440075f0>
+capsys = <_pytest.capture.CaptureFixture object at 0x144072ba0>
+eager_reading = None
+
+    def test_normal_batch_logs_owned_optimizer_gradients(tmp_path, monkeypatch, capsys, eager_reading):
+        from pathlib import Path
+        from test_compiled_word_chunk import _tiny_canonical_model
+        curriculum = json.loads((Path(__file__).resolve().parents[1] / "data/grammar_wording.json").read_text())
+        chosen = ("wheels belong to bicycles", "bicycles are equal to wheels")
+        lessons = [next(row for row in curriculum["train"] if row["text"] == text) for text in chosen]
+        torch.manual_seed(942)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8")
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.branch_diagnostics_every = 1
+        model.inputSpace.data.grammar_lessons = {"train": lessons}
+        model.inputSpace.data.has_supervised_outputs = False
+        optimizer = model.getOptimizer(lr=.003)
+        try:
+            inputs = model.inputSpace.prepInput(list(chosen))
+            result, _ = model.runBatch(train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+                source_rows=[0, 1], batch_override=(inputs, torch.empty(2, 0)))
+            assert result is not None
+            report = model._last_ownership_audit
+            assert report['conflicts'] == 0
+            assert report['active'] > 0
+            assert all(row['writers'] in ([], [row['owner']]) for row in report['parameters'])
+            assert any(row['writers'] == ['reconstruction'] for row in report['parameters'])
+            assert any(row['writers'] == ['output'] for row in report['parameters'])
+            dictionary = model.conceptualSpace.similarity_codebook.W
+>           assert not isinstance(dictionary, torch.nn.Parameter)
+E           AssertionError: assert not True
+E            +  where True = isinstance(Parameter containing:\ntensor([[ 0.4174, -0.1215,  0.0847,  ...,  0.0928,  0.1297, -0.0410],\n        [ 0.3710,  0.2972,...7,  0.0954, -0.4577],\n        [-0.0284,  0.0474, -0.1007,  ..., -0.4393,  0.1128,  0.2205]],\n       requires_grad=True), <class 'torch.nn.parameter.Parameter'>)
+E            +    where <class 'torch.nn.parameter.Parameter'> = <module 'torch.nn' from '/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/__init__.py'>.Parameter
+E            +      where <module 'torch.nn' from '/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/__init__.py'> = torch.nn
+
+test/test_gradient_factorization.py:145: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+  [objective-ownership] {"active": 29, "conflicts": 0, "inactive": 117, "parameters": [{"elements": 12, "owner": "reconstruction", "parameter": "conceptualSpaces.0.concept_parts_layer.features.values", "writers": []}, {"elements": 512, "owner": "reconstruction", "parameter": "perceptualSpace._owned_bases.what.W", "writers": ["reconstruction"]}, {"elements": 2048, "owner": "reconstruction", "parameter": "perceptualSpace._percept_store.byte_fallback.byte_codebook", "writers": []}, {"elements": 9, "owner": "reconstruction", "parameter": "conceptualSpaces.0.layers.5.sigma.layer.W", "writers": []}, {"elements": 1, "owner": "reconstruction", "parameter": "conceptualSpaces.0.layers.5.sigma.layer.biasWeight", "writers": []}, {"elements": 9, "owner": "reconstruction", "parameter": "conceptualSpaces.1.layers.5.sigma.layer.W", "writers": []}, {"elements": 1, "owner": "reconstruction", "parameter": "conceptualSpaces.1.layers.5.sigma.layer.biasWeight", "writers": []}, {"elements": 9, "owner": "reconstruction", "parameter": "conceptualSpaces.2.layers.5.sigma.layer.W", "writers": []}, {"elements": 1, "owner": "reconstruction", "parameter": "conceptualSpaces.2.layers.5.sigma.layer.biasWeight", "writers": []}, {"elements": 9, "owner": "reconstruction", "parameter": "conceptualSpaces.3.layers.5.sigma.layer.W", "writers": []}, {"elements": 1, "owner": "reconstruction", "parameter": "conceptualSpaces.3.layers.5.sigma.layer.biasWeight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.0.begins_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.0.ends_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.0.atom_level", "writers": []}, {"elements": 64, "owner": "reconstruction", "parameter": "wholeSpaces.0._owned_bases.what.W", "writers": []}, {"elements": 2048, "owner": "reconstruction", "parameter": "wholeSpaces.0._owned_bases.what.primitive_properties.members", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.1.begins_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.1.ends_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.1.atom_level", "writers": []}, {"elements": 64, "owner": "reconstruction", "parameter": "wholeSpaces.1._owned_bases.what.W", "writers": []}, {"elements": 2048, "owner": "reconstruction", "parameter": "wholeSpaces.1._owned_bases.what.primitive_properties.members", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.2.begins_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.2.ends_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.2.atom_level", "writers": []}, {"elements": 64, "owner": "reconstruction", "parameter": "wholeSpaces.2._owned_bases.what.W", "writers": []}, {"elements": 2048, "owner": "reconstruction", "parameter": "wholeSpaces.2._owned_bases.what.primitive_properties.members", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.3.begins_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.3.ends_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.3.atom_level", "writers": []}, {"elements": 64, "owner": "reconstruction", "parameter": "wholeSpaces.3._owned_bases.what.W", "writers": ["reconstruction"]}, {"elements": 2048, "owner": "reconstruction", "parameter": "wholeSpaces.3._owned_bases.what.primitive_properties.members", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.d", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_U", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.biasWeight", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._lex_gate.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._lex_gate.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.d", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._lex_gate.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._lex_gate.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.weight", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.bias", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.d", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._lex_gate.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._lex_gate.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._adv_edit.weight", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._adv_edit.bias", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_L", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.d", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_U", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.biasWeight", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._lex_gate.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._lex_gate.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_map.weight", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_map.bias", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_prior.0.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_prior.0.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_prior.2.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_prior.2.bias", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.stop_anchor", "writers": []}, {"elements": 288, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor", "writers": []}, {"elements": 160, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.apply_anchor", "writers": []}, {"elements": 232, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.tool_embedding", "writers": ["reconstruction"]}, {"elements": 1984, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.weight", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.bias", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.weight", "writers": ["reconstruction"]}, {"elements": 1, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.bias", "writers": ["reconstruction"]}, {"elements": 1472, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.operand_order.weight", "writers": ["reconstruction"]}, {"elements": 1472, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.copy_order.weight", "writers": ["reconstruction"]}, {"elements": 841, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.what_projection.weight", "writers": ["reconstruction"]}, {"elements": 304, "owner": "reconstruction", "parameter": "symbolSpace.subspace.category_embedding.weight", "writers": []}, {"elements": 1024, "owner": "reconstruction", "parameter": "symbolSpace.subspace.rule_predictor.0.weight", "writers": []}, {"elements": 32, "owner": "reconstruction", "parameter": "symbolSpace.subspace.rule_predictor.0.bias", "writers": []}, {"elements": 1856, "owner": "reconstruction", "parameter": "symbolSpace.subspace.rule_predictor.2.weight", "writers": []}, {"elements": 58, "owner": "reconstruction", "parameter": "symbolSpace.subspace.rule_predictor.2.bias", "writers": []}, {"elements": 1024, "owner": "reconstruction", "parameter": "conceptualSpaces.0.layers.3.W", "writers": ["reconstruction"]}, {"elements": 576, "owner": "reconstruction", "parameter": "conceptualSpaces.0.layers.4.coefficients", "writers": ["reconstruction"]}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.pi.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.pi.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.sigma.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.sigma.layer.biasWeight", "writers": []}, {"elements": 928, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.routing_proj.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.routing_proj.bias", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.pi.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.pi.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.sigma.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.sigma.layer.biasWeight", "writers": []}, {"elements": 928, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.routing_proj.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.routing_proj.bias", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.pi.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.pi.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.pi.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.pi.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.sigma.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.sigma.layer.biasWeight", "writers": []}, {"elements": 928, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.routing_proj.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.routing_proj.bias", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.pi.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.pi.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.pi.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.pi.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.sigma.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.sigma.layer.biasWeight", "writers": []}, {"elements": 928, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.routing_proj.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.routing_proj.bias", "writers": []}, {"elements": 3584, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2.predictor.0.weight", "writers": []}, {"elements": 32, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2.predictor.0.bias", "writers": []}, {"elements": 512, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2.predictor.2.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2.predictor.2.bias", "writers": []}, {"elements": 102, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_weight", "writers": []}, {"elements": 1, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_bias", "writers": []}, {"elements": 41616, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight", "writers": []}, {"elements": 102, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias", "writers": []}, {"elements": 5202, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight", "writers": []}, {"elements": 51, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace._readout_bias", "writers": []}, {"elements": 128, "owner": "output", "parameter": "inputSpace.outputSpace.layers.0.W", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace.layers.0.biasWeight", "writers": []}, {"elements": 128, "owner": "output", "parameter": "inputSpace.outputSpace.layers.1.W", "writers": []}, {"elements": 128, "owner": "output", "parameter": "inputSpace.outputSpace.layers.1.biasWeight", "writers": []}, {"elements": 448, "owner": "output", "parameter": "symbolSpace.languageSpace.generate_policy.weight", "writers": ["output"]}, {"elements": 28, "owner": "output", "parameter": "symbolSpace.languageSpace.generate_policy.bias", "writers": ["output"]}, {"elements": 4464, "owner": "output", "parameter": "answer_record_reader.weight", "writers": []}, {"elements": 464, "owner": "output", "parameter": "question_conditioners.16.weight", "writers": []}, {"elements": 256, "owner": "output", "parameter": "inputSpace.outputSpace.percept_adapter.raw_L", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace.percept_adapter.d", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace.percept_adapter.raw_U", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace.percept_adapter.biasWeight", "writers": []}]}
+_ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f633200>
+unadmitted = False, trailing = False
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8301: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23500: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17583: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21966: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21525: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20690: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20658: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20185: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20171: in _reconstruct_trial
+    return self._compiled_reconstruct()(record.root.clone(), record.word_values,
+bin/Models.py:12391: in _reconstruct_sentences
+    recovered) = _reconstruction_while_loop(
+bin/Models.py:381: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t = tensor(0)
+stack = tensor([[[-0.0982,  0.4110,  0.3657,  0.4809,  0.5240,  0.3118, -0.0295,
+           0.0147,  0.2861,  0.0403],
+       ...0000],
+         [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000,  0.0000,  0.0000]]])
+depth = tensor([2, 2, 2, 2])
+idea_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+byte_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+count = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+trunc = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+recovered = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0....., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]])
+
+    def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+        w = (T - 1) - t
+        wa = _col(leaves, w)
+        # A trailing separator still locates the physical sentence end;
+        # it loads the closing state but consumes no grammar operand.
+        end_b = torch.logical_and(_col(is_end, w), _col(active, w))
+        sid = _col(ids, w).clamp(0, slots - 1)
+        loaded = pre_stack.gather(
+            1, sid.reshape(B, 1, 1, 1).expand(B, 1, cap, D)).reshape(B, cap, D)
+        loaded_depth = pre_depth.gather(1, sid.reshape(B, 1)).reshape(B)
+        stack = torch.where(end_b.reshape(B, 1, 1), loaded, stack)
+        depth = torch.where(end_b, loaded_depth, depth)
+        ref_w = _word_col(reference, w).detach()
+        ref_w = torch.where(wa[:, None], ref_w, torch.zeros_like(ref_w))
+        unavailable = torch.zeros(B, dtype=torch.bool, device=dev)
+        for r in reversed(range(3)):
+            slot = (3 * w + r).reshape(1).expand(B)
+            stack, depth, bad_round = undo_operation(stack, depth, slot, wa, sid)
+            unavailable = unavailable | bad_round
+        # pop: the top is the recovered word, scored on the spot
+        top = stack[:, 0, :]
+        underflow = torch.logical_and(wa, depth < 1)
+        pop_w = wa.to(S.dtype)
+        idea_d = (top - ref_w).square().mean(-1)
+>       byte_d = self._byte_word_cost(
+            top, w, bank_n, bank_bytes,
+            bank_valid & (bank_sentence_ids == sid[:, None])[:, :, None],
+            bytes_bwp, valid_bwp, byte_ready, priming=bank_weights)
+E       TypeError: test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.observed_cost() got an unexpected keyword argument 'priming'
+
+bin/Models.py:12368: TypeError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1080d5eb0>
+unadmitted = True, trailing = False
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8301: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23500: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17583: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21966: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21525: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20690: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20658: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20185: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20171: in _reconstruct_trial
+    return self._compiled_reconstruct()(record.root.clone(), record.word_values,
+bin/Models.py:12391: in _reconstruct_sentences
+    recovered) = _reconstruction_while_loop(
+bin/Models.py:381: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t = tensor(0)
+stack = tensor([[[-0.2170, -0.2584, -0.0925,  0.5329,  0.3270,  0.2356,  0.5341,
+          -0.1662,  0.3113, -0.1461],
+       ...0000],
+         [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000,  0.0000,  0.0000]]])
+depth = tensor([2, 2, 2, 2])
+idea_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+byte_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+count = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+trunc = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+recovered = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0....., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]])
+
+    def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+        w = (T - 1) - t
+        wa = _col(leaves, w)
+        # A trailing separator still locates the physical sentence end;
+        # it loads the closing state but consumes no grammar operand.
+        end_b = torch.logical_and(_col(is_end, w), _col(active, w))
+        sid = _col(ids, w).clamp(0, slots - 1)
+        loaded = pre_stack.gather(
+            1, sid.reshape(B, 1, 1, 1).expand(B, 1, cap, D)).reshape(B, cap, D)
+        loaded_depth = pre_depth.gather(1, sid.reshape(B, 1)).reshape(B)
+        stack = torch.where(end_b.reshape(B, 1, 1), loaded, stack)
+        depth = torch.where(end_b, loaded_depth, depth)
+        ref_w = _word_col(reference, w).detach()
+        ref_w = torch.where(wa[:, None], ref_w, torch.zeros_like(ref_w))
+        unavailable = torch.zeros(B, dtype=torch.bool, device=dev)
+        for r in reversed(range(3)):
+            slot = (3 * w + r).reshape(1).expand(B)
+            stack, depth, bad_round = undo_operation(stack, depth, slot, wa, sid)
+            unavailable = unavailable | bad_round
+        # pop: the top is the recovered word, scored on the spot
+        top = stack[:, 0, :]
+        underflow = torch.logical_and(wa, depth < 1)
+        pop_w = wa.to(S.dtype)
+        idea_d = (top - ref_w).square().mean(-1)
+>       byte_d = self._byte_word_cost(
+            top, w, bank_n, bank_bytes,
+            bank_valid & (bank_sentence_ids == sid[:, None])[:, :, None],
+            bytes_bwp, valid_bwp, byte_ready, priming=bank_weights)
+E       TypeError: test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.observed_cost() got an unexpected keyword argument 'priming'
+
+bin/Models.py:12368: TypeError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1080d7590>
+unadmitted = False, trailing = True
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8301: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23500: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17583: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21966: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21525: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20690: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20658: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20185: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20171: in _reconstruct_trial
+    return self._compiled_reconstruct()(record.root.clone(), record.word_values,
+bin/Models.py:12391: in _reconstruct_sentences
+    recovered) = _reconstruction_while_loop(
+bin/Models.py:381: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t = tensor(0)
+stack = tensor([[[-0.1686,  0.0843, -0.0265, -0.3743,  0.1779, -0.2735, -0.1741,
+          -0.4682,  0.1232, -0.2478],
+       ...0000],
+         [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000,  0.0000,  0.0000]]])
+depth = tensor([1, 1, 1, 1])
+idea_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+byte_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+count = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+trunc = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+recovered = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0....., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]])
+
+    def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+        w = (T - 1) - t
+        wa = _col(leaves, w)
+        # A trailing separator still locates the physical sentence end;
+        # it loads the closing state but consumes no grammar operand.
+        end_b = torch.logical_and(_col(is_end, w), _col(active, w))
+        sid = _col(ids, w).clamp(0, slots - 1)
+        loaded = pre_stack.gather(
+            1, sid.reshape(B, 1, 1, 1).expand(B, 1, cap, D)).reshape(B, cap, D)
+        loaded_depth = pre_depth.gather(1, sid.reshape(B, 1)).reshape(B)
+        stack = torch.where(end_b.reshape(B, 1, 1), loaded, stack)
+        depth = torch.where(end_b, loaded_depth, depth)
+        ref_w = _word_col(reference, w).detach()
+        ref_w = torch.where(wa[:, None], ref_w, torch.zeros_like(ref_w))
+        unavailable = torch.zeros(B, dtype=torch.bool, device=dev)
+        for r in reversed(range(3)):
+            slot = (3 * w + r).reshape(1).expand(B)
+            stack, depth, bad_round = undo_operation(stack, depth, slot, wa, sid)
+            unavailable = unavailable | bad_round
+        # pop: the top is the recovered word, scored on the spot
+        top = stack[:, 0, :]
+        underflow = torch.logical_and(wa, depth < 1)
+        pop_w = wa.to(S.dtype)
+        idea_d = (top - ref_w).square().mean(-1)
+>       byte_d = self._byte_word_cost(
+            top, w, bank_n, bank_bytes,
+            bank_valid & (bank_sentence_ids == sid[:, None])[:, :, None],
+            bytes_bwp, valid_bwp, byte_ready, priming=bank_weights)
+E       TypeError: test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.observed_cost() got an unexpected keyword argument 'priming'
+
+bin/Models.py:12368: TypeError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1446d9610>
+unadmitted = True, trailing = True
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8301: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23500: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17583: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21966: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21525: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20690: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20658: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20185: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20171: in _reconstruct_trial
+    return self._compiled_reconstruct()(record.root.clone(), record.word_values,
+bin/Models.py:12391: in _reconstruct_sentences
+    recovered) = _reconstruction_while_loop(
+bin/Models.py:381: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t = tensor(0)
+stack = tensor([[[-1.3361e-02,  2.4762e-02,  2.9148e-02, -1.6557e+00,  1.2799e-07,
+           1.0748e+00,  0.0000e+00,  9.4377...0,  0.0000e+00,  0.0000e+00,  0.0000e+00,
+           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]])
+depth = tensor([1, 1, 1, 1])
+idea_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+byte_sum = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+count = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+trunc = tensor([[0.],
+        [0.],
+        [0.],
+        [0.]])
+recovered = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0....., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]])
+
+    def body(t, stack, depth, idea_sum, byte_sum, count, trunc, recovered):
+        w = (T - 1) - t
+        wa = _col(leaves, w)
+        # A trailing separator still locates the physical sentence end;
+        # it loads the closing state but consumes no grammar operand.
+        end_b = torch.logical_and(_col(is_end, w), _col(active, w))
+        sid = _col(ids, w).clamp(0, slots - 1)
+        loaded = pre_stack.gather(
+            1, sid.reshape(B, 1, 1, 1).expand(B, 1, cap, D)).reshape(B, cap, D)
+        loaded_depth = pre_depth.gather(1, sid.reshape(B, 1)).reshape(B)
+        stack = torch.where(end_b.reshape(B, 1, 1), loaded, stack)
+        depth = torch.where(end_b, loaded_depth, depth)
+        ref_w = _word_col(reference, w).detach()
+        ref_w = torch.where(wa[:, None], ref_w, torch.zeros_like(ref_w))
+        unavailable = torch.zeros(B, dtype=torch.bool, device=dev)
+        for r in reversed(range(3)):
+            slot = (3 * w + r).reshape(1).expand(B)
+            stack, depth, bad_round = undo_operation(stack, depth, slot, wa, sid)
+            unavailable = unavailable | bad_round
+        # pop: the top is the recovered word, scored on the spot
+        top = stack[:, 0, :]
+        underflow = torch.logical_and(wa, depth < 1)
+        pop_w = wa.to(S.dtype)
+        idea_d = (top - ref_w).square().mean(-1)
+>       byte_d = self._byte_word_cost(
+            top, w, bank_n, bank_bytes,
+            bank_valid & (bank_sentence_ids == sid[:, None])[:, :, None],
+            bytes_bwp, valid_bwp, byte_ready, priming=bank_weights)
+E       TypeError: test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.observed_cost() got an unexpected keyword argument 'priming'
+
+bin/Models.py:12368: TypeError
+____________________ TestUnionInverse.test_batched_recovery ____________________
+
+self = <test_inverse_recommend.TestUnionInverse testMethod=test_batched_recovery>
+
+    def test_batched_recovery(self):
+        W = self._build_codebook()
+        Y = torch.stack([W[0], W[2], W[3]], dim=0)      # [3, 2]
+>       x1, x2 = Ops.disjunctionReverse(Y, Y, W)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'disjunctionReverse'. Did you mean: '_disjunction_kernel'?
+
+test/test_inverse_recommend.py:114: AttributeError
+_____ TestUnionInverse.test_pair_satisfies_constraints_on_codebook_target ______
+
+self = <test_inverse_recommend.TestUnionInverse testMethod=test_pair_satisfies_constraints_on_codebook_target>
+
+    def test_pair_satisfies_constraints_on_codebook_target(self):
+        W = self._build_codebook()
+        y = W[2].clone()                                # [0.6, 0.5]
+>       x1, x2 = Ops.disjunctionReverse(y, y, W)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'disjunctionReverse'. Did you mean: '_disjunction_kernel'?
+
+test/test_inverse_recommend.py:100: AttributeError
+___________ TestUnionInverse.test_sentinels_keep_selection_non_empty ___________
+
+self = <test_inverse_recommend.TestUnionInverse testMethod=test_sentinels_keep_selection_non_empty>
+
+    def test_sentinels_keep_selection_non_empty(self):
+        # When y is below every learned row but ⊥ is available, x1 falls
+        # back to ⊥ rather than producing a NaN argmax.
+        W = torch.tensor([[0.6, 0.6], [0.8, 0.8]])
+        y = torch.tensor([0.1, 0.1])                    # below all rows
+>       x1, x2 = Ops.disjunctionReverse(y, y, W)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'disjunctionReverse'. Did you mean: '_disjunction_kernel'?
+
+test/test_inverse_recommend.py:125: AttributeError
+__ TestIntersectionInverse.test_pair_satisfies_constraints_on_codebook_target __
+
+self = <test_inverse_recommend.TestIntersectionInverse testMethod=test_pair_satisfies_constraints_on_codebook_target>
+
+    def test_pair_satisfies_constraints_on_codebook_target(self):
+        W = self._build_codebook()
+        y = W[1].clone()                                # [0.4, 0.3]
+>       x1, x2 = Ops.conjunctionReverse(y, y, W)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'conjunctionReverse'. Did you mean: '_conjunction_kernel'?
+
+test/test_inverse_recommend.py:147: AttributeError
+__________ TestIntersectionInverse.test_x2_minimises_overlap_with_x1 ___________
+
+self = <test_inverse_recommend.TestIntersectionInverse testMethod=test_x2_minimises_overlap_with_x1>
+
+    def test_x2_minimises_overlap_with_x1(self):
+        # Build a codebook where two distinct rows both bound y but
+        # have very different overlap with x1; the recommender should
+        # prefer the one with smaller overlap.
+        W = torch.tensor([
+            [0.5, 0.5],   # bounds y; medium row
+            [0.5, 0.9],   # bounds y but overlaps {a,b} differently
+            [0.9, 0.5],   # bounds y; different shape
+        ])
+        y = torch.tensor([0.5, 0.5])
+>       x1, x2 = Ops.conjunctionReverse(y, y, W)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'conjunctionReverse'. Did you mean: '_conjunction_kernel'?
+
+test/test_inverse_recommend.py:165: AttributeError
+_ TestEmptyCodebook.test_intersection_inverse_empty_W_falls_back_to_identity_pair _
+
+self = <test_inverse_recommend.TestEmptyCodebook testMethod=test_intersection_inverse_empty_W_falls_back_to_identity_pair>
+
+    def test_intersection_inverse_empty_W_falls_back_to_identity_pair(self):
+        y = torch.tensor([0.4, 0.3])
+>       x1, x2 = Ops.conjunctionReverse(y, y, None)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'conjunctionReverse'. Did you mean: '_conjunction_kernel'?
+
+test/test_inverse_recommend.py:195: AttributeError
+___ TestEmptyCodebook.test_union_inverse_empty_W_falls_back_to_identity_pair ___
+
+self = <test_inverse_recommend.TestEmptyCodebook testMethod=test_union_inverse_empty_W_falls_back_to_identity_pair>
+
+    def test_union_inverse_empty_W_falls_back_to_identity_pair(self):
+        # When W is None or empty the wrapper short-circuits to
+        # (result, result) without touching the recommender.
+        y = torch.tensor([0.4, 0.3])
+>       x1, x2 = Ops.disjunctionReverse(y, y, None)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'disjunctionReverse'. Did you mean: '_disjunction_kernel'?
+
+test/test_inverse_recommend.py:184: AttributeError
+_______________ test_kwarg_forwarding_through_disjunctionReverse _______________
+
+    def test_kwarg_forwarding_through_disjunctionReverse():
+        """Public ``Ops.disjunctionReverse`` forwards left_rows/right_rows
+        to the underlying implementation."""
+        from Layers import Ops
+        import torch
+        W = _toy_codebook()
+        y = torch.tensor([[0.5, 0.5]])
+        # Without restriction
+>       x1a, x2a = Ops.disjunctionReverse(y, y, W)
+                   ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'disjunctionReverse'. Did you mean: '_disjunction_kernel'?
+
+test/test_restricted_candidate_inverse.py:172: AttributeError
+_______________ test_kwarg_forwarding_through_conjunctionReverse _______________
+
+    def test_kwarg_forwarding_through_conjunctionReverse():
+        """``Ops.conjunctionReverse`` forwards the kwargs too."""
+        from Layers import Ops
+        import torch
+        W = _toy_codebook()
+        y = torch.tensor([[0.5, 0.5]])
+>       x1a, x2a = Ops.conjunctionReverse(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+            y, y, W, left_rows=torch.tensor([2], dtype=torch.long))
+E       AttributeError: type object 'Ops' has no attribute 'conjunctionReverse'. Did you mean: '_conjunction_kernel'?
+
+test/test_restricted_candidate_inverse.py:189: AttributeError
+____________ test_typed_mask_from_knowledge_view_drives_recommender ____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1174/test_typed_mask_from_knowledge0')
+
+    def test_typed_mask_from_knowledge_view_drives_recommender(tmp_path):
+        """Full pipeline: artifact → load_knowledge_view → compute
+        refs_by_category ∩ refs_by_order from the view → pass to
+        disjunctionReverse → verify x1 obeys the restriction."""
+        from embed import (save_artifact, build_knowledge_section,
+                           load_knowledge_view)
+        from Layers import Ops
+        import torch
+        path = str(tmp_path / "phase3.kv")
+        save_artifact(path, knowledge=build_knowledge_section(_tiny_grammar()))
+        view = load_knowledge_view(path)
+        # The bootstrap has each class node at order 0; restrict by
+        # category alone (intersect with refs_by_order(0)).
+        np_refs = view.refs_by_category('NP')
+        order_zero = view.refs_by_order(0)
+        left_rows = _intersect_long_tensors(np_refs, order_zero)
+        # The intersection should be exactly the NP class node (1 ref)
+        assert left_rows.numel() == 1
+        # Build a small bivector W indexed to match the artifact's ref_ids
+        # (so left_rows points at real W rows).
+        W = torch.tensor([
+            [0.0, 0.0],
+            [0.5, 0.0],
+            [0.5, 0.5],
+            [1.0, 1.0],
+            [0.7, 0.7],
+        ])[:view.n_refs_live]
+        y = torch.tensor([[0.5, 0.5]])
+>       x1, x2 = Ops.disjunctionReverse(y, y, W, left_rows=left_rows)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'disjunctionReverse'. Did you mean: '_disjunction_kernel'?
+
+test/test_restricted_candidate_inverse.py:254: AttributeError
+__________ test_typed_mask_empty_intersection_falls_back_to_sentinels __________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1174/test_typed_mask_empty_intersec0')
+
+    def test_typed_mask_empty_intersection_falls_back_to_sentinels(tmp_path):
+        """When refs_by_category ∩ refs_by_order is empty (no refs at
+        that category & order in the bootstrap), the recommender falls
+        back to ⊥ / ⊤ sentinels."""
+        from embed import (save_artifact, build_knowledge_section,
+                           load_knowledge_view)
+        from Layers import Ops
+        import torch
+        path = str(tmp_path / "phase3_empty.kv")
+        save_artifact(path, knowledge=build_knowledge_section(_tiny_grammar()))
+        view = load_knowledge_view(path)
+        # _tiny_grammar declares NP at orders 0 (base), 3 (NP3), and 4
+        # (NP4 in lower's RHS). Order 7 is intentionally absent.
+        left_rows = _intersect_long_tensors(
+            view.refs_by_category('NP'), view.refs_by_order(7))
+        assert left_rows.numel() == 0
+        W = torch.tensor([
+            [0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [1.0, 1.0], [0.7, 0.7],
+        ])[:view.n_refs_live]
+        y = torch.tensor([[0.3, 0.3]])
+>       x1, _ = Ops.disjunctionReverse(y, y, W, left_rows=left_rows)
+                ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Ops' has no attribute 'disjunctionReverse'. Did you mean: '_disjunction_kernel'?
+
+test/test_restricted_candidate_inverse.py:283: AttributeError
+=============================== warnings summary ===============================
+test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_keeps_both_terms
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction
+FAILED test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_keeps_both_terms
+FAILED test/test_definition_attribution.py::test_passback_scales_unknown_parts_without_erasing_location
+FAILED test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]
+FAILED test/test_inverse_recommend.py::TestUnionInverse::test_batched_recovery
+FAILED test/test_inverse_recommend.py::TestUnionInverse::test_pair_satisfies_constraints_on_codebook_target
+FAILED test/test_inverse_recommend.py::TestUnionInverse::test_sentinels_keep_selection_non_empty
+FAILED test/test_inverse_recommend.py::TestIntersectionInverse::test_pair_satisfies_constraints_on_codebook_target
+FAILED test/test_inverse_recommend.py::TestIntersectionInverse::test_x2_minimises_overlap_with_x1
+FAILED test/test_inverse_recommend.py::TestEmptyCodebook::test_intersection_inverse_empty_W_falls_back_to_identity_pair
+FAILED test/test_inverse_recommend.py::TestEmptyCodebook::test_union_inverse_empty_W_falls_back_to_identity_pair
+FAILED test/test_restricted_candidate_inverse.py::test_kwarg_forwarding_through_disjunctionReverse
+FAILED test/test_restricted_candidate_inverse.py::test_kwarg_forwarding_through_conjunctionReverse
+FAILED test/test_restricted_candidate_inverse.py::test_typed_mask_from_knowledge_view_drives_recommender
+FAILED test/test_restricted_candidate_inverse.py::test_typed_mask_empty_intersection_falls_back_to_sentinels
+19 failed, 35 passed, 1 warning in 8.00s

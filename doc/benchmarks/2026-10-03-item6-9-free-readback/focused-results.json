@@ -1,0 +1,212 @@
+[
+  {
+    "probe": "audit-after",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 4.886315333016682,
+    "peak_memory_bytes": 668124696
+  },
+  {
+    "probe": "audit-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 4.891432957985671,
+    "peak_memory_bytes": 619939328
+  },
+  {
+    "probe": "compiled-free-before",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 598.4365165409981,
+    "peak_memory_bytes": 2153581952
+  },
+  {
+    "probe": "contracts-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 3.6110464580124244,
+    "peak_memory_bytes": 429475088
+  },
+  {
+    "probe": "doc-links-final",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 4.1231037079996895,
+    "peak_memory_bytes": 428279080
+  },
+  {
+    "probe": "final-ports-check",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 6.965496207994875,
+    "peak_memory_bytes": 655164976
+  },
+  {
+    "probe": "free-after",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 4.357217167009367,
+    "peak_memory_bytes": 583255504
+  },
+  {
+    "probe": "free-derivation-learning-after",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 148.89665650000097,
+    "peak_memory_bytes": 4157576040
+  },
+  {
+    "probe": "free-discard-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 4.637550332990941,
+    "peak_memory_bytes": 429557032
+  },
+  {
+    "probe": "free-lift-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 3.8723513330041897,
+    "peak_memory_bytes": 486147488
+  },
+  {
+    "probe": "free-search-after",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 6.715928124991478,
+    "peak_memory_bytes": 668452376
+  },
+  {
+    "probe": "free-search-contracts",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 27.17995754099684,
+    "peak_memory_bytes": 1382975816
+  },
+  {
+    "probe": "mechanism-after",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 11.099859917012509,
+    "peak_memory_bytes": 892618552
+  },
+  {
+    "probe": "momentum-readers",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 8.015108999999939,
+    "peak_memory_bytes": 903497432
+  },
+  {
+    "probe": "native-diagonal-after",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 21.485115832998417,
+    "peak_memory_bytes": 1437797208
+  },
+  {
+    "probe": "native-diagonal-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 3.079949541017413,
+    "peak_memory_bytes": 350111280
+  },
+  {
+    "probe": "native-free-aot-after",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 15.543629292020341,
+    "peak_memory_bytes": 677251088
+  },
+  {
+    "probe": "native-functional-after",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 4.909072082984494,
+    "peak_memory_bytes": 584271792
+  },
+  {
+    "probe": "native-functional-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 3.345821666007396,
+    "peak_memory_bytes": 352126512
+  },
+  {
+    "probe": "operator-ports-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 8.77493158300058,
+    "peak_memory_bytes": 731416208
+  },
+  {
+    "probe": "operators-optimizer-after",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 3.86029562499607,
+    "peak_memory_bytes": 504743232
+  },
+  {
+    "probe": "optimizer-resume-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 3.6065546669997275,
+    "peak_memory_bytes": 428115264
+  },
+  {
+    "probe": "ports-and-operators-after",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 37.06102762502269,
+    "peak_memory_bytes": 1434192080
+  },
+  {
+    "probe": "ports-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 9.820333499985281,
+    "peak_memory_bytes": 696518168
+  },
+  {
+    "probe": "reference-and-bank-after",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 22.25821158301551,
+    "peak_memory_bytes": 1506937208
+  },
+  {
+    "probe": "remaining-contracts",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 12.663977624994004,
+    "peak_memory_bytes": 875694240
+  },
+  {
+    "probe": "same-reference-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 4.642766042001313,
+    "peak_memory_bytes": 430032168
+  },
+  {
+    "probe": "serial-learning-after",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 13.73045279199141,
+    "peak_memory_bytes": 1602357432
+  },
+  {
+    "probe": "trial-after",
+    "exit_code": 0,
+    "reason": "exit",
+    "elapsed_seconds": 4.645327375008492,
+    "peak_memory_bytes": 618808760
+  },
+  {
+    "probe": "trial-before",
+    "exit_code": 1,
+    "reason": "exit",
+    "elapsed_seconds": 4.380693917017197,
+    "peak_memory_bytes": 562480616
+  }
+]

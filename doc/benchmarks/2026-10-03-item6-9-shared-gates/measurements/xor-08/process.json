@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+    "child",
+    "--kind",
+    "xor",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-08"
+  ],
+  "pid": 70944,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1160055640,
+  "elapsed_seconds": 208.46915162500227,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-08/driver.log"
+}

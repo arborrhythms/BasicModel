@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-314.recycle.json"
+}

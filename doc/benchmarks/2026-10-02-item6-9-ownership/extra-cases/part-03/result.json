@@ -1,0 +1,1037 @@
+{
+  "exit_code": 137,
+  "reason": "memory",
+  "selected": [
+    "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+    "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]",
+    "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]",
+    "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]",
+    "test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]",
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]",
+    "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+    "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+    "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+    "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+    "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+    "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+    "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+    "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+    "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope",
+    "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+    "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+    "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+    "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+    "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+    "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+    "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+    "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+    "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+    "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+    "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+    "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+    "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_words_summary_row_running_mean",
+    "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "test/test_word_store.py::test_leaf_distill_default_off",
+    "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "completed": [
+    "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+    "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]",
+    "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]",
+    "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]",
+    "test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text",
+    "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]",
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+    "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+    "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+    "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+    "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+    "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-000.json"
+      ],
+      "pid": 50608,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 3701001888,
+      "elapsed_seconds": 11.641964583992376,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer"
+      ],
+      "completed": [
+        "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 7.473933917004615,
+          "message": "test/test_global_consume.py:219: in test_ltm_truthset_read_is_fed_to_the_answer\n    prev = m.conceptualSpaces[0]._subspaceForWS\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_subspaceForWS'. Did you mean: '_subspaceForPS'?",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-002.json"
+      ],
+      "pid": 50610,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4914420360,
+      "elapsed_seconds": 24.39353904199379,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]",
+        "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]",
+        "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]",
+        "test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+        "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]",
+        "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]"
+      ],
+      "completed": [
+        "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]",
+        "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]",
+        "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]",
+        "test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+        "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]",
+        "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.726573208012269,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.881572500002221,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=1.030s)\r\nbatch = 0 (\u0394=0.898s)\r\nbatch = 0 (\u0394=0.923s)\r\nbatch = 0 (\u0394=0.852s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 4.76873962499667,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.994s)\r\nbatch = 0 (\u0394=0.874s)\r\nbatch = 0 (\u0394=0.877s)\r\nbatch = 0 (\u0394=0.879s)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.6125643749983283,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.8786752079904545,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.6456221249973169,
+          "message": "",
+          "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-856/test_native_checkpoint_restore0/native.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-856/test_native_checkpoint_restore0/native.ckpt\r\n"
+        },
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.6614591669931542,
+          "message": "",
+          "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-856/test_native_checkpoint_restore1/native.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-856/test_native_checkpoint_restore1/native.ckpt\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-004.json"
+      ],
+      "pid": 50715,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1193396048,
+      "elapsed_seconds": 14.034251208999194,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]"
+      ],
+      "completed": [
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.7673419999919133,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.989s)\r\nbatch = 0 (\u0394=0.738s)\r\nbatch = 1 (\u0394=0.661s)\r\n"
+        },
+        {
+          "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.223036625000532,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.948s)\r\nbatch = 0 (\u0394=0.711s)\r\nbatch = 1 (\u0394=0.644s)\r\n"
+        },
+        {
+          "nodeid": "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.8989052919932874,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.795s)\r\nbatch = 0 (\u0394=0.612s)\r\nbatch = 1 (\u0394=0.590s)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-005.json"
+      ],
+      "pid": 50768,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1026148608,
+      "elapsed_seconds": 29.855319624999538,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+        "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+        "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+        "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph"
+      ],
+      "completed": [
+        "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+        "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+        "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+        "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.4383002920076251,
+          "message": "",
+          "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+        },
+        {
+          "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.28701749999891035,
+          "message": "",
+          "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+        },
+        {
+          "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.521700290992158,
+          "message": "",
+          "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+        },
+        {
+          "nodeid": "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 16.006589917000383,
+          "message": "",
+          "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-006.json"
+      ],
+      "pid": 50819,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1070778648,
+      "elapsed_seconds": 20.31321945899981,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+        "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix"
+      ],
+      "completed": [
+        "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+        "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 14.457885584008181,
+          "message": "test/test_per_word_ss_padding_noop.py:58: in test_stm_depth_tracks_valid_len_not_N\n    assert depth_after - depth_before == L, (\nE   AssertionError: STM mirror advanced by 1, expected 8 (real-positions count)\nE   assert (1 - 0) == 8",
+          "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+        },
+        {
+          "nodeid": "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.7092411659978097,
+          "message": "",
+          "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-007.json"
+      ],
+      "pid": 50926,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 683410920,
+      "elapsed_seconds": 6.808104957992327,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+        "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+        "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+        "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+        "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+        "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+        "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order"
+      ],
+      "completed": [
+        "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+        "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+        "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+        "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+        "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+        "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+        "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.08053470800223295,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.8078735829913057,
+          "message": "test/test_priming_energy.py:131: in test_cs_to_ps_projection_live\n    assert bridge, \"the mint must record the projection bridge\"\nE   AssertionError: the mint must record the projection bridge\nE   assert None",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.558s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.105s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.091s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.35440399999788497,
+          "message": "test/test_priming_energy.py:147: in test_cs_to_ws_projection_live\n    bridge = cs0._priming_bridge\n             ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_priming_bridge'. Did you mean: '_priming_bridge_put'?",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.093s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.092s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.6242438339977525,
+          "message": "test/test_priming_energy.py:165: in test_projection_bounded_across_epochs\n    assert float(b6.max()) < 1000.0, \"projection must not grow unbounded\"\n                 ^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'max'",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.101s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.092s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.092s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.091s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.092s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.092s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.17025666699919384,
+          "message": "",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.101s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.1693181669979822,
+          "message": "",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.100s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.16863466599897947,
+          "message": "",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-001.json"
+      ],
+      "pid": 50609,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2207861496,
+      "elapsed_seconds": 108.2785125419905,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop"
+      ],
+      "completed": [
+        "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 102.48640662500111,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-003.json"
+      ],
+      "pid": 50659,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2178796112,
+      "elapsed_seconds": 98.21574204199715,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 92.5347620829998,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-010.json"
+      ],
+      "pid": 51039,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 3743158184,
+      "elapsed_seconds": 7.668437333006295,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration"
+      ],
+      "completed": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 3.184473458008142,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 2.074s; word units 100.0% of 30 words (letters-only 100.0% of 30).\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-011.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-011.json"
+      ],
+      "pid": 51054,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 3363229056,
+      "elapsed_seconds": 10.828824249998434,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+        "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot"
+      ],
+      "completed": [
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+        "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.243794124995475,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.4237124589999439,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.4754889589967206,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.44019037499674596,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-009.json"
+      ],
+      "pid": 51034,
+      "exit_code": 137,
+      "reason": "memory",
+      "peak_memory_bytes": 8610536384,
+      "elapsed_seconds": 25.39767037499405,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+        "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+        "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+        "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+        "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+        "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+        "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+        "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+      ],
+      "completed": [
+        "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+        "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+        "test/test_reading_attention.py::test_forward_is_finite_and_deterministic"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.1776897920062765,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.15856124999118,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 6.239292875005049,
+          "message": "test/test_reading_attention.py:308: in test_forward_is_finite_and_deterministic\n    assert torch.equal(out1, out2), \"the eval forward must be deterministic\"\nE   AssertionError: the eval forward must be deterministic\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10ced53a0>(tensor([[[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]]]), tensor([[[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.4999]]]))\nE    +    where <built-in method equal of type object at 0x10ced53a0> = torch.equal",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": "test/test_reading_attention.py::test_train_forward_then_backward_is_finite"
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-008.json"
+      ],
+      "pid": 50947,
+      "exit_code": 125,
+      "reason": "aborted",
+      "peak_memory_bytes": 1307888064,
+      "elapsed_seconds": 39.10315100000298,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+      ],
+      "completed": [],
+      "reports": [],
+      "recycled": false,
+      "active_case": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-012.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-012.json"
+      ],
+      "pid": 51140,
+      "exit_code": 125,
+      "reason": "aborted",
+      "peak_memory_bytes": 1874479336,
+      "elapsed_seconds": 7.265310041999328,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/worker-012.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+      ],
+      "completed": [],
+      "reports": [],
+      "recycled": false,
+      "active_case": "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output"
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 1800,
+    "suite_seconds": 21600,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03",
+  "elapsed_seconds": 139.84357679099776,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 11134348448,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/collect.json"
+    ],
+    "pid": 50598,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431654112,
+    "elapsed_seconds": 3.605469999994966,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-03/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+        "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+        "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]",
+        "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]",
+        "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]",
+        "test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+        "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]",
+        "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]",
+        "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+        "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+        "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+        "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+        "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+        "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+        "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix",
+        "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+        "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+        "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+        "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+        "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+        "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+        "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+        "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+        "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+        "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+        "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+        "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+        "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+        "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+        "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+        "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+        "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope",
+        "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+        "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+        "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+        "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+        "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+        "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+        "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+        "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+        "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+        "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+        "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+        "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+        "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+        "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+        "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+        "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+        "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+        "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+        "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+        "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+        "test/test_word_store.py::test_reading_promotes_the_batch_words",
+        "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+        "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+        "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+        "test/test_word_store.py::test_words_summary_row_running_mean",
+        "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+        "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+        "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+        "test/test_word_store.py::test_leaf_distill_default_off",
+        "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+        "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+        "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+        "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+        "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+        "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+        "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]",
+        "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[False]",
+        "test/test_output_path_supervised.py::test_available_input_targets_do_not_train_answer_modules_after_adam[True]",
+        "test/test_output_path_supervised.py::test_supplied_text_scores_fixed_surface_and_masks_automatic_text",
+        "test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[production]",
+        "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]",
+        "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-production]",
+        "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]",
+        "test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]",
+        "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+        "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+        "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+        "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+        "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+        "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix",
+        "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+        "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+        "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+        "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+        "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+        "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+        "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+        "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+        "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+        "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+        "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+        "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+        "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+        "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+        "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+        "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+        "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+        "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+        "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope",
+        "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+        "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+        "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+        "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+        "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+        "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+        "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+        "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+        "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+        "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+        "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+        "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+        "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+        "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+        "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+        "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+        "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+        "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+        "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+        "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+        "test/test_word_store.py::test_reading_promotes_the_batch_words",
+        "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+        "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+        "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+        "test/test_word_store.py::test_words_summary_row_running_mean",
+        "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+        "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+        "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+        "test/test_word_store.py::test_leaf_distill_default_off",
+        "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+        "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+        "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+        "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+        "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+      ],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

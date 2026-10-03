@@ -1,0 +1,84 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]"
+  ],
+  "completed": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.30917412499547936,
+      "message": "test/test_grammar_separator.py:59: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)\nE   assert ([tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0, ...05,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]), ...] and False)\nE    +  where False = <built-in method equal of type object at 0x10ea513a0>(tensor([[[0],\\n         [0],\\n         [0],\\n         [0],\\n         [0],\\n         [0]],\\n\\n        [[0],\\n         [0],\\n    ...0],\\n         [0],\\n         [0]],\\n\\n        [[0],\\n         [0],\\n         [0],\\n         [0],\\n         [0],\\n         [0]]]), tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0,  ...    [105,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]))\nE    +    where <built-in method equal of type object at 0x10ea513a0> = torch.equal\nE    +    and   tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0,  ...    [105,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._ar_target_word_bytes",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.26685612500295974,
+      "message": "test/test_grammar_separator.py:59: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)\nE   assert ([tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0, ...05,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]), ...] and False)\nE    +  where False = <built-in method equal of type object at 0x10ea513a0>(tensor([[[0],\\n         [0],\\n         [0],\\n         [0],\\n         [0],\\n         [0]],\\n\\n        [[0],\\n         [0],\\n    ...0],\\n         [0],\\n         [0]],\\n\\n        [[0],\\n         [0],\\n         [0],\\n         [0],\\n         [0],\\n         [0]]]), tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0,  ...    [105,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]))\nE    +    where <built-in method equal of type object at 0x10ea513a0> = torch.equal\nE    +    and   tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0,  ...    [105,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._ar_target_word_bytes",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.2696735420031473,
+      "message": "test/test_grammar_separator.py:59: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)\nE   assert ([tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0, ...05,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]), ...] and False)\nE    +  where False = <built-in method equal of type object at 0x10ea513a0>(tensor([[[0],\\n         [0],\\n         [0],\\n         [0],\\n         [0],\\n         [0]],\\n\\n        [[0],\\n         [0],\\n    ...0],\\n         [0],\\n         [0]],\\n\\n        [[0],\\n         [0],\\n         [0],\\n         [0],\\n         [0],\\n         [0]]]), tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0,  ...    [105,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]))\nE    +    where <built-in method equal of type object at 0x10ea513a0> = torch.equal\nE    +    and   tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0,  ...    [105,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._ar_target_word_bytes",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.26909837500716094,
+      "message": "test/test_grammar_separator.py:59: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)\nE   assert ([tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0, ...05,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]), ...] and False)\nE    +  where False = <built-in method equal of type object at 0x10ea513a0>(tensor([[[0],\\n         [0],\\n         [0],\\n         [0],\\n         [0],\\n         [0]],\\n\\n        [[0],\\n         [0],\\n    ...0],\\n         [0],\\n         [0]],\\n\\n        [[0],\\n         [0],\\n         [0],\\n         [0],\\n         [0],\\n         [0]]]), tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0,  ...    [105,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]))\nE    +    where <built-in method equal of type object at 0x10ea513a0> = torch.equal\nE    +    and   tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [108,   0,   0,   0,   0,  ...    [105,   0,   0,   0,   0,   0],\\n         [110,   0,   0,   0,   0,   0],\\n         [103,   0,   0,   0,   0,   0]]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._ar_target_word_bytes",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016904099902603775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013708299957215786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014699999883305281,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,102 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients __________
+
+    def test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients():
+        """K=2 replay is parity-exact for all six STM tensors and L_intra."""
+        torch.manual_seed(71)
+        words = torch.randn(2, 4, 5)
+        gates = torch.tensor([
+            [True, True, True, True],
+            [True, True, False, False],
+        ])
+    
+        legacy = _harness(words, gates, chunk=False)
+        predictor_state = legacy.conceptualSpace.intraSentenceLayer.state_dict()
+        chunked = _harness(
+            words, gates, chunk=True, predictor_state=predictor_state)
+    
+        for p in range(words.shape[1]):
+            legacy._per_word_body_step(
+                words[:, p:p + 1], p, gates[:, p:p + 1],
+                legacy._per_word_contributions)
+    
+        bank_rows = chunked.inputSpace._ar_concept_lookup_rows
+        bank_atoms = chunked.inputSpace._ar_concept_lookup_atoms
+        result = chunked._run_aligned_word_chunk_loop(
+            chunked._per_word_contributions, words.shape[1])
+        assert result is chunked.conceptualSpace.subspace
+        assert chunked.inputSpace._ar_concept_lookup_rows is bank_rows
+        assert chunked.inputSpace._ar_concept_lookup_atoms is bank_atoms
+    
+        for name in _STM_ATTRS:
+            torch.testing.assert_close(
+                getattr(chunked.conceptualSpace.stm, name),
+                getattr(legacy.conceptualSpace.stm, name), rtol=0, atol=0)
+        assert (chunked.conceptualSpace.stm._max_depth_host
+                == legacy.conceptualSpace.stm._max_depth_host)
+        assert chunked.conceptualSpace.stm._max_depth_host > 0
+        for got, expected in zip(
+                chunked._per_word_contributions,
+                legacy._per_word_contributions):
+            torch.testing.assert_close(got, expected, rtol=0, atol=0)
+        for got, expected in zip(
+                chunked._per_word_percept_contributions,
+                legacy._per_word_percept_contributions):
+            torch.testing.assert_close(got, expected, rtol=0, atol=0)
+    
+        legacy_loss = legacy.conceptualSpace.consume_intra_loss()
+        chunk_loss = chunked.conceptualSpace.consume_intra_loss()
+        torch.testing.assert_close(chunk_loss, legacy_loss, rtol=1e-6, atol=1e-7)
+        # The trained relative cost must preserve all chunks as well as the raw
+        # fidelity metric retained by this original parity check.
+        legacy_relative = legacy.conceptualSpace._consumed_intra_errors.total()
+        chunk_relative = chunked.conceptualSpace._consumed_intra_errors.total()
+        torch.testing.assert_close(chunk_relative, legacy_relative, rtol=1e-6, atol=1e-7)
+>       legacy_gradient = torch.autograd.grad(legacy_relative,
+            tuple(legacy.conceptualSpace.intraSentenceLayer.parameters()), retain_graph=True)
+
+test/test_compiled_word_chunk.py:194: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad
+    result_tuple = handle_torch_function(
+.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:594: in grad
+    result = _engine_run_backward(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t_outputs = (tensor(1.4558, grad_fn=<ViewBackward0>),)
+args = ((tensor(1.),), True, False, (Parameter containing:
+tensor([[0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0.],
+      ...0., 0., 0.]], requires_grad=True), Parameter containing:
+tensor([1., 1., 1., 1., 1.], requires_grad=True), ...), False)
+kwargs = {'accumulate_grad': False}
+
+    def _engine_run_backward(
+        t_outputs: Sequence[torch.Tensor | GradientEdge],
+        *args: Any,
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, ...]:
+        attach_logging_hooks = log.getEffectiveLevel() <= logging.DEBUG
+        if attach_logging_hooks:
+            unregister_hooks = _register_logging_hooks_on_whole_graph(t_outputs)
+    
+        # Need to save the context so compiler config will be visible in device threads
+        torch._C._stash_obj_in_tls("context", contextvars.copy_context())
+    
+        try:
+>           return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+                t_outputs, *args, **kwargs
+            )  # Calls into the C++ engine to run the backward pass
+E           RuntimeError: The differentiated Tensor at index 8 appears to not have been used in the graph. Set allow_unused=True if this is the desired behavior.
+
+.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: RuntimeError
+=========================== short test summary info ============================
+FAILED test/test_compiled_word_chunk.py::test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients
+1 failed, 2 passed in 5.74s

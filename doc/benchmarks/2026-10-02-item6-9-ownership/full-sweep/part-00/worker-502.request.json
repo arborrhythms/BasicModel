@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_phase2_pipeline_primitives.py::test_build_pipelines_creates_body_stages"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-502.recycle.json"
+}

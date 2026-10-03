@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_input_word_cursor.py", line 64, in _build_nongrammar_model
+    from space_equiv import _p
+ModuleNotFoundError: No module named 'space_equiv'

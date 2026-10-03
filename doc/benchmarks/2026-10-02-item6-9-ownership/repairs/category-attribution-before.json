@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-02-item6-9-ownership/probe_category_roles.py"
+  ],
+  "pid": 19083,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1844512448,
+  "elapsed_seconds": 16.812442792012007,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/category-attribution-before.log"
+}

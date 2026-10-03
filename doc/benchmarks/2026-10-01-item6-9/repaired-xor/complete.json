@@ -1,0 +1,171 @@
+{
+  "elapsed_seconds": 145.98592358385213,
+  "peak_aggregate_memory_bytes": 14770267744,
+  "completed": [
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 1610612736.0,
+      "gate": 2,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 605865928,
+      "reason": "exit",
+      "elapsed_seconds": 14.79763145907782
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 6704127405.599999,
+      "gate": 8,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 4895396880,
+      "reason": "exit",
+      "elapsed_seconds": 14.574749917024747
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 1610612736.0,
+      "gate": 7,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 454510464,
+      "reason": "exit",
+      "elapsed_seconds": 19.937674834160134
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 6714713076.8,
+      "gate": 9,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 4895642616,
+      "reason": "exit",
+      "elapsed_seconds": 14.645830041961744
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 6690517185.599999,
+      "gate": 10,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 4891988936,
+      "reason": "exit",
+      "elapsed_seconds": 14.643063249997795
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 1610612736.0,
+      "gate": 0,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 484198272,
+      "reason": "exit",
+      "elapsed_seconds": 36.51445237500593
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 6274990843.2,
+      "gate": 11,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 4563456776,
+      "reason": "exit",
+      "elapsed_seconds": 14.117020000005141
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 6665916547.2,
+      "gate": 12,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 5001745496,
+      "reason": "exit",
+      "elapsed_seconds": 15.452232332900167
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 1905863306.4,
+      "gate": 4,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 1192316648,
+      "reason": "exit",
+      "elapsed_seconds": 45.399984292220324
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 1906182669.6,
+      "gate": 3,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 1193578240,
+      "reason": "exit",
+      "elapsed_seconds": 45.73961670883
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 6671241378.4,
+      "gate": 13,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 4995650624,
+      "reason": "exit",
+      "elapsed_seconds": 15.18898491607979
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 1868162006.4,
+      "gate": 1,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 1167133168,
+      "reason": "exit",
+      "elapsed_seconds": 66.89937512506731
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 1610612736.0,
+      "gate": 5,
+      "trial": null,
+      "exit_code": 1,
+      "peak_memory_bytes": 654002192,
+      "reason": "exit",
+      "elapsed_seconds": 83.41015270911157
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 1610612736.0,
+      "gate": 6,
+      "trial": null,
+      "exit_code": 1,
+      "peak_memory_bytes": 661768232,
+      "reason": "exit",
+      "elapsed_seconds": 86.26182941603474
+    },
+    {
+      "label": "candidate",
+      "kind": "xor",
+      "reserved_bytes": 6769388248.0,
+      "gate": 14,
+      "trial": null,
+      "exit_code": 0,
+      "peak_memory_bytes": 4910371904,
+      "reason": "exit",
+      "elapsed_seconds": 100.31120074982755
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+  ],
+  "completed": [
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_consumer_falls_back_on_width_mismatch",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010845799988601357,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode_d3.py', 79, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

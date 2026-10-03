@@ -1,0 +1,258 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+DICTIONARY-GRAD perceptualSpace._owned_bases.what.W [64, 8] torch.strided 1.0120682503861334e-12
+DICTIONARY-GRAD conceptualSpaces.0.layers.3.W [128, 16] torch.sparse_coo 5.475683792610653e-05
+DICTIONARY-GRAD conceptualSpaces.0.layers.4.coefficients [128, 9] torch.sparse_coo 3.904438301560731e-07
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_U [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.biasWeight [1, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.weight [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.2._adv_edit.weight [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_L [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_U [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.biasWeight [1, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.24.marker_map.weight [16, 16] torch.strided 0.0
+DICTIONARY-GRAD wholeSpaces.3._owned_bases.what.W [8, 8] torch.strided 0.0
+DICTIONARY-GRAD wholeSpaces.3._owned_bases.what.primitive_properties.members [8, 256] torch.strided 0.0
+DICTIONARY-GRAD perceptualSpace._owned_bases.what.W [64, 8] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.0.layers.3.W [128, 16] torch.sparse_coo 3.463137545622885e-05
+DICTIONARY-GRAD conceptualSpaces.0.layers.4.coefficients [128, 9] torch.sparse_coo 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_U [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.biasWeight [1, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.weight [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.2._adv_edit.weight [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_L [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_U [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.biasWeight [1, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.24.marker_map.weight [16, 16] torch.strided 0.0
+DICTIONARY-GRAD wholeSpaces.3._owned_bases.what.W [8, 8] torch.strided 0.0
+DICTIONARY-GRAD wholeSpaces.3._owned_bases.what.primitive_properties.members [8, 256] torch.strided 0.0
+DICTIONARY-GRAD perceptualSpace._owned_bases.what.W [64, 8] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.0.layers.3.W [128, 16] torch.strided 0.0025009033270180225
+DICTIONARY-GRAD conceptualSpaces.0.layers.4.coefficients [128, 9] torch.sparse_coo 3.1764466257300228e-06
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_U [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.biasWeight [1, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.weight [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.2._adv_edit.weight [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_L [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_U [16, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.biasWeight [1, 16] torch.strided 0.0
+DICTIONARY-GRAD conceptualSpaces.3.syntacticLayer.layers.24.marker_map.weight [16, 16] torch.strided 0.0
+DICTIONARY-GRAD wholeSpaces.3._owned_bases.what.W [8, 8] torch.strided 0.0
+DICTIONARY-GRAD wholeSpaces.3._owned_bases.what.primitive_properties.members [8, 256] torch.strided 0.0
+DICTIONARY-GRAD symbolSpace.subspace.layers.2._inter_predictor.network.0.weight [102, 408] torch.strided 0.124947689473629
+DICTIONARY-GRAD symbolSpace.subspace.layers.2._inter_predictor.network.2.weight [51, 102] torch.strided 0.07103755325078964
+F
+=================================== FAILURES ===================================
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1001/test_real_packed_ends_train_be0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12a137500>
+compiled = False
+
+    @pytest.mark.parametrize('compiled', [False, pytest.param(True, marks=pytest.mark.slow)])
+    def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, compiled):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from test_reverse_traversal import _select_completed_binary_path
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+            concept_rows=128, part_rows=64, input_width=16, training_overrides={'intraLossWeight': 0},
+            stm_capacity=3, chooser_depth=1,
+            architecture_overrides={'ltmConsolidation': True, 'symbolicOrder': 1})
+        # Completion is a fixture for this causal mechanism test. Both winners
+        # must leave a real predecessor, regardless of the untrained chooser.
+        _select_completed_binary_path(model)
+        optimizer = model.getOptimizer(lr=1e-4)
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model.reconstruction_placement = 'eager'
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        if compiled:
+            import SentenceCompose
+            monkeypatch.setattr(SentenceCompose, 'compile_word_brick',
+                lambda fn: torch.compile(fn, backend='eager', fullgraph=True))
+        # Sentence ends land at different word columns in the two rows; the
+        # first row's one-word sentence also exercises its dedicated closing trace.
+        raw = model.inputSpace.prepPackedInput([['a', 'c d'], ['e f', 'g']])
+        events = []
+        candidates, prior_context = {}, []
+        path_cost = model._sentence_path_cost
+        def controlled_cost(path, sid, active):
+            cost, recon, observation, pending = path_cost(path, sid, active)
+            alternative = model._sentence_trial == 'explore'
+            candidates[sid, alternative] = observation
+            if sid == 1:
+                # The second sentence sees exactly the chain committed by the
+                # first, including its occurrence identity, in both trials.
+                disc = model.symbolSpace.discourse
+                assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+            fixed = cost.new_tensor([1., 2.] if alternative else [2., 1.])
+            # This causal fixture fixes the comparison, not the numerical reading.
+            # Give the two trials equal reconstruction so the decided precedence
+            # rule permits the same controlled winners; keep its live derivative.
+            recon = (*recon[:2], recon[2] - recon[2].detach() + 1., *recon[3:])
+            # The comparison reads R from Error and the supplied-answer value;
+            # expectation and lessons no longer enter it. Inject the same fixed
+            # row ordering at that boundary, leaving every trained term intact.
+            reconstruction = model._sentence_cost_registry.total(objective='reconstruction')
+            model._sentence_answer_cost = fixed - reconstruction.detach()
+            return cost - cost.detach() + fixed, recon, observation, pending
+        monkeypatch.setattr(model, '_sentence_path_cost', controlled_cost)
+        perceived = []
+        # The perception owner must see the committed predecessor before it is
+        # called for the next sentence. The second compose must not call it again.
+        perceive = model.perceptualSpace.synthesize_word_parts
+        def perception(*args, **kwargs):
+            # Input staging also builds a detached reporting slab. Count the
+            # live word perception shared by the two compose/backward paths.
+            if torch.is_grad_enabled() and not torch.compiler.is_compiling():
+                perceived.append(len(model._sentence_fields))
+                if len(model._sentence_fields) == 1:
+                    disc = model.symbolSpace.discourse
+                    assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+            return perceive(*args, **kwargs)
+        if not compiled:
+            monkeypatch.setattr(model.perceptualSpace, 'synthesize_word_parts', perception)
+        original = model._sentence_train_step
+        def step(loss):
+            events.append(('step', float(loss.detach())))
+            return original(loss)
+        monkeypatch.setattr(model, '_sentence_train_step', step)
+        commit = model._commit_sentence
+        def observe(*args):
+            events.append(('commit', args[1]))
+            result = commit(*args)
+            disc = model.symbolSpace.discourse
+            context = tuple(tuple(row) for row in disc._inter_context_occurrences)
+            assert [len(row) for row in context] == [args[1] + 1] * 2
+            assert all(occurrence is not None for row in context for occurrence in row)
+            for b, alternative in enumerate((True, False)):
+                expected = candidates[args[1], alternative]
+                roles, occupied = disc._canonical_meaning(
+                    expected['observed'][b], expected['observed_depths'][b], expected['layout'],
+                    None if expected['roles'] is None else expected['roles'][b])
+                depth, payload, mask = disc._inter_context[b][-1]
+                assert depth == int(occupied.sum())
+                torch.testing.assert_close(payload, roles)
+                torch.testing.assert_close(mask, occupied)
+            if args[1] == 0:
+                prior_context.append(context)
+            return result
+        monkeypatch.setattr(model, '_commit_sentence', observe)
+        try:
+>           model.runBatch(train=True, optimizer=optimizer, batchSize=2,
+                batch_override=(raw, torch.empty(2, 0)), split='runtime')
+
+test/test_sentence_compose.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14260: in runBatch
+    if schedule is None or not schedule.every:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14434: in _run_sentence_batch
+    split=call['split'], source_rows=call['source_rows'], trial_mode=call['trial_mode']):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14804: in _run_batch_once
+    ???
+bin/Models.py:9166: in _what_or_think
+    """One understanding and answer boundary per batch presentation."""
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10649: in what
+    "Model.what needs input_data or an existing execution")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8863: in _execute_input_sentence
+    """Run caller-supplied sentence execution under the same phase mask."""
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8673: in forward
+    try:
+         
+bin/Models.py:23971: in _forward_per_stage
+    ???
+bin/Models.py:18018: in _forward_body
+    ???
+bin/Models.py:22437: in _forward_body_per_word
+    (last_cs, tensor_trip_count, tensor_sentence_roots,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21988: in _run_tensor_peer_word_pipeline
+    if sentence_transactions:
+bin/Models.py:21144: in _run_sentence_word_bricks
+    self._sentence_train_step(loss)
+bin/SentenceCompose.py:153: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:21142: in train_trial
+    self._sentence_cost_registry = registry
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_sentence_compose.py:144: in step
+    return original(loss)
+           ^^^^^^^^^^^^^^
+bin/Models.py:20510: in _sentence_train_step
+    preflight_finite_gradients(optimizer, self.named_parameters(),
+    ^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-02-item6-9-reconstruction/gradient_layout_probe.py:12: in observed
+    return step(*args,**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^
+bin/Optimizer.py:792: in step
+    return self._step_without_finite_preflight()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Optimizer.py:770: in _step_without_finite_preflight
+    results.append(unchecked())
+                   ^^^^^^^^^^^
+bin/Optimizer.py:616: in _step_without_finite_preflight
+    return self._inner.step()
+           ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/optim/optimizer.py:549: in wrapper
+    out = func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = _RowLocalAdam (
+Parameter Group 0
+    betas: (0.9, 0.999)
+    eps: 1e-08
+    lr: 0.0001
+    maximize: False
+    moment_dtype: torch.bfloat16
+    weight_decay: 0.0
+)
+closure = None
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+    
+        proximal, self._l1_proximal = self._l1_proximal, {}
+        for group in self.param_groups:
+            beta1, beta2 = group["betas"]
+            moment_dtype = group.get("moment_dtype", torch.float32)
+            for param in group["params"]:
+                grad = param.grad
+                if grad is None:
+                    continue
+                if param.ndim < 1:
+                    raise RuntimeError(
+                        "RowLocalAdam requires a parameter with a row axis")
+                if not grad.is_sparse:
+>                   raise RuntimeError(
+                        "RowLocalAdam requires sparse COO gradients; a dense "
+                        "gradient would defeat its memory guarantee")
+E                   RuntimeError: RowLocalAdam requires sparse COO gradients; a dense gradient would defeat its memory guarantee
+
+bin/Optimizer.py:436: RuntimeError
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+1 failed in 1.98s

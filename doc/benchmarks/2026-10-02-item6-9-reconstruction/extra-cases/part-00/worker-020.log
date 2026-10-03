@@ -1,0 +1,109 @@
+..F.....                                                                 [100%]
+=================================== FAILURES ===================================
+_____ test_output_path_memorizes_supervised_labels_on_the_serial_topology ______
+test/test_output_path_supervised.py:134: in test_output_path_memorizes_supervised_labels_on_the_serial_topology
+    assert _memorize(m, epochs=40, lr=1e-3) >= 1.0
+E   assert 0.96875 >= 1.0
+E    +  where 0.96875 = _memorize(BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=29, out_features=136, bias=False)\n  )\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\n), epochs=40, lr=0.001)
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 1.556s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.503s, 100.00%)
+Training throughput: 1 batches in 1.501s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.609s, 100.00%)
+Training throughput: 1 batches in 1.608s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.496s, 100.00%)
+Training throughput: 1 batches in 1.494s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.537s, 100.00%)
+Training throughput: 1 batches in 1.535s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.538s, 100.00%)
+Training throughput: 1 batches in 1.536s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.537s, 100.00%)
+Training throughput: 1 batches in 1.535s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.657s, 100.00%)
+Training throughput: 1 batches in 1.655s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.556s, 100.00%)
+Training throughput: 1 batches in 1.554s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.546s, 100.00%)
+Training throughput: 1 batches in 1.545s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=2.040s, 100.00%)
+Training throughput: 1 batches in 1.541s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.656s, 100.00%)
+Training throughput: 1 batches in 1.654s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.507s, 100.00%)
+Training throughput: 1 batches in 1.506s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.489s, 100.00%)
+Training throughput: 1 batches in 1.487s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.503s, 100.00%)
+Training throughput: 1 batches in 1.501s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.507s, 100.00%)
+Training throughput: 1 batches in 1.505s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.589s, 100.00%)
+Training throughput: 1 batches in 1.587s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.493s, 100.00%)
+Training throughput: 1 batches in 1.491s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.522s, 100.00%)
+Training throughput: 1 batches in 1.520s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.503s, 100.00%)
+Training throughput: 1 batches in 1.502s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.976s, 100.00%)
+Training throughput: 1 batches in 1.481s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.603s, 100.00%)
+Training throughput: 1 batches in 1.601s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.539s, 100.00%)
+Training throughput: 1 batches in 1.537s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.497s, 100.00%)
+Training throughput: 1 batches in 1.495s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.509s, 100.00%)
+Training throughput: 1 batches in 1.508s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.553s, 100.00%)
+Training throughput: 1 batches in 1.552s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.616s, 100.00%)
+Training throughput: 1 batches in 1.614s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.508s, 100.00%)
+Training throughput: 1 batches in 1.506s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.524s, 100.00%)
+Training throughput: 1 batches in 1.522s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.504s, 100.00%)
+Training throughput: 1 batches in 1.503s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=2.136s, 100.00%)
+Training throughput: 1 batches in 1.623s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.535s, 100.00%)
+Training throughput: 1 batches in 1.533s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.531s, 100.00%)
+Training throughput: 1 batches in 1.529s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.540s, 100.00%)
+Training throughput: 1 batches in 1.539s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.537s, 100.00%)
+Training throughput: 1 batches in 1.535s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.627s, 100.00%)
+Training throughput: 1 batches in 1.625s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.525s, 100.00%)
+Training throughput: 1 batches in 1.524s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.538s, 100.00%)
+Training throughput: 1 batches in 1.536s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.537s, 100.00%)
+Training throughput: 1 batches in 1.535s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+batch = 0 (Δ=1.540s, 100.00%)
+Training throughput: 1 batches in 1.539s; word units 100.0% of 16 words (letters-only 100.0% of 16).
+=============================== warnings summary ===============================
+test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_parallel_topology
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-development]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7148: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1028/test_native_realized_answer_lo0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-production]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7148: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1028/test_native_realized_answer_lo1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-development]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7148: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1028/test_native_realized_answer_lo2/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology
+1 failed, 7 passed, 4 warnings in 77.05s (0:01:17)

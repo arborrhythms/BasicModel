@@ -1,0 +1,22 @@
+{
+  "updates": 32,
+  "learning_rate": 0.03,
+  "witness_updates": 32,
+  "properties": [
+    {"row": 8, "bytes": [48, 49], "memberships": [0, 1]},
+    {"row": 9, "bytes": [48, 49], "memberships": [1, 0]}
+  ],
+  "names": [{
+    "concept": 10001,
+    "features": [
+      {"tower": "ws", "row": 8, "weight": 1},
+      {"tower": "ws", "row": 9, "weight": 0},
+      {"tower": "ws", "row": 9, "weight": 0, "negative": true}
+    ],
+    "examples": [
+      {"text": "0", "evidence": [0, 1]},
+      {"text": "1", "evidence": [1, 0]},
+      {"text": "A", "evidence": [0, 0]}
+    ]
+  }]
+}

@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook"
+  ],
+  "completed": [
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook"
+  ],
+  "slow_selected": [
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1373066249943804,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

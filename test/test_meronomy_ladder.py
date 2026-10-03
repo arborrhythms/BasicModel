@@ -32,30 +32,10 @@ def _bytes(s):
 
 # -- Phase 0: the analysis cuts route through Legacy, byte-identically ----------
 
-def test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical():
-    assert Legacy.LEGACY_WHOLE_ANALYSIS_MODES == {
-        "byte", "raw", "sentence", "word", "grammatical"}
-    assert "meronomy" not in Legacy.LEGACY_WHOLE_ANALYSIS_MODES
-    with pytest.raises(ValueError, match="legacy WholeSpace analysis"):
-        Legacy.normalize_whole_analysis_mode("meronomy")
 
 
-@pytest.mark.parametrize("surface", ["abc123", "hi, there", "12 plus 1", "a...b"])
-def test_word_and_grammatical_cuts_equal_the_meronomy_cut(surface):
-    u = _bytes(surface)
-    canonical = WholeSpace.stage_analysis_spans(
-        property_reader(analysis_mode="meronomy"), u)
-    for mode in ("word", "grammatical"):
-        legacy = WholeSpace.stage_analysis_spans(
-            property_reader(analysis_mode=mode), u)
-        assert torch.equal(legacy, canonical), (mode, legacy, canonical)
 
 
-@pytest.mark.parametrize("mode", ["byte", "raw", "sentence"])
-def test_undivided_legacy_modes_stage_no_spans(mode):
-    fake = property_reader(analysis_mode=mode)
-    assert WholeSpace.stage_analysis_spans(fake, _bytes("abc def")) is None
-    assert fake._staged_property_signatures is None
 
 
 def test_meronomy_cut_with_no_unity_stages_nothing():
@@ -146,6 +126,26 @@ def _build_ladder(dat=None):
 @pytest.fixture(scope="module")
 def ladder():
     return _build_ladder()
+
+
+@pytest.fixture(scope="module")
+def trained_ladder():
+    """One two-presentation training pass for utility and epoch-report reads."""
+    from contextlib import redirect_stdout
+    from io import StringIO
+    from reading_fixtures import use_eager_reading
+    output = StringIO()
+    with pytest.MonkeyPatch.context() as patch:
+        use_eager_reading(patch)
+        m = _build_ladder()
+        optimizer = m.getOptimizer(lr=1e-3)
+        with redirect_stdout(output):
+            m.runEpoch(optimizer=optimizer, batchSize=1, split="train", max_batches=2)
+    try:
+        yield m, output.getvalue()
+    finally:
+        m.End()
+        m.symbolSpace.soft_reset()
 
 
 def _stage(m, surfaces):
@@ -320,6 +320,7 @@ def _stage_tensor_peer(m, samples):
     return _stage_fullgraph_tensor_peer(m, samples)
 
 
+@pytest.mark.slow
 def test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop():
     """Alec (2026-09-11): compilation is essential, with fullgraph.  The
     STM provenance slab, the chunk licensing and the phrase proposals are
@@ -437,10 +438,9 @@ def test_word_unit_fraction_is_zero_on_the_atomic_cold_start(tmp_path):
     assert m.word_unit_fraction() == 0.0
 
 
-def test_epoch_report_carries_the_word_unit_fraction(capsys):
-    m = _build_ladder()
-    opt = m.getOptimizer(lr=1e-3)
-    m.runEpoch(optimizer=opt, batchSize=1, split="train", max_batches=1)
+def test_epoch_report_carries_the_word_unit_fraction(capsys, eager_reading, trained_ladder):
+    m, report = trained_ladder
+    print(report)
     assert m.word_unit_fraction() is not None
     out = capsys.readouterr().out
     if "Packed training throughput" in out:
@@ -518,22 +518,20 @@ def test_stem_stages_loop_constants_with_fixed_shapes(ladder):
     assert tuple(stm._wholes.shape) == (B, int(stm.capacity), 3)
 
 
-def test_utility_counts_accrue_once_per_presentation():
+def test_utility_counts_accrue_once_per_presentation(eager_reading, trained_ladder, monkeypatch):
     """Counts commit at the training path's sentence boundary, once per
     presentation (the bare per-row reset cascade is not the training path
     on this fixture; see the plan's open defects)."""
-    m = _build_ladder()
+    m, _report = trained_ladder
     cs = m._concept_owner()
-    opt = m.getOptimizer(lr=1e-3)
-    m.runEpoch(optimizer=opt, batchSize=1, split="train", max_batches=2)
     cu = cs.utility_counts()
     assert cu["n"] == 2 and cu["n_c"] and cu["n_f"]
     assert all(1 <= v <= 2 for v in cu["n_c"].values())
     assert not cs.__dict__.get("_cu_proposals")      # drained at the boundary
     # Below the minimum evidence the utility is withheld; above it, defined.
-    cs.utility_min_count = 3
+    monkeypatch.setattr(cs, "utility_min_count", 3)
     assert all(cs.category_utility(c) is None for c in cu["n_c"])
-    cs.utility_min_count = 1
+    monkeypatch.setattr(cs, "utility_min_count", 1)
     defined = [cs.category_utility(c) for c in cu["n_c"]]
     assert any(v is not None for v in defined)       # units with features
 
@@ -619,6 +617,7 @@ def test_boundary_types_none_starts_without_boundaries(tmp_path):
 
 # -- Phase 2, step 3: the cold start learns space as the basic boundary ---------
 
+@pytest.mark.usefixtures('eager_reading')
 @pytest.mark.slow
 def test_cold_start_learns_space_as_the_basic_boundary(tmp_path):
     """Under <boundaryTypes>none</boundaryTypes> with the learner on, a

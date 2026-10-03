@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-455.recycle.json"
+}

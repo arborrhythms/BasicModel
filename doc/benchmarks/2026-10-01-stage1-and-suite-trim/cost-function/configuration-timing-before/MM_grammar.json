@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_grammar.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 1.4806753340017167,
+  "batch": 64,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 0.531384750000143,
+  "output_loss": 0.17504213750362396,
+  "reconstruction_loss": 0.44326502084732056,
+  "completed": true,
+  "total_seconds": 2.012064249996911
+}

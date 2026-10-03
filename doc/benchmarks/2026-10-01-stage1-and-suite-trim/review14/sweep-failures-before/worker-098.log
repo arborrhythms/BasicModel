@@ -1,0 +1,10 @@
+...ssssF                                                                 [100%]
+=================================== FAILURES ===================================
+______________ test_tiny_canonical_detached_reverse_stops_at_root ______________
+test/test_compiled_word_chunk.py:955: in test_tiny_canonical_detached_reverse_stops_at_root
+    assert model.detached_reverse
+E   assert False
+E    +  where False = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...t(\n    (0-3): 4 x _BodyStage()\n  )\n  (where_encoding): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n).detached_reverse
+=========================== short test summary info ============================
+FAILED test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root
+1 failed, 3 passed, 4 skipped in 2.67s

@@ -20,6 +20,7 @@ Asserts:
 See: doc/plans (STM serial/parallel modes), bin/Layers.py
 (IntraSentenceLayer), bin/Spaces.py (ConceptualSpace.__init__).
 """
+import pytest
 import os
 import sys
 import unittest
@@ -238,6 +239,12 @@ class TestConceptualSpaceOwnership(unittest.TestCase):
         # The layer's own Reset is a structural no-op but must be callable.
         cs.intraSentenceLayer.Reset()
 
+    def test_reset_clears_registered_prediction_targets(self):
+        cs = self.model.conceptualSpaces[0]
+        cs._intra_errors.squared('intra', torch.ones(2), torch.ones(2))
+        cs.Reset()
+        self.assertIsNone(cs._intra_errors.total())
+
     def test_dims_match_space(self):
         cs = self.model.conceptualSpaces[0]
         layer = cs.intraSentenceLayer
@@ -363,6 +370,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
         self.assertEqual(int(r.shape[-1]), n_rules,
                          "returned routing must be [B, n_rules].")
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_bias_fires_on_real_model(self):
         # The defining acceptance check: with the real rule_probs from a
         # serial forward, the predictor output MUST change vs routing=None

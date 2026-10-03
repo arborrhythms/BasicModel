@@ -1,0 +1,17 @@
+{
+  "selectors": [
+    "test/test_subspace_context.py",
+    "test/test_reading_attention.py",
+    "test/test_concept_readout_l1.py",
+    "test/test_output_synthesis.py",
+    "test/test_understanding_reconstruct.py",
+    "test/test_reconstruction_roundtrip.py",
+    "test/test_inter_sentence_prediction_shape.py",
+    "test/test_expectation_kind.py",
+    "test/test_sentence_expectation.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

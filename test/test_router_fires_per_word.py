@@ -202,7 +202,7 @@ def test_default_router_wire_serial_is_both():
 
 
 @pytest.mark.parametrize('mode', ['both', 'per-word'])
-def test_serial_words_use_the_shared_operation_layer(mode):
+def test_serial_words_use_the_shared_operation_layer(mode, eager_reading):
     model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
     probe = _run_forward_spying_fold(model)
     assert probe['compose'] == 0  # no second independently selected parse
@@ -214,6 +214,7 @@ def test_serial_words_use_the_shared_operation_layer(mode):
     assert torch.isfinite(probe['single_S']).all()
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_router_wire_serial_boundary_no_serial_forward_compose():
     """Boundary routing does not add a second serial forward compose pass."""
     model = _make_serial_model(router_wire_serial="boundary")
@@ -225,6 +226,7 @@ def test_router_wire_serial_boundary_no_serial_forward_compose():
         f"{n_calls}.")
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_router_wire_serial_off_no_serial_forward_compose():
     """``routerWireSerial='off'`` also fires ``compose`` ZERO times per
     serial forward — the same count every mode now yields on the serial
@@ -237,6 +239,7 @@ def test_router_wire_serial_off_no_serial_forward_compose():
         f"calls; got {n_calls}.")
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_boundary_generate_gated_by_router_wire_serial():
     """The reverse-path boundary fire (``_chart_generate_from_stm`` ->
     ``symbolSpace.reverse``) is gated by ``<routerWireSerial>``:

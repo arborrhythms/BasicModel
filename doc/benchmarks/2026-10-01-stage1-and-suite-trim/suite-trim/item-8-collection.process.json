@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "test",
+    "--collect-only",
+    "-q"
+  ],
+  "pid": 82595,
+  "exit_code": 2,
+  "reason": "exit",
+  "peak_memory_bytes": 485901632,
+  "elapsed_seconds": 5.158312375002424,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/item-8-collection.log"
+}

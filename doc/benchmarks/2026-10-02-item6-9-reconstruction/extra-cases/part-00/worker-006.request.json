@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_conceptualize.py::test_conceptualize_dispatch"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/extra-cases/part-00/worker-006.recycle.json"
+}

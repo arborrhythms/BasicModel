@@ -1,0 +1,272 @@
+.......................FF......FF...F..FF...F..F.............FF......... [ 88%]
+.........                                                                [100%]
+=================================== FAILURES ===================================
+______________________ test_execute_arity2_requires_right ______________________
+
+    def test_execute_arity2_requires_right():
+        """execute on an arity-2 rule without `right` raises a clear error."""
+        from Language import TheGrammar
+>       from Layers import MinLayer
+E       ImportError: cannot import name 'MinLayer' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'PiLayer'?
+
+test/test_subspace_what_stm_contract.py:311: ImportError
+____________ test_execute_superposed_independent_then_weighted_sum _____________
+
+    def test_execute_superposed_independent_then_weighted_sum():
+        """Each rule sees its own (left, right) and outputs combine by weighted sum.
+    
+        Pin the independent-contribution semantics: mutating one rule's
+        output must not affect another's, because the combine is one
+        stacked weighted sum (the plan's pseudo-code).
+        """
+        from Language import TheGrammar
+>       from Layers import MinLayer, MaxLayer
+E       ImportError: cannot import name 'MinLayer' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'PiLayer'?
+
+test/test_subspace_what_stm_contract.py:348: ImportError
+________________ test_reduce_writes_parent_in_left_zeros_right _________________
+
+    def test_reduce_writes_parent_in_left_zeros_right():
+        """Hard REDUCE: parent at i=n_live-2, zero at j=n_live-1, occ updates."""
+        from Language import TheGrammar, RuleCodebook
+>       from Layers import MinLayer
+E       ImportError: cannot import name 'MinLayer' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'PiLayer'?
+
+test/test_subspace_what_stm_contract.py:550: ImportError
+____________________ test_reduce_raises_on_stack_underflow _____________________
+
+    def test_reduce_raises_on_stack_underflow():
+        """Reducing with fewer than 2 live slots must raise."""
+        from Language import TheGrammar, RuleCodebook
+>       from Layers import MinLayer
+E       ImportError: cannot import name 'MinLayer' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'PiLayer'?
+
+test/test_subspace_what_stm_contract.py:602: ImportError
+____________ test_unreduce_calls_layer_reverse_and_writes_children _____________
+
+    def test_unreduce_calls_layer_reverse_and_writes_children():
+        """Plan acceptance: reverse uses .where to decode rule, then applies
+        the layer's reverse method to split parent into children.
+    
+        ADAPTED (2026-07-04 serial plan Task 1): the identity stub is
+        REVOKED. The stack's ``.what`` is not a 2-D codebook, so the
+        recommender cannot run and unreduce must FAIL LOUD with the
+        Gate-S1 inventory row instead of writing (parent, parent)."""
+        from Language import TheGrammar, RuleCodebook
+>       from Layers import MinLayer
+E       ImportError: cannot import name 'MinLayer' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'PiLayer'?
+
+test/test_subspace_what_stm_contract.py:777: ImportError
+______________________ test_unreduce_raises_on_full_stack ______________________
+
+    def test_unreduce_raises_on_full_stack():
+        """Full stack -> no room for the new right child slot; must raise."""
+        from Language import TheGrammar, RuleCodebook
+>       from Layers import MinLayer
+E       ImportError: cannot import name 'MinLayer' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'PiLayer'?
+
+test/test_subspace_what_stm_contract.py:875: ImportError
+______ test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub ______
+
+    def test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub():
+        """reverse_stack unwinds the outermost rule, then stops.
+    
+        Limitation worth pinning: under the identity-stub contract, an
+        unreduce clears the children's .where to 0 (we have no provenance
+        for the children -- the lossy parent doesn't tell us what rule
+        each child came from). reverse_stack reads the top slot's .where
+        each loop, so the very next iteration sees an 'empty' kind and
+        halts.
+    
+        Forward: shift A, shift B, shift C, reduce (top-2), reduce (top-2).
+        Stack ends with 1 rule-stamped root.
+    
+        ADAPTED (2026-07-04 serial plan Task 1): min has no faithful
+        inverse on this path (the stack .what is not a codebook), so the
+        reverse now FAILS LOUD; the unwinding contract is observable only
+        once a real inverse exists (the Gate-S1 inventory consequence).
+        """
+        from Language import TheGrammar, RuleCodebook
+>       from Layers import MinLayer
+E       ImportError: cannot import name 'MinLayer' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'PiLayer'?
+
+test/test_subspace_what_stm_contract.py:933: ImportError
+____________ test_forward_dispatches_to_forward_stack_with_actions _____________
+
+    def test_forward_dispatches_to_forward_stack_with_actions():
+        """languageLayer.forward(actions=...) is a thin wrapper around forward_stack."""
+        from Language import TheGrammar, RuleCodebook
+>       from Layers import MinLayer
+E       ImportError: cannot import name 'MinLayer' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'PiLayer'?
+
+test/test_subspace_what_stm_contract.py:1092: ImportError
+______________ test_forward_stack_orchestrates_shift_then_reduce _______________
+
+    def test_forward_stack_orchestrates_shift_then_reduce():
+        """forward_stack runs a list of (shift/reduce) actions end-to-end."""
+        from Language import TheGrammar, RuleCodebook
+>       from Layers import MinLayer
+E       ImportError: cannot import name 'MinLayer' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'PiLayer'?
+
+test/test_subspace_what_stm_contract.py:1197: ImportError
+__ test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient ___
+
+    def test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient():
+        from Language import LanguageSpace, ConjunctionLayer
+        operation = ConjunctionLayer()
+        basis = torch.tensor([[[.2, 0.], [0., .2]]])
+        parent = torch.tensor([[-.03, .02]], requires_grad=True)
+        left, right, available = LanguageSpace._bounded_binary_reconstruction(
+            operation, parent, torch.zeros_like(parent), torch.tensor([False]),
+            torch.tensor([False]), basis, torch.ones(1, 2, dtype=torch.bool), 2)
+        assert available.tolist() == [True]
+        pair = torch.stack((left[0], right[0]))
+        assert torch.equal(pair, basis[0]) or torch.equal(pair, basis[0].flip(0))
+        older, newer = basis[:, :, None], basis[:, None, :]
+        residual = (operation.compose(older, newer) - parent[:, None, None]).square().mean(-1)
+        weights = (-residual / .01).flatten(1).softmax(-1).reshape(1, 2, 2)
+        soft = ((older[..., 0] + 3 * newer[..., 1]) * weights).sum((1, 2))
+        expected = torch.autograd.grad(soft.sum(), parent, retain_graph=True)[0]
+        assert bool(expected.abs().any())
+        actual = torch.autograd.grad((left[..., 0] + 3 * right[..., 1]).sum(), parent)[0]
+>       torch.testing.assert_close(actual, expected)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 2 / 2 (100.0%)
+E       Greatest absolute difference: 0.1353577822446823 at index (0, 1) (up to 1e-05 allowed)
+E       Greatest relative difference: 0.6783173084259033 at index (0, 1) (up to 1.3e-06 allowed)
+
+test/test_grammar_reconstruction_gate.py:23: AssertionError
+_ test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1083a5280>
+
+    def test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal(monkeypatch):
+        from pathlib import Path
+        import Models
+        import util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        # The subject is the inverse traversal, not graph capture.
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        commit = model._commit_sentence
+        inverse = model.languageSpace.reverse_binary_step
+        parents, decoded = [], []
+        readback = False
+        def reverse(parent, *args, **kwargs):
+            # The free read-back searches candidates. Training's tied inverse
+            # separately consumes the recorded witnesses, which can name a side.
+            if readback and bool(args[1].any()):
+                parents.append(parent.detach().clone())
+                assert not bool(kwargs['reference_side'][1].any())
+            return inverse(parent, *args, **kwargs)
+        monkeypatch.setattr(model.languageSpace, 'reverse_binary_step', reverse)
+        def observe(state, sid, active, *args):
+            nonlocal readback
+            readback = True
+            texts, unavailable = model.reconstruct_grammar_sentence(state, sid, active)
+            assert len(texts) == 4 and unavailable.shape == (4,)
+            assert parents, 'the reading must traverse the grammar inverse'
+            before = parents[0]
+            changed = list(state[1])
+            changed[9], changed[13] = changed[9] + 10, changed[13] + 10
+            parents.clear()
+            model.reconstruct_grammar_sentence((state[0], tuple(changed), state[2]), sid, active)
+            assert parents and not torch.equal(parents[0], before)
+            assert model._word_symbol_concept_ids() is None
+            decoded.append(texts)
+            readback = False
+            return commit(state, sid, active, *args)
+        monkeypatch.setattr(model, '_commit_sentence', observe)
+        try:
+            with torch.no_grad():
+>               model.forward(model.inputSpace.prepInput(list(data.test_input)))
+
+test/test_grammar_reconstruction_gate.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8302: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23508: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17587: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21974: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21533: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20731: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grammar_reconstruction_gate.py:54: in observe
+    texts, unavailable = model.reconstruct_grammar_sentence(state, sid, active)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12430: in reconstruct_grammar_sentence
+    result = self._reconstruct_sentences(record.root.clone(), record.word_values,
+bin/Models.py:12395: in _reconstruct_sentences
+    recovered) = _reconstruction_while_loop(
+bin/Models.py:381: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12365: in body
+    stack, depth, bad_round = undo_operation(stack, depth, slot, wa, sid)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12283: in undo_operation
+    stack, depth, bad_binary = _undo_binary(stack, depth, slot, ready, sentence=sentence)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12259: in _undo_binary
+    left, right, unavailable = language.reverse_binary_step(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+parent = tensor([[ 0.3901, -0.0870, -0.2906, -0.1855, -0.2400,  0.4427, -0.0073,  0.0684,
+          0.1291,  0.2986],
+        [... 0.0089],
+        [ 0.1337,  0.0251, -0.4140, -0.1481, -0.1104,  0.0354, -0.5678,  0.0137,
+          0.1610,  0.2517]])
+args = (tensor([1, 1, 1, 1]), tensor([True, True, True, True]))
+kwargs = {'inverses': None, 'basis': tensor([[[-0.5218, -0.2375,  0.1769,  0.0403, -0.0761, -0.6382,  0.1055,
+          -0.2621...2., 0., 0., 0., 0., 0., 0.],
+        [2., 2., 0., 0., 0., 0., 0., 0.],
+        [2., 2., 0., 0., 0., 0., 0., 0.]]), ...}
+
+    def reverse(parent, *args, **kwargs):
+        # The free read-back searches candidates. Training's tied inverse
+        # separately consumes the recorded witnesses, which can name a side.
+        if readback and bool(args[1].any()):
+            parents.append(parent.detach().clone())
+>           assert not bool(kwargs['reference_side'][1].any())
+                            ^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'reference_side'
+
+test/test_grammar_reconstruction_gate.py:48: KeyError
+=============================== warnings summary ===============================
+test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_subspace_what_stm_contract.py::test_execute_arity2_requires_right
+FAILED test/test_subspace_what_stm_contract.py::test_execute_superposed_independent_then_weighted_sum
+FAILED test/test_subspace_what_stm_contract.py::test_reduce_writes_parent_in_left_zeros_right
+FAILED test/test_subspace_what_stm_contract.py::test_reduce_raises_on_stack_underflow
+FAILED test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children
+FAILED test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_full_stack
+FAILED test/test_subspace_what_stm_contract.py::test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub
+FAILED test/test_subspace_what_stm_contract.py::test_forward_dispatches_to_forward_stack_with_actions
+FAILED test/test_subspace_what_stm_contract.py::test_forward_stack_orchestrates_shift_then_reduce
+FAILED test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient
+FAILED test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal
+11 failed, 70 passed, 1 warning in 4.83s

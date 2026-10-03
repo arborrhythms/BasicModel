@@ -1,0 +1,908 @@
+{
+  "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+  "phase": "setup",
+  "elapsed_seconds": 0.0033605420030653477,
+  "profile_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/profiles-after-repair/42f3b036a5026502.setup.prof",
+  "functions": [
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/runner.py",
+      "line": 168,
+      "function": "pytest_runtest_setup",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3e-06,
+      "cumulative_seconds": 0.003273667
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/runner.py",
+      "line": 520,
+      "function": "setup",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 9.002000000000001e-06,
+      "cumulative_seconds": 0.0032579170000000004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+      "line": 1709,
+      "function": "setup",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.0420000000000001e-06,
+      "cumulative_seconds": 0.003244625
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/fixtures.py",
+      "line": 802,
+      "function": "_fillfixtures",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 4.417e-06,
+      "cumulative_seconds": 0.0032435830000000004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/fixtures.py",
+      "line": 604,
+      "function": "getfixturevalue",
+      "primitive_calls": 8,
+      "calls": 12,
+      "self_seconds": 8.001e-06,
+      "cumulative_seconds": 0.0032391660000000004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/fixtures.py",
+      "line": 647,
+      "function": "_get_active_fixturedef",
+      "primitive_calls": 8,
+      "calls": 16,
+      "self_seconds": 4.2039e-05,
+      "cumulative_seconds": 0.003232457
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/fixtures.py",
+      "line": 1171,
+      "function": "execute",
+      "primitive_calls": 7,
+      "calls": 7,
+      "self_seconds": 2.0458e-05,
+      "cumulative_seconds": 0.003132999
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py",
+      "line": 497,
+      "function": "__call__",
+      "primitive_calls": 7,
+      "calls": 7,
+      "self_seconds": 8.042e-06,
+      "cumulative_seconds": 0.003001459
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py",
+      "line": 111,
+      "function": "_hookexec",
+      "primitive_calls": 7,
+      "calls": 7,
+      "self_seconds": 3.0430000000000003e-06,
+      "cumulative_seconds": 0.002989209
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py",
+      "line": 76,
+      "function": "_multicall",
+      "primitive_calls": 7,
+      "calls": 7,
+      "self_seconds": 2.8452e-05,
+      "cumulative_seconds": 0.002986166
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/fixtures.py",
+      "line": 1305,
+      "function": "pytest_fixture_setup",
+      "primitive_calls": 7,
+      "calls": 7,
+      "self_seconds": 1.3623000000000002e-05,
+      "cumulative_seconds": 0.002878376
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/fixtures.py",
+      "line": 991,
+      "function": "call_fixture_func",
+      "primitive_calls": 7,
+      "calls": 7,
+      "self_seconds": 1.4291000000000001e-05,
+      "cumulative_seconds": 0.0027891680000000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/test/conftest.py",
+      "line": 48,
+      "function": "eager_reading",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.4990000000000003e-06,
+      "cumulative_seconds": 0.0018918750000000001
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 1349,
+      "function": "_find_and_load",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 5.959e-06,
+      "cumulative_seconds": 0.0018804170000000001
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 1304,
+      "function": "_find_and_load_unlocked",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.999e-06,
+      "cumulative_seconds": 0.001850583
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 911,
+      "function": "_load_unlocked",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.7090000000000002e-06,
+      "cumulative_seconds": 0.001751542
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 993,
+      "function": "exec_module",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.999e-06,
+      "cumulative_seconds": 0.001726625
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1066,
+      "function": "get_code",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.2668000000000001e-05,
+      "cumulative_seconds": 0.0017024170000000001
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 480,
+      "function": "_call_with_frames_removed",
+      "primitive_calls": 3,
+      "calls": 3,
+      "self_seconds": 2.127e-06,
+      "cumulative_seconds": 0.001344085
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1058,
+      "function": "source_to_code",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 7.91e-07,
+      "cumulative_seconds": 0.0013238330000000002
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.compile>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.0013221670000000002,
+      "cumulative_seconds": 0.0013221670000000002
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.next>",
+      "primitive_calls": 20,
+      "calls": 29,
+      "self_seconds": 1.0914000000000001e-05,
+      "cumulative_seconds": 0.0009326670000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/tmpdir.py",
+      "line": 290,
+      "function": "tmp_path",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.001e-06,
+      "cumulative_seconds": 0.0008435840000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/tmpdir.py",
+      "line": 282,
+      "function": "_mk_tmp",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.792e-06,
+      "cumulative_seconds": 0.000842583
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/tmpdir.py",
+      "line": 121,
+      "function": "mktemp",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.624e-06,
+      "cumulative_seconds": 0.000740208
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/tmpdir.py",
+      "line": 115,
+      "function": "_ensure_relative_to_basetemp",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 8.249e-06,
+      "cumulative_seconds": 0.000587667
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/tmpdir.py",
+      "line": 145,
+      "function": "getbasetemp",
+      "primitive_calls": 3,
+      "calls": 3,
+      "self_seconds": 1.9876e-05,
+      "cumulative_seconds": 0.000503251
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/pathlib.py",
+      "line": 224,
+      "function": "make_numbered_dir",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 7.914e-06,
+      "cumulative_seconds": 0.000389333
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/pathlib.py",
+      "line": 374,
+      "function": "make_numbered_dir_with_cleanup",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 7.043e-06,
+      "cumulative_seconds": 0.00036587500000000004
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1211,
+      "function": "_cache_bytecode",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.793e-06,
+      "cumulative_seconds": 0.00022820900000000002
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1216,
+      "function": "set_data",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.626e-06,
+      "cumulative_seconds": 0.00021562500000000002
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 195,
+      "function": "_write_atomic",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.2333e-05,
+      "cumulative_seconds": 0.00020691600000000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/pathlib.py",
+      "line": 204,
+      "function": "_force_symlink",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 3.333e-06,
+      "cumulative_seconds": 0.000174667
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 1228,
+      "function": "resolve",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 4.209e-06,
+      "cumulative_seconds": 0.00014204200000000002
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 1306,
+      "function": "mkdir",
+      "primitive_calls": 3,
+      "calls": 3,
+      "self_seconds": 2.043e-06,
+      "cumulative_seconds": 0.000128126
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method posix.mkdir>",
+      "primitive_calls": 3,
+      "calls": 3,
+      "self_seconds": 9.1292e-05,
+      "cumulative_seconds": 0.00012287500000000002
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method posix.replace>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.00011204100000000001,
+      "cumulative_seconds": 0.00011204100000000001
+    },
+    {
+      "file": "<frozen posixpath>",
+      "line": 420,
+      "function": "realpath",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 4.4140000000000004e-06,
+      "cumulative_seconds": 0.00011200000000000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method posix.open>",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 0.0001095,
+      "cumulative_seconds": 0.0001095
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/pathlib.py",
+      "line": 245,
+      "function": "create_cleanup_lock",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 6.875e-06,
+      "cumulative_seconds": 0.00010945800000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/fixtures.py",
+      "line": 1254,
+      "function": "__init__",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 7.835e-06,
+      "cumulative_seconds": 0.00010062600000000001
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/re/__init__.py",
+      "line": 179,
+      "function": "sub",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.7500000000000004e-06,
+      "cumulative_seconds": 9.958300000000001e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 1379,
+      "function": "symlink_to",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 1.543e-06,
+      "cumulative_seconds": 9.9209e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 437,
+      "function": "__str__",
+      "primitive_calls": 22,
+      "calls": 22,
+      "self_seconds": 1.2668000000000001e-05,
+      "cumulative_seconds": 9.791300000000001e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method posix.symlink>",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 9.608400000000001e-05,
+      "cumulative_seconds": 9.7292e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/re/__init__.py",
+      "line": 280,
+      "function": "_compile",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 6.126e-06,
+      "cumulative_seconds": 9.570800000000001e-05
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 1240,
+      "function": "_find_spec",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 9.209000000000001e-06,
+      "cumulative_seconds": 9.483400000000001e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.max>",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 6.5410000000000006e-06,
+      "cumulative_seconds": 9.312400000000001e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 447,
+      "function": "__fspath__",
+      "primitive_calls": 19,
+      "calls": 19,
+      "self_seconds": 5.083e-06,
+      "cumulative_seconds": 9.312200000000001e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/fixtures.py",
+      "line": 1057,
+      "function": "__init__",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 9.957000000000001e-06,
+      "cumulative_seconds": 9.1833e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py",
+      "line": 25,
+      "function": "run_old_style_hookwrapper",
+      "primitive_calls": 15,
+      "calls": 15,
+      "self_seconds": 1.3541000000000001e-05,
+      "cumulative_seconds": 8.9875e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/pathlib.py",
+      "line": 180,
+      "function": "extract_suffixes",
+      "primitive_calls": 13,
+      "calls": 13,
+      "self_seconds": 3.997e-06,
+      "cumulative_seconds": 8.0707e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/compat.py",
+      "line": 108,
+      "function": "getfuncargnames",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 8.918e-06,
+      "cumulative_seconds": 8.0083e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/re/_compiler.py",
+      "line": 745,
+      "function": "compile",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.791e-06,
+      "cumulative_seconds": 7.933300000000001e-05
+    },
+    {
+      "file": "<frozen posixpath>",
+      "line": 429,
+      "function": "_joinrealpath",
+      "primitive_calls": 2,
+      "calls": 3,
+      "self_seconds": 1.8458000000000002e-05,
+      "cumulative_seconds": 7.8584e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 551,
+      "function": "drive",
+      "primitive_calls": 12,
+      "calls": 12,
+      "self_seconds": 6.582000000000001e-06,
+      "cumulative_seconds": 7.8498e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 407,
+      "function": "_load_parts",
+      "primitive_calls": 12,
+      "calls": 12,
+      "self_seconds": 1.1745e-05,
+      "cumulative_seconds": 7.8083e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/pathlib.py",
+      "line": 172,
+      "function": "find_prefixed",
+      "primitive_calls": 13,
+      "calls": 13,
+      "self_seconds": 2.6332e-05,
+      "cumulative_seconds": 7.6501e-05
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1187,
+      "function": "get_data",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 4.21e-06,
+      "cumulative_seconds": 7.500000000000001e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/compat.py",
+      "line": 68,
+      "function": "signature",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 2.251e-06,
+      "cumulative_seconds": 6.6875e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 1336,
+      "function": "unlink",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 1.916e-06,
+      "cumulative_seconds": 6.595800000000001e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 3346,
+      "function": "signature",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 1.916e-06,
+      "cumulative_seconds": 6.462400000000001e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method posix.unlink>",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 4.5584e-05,
+      "cumulative_seconds": 6.404200000000001e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 3081,
+      "function": "from_callable",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 6.124e-06,
+      "cumulative_seconds": 6.270800000000001e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method _io.open_code>",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 5.8624000000000007e-05,
+      "cumulative_seconds": 5.8624000000000007e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 2501,
+      "function": "_signature_from_callable",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 1.5829e-05,
+      "cumulative_seconds": 5.6584000000000006e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'send' of 'generator' objects>",
+      "primitive_calls": 15,
+      "calls": 23,
+      "self_seconds": 8.710000000000001e-06,
+      "cumulative_seconds": 5.5377e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method posix.stat>",
+      "primitive_calls": 11,
+      "calls": 11,
+      "self_seconds": 3.8334e-05,
+      "cumulative_seconds": 5.4457000000000004e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 387,
+      "function": "_parse_path",
+      "primitive_calls": 12,
+      "calls": 12,
+      "self_seconds": 2.3624000000000003e-05,
+      "cumulative_seconds": 5.0127e-05
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 768,
+      "function": "_code_to_timestamp_pyc",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.8740000000000005e-06,
+      "cumulative_seconds": 4.8125000000000004e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method posix.scandir>",
+      "primitive_calls": 2,
+      "calls": 2,
+      "self_seconds": 4.6542e-05,
+      "cumulative_seconds": 4.7084000000000005e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 391,
+      "function": "_has_code_flag",
+      "primitive_calls": 35,
+      "calls": 35,
+      "self_seconds": 2.6167000000000002e-05,
+      "cumulative_seconds": 4.4459e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method marshal.dumps>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 4e-05,
+      "cumulative_seconds": 4e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py",
+      "line": 102,
+      "function": "find_spec",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.126e-06,
+      "cumulative_seconds": 3.9459e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/re/_parser.py",
+      "line": 969,
+      "function": "parse",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 4.458e-06,
+      "cumulative_seconds": 3.7791000000000005e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/anyio/pytest_plugin.py",
+      "line": 131,
+      "function": "pytest_fixture_setup",
+      "primitive_calls": 14,
+      "calls": 14,
+      "self_seconds": 5.042e-06,
+      "cumulative_seconds": 3.7460000000000004e-05
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1524,
+      "function": "find_spec",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.5410000000000002e-06,
+      "cumulative_seconds": 3.7333e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py",
+      "line": 190,
+      "function": "_early_rewrite_bailout",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 6.9570000000000005e-06,
+      "cumulative_seconds": 3.6917e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/re/_compiler.py",
+      "line": 578,
+      "function": "_code",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.1167e-05,
+      "cumulative_seconds": 3.6875e-05
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1495,
+      "function": "_get_spec",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.542e-06,
+      "cumulative_seconds": 3.5792000000000006e-05
+    },
+    {
+      "file": "<frozen posixpath>",
+      "line": 71,
+      "function": "join",
+      "primitive_calls": 23,
+      "calls": 23,
+      "self_seconds": 2.0788e-05,
+      "cumulative_seconds": 3.3919000000000005e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.isinstance>",
+      "primitive_calls": 337,
+      "calls": 337,
+      "self_seconds": 2.4672e-05,
+      "cumulative_seconds": 3.38e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 2397,
+      "function": "_signature_from_function",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 1.8334e-05,
+      "cumulative_seconds": 3.1792e-05
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1597,
+      "function": "find_spec",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 6.6700000000000005e-06,
+      "cumulative_seconds": 3.1541e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/re/_parser.py",
+      "line": 452,
+      "function": "_parse_sub",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.5998e-05,
+      "cumulative_seconds": 3.1375000000000004e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method posix.lstat>",
+      "primitive_calls": 16,
+      "calls": 16,
+      "self_seconds": 3.1084e-05,
+      "cumulative_seconds": 3.1084e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 427,
+      "function": "iscoroutinefunction",
+      "primitive_calls": 14,
+      "calls": 14,
+      "self_seconds": 4.544e-06,
+      "cumulative_seconds": 2.9627000000000003e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method posix.fspath>",
+      "primitive_calls": 62,
+      "calls": 65,
+      "self_seconds": 4.583e-06,
+      "cumulative_seconds": 2.9624000000000003e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 835,
+      "function": "stat",
+      "primitive_calls": 6,
+      "calls": 6,
+      "self_seconds": 1.334e-06,
+      "cumulative_seconds": 2.9376e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 380,
+      "function": "with_segments",
+      "primitive_calls": 11,
+      "calls": 11,
+      "self_seconds": 6.040000000000001e-06,
+      "cumulative_seconds": 2.8459000000000003e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/item69_profile.py",
+      "line": 33,
+      "function": "pytest_runtest_setup",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.5830000000000001e-06,
+      "cumulative_seconds": 2.7791000000000002e-05
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 140,
+      "function": "_path_stat",
+      "primitive_calls": 5,
+      "calls": 5,
+      "self_seconds": 1.209e-06,
+      "cumulative_seconds": 2.7624000000000002e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 435,
+      "function": "isasyncgenfunction",
+      "primitive_calls": 14,
+      "calls": 14,
+      "self_seconds": 3.6240000000000004e-06,
+      "cumulative_seconds": 2.6542e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py",
+      "line": 141,
+      "function": "__exit__",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.5000000000000004e-07,
+      "cumulative_seconds": 2.6208e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/fixtures.py",
+      "line": 817,
+      "function": "__init__",
+      "primitive_calls": 7,
+      "calls": 7,
+      "self_seconds": 8.043e-06,
+      "cumulative_seconds": 2.5876e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/item69_profile.py",
+      "line": 12,
+      "function": "record_profile",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.249e-06,
+      "cumulative_seconds": 2.5583000000000002e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'disable' of '_lsprof.Profiler' objects>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.4334e-05,
+      "cumulative_seconds": 2.4334e-05
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/nodes.py",
+      "line": 227,
+      "function": "ihook",
+      "primitive_calls": 7,
+      "calls": 7,
+      "self_seconds": 3.4190000000000002e-06,
+      "cumulative_seconds": 2.3208000000000002e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py",
+      "line": 711,
+      "function": "joinpath",
+      "primitive_calls": 7,
+      "calls": 7,
+      "self_seconds": 3.208e-06,
+      "cumulative_seconds": 2.3083000000000002e-05
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/re/_compiler.py",
+      "line": 516,
+      "function": "_compile_info",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.4335e-05,
+      "cumulative_seconds": 2.2167e-05
+    }
+  ]
+}

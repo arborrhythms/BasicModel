@@ -32,12 +32,6 @@ sys.path.insert(0, str(_project / "bin"))
 
 # --- Gate 1: Chart class is gone ----------------------------------------
 
-def test_chart_class_no_longer_exists():
-    """Importing ``Language.Chart`` should fail; the class is retired."""
-    import Language
-    assert not hasattr(Language, "Chart"), (
-        "Chart class still present in bin/Language.py; Stage 3 retires it."
-    )
 
 
 def test_chart_inside_helpers_gone():

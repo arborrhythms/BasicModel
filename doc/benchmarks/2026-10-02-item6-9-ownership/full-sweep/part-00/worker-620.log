@@ -1,0 +1,16 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+___________ test_sentence_trials_keep_their_own_perception_pullbacks ___________
+test/test_sentence_comparison.py:57: in test_sentence_trials_keep_their_own_perception_pullbacks
+    assert created == called == [0, 1], (created, called)
+E   AssertionError: ([0, 1], [])
+E   assert [0, 1] == []
+E     
+E     Left contains 2 more items, first extra item: 0
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=========================== short test summary info ============================
+FAILED test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+1 failed, 2 passed in 3.84s

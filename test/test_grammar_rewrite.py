@@ -38,25 +38,6 @@ def _complete_grammar():
     return g
 
 
-def test_grammar_has_no_marker_helper_rules():
-    """complete.grammar carries no ``*_MARK`` categories and no copy/swap
-    MARKER-helper rules after the rewrite."""
-    from Language import Grammar
-    g = _complete_grammar()
-
-    # (1) No surface-marker categories survive anywhere in the SS table.
-    for r in g.rules:
-        tokens = [c.strip() for c in str(r.lhs).split(',')]
-        tokens += list(r.rhs_symbols or ())
-        for tok in tokens:
-            assert not tok.endswith("_MARK"), (
-                f"marker category {tok!r} survives in rule {r.canonical!r}")
-
-    # (2) copy/swap were the marker idiom; they are retired from the
-    #     symbolic grammar (markers are now learned and owned by the op).
-    methods = {r.method_name for r in g.rules if r.method_name}
-    assert "copy" not in methods, "copy MARKER-helper rules must be deleted"
-    assert "swap" not in methods, "swap MARKER-helper rules must be deleted"
 
 
 def test_pp_modifies_vp_via_lower():

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_tied_operator_reconstruction.py::test_missing_absorbed_operand_uses_bounded_compose_candidates"
+  ],
+  "completed": [
+    "test/test_tied_operator_reconstruction.py::test_missing_absorbed_operand_uses_bounded_compose_candidates"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_tied_operator_reconstruction.py::test_missing_absorbed_operand_uses_bounded_compose_candidates",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.26814420799928484,
+      "message": "test/test_tied_operator_reconstruction.py:277: in test_missing_absorbed_operand_uses_bounded_compose_candidates\n    torch.testing.assert_close(left, basis[:, :2].mean(1))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 2 / 2 (100.0%)\nE   Greatest absolute difference: 0.2500000298023224 at index (0, 0) (up to 1e-05 allowed)\nE   Greatest relative difference: 0.7142857313156128 at index (0, 0) (up to 1.3e-06 allowed)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

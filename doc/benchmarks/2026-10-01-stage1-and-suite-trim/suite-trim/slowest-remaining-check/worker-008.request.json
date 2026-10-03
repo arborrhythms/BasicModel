@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-008.recycle.json"
+}

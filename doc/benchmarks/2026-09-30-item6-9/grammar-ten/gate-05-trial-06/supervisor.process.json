@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/measure.py",
+    "group",
+    "--root",
+    "/Users/arogers/github/WikiOracle/basicmodel",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/grammar-ten/gate-05-trial-06",
+    "--gate",
+    "5"
+  ],
+  "pid": 63888,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 653248528,
+  "elapsed_seconds": 93.15731587493792,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/grammar-ten/gate-05-trial-06/supervisor.log"
+}

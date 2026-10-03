@@ -1,0 +1,35 @@
+{
+  "unresolved generation rule": [
+    "data/HeadEmission.xml"
+  ],
+  "unchanged configured space geometry": [
+    "data/LM_5M_IR.xml",
+    "data/MM_5M_AR.xml",
+    "data/MM_5M_IR.xml",
+    "data/XOR_recon.xml"
+  ],
+  "fixed input-address capacity": [
+    "data/MM_add.xml",
+    "data/MM_math.xml",
+    "data/XOR_spaces.xml",
+    "data/stream_smoke.xml"
+  ],
+  "8 GiB worker guard": [
+    "data/MM_add_verb.xml"
+  ],
+  "TruthSet clause/closing requirements": [
+    "data/MM_ltm_consolidation_fixture.xml",
+    "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "data/MM_qa.xml",
+    "data/MM_query_reasoning.xml"
+  ],
+  "MNIST data loading before model construction": [
+    "data/ergodic-only.xml",
+    "data/ergodic.xml",
+    "data/mnist.xml",
+    "data/simple.xml"
+  ],
+  "dataset lookup": [
+    "data/tomatoes.xml"
+  ]
+}

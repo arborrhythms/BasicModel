@@ -3,6 +3,7 @@
 Covers native pass geometry, WordEncoding identities, and model forward paths.
 """
 
+import pytest
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
@@ -124,6 +125,7 @@ class TestBackwardCompat(unittest.TestCase):
             del model
             gc.collect()
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_mentalmodel_unchanged(self):
         """MentalModel.xml (subsymbolicOrder=1) still creates and forwards."""
         result = self._mentalmodel_forward()
@@ -131,6 +133,7 @@ class TestBackwardCompat(unittest.TestCase):
         self.assertTrue(all(bool(torch.isfinite(value).all())
                             for value in result if torch.is_tensor(value)))
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_mentalmodel_compaction_overflow_regression(self):
         """Reproduce the known failing initialization, never a selected pass.
 

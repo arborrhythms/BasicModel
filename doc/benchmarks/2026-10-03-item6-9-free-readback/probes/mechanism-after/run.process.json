@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_free_reconstruction.py",
+    "test/test_gradient_factorization.py",
+    "test/test_grammar_separator.py",
+    "test/test_sentence_comparison.py",
+    "test/test_objective_ownership.py",
+    "test/test_grammar_object_leaves.py",
+    "test/test_live_references.py",
+    "test/test_ops_lift_lower.py",
+    "test/test_row_local_concept_optimizer.py"
+  ],
+  "pid": 42042,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 892618552,
+  "elapsed_seconds": 11.099859917012509,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/mechanism-after/run.log"
+}

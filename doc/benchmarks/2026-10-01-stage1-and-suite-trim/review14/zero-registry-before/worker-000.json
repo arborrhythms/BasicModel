@@ -1,0 +1,34 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+  ],
+  "completed": [
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.022808791996794753,
+      "message": "test/test_sentence_compose.py:223: in test_disabled_sentence_prediction_leaves_adam_momentum_unused\n    cost, *_ = BasicModel._sentence_path_cost(\nbin/Models.py:20797: in _sentence_path_cost\n    prediction_errors, contrast_errors = disc._sentence_prediction_errors\n                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_sentence_prediction_errors'. Did you mean: 'sentence_prediction_cost'?",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00027762500394601375,
+      "message": "test/test_generation_lesson.py:28: in test_sentence_generation_lesson_keeps_its_weighted_output_gradient\n    cost, *_ = BasicModel._sentence_path_cost(\nbin/Models.py:20786: in _sentence_path_cost\n    errors.merge(self._grammar_lesson_errors[name], prefix='grammar.',\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_grammar_lesson_errors'. Did you mean: 'grammar_lesson_weight'?",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

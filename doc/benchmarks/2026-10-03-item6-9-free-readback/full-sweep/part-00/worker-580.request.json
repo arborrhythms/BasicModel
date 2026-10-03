@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reconstruction_precedence.py::test_only_strictly_lower_reconstruction_wins_and_tie_keeps_greedy"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-580.recycle.json"
+}

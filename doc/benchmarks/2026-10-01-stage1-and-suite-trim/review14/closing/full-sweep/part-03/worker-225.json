@@ -1,0 +1,84 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+    "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+    "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+    "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+    "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+    "test/test_within_whole_division.py::test_live_no_store_is_inert",
+    "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole"
+  ],
+  "completed": [
+    "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+    "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+    "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+    "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+    "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+    "test/test_within_whole_division.py::test_live_no_store_is_inert",
+    "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01773604200570844,
+      "message": "test/test_within_whole_division.py:94: in test_live_default_on_divides_punct_run\n    ws = _whole_space()\n         ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004677666001953185,
+      "message": "test/test_within_whole_division.py:109: in test_live_attested_whole_stays_one_concept\n    ws = _whole_space()\n         ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.003955832988140173,
+      "message": "test/test_within_whole_division.py:125: in test_live_no_complete_tiling_keeps_span\n    ws_on = _whole_space()\n            ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004026708003948443,
+      "message": "test/test_within_whole_division.py:141: in test_live_seeded_bytes_alone_do_not_divide_words\n    ws = _whole_space()\n         ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.004100874997675419,
+      "message": "test/test_within_whole_division.py:150: in test_live_knob_off_restores_pre_t3_spans\n    ws = _whole_space(divideWithinWhole=False)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_store_is_inert",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0042177080031251535,
+      "message": "test/test_within_whole_division.py:159: in test_live_no_store_is_inert\n    ws = _whole_space()\n         ^^^^^^^^^^^^^^\ntest/test_within_whole_division.py:63: in _whole_space\n    return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20771: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00021675000607501715,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_within_whole_division.py', 170, 'Skipped: lxml not installed')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

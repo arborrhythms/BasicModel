@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_supplied_answer_training.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

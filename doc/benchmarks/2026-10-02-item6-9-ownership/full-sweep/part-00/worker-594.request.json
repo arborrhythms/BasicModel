@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_relevance_bases.py::test_symbol_history_projection"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-594.recycle.json"
+}

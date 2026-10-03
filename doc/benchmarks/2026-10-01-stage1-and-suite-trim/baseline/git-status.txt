@@ -1,0 +1,37 @@
+ M bin/Language.py
+ M bin/Layers.py
+ M bin/Models.py
+ M bin/SentenceCompose.py
+ M bin/Spaces.py
+ M doc/FutureWork.md
+ M doc/GradientFlow.md
+ M doc/Testing.md
+ M doc/Training.md
+ M doc/plans/2026-09-15-next-sentence-as-the-production-objective.md
+ M doc/plans/2026-09-29-item-6-9-xor-grammar.md
+ M test/reading_fixtures.py
+ M test/test_explicit_dimensions.py
+ M test/test_grammar_binary_ops.py
+ M test/test_item7_end_state_storage.py
+ M test/test_prepared_answer_boundary.py
+ M test/test_reverse_traversal.py
+ M test/test_sentence_compose.py
+ M test/test_subspace_what_stm_contract.py
+ M test/test_tied_operator_reconstruction.py
+ M todo.md
+?? doc/benchmarks/2026-09-30-item6-9/
+?? doc/benchmarks/2026-10-01-item6-9-continuation/
+?? doc/benchmarks/2026-10-01-item6-9-review/
+?? doc/benchmarks/2026-10-01-item6-9/
+?? doc/specs/2026-10-01-objective-conflicts.md
+?? test/test_concept_not.py
+?? test/test_grammar_object_leaves.py
+?? test/test_grammar_reconstruction_gate.py
+?? test/test_grammar_sentence_scope.py
+?? test/test_grammar_separator.py
+?? test/test_inverse_unary_exclusion.py
+?? test/test_sentence_comparison.py
+?? test/test_sentence_prediction_trials.py
+?? test/test_supplied_answer_training.py
+?? test/test_trial_policy_ownership.py
+?? test/test_understanding_readout.py

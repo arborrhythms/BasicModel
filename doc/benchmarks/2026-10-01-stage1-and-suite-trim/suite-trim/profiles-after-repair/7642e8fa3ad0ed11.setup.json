@@ -1,0 +1,908 @@
+{
+  "nodeid": "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+  "phase": "setup",
+  "elapsed_seconds": 2.2687080830000923,
+  "profile_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/profiles-after-repair/7642e8fa3ad0ed11.setup.prof",
+  "functions": [
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/tensor/_ops/single_dim_strategy.py",
+      "line": 627,
+      "function": "_resolve_foreach_elementwise_overload",
+      "primitive_calls": 225,
+      "calls": 225,
+      "self_seconds": 0.0024815690000000003,
+      "cumulative_seconds": 13.173515049
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/tensor/_ops/autogen.py",
+      "line": 337,
+      "function": "_find_foreach_variants",
+      "primitive_calls": 901,
+      "calls": 901,
+      "self_seconds": 0.0011034320000000001,
+      "cumulative_seconds": 3.8820129800000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/library.py",
+      "line": 441,
+      "function": "impl",
+      "primitive_calls": 159,
+      "calls": 159,
+      "self_seconds": 0.001349464,
+      "cumulative_seconds": 1.9709556680000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 8.000000000000001e-06,
+      "cumulative_seconds": 0.8979506660000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/base.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.6376e-05,
+      "cumulative_seconds": 0.89334
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/utils/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.2001e-05,
+      "cumulative_seconds": 0.8917355
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/utils/_chunking.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 7.749e-06,
+      "cumulative_seconds": 0.8842456660000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/utils/_param_validation.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.3874000000000001e-05,
+      "cumulative_seconds": 0.884022792
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/utils/validation.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.0752e-05,
+      "cumulative_seconds": 0.8138446250000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/utils/_array_api.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.3667000000000002e-05,
+      "cumulative_seconds": 0.7785576670000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/library.py",
+      "line": 272,
+      "function": "define",
+      "primitive_calls": 25,
+      "calls": 42,
+      "self_seconds": 0.0009727010000000001,
+      "cumulative_seconds": 0.762985208
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/utils/fixes.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.8207000000000003e-05,
+      "cumulative_seconds": 0.6841912090000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.5958000000000002e-05,
+      "cumulative_seconds": 0.457785667
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 8.292000000000001e-06,
+      "cumulative_seconds": 0.457036041
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/fsdp/_shard_utils.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 4.001e-06,
+      "cumulative_seconds": 0.45519341700000004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/tensor/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.4165e-05,
+      "cumulative_seconds": 0.45255158300000004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/stats/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 9.4534e-05,
+      "cumulative_seconds": 0.44691858300000004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/tensor/_ops/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.0624e-05,
+      "cumulative_seconds": 0.43915629100000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/tensor/_ops/autogen.py",
+      "line": 509,
+      "function": "auto_register_op_variants",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.00022787300000000002,
+      "cumulative_seconds": 0.439063334
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 806,
+      "function": "module_from_spec",
+      "primitive_calls": 2759,
+      "calls": 2759,
+      "self_seconds": 0.0019490800000000002,
+      "cumulative_seconds": 0.43660938000000005
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1291,
+      "function": "create_module",
+      "primitive_calls": 214,
+      "calls": 214,
+      "self_seconds": 0.00011668,
+      "cumulative_seconds": 0.415324793
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method _imp.create_dynamic>",
+      "primitive_calls": 214,
+      "calls": 214,
+      "self_seconds": 0.41496673500000003,
+      "cumulative_seconds": 0.415061071
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/embed.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.6747e-05,
+      "cumulative_seconds": 0.334313917
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/data.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.4458000000000001e-05,
+      "cumulative_seconds": 0.333766958
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/stats/_stats_py.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.00021832900000000002,
+      "cumulative_seconds": 0.31243095800000004
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1066,
+      "function": "get_code",
+      "primitive_calls": 2532,
+      "calls": 2532,
+      "self_seconds": 0.006454577,
+      "cumulative_seconds": 0.302436298
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/visualize.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 7.792000000000001e-06,
+      "cumulative_seconds": 0.246759
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1299,
+      "function": "exec_module",
+      "primitive_calls": 151,
+      "calls": 214,
+      "self_seconds": 0.000105394,
+      "cumulative_seconds": 0.24625695900000003
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method _imp.exec_dynamic>",
+      "primitive_calls": 151,
+      "calls": 214,
+      "self_seconds": 0.020640671000000003,
+      "cumulative_seconds": 0.24565983000000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.9124000000000002e-05,
+      "cumulative_seconds": 0.24083200000000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/exc.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.000366334,
+      "cumulative_seconds": 0.220268291
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/_lib/_docscrape.py",
+      "line": 579,
+      "function": "__init__",
+      "primitive_calls": 604,
+      "calls": 604,
+      "self_seconds": 0.000364447,
+      "cumulative_seconds": 0.22004113400000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/utils.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.00020937900000000002,
+      "cumulative_seconds": 0.218737958
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pandas/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.0292e-05,
+      "cumulative_seconds": 0.21811729200000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/arrow_dataset.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 7.133500000000001e-05,
+      "cumulative_seconds": 0.21748325000000002
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 755,
+      "function": "_compile_bytecode",
+      "primitive_calls": 2532,
+      "calls": 2532,
+      "self_seconds": 0.080313749,
+      "cumulative_seconds": 0.21073427800000002
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 1240,
+      "function": "_find_spec",
+      "primitive_calls": 2770,
+      "calls": 2852,
+      "self_seconds": 0.009634543,
+      "cumulative_seconds": 0.195333582
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/fx/experimental/symbolic_shapes.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.000147414,
+      "cumulative_seconds": 0.19417800000000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/_lib/_array_api.py",
+      "line": 930,
+      "function": "decorator",
+      "primitive_calls": 455,
+      "calls": 455,
+      "self_seconds": 0.0014272900000000001,
+      "cumulative_seconds": 0.19359145200000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/_lib/_docscrape.py",
+      "line": 140,
+      "function": "__init__",
+      "primitive_calls": 612,
+      "calls": 612,
+      "self_seconds": 0.000985049,
+      "cumulative_seconds": 0.193511326
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/matplotlib/pyplot.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.000112671,
+      "cumulative_seconds": 0.184925625
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sympy/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 8.195500000000001e-05,
+      "cumulative_seconds": 0.177636709
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py",
+      "line": 1264,
+      "function": "wrap",
+      "primitive_calls": 616,
+      "calls": 616,
+      "self_seconds": 0.000500691,
+      "cumulative_seconds": 0.16670254
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py",
+      "line": 921,
+      "function": "_process_class",
+      "primitive_calls": 616,
+      "calls": 616,
+      "self_seconds": 0.008390869,
+      "cumulative_seconds": 0.166201849
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.hasattr>",
+      "primitive_calls": 73490,
+      "calls": 76191,
+      "self_seconds": 0.011937838000000001,
+      "cumulative_seconds": 0.158546195
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/_lib/_docscrape.py",
+      "line": 388,
+      "function": "_parse",
+      "primitive_calls": 612,
+      "calls": 612,
+      "self_seconds": 0.003859509,
+      "cumulative_seconds": 0.14490208100000002
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method marshal.loads>",
+      "primitive_calls": 2532,
+      "calls": 2532,
+      "self_seconds": 0.12973276,
+      "cumulative_seconds": 0.12973276
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py",
+      "line": 1247,
+      "function": "dataclass",
+      "primitive_calls": 616,
+      "calls": 616,
+      "self_seconds": 0.000525638,
+      "cumulative_seconds": 0.115879175
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py",
+      "line": 449,
+      "function": "_create_fn",
+      "primitive_calls": 2481,
+      "calls": 2481,
+      "self_seconds": 0.004779373,
+      "cumulative_seconds": 0.11486744900000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/stats/distributions.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 3.3417e-05,
+      "cumulative_seconds": 0.11299858300000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/matplotlib/artist.py",
+      "line": 152,
+      "function": "_update_set_signature_and_docstring",
+      "primitive_calls": 106,
+      "calls": 106,
+      "self_seconds": 0.001086105,
+      "cumulative_seconds": 0.11139758200000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/matplotlib/artist.py",
+      "line": 119,
+      "function": "__init_subclass__",
+      "primitive_calls": 105,
+      "calls": 105,
+      "self_seconds": 0.00016135200000000002,
+      "cumulative_seconds": 0.110013125
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/decomposition/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 8.959e-06,
+      "cumulative_seconds": 0.10697737500000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pandas/core/api.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.4124e-05,
+      "cumulative_seconds": 0.10015670800000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/decomposition/_dict_learning.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.6581000000000003e-05,
+      "cumulative_seconds": 0.098203708
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sklearn/linear_model/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.596e-05,
+      "cumulative_seconds": 0.09768770800000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/matplotlib/figure.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.3083000000000002e-05,
+      "cumulative_seconds": 0.09228825
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/tensor/_ops/_conv_ops.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.9417e-05,
+      "cumulative_seconds": 0.09018625000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/matplotlib/artist.py",
+      "line": 1915,
+      "function": "kwdoc",
+      "primitive_calls": 120,
+      "calls": 120,
+      "self_seconds": 0.000179716,
+      "cumulative_seconds": 0.08779724500000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/matplotlib/projections/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 9.21e-06,
+      "cumulative_seconds": 0.08687679200000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/special/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 7.2456e-05,
+      "cumulative_seconds": 0.08279016700000001
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/re/__init__.py",
+      "line": 280,
+      "function": "_compile",
+      "primitive_calls": 17755,
+      "calls": 17755,
+      "self_seconds": 0.0054364240000000005,
+      "cumulative_seconds": 0.081804124
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/tensor/_dtensor_spec.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 6.917e-06,
+      "cumulative_seconds": 0.081365083
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 882,
+      "function": "cleandoc",
+      "primitive_calls": 8471,
+      "calls": 8471,
+      "self_seconds": 0.042113996,
+      "cumulative_seconds": 0.079932708
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py",
+      "line": 102,
+      "function": "find_spec",
+      "primitive_calls": 2851,
+      "calls": 2851,
+      "self_seconds": 0.002043824,
+      "cumulative_seconds": 0.079644563
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/matplotlib/image.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.6206e-05,
+      "cumulative_seconds": 0.07888062500000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/tensor/placement_types.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.2875e-05,
+      "cumulative_seconds": 0.07733008400000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/sympy/polys/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.8832e-05,
+      "cumulative_seconds": 0.076521292
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/huggingface_hub/__init__.py",
+      "line": 1214,
+      "function": "__getattr__",
+      "primitive_calls": 62,
+      "calls": 65,
+      "self_seconds": 3.5745000000000004e-05,
+      "cumulative_seconds": 0.07651803900000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py",
+      "line": 190,
+      "function": "_early_rewrite_bailout",
+      "primitive_calls": 2851,
+      "calls": 2851,
+      "self_seconds": 0.006646007000000001,
+      "cumulative_seconds": 0.076379604
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/matplotlib/artist.py",
+      "line": 1676,
+      "function": "pprint_setters",
+      "primitive_calls": 120,
+      "calls": 120,
+      "self_seconds": 0.0017676850000000002,
+      "cumulative_seconds": 0.07529791100000001
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1524,
+      "function": "find_spec",
+      "primitive_calls": 2850,
+      "calls": 2850,
+      "self_seconds": 0.0011112160000000002,
+      "cumulative_seconds": 0.074217475
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_library/custom_ops.py",
+      "line": 741,
+      "function": "_register_to_dispatcher",
+      "primitive_calls": 6,
+      "calls": 10,
+      "self_seconds": 5.0167e-05,
+      "cumulative_seconds": 0.07367404300000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_library/custom_ops.py",
+      "line": 789,
+      "function": "_register_autograd_dispatcher_impl",
+      "primitive_calls": 18,
+      "calls": 18,
+      "self_seconds": 5.0414e-05,
+      "cumulative_seconds": 0.07360245800000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_library/custom_ops.py",
+      "line": 793,
+      "function": "_register_adinplaceorview_dispatcher_impl",
+      "primitive_calls": 6,
+      "calls": 10,
+      "self_seconds": 7.8089e-05,
+      "cumulative_seconds": 0.073591958
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1495,
+      "function": "_get_spec",
+      "primitive_calls": 2850,
+      "calls": 2850,
+      "self_seconds": 0.002845321,
+      "cumulative_seconds": 0.07308455200000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/distributed/_functional_collectives.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.2959e-05,
+      "cumulative_seconds": 0.071828667
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/re/_compiler.py",
+      "line": 745,
+      "function": "compile",
+      "primitive_calls": 532,
+      "calls": 532,
+      "self_seconds": 0.000866801,
+      "cumulative_seconds": 0.07171980800000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/matplotlib/backend_bases.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.7209e-05,
+      "cumulative_seconds": 0.070977291
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/arrow_reader.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 2.025e-05,
+      "cumulative_seconds": 0.070748292
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 863,
+      "function": "getdoc",
+      "primitive_calls": 8281,
+      "calls": 8281,
+      "self_seconds": 0.002804745,
+      "cumulative_seconds": 0.06979
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/stats/_continuous_distns.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 0.000183288,
+      "cumulative_seconds": 0.06952316700000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/download/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 4.791e-06,
+      "cumulative_seconds": 0.068941375
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/library.py",
+      "line": 330,
+      "function": "_register_fake",
+      "primitive_calls": 20,
+      "calls": 20,
+      "self_seconds": 1.7501e-05,
+      "cumulative_seconds": 0.06858799900000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_library/fake_impl.py",
+      "line": 38,
+      "function": "register",
+      "primitive_calls": 20,
+      "calls": 20,
+      "self_seconds": 6.653300000000001e-05,
+      "cumulative_seconds": 0.068559165
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_library/custom_ops.py",
+      "line": 772,
+      "function": "_register_fake_dispatcher_impl",
+      "primitive_calls": 18,
+      "calls": 18,
+      "self_seconds": 3.2747000000000003e-05,
+      "cumulative_seconds": 0.068286081
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 1070,
+      "function": "findsource",
+      "primitive_calls": 43,
+      "calls": 43,
+      "self_seconds": 0.00010054600000000001,
+      "cumulative_seconds": 0.068258504
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/scipy/optimize/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 5.8951000000000005e-05,
+      "cumulative_seconds": 0.06791612500000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/datasets/download/download_manager.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 1.6083000000000002e-05,
+      "cumulative_seconds": 0.067863542
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_library/utils.py",
+      "line": 36,
+      "function": "get_source",
+      "primitive_calls": 20,
+      "calls": 20,
+      "self_seconds": 2.2422e-05,
+      "cumulative_seconds": 0.067638668
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 1688,
+      "function": "getframeinfo",
+      "primitive_calls": 20,
+      "calls": 20,
+      "self_seconds": 0.000105537,
+      "cumulative_seconds": 0.06761370800000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/library.py",
+      "line": 882,
+      "function": "wrap",
+      "primitive_calls": 32,
+      "calls": 32,
+      "self_seconds": 9.487200000000001e-05,
+      "cumulative_seconds": 0.067471998
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_library/custom_ops.py",
+      "line": 235,
+      "function": "inner",
+      "primitive_calls": 3,
+      "calls": 8,
+      "self_seconds": 1.9332e-05,
+      "cumulative_seconds": 0.066420043
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_library/custom_ops.py",
+      "line": 433,
+      "function": "inner",
+      "primitive_calls": 3,
+      "calls": 8,
+      "self_seconds": 4.3995e-05,
+      "cumulative_seconds": 0.066363875
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_library/custom_ops.py",
+      "line": 282,
+      "function": "__init__",
+      "primitive_calls": 3,
+      "calls": 8,
+      "self_seconds": 3.5622000000000006e-05,
+      "cumulative_seconds": 0.066103334
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1187,
+      "function": "get_data",
+      "primitive_calls": 2532,
+      "calls": 2532,
+      "self_seconds": 0.002342162,
+      "cumulative_seconds": 0.066077141
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py",
+      "line": 988,
+      "function": "getmodule",
+      "primitive_calls": 63,
+      "calls": 63,
+      "self_seconds": 0.004323406,
+      "cumulative_seconds": 0.06593671000000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/huggingface_hub/hf_api.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 7.708400000000001e-05,
+      "cumulative_seconds": 0.065552
+    },
+    {
+      "file": "<frozen importlib._bootstrap_external>",
+      "line": 1597,
+      "function": "find_spec",
+      "primitive_calls": 5074,
+      "calls": 5074,
+      "self_seconds": 0.012995387,
+      "cumulative_seconds": 0.06551124400000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pyarrow/parquet/__init__.py",
+      "line": 1,
+      "function": "<module>",
+      "primitive_calls": 1,
+      "calls": 1,
+      "self_seconds": 4.25e-06,
+      "cumulative_seconds": 0.065446959
+    }
+  ]
+}

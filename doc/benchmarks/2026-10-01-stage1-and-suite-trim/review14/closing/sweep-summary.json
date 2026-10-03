@@ -1,0 +1,58 @@
+{
+  "selected": 5060,
+  "completed": 5057,
+  "attempted": 5060,
+  "counts": {
+    "passed": 4672,
+    "skipped": 314,
+    "failed": 71,
+    "process_failed": 3
+  },
+  "report_counts": {
+    "passed": 4675,
+    "skipped": 314,
+    "failed": 71,
+    "process_failed": 3
+  },
+  "minutes": 214.65641266666668,
+  "source_matched": true,
+  "worker_peak_gib": 8.000999577343464,
+  "missing_process_metadata": [
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-02/worker-000.log",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-02/worker-001.log"
+  ],
+  "duplicate_cases": 10,
+  "extra_attempts": 17,
+  "wall_time_includes_receipt_repair": true,
+  "process_failures": [
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "process",
+      "outcome": "process_failed",
+      "reason": "memory",
+      "exit_code": 137,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-575.log"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]",
+      "phase": "process",
+      "outcome": "process_failed",
+      "reason": "aborted",
+      "exit_code": 125,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-623.log"
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+      "phase": "process",
+      "outcome": "process_failed",
+      "reason": "interrupted",
+      "exit_code": 125,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-01/worker-012.log"
+    }
+  ],
+  "baseline": {
+    "cases": 5219,
+    "wall_minutes": 122
+  },
+  "complete": true
+}

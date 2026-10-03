@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_ladder_idiom.xml",
+  "arm": "before",
+  "seed": null,
+  "configuration_changed": false,
+  "measurement": "one first training batch at configured batch; numerical execution without graph capture",
+  "backend": "none",
+  "build_seconds": 0.2580765419988893,
+  "batch": 8,
+  "reconstruct_in_loop": false,
+  "scope": "receipt control: XML reconstruction setting",
+  "training_seconds": 8.679129584001203,
+  "output_loss": 1.5578944683074951,
+  "reconstruction_loss": 0.13624748587608337,
+  "completed": true,
+  "total_seconds": 8.93809962499654
+}

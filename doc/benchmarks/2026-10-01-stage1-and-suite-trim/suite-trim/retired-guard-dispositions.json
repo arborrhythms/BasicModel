@@ -1,0 +1,487 @@
+[
+  {
+    "id": "test/test_bounded_test_runner.py::test_bounded_workers_ignore_iteration_xdist_request",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_conceptual_introspection.py::TestIntrospectionLayers::test_layer_classes_parked_in_legacy",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_dimensional_governance.py::test_serial_relaxes_symbol_dim_passthrough",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_item7_property_read_storage.py::test_property_read_does_not_save_event_property_primitive_product",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_item7_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_excludes_emb_params_when_frozen",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_mereology.py::TestCopyLayer::test_copy_layer_parked_in_legacy",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_mereology.py::TestCopyLayer::test_introspection_layers_parked_in_legacy",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_parthood_orders.py::TestMonotonicCodebookRequirement::test_allows_monotonic_without_cs_codebook",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_ps_reverse_e2e.py::test_grammar_has_no_and_token",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_validation_has_no_mps_host_sync",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_ws_cache_not_present_after_forward",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_cs_cache_not_present_after_forward",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_runBatch_reverse_path_does_not_depend_on_cs_cache",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_train_compile_target.py::test_mlx_compile_target_does_not_set_training_compile_env",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_when_encoding_v2.py::test_no_endpoint_bracket_api",
+    "action": "kept",
+    "reason": "Checks executed behavior, or moved beside its parked class in item 2."
+  },
+  {
+    "id": "test/test_abstraction_order_canonical.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_aligned_fold_binding.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_has_no_symbolicspace_ref",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_perceptualspace_does_not_define_autobind",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_bounded_stm_fold.py::test_binary_reducer_is_space_role_free",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_compose_operations.py::test_tiling_and_per_position_unary_implementations_are_deleted",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_conceptual_recurrence.py::test_combine_no_dropped_reverse",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_conceptual_recurrence.py::test_no_comprehension_seed_interface",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_conceptual_recurrence.py::test_reconstruct_enum_retired",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_config_scoping.py::TestDefaultsXml::test_architecture_has_model_wide_only",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_sigma_layers",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_attribute_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_variants_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_cs_stm_bookkeeping.py::TestSigmaPerceptRetired::test_sigma_percept_reverse_helper_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_no_cross_space_reach",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_cs_to_ss_forward.py::test_build_symbol_leg_is_retired",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_discourse_space.py::TestBackCompatShims::test_comprehension_priming_projection_is_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_grammar_sections.py::test_normalization_layer_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_item7_storage.py::test_sequence_concepts_are_retired_in_favor_of_ltm_references",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_item7_taxonomy.py::test_wholespace_has_no_taxonomy_or_truth_writer",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lbg_positive_int.py::test_wholespace_word_taxonomy_mutators_are_deleted",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_learn_score_components.py::test_learn_score_components_are_deleted",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_expand_masked_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_outputspace_expand_masked_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_arir_step_retired",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_getbatch_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_peer_embedding_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_predict_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_embed_token_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_get_space_embedding_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_get_mask_embedding_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_lexicon_helper_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_inputspace_forward_does_not_stash_raw_input",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::test_perceptualspace_embed_reads_subspace_not_raw",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_symbolic_space_paired_row_api_is_retired",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_lower_classes_no_substrate_borrow_in_source",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_mereology_raise.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_no_eos_sync.py::test_batch_advances_sentence_property_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestForwardArityContract::test_sourced_input_and_read_event_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestForwardArityContract::test_forward_input_refs_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestSubwholeSpaceRetired::test_subsymbolic_space_class_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestSubwholeSpaceRetired::test_subwholeSpace_ref_not_on_conceptual",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_perceptual_loopback.py::TestSubwholeSpaceRetired::test_subsymbolic_widen_dim_param_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_pi2_sigma2_folds.py::test_no_odds_transforms_on_the_new_path",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_no_sigma_percept",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestOwnership::test_symbolic_has_no_sigma",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestOwnership::test_conceptual_has_no_bare_sigma",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestOwnership::test_output_has_no_pilayer",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_aliases_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_pi_sigma_ownership.py::TestForwardReverseAliases::test_conceptual_no_sigma_percept_forward",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_property_tiling.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_ps_single_arg_refactor.py::TestPSOwnsSingleLayers::test_ps_pi_attribute_retired",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_input_module_list_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_ps_single_arg_refactor.py::TestPSLegacyAttributesGone::test_pi_concept_module_list_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_relative_sentence_codebook_insertion.py::test_wholespace_truth_and_taxonomy_writer_is_deleted",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_relative_sentence_codebook_insertion.py::test_gated_relation_routes_are_deleted",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_role_collapsed_grammar.py::test_no_pos_or_category_state_names",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_sparse_layer.py::test_concept_store_absent_from_generic_sparse_layer",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_stage_3_parser_cleanup.py::test_chart_class_no_longer_exists",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAtConstruction::test_ws_cache_not_present_after_construction",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_stage_caches_retired.py::TestPerStageCachesRetiredAtConstruction::test_cs_cache_not_present_after_construction",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_stm_residual_no_sync.py::test_no_comprehension_prediction_api",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_subspace_what_stm_contract.py::test_rule_codebook_does_not_determine_parent_vectors",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_subspace_what_stm_contract.py::test_stack_router_gate_is_retired",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_paired_row_api_is_retired",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_truth_criterion_gates_learning.py::test_content_gate_and_alternative_relation_writer_are_deleted",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_truth_layer_record_many.py::test_should_store_function_deleted",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_two_codebook_meta_taxonomy.py::test_wholespace_has_no_meta_decode_or_persisted_taxonomy",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_two_truth_stores.py::test_retired_relative_store_is_absent",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_unified_lexicon_codebook.py::test_retired_wholespace_taxonomy_writer_is_absent",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_paired_insert_api_is_gone",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_router_kind_is_signal",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_grammar_rewrite.py::test_grammar_has_no_marker_helper_rules",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_chunk_layer_bpe.py::TestChunkLayerBPE::test_no_prototype_table",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_meronomy_laws.py::test_no_legacy_chart_helper_names",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_lift_lower_factorization.py::TestRawGateRetired::test_lift_layer_no_raw_gate",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_tied_vectors_compile.py::test_tie_api_is_retired",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  },
+  {
+    "id": "test/test_grammar_ps_ss_sections.py::test_cfg_loader_removed",
+    "action": "consolidated",
+    "target": "test/test_retired_names.py::test_retired_names_remain_absent"
+  }
+]

@@ -1,0 +1,10 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________________ test_ss_unity_validity_at_stem ________________________
+test/test_serial_object_meta.py:327: in test_ss_unity_validity_at_stem
+    assert real > 0, "a live unity must feed the universe branch"
+E   AssertionError: a live unity must feed the universe branch
+E   assert 0 > 0
+=========================== short test summary info ============================
+FAILED test/test_serial_object_meta.py::test_ss_unity_validity_at_stem - Asse...
+1 failed in 3.41s

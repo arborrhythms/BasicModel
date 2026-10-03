@@ -1,0 +1,9 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1739: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/probe_qa_ingestion.py", line 8, in <module>
+    print('CONFIG',model.serial,model.useGrammar,model._sentence_ends,model.concept_binding,flush=True)
+                                                 ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1972, in __getattr__
+    raise AttributeError(
+AttributeError: 'BasicModel' object has no attribute '_sentence_ends'. Did you mean: '_sentence_run'?

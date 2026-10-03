@@ -1,0 +1,78 @@
+bin/bench_train_word_bucket.py:456:        model.flush_word_buffers()
+bin/Layers.py:10384:    legacy ``begin_what_episode``) LIVE on the autograd graph so the root answer
+bin/Layers.py:10534:    def begin_what_episode(self, b=0):
+bin/eval_fineweb_learning.py:121:        model.flush_word_buffers()
+test/test_basicmodel.py:2865:    def test_add_word_start_state(self):
+test/test_basicmodel.py:2867:        ws.add_word(0, 0, 0)
+test/test_basicmodel.py:2872:        ws.add_word(0, 0, 0)
+test/test_basicmodel.py:2873:        ws.add_word(0, 42, 0)
+test/test_basicmodel.py:2883:    def test_add_word_validates(self):
+test/test_basicmodel.py:2886:            ws.add_word(0, 0, 99)  # bad rule
+test/test_what_episode_memory.py:29:    memory.begin_what_episode(0)
+test/test_what_episode_memory.py:42:    memory.begin_what_episode(0)
+test/test_what_episode_memory.py:92:    memory.begin_what_episode(0)
+test/test_thought_legacy_boundaries.py:21:        memory.begin_what_episode()
+test/test_thought_legacy_boundaries.py:27:    memory.begin_what_episode(b=1)
+test/test_thought_legacy_boundaries.py:35:    memory.begin_what_episode()
+test/test_thought_legacy_boundaries.py:46:    memory.begin_what_episode()
+test/test_word_buffer_flush.py:6:doc-streaming loop then calls ``flush_word_buffer`` once per tick to
+test/test_word_buffer_flush.py:12:scalar ``add_word(int, ...)`` path and the new vector
+test/test_word_buffer_flush.py:13:``add_word(LongTensor, ...)`` path.
+test/test_word_buffer_flush.py:28:# The vector ``add_word`` overload requires a TheGrammar with at least
+test/test_word_buffer_flush.py:57:    sub.flush_word_buffer()
+test/test_word_buffer_flush.py:63:    """Scalar add_word and vector add_word produce identical entries.
+test/test_word_buffer_flush.py:80:        ref_sub.add_word(b, v, r, order=o, leaf1=l1, leaf2=l2, leaf3=l3)
+test/test_word_buffer_flush.py:90:    cand_sub.add_word(
+test/test_word_buffer_flush.py:101:    cand_sub.add_word(
+test/test_word_buffer_flush.py:110:    cand_sub.flush_word_buffer()
+test/test_word_buffer_flush.py:125:    sub.add_word(
+test/test_word_buffer_flush.py:131:    sub.flush_word_buffer()
+test/test_word_buffer_flush.py:135:    sub.add_word(
+test/test_word_buffer_flush.py:140:    sub.flush_word_buffer()
+test/test_word_buffer_flush.py:154:    sub.add_word(
+test/test_word_buffer_flush.py:160:    sub.flush_word_buffer()
+test/test_word_buffer_flush.py:173:    sub.add_word(0, 1, 0)
+test/test_word_buffer_flush.py:174:    sub.add_word(1, 2, 0)
+test/test_word_buffer_flush.py:177:    sub.flush_word_buffer()
+bin/Spaces.py:6536:        # vector-typed ``add_word`` overload below; the outer doc-streaming
+bin/Spaces.py:6537:        # loop then calls ``flush_word_buffer`` once per tick to materialize
+bin/Spaces.py:6538:        # ``self.word`` for legacy consumers. The scalar ``add_word`` overload
+bin/Spaces.py:7389:    def add_word(self, batch, vector, rule, order=0,
+bin/Spaces.py:7409:          calls ``flush_word_buffer`` once per tick to materialize the
+bin/Spaces.py:7422:            self._add_word_vec(batch, vector, rule, order=order,
+bin/Spaces.py:7434:        ``clear_word_buffer`` / ``flush_word_buffer``).
+bin/Spaces.py:7452:        irrelevant. Called by ``flush_word_buffer`` after materializing
+bin/Spaces.py:7457:    def _add_word_vec(self, b_indices, vec_idxs, rule_ids,
+bin/Spaces.py:7459:        """Tensor scatter into ``word_records`` -- vector ``add_word`` body.
+bin/Spaces.py:7510:    def flush_word_buffer(self):
+bin/Spaces.py:7535:                # tuple matches the legacy add_word output exactly.
+test/test_space_carrier_bridge.py:111:    carrier = space.to_pipeline_carrier(_control())
+test/test_space_carrier_bridge.py:186:            first.as_pipeline_stage(
+test/test_space_carrier_bridge.py:192:            second.as_pipeline_stage(
+test/test_space_carrier_bridge.py:219:    stage = space.as_pipeline_stage(
+test/test_space_carrier_bridge.py:230:    stage = space.as_pipeline_stage(
+test/test_space_carrier_bridge.py:242:    carrier = space.to_pipeline_carrier(_control())
+test/test_space_carrier_bridge.py:245:    rebuilt = space.from_pipeline_carrier(carrier)
+test/test_space_carrier_bridge.py:270:    carrier = space.to_pipeline_carrier(_control(), prior=prior)
+test/test_packed_reconstruction_parity.py:53:    model.flush_word_buffers()
+test/test_expectation_review.py:81:    memory.begin_what_episode(0)
+bin/space_carrier.py:30:    def carrier_schema(self):
+bin/space_carrier.py:34:        schema = getattr(self, '_carrier_schema', None)
+bin/space_carrier.py:47:            object.__setattr__(self, '_carrier_schema', schema)
+bin/space_carrier.py:162:    def _carrier_activation(legacy_subspace):
+bin/space_carrier.py:172:    def _carrier_band_from_index(legacy_subspace, indices, role, band_index):
+bin/space_carrier.py:188:    def to_pipeline_carrier(self, control, legacy_subspace=None, *, prior=None):
+bin/space_carrier.py:217:        activation = self._carrier_activation(legacy)
+bin/space_carrier.py:233:                where = self._carrier_band_from_index(
+bin/space_carrier.py:237:                when = self._carrier_band_from_index(
+bin/space_carrier.py:251:                event = torch.empty(0, 0, self.carrier_schema.event_width)
+bin/space_carrier.py:287:            schema=self.carrier_schema,
+bin/space_carrier.py:294:    def from_pipeline_carrier(self, carrier):
+bin/space_carrier.py:332:    def as_pipeline_stage(
+bin/space_carrier.py:373:            legacy_in = self.from_pipeline_carrier(carrier)
+bin/space_carrier.py:388:            return self.to_pipeline_carrier(
+test/test_thought_checkpoint_credit.py:13:    memory.begin_what_episode()
+bin/Models.py:15944:    def flush_word_buffers(self):
+bin/Models.py:15957:            if sub is None or not hasattr(sub, 'flush_word_buffer'):
+bin/Models.py:15959:            sub.flush_word_buffer()
+bin/Models.py:16509:                self.flush_word_buffers()

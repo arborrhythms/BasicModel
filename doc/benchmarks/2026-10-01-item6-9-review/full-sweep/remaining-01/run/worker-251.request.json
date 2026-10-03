@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mereology.py::TestSTEAnswer::test_backward_routes_through_q"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-251.recycle.json"
+}

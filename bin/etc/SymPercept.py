@@ -1,5 +1,15 @@
 """Analytic NumPy experiment for a reversible 2D linear perceptual map."""
 
+import sys
+from pathlib import Path
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    if "--demo" not in sys.argv:
+        import os
+        os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+        os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+        os.environ.setdefault("MPLBACKEND", "Agg")
+
 import numpy as np
 import util
 import matplotlib.pyplot as plt
@@ -270,5 +280,28 @@ def train_bidirectional_model(num_epochs=100, lr=0.001, num_samples=128):
 # Module Exposure
 # -------------------------------
 __all__ = ['BidirectionalLinearNumpy', 'get_optimizer', 'train_bidirectional_model', 'NumpySGD']
-if __name__ == '__main__':
+if __name__ == "__main__" and "--demo" in sys.argv:
     train_bidirectional_model(num_epochs=10000, lr=0.001, num_samples=128)
+
+
+if __name__ == "__main__" and "--demo" not in sys.argv:
+    import unittest
+    from util import TheDevice
+    util.init_device("cpu")
+
+    class TestSymPercept(unittest.TestCase):
+        def test_bidirectional_creation(self):
+            model = BidirectionalLinearNumpy()
+            self.assertIsNotNone(model)
+            self.assertEqual(model.dim, 2)
+
+        def test_forward_reverse(self):
+            model = BidirectionalLinearNumpy()
+            x = np.random.randn(1, 2)
+            y = model.forward(x)
+            x_rec = model.inverse(y)
+            err = np.abs(x - x_rec).max()
+            self.assertLess(err, 1e-4,
+                            f"SymPercept reverse error: {err:.6f}")
+
+    unittest.main()

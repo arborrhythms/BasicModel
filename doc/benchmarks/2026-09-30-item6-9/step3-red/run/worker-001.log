@@ -1,0 +1,31 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml] ____
+doc/benchmarks/2026-09-30-item6-9/probe_step3.py:38: in test_grammar_resolves_each_word_to_its_full_object_code
+    assert len(seen) == 8, f'every real word must resolve once; observed {len(seen)} object leaves'
+E   AssertionError: every real word must resolve once; observed 0 object leaves
+E   assert 0 == 8
+E    +  where 0 = len([])
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]
+1 failed, 4 warnings in 2.61s

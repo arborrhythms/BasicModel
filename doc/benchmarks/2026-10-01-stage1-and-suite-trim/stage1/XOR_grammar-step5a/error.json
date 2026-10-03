@@ -1,0 +1,5 @@
+{
+  "type": "RuntimeError",
+  "message": "tied reconstruction bank requires staged word and sentence masks",
+  "seconds": 0.5913316669975757
+}

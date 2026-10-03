@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words"
+  ],
+  "completed": [
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words"
+  ],
+  "slow_selected": [
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07962266702088527,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

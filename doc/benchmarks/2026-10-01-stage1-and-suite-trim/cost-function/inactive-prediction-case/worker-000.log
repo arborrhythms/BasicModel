@@ -1,0 +1,12 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_functional_prediction_cost_does_not_mutate_an_inactive_row ________
+test/test_sentence_journal.py:126: in test_functional_prediction_cost_does_not_mutate_an_inactive_row
+    assert error.shape == count.shape == (2,)
+E   assert torch.Size([]) == (2,)
+E     
+E     Right contains one more item: 2
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row
+1 failed in 2.12s

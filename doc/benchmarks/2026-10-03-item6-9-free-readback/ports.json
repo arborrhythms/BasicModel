@@ -1,0 +1,5071 @@
+[
+  {
+    "file": "test/objective_conflicts_probe.py",
+    "old": "ports/objective_conflicts_probe.py/old.py.txt",
+    "new": "ports/objective_conflicts_probe.py/new.py.txt",
+    "reason": "Observe actual optimizer displacement coordinate by coordinate and the kept recorded derivation each epoch. Selection audit uses reconstruction alone. No extra training or randomness.",
+    "cases": [],
+    "added": [],
+    "old_sha256": "f9a5ad297c71bd8b34f716e74573d307bbb838be361dd20410975e27a7faa68e",
+    "new_sha256": "d747056a0b0eaa50507ef494bdc040b501a54df4457a58657292d35b3089007c"
+  },
+  {
+    "file": "test/test_boolean_reverse_recommender.py",
+    "old": "ports/test_boolean_reverse_recommender.py/old.py.txt",
+    "new": "ports/test_boolean_reverse_recommender.py/new.py.txt",
+    "reason": "The conjunction/disjunction parents and independent expected kernels use the decided product/mean; exact recomposition and gradient assertions remain.",
+    "cases": [
+      {
+        "old": "test_conjunction_reverse_no_basis_fails_loud",
+        "new": "test_conjunction_reverse_no_basis_fails_loud",
+        "body_changed": false,
+        "old_lines": [
+          38,
+          45
+        ],
+        "new_lines": [
+          30,
+          37
+        ]
+      },
+      {
+        "old": "test_disjunction_reverse_no_basis_fails_loud",
+        "new": "test_disjunction_reverse_no_basis_fails_loud",
+        "body_changed": false,
+        "old_lines": [
+          48,
+          54
+        ],
+        "new_lines": [
+          40,
+          46
+        ]
+      },
+      {
+        "old": "test_conjunction_reverse_with_basis_recovers_pair",
+        "new": "test_conjunction_reverse_with_basis_recovers_pair",
+        "body_changed": true,
+        "old_lines": [
+          57,
+          67
+        ],
+        "new_lines": [
+          49,
+          59
+        ]
+      },
+      {
+        "old": "test_disjunction_reverse_with_basis_recovers_pair",
+        "new": "test_disjunction_reverse_with_basis_recovers_pair",
+        "body_changed": true,
+        "old_lines": [
+          70,
+          78
+        ],
+        "new_lines": [
+          62,
+          70
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "7c19064687567b64bafb069345f160d557190c5ab6a1d7ec5b1a8d0fafb4aafb",
+    "new_sha256": "6854fabdc856b7d67fd8a8d9335f1022b49383276dec0bf568821cfad090ee3d"
+  },
+  {
+    "file": "test/test_compiled_operator_diagonal.py",
+    "old": "ports/test_compiled_operator_diagonal.py/old.py.txt",
+    "new": "ports/test_compiled_operator_diagonal.py/new.py.txt",
+    "reason": "New exact AOT conditional-backward regression for the production free inverse: active LDU diagonal gradient and inactive zero gradient have compatible dense layouts.",
+    "cases": [],
+    "added": [
+      "test_free_candidate_search_compiles_backward_through_native_operators",
+      "test_functional_ldu_cond_backward_is_dense_and_exact",
+      "test_ldu_diagonal_cond_backward_is_dense_and_exact"
+    ],
+    "old_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "new_sha256": "a80588b6ffa29ff38b53e83e9d833f5a0d52ae8413141e56c53c1989bb2bf854"
+  },
+  {
+    "file": "test/test_concept_binding_operators.py",
+    "old": "ports/test_concept_binding_operators.py/old.py.txt",
+    "new": "ports/test_concept_binding_operators.py/new.py.txt",
+    "reason": "New three-face tests for product, mean, min and max; reference identity, finite zero-product gradient, and both operands searched for affine and discarding rules.",
+    "cases": [],
+    "added": [
+      "test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+      "test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+      "test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+      "test_free_discarding_operator_still_searches_both_bank_operands",
+      "test_free_lift_inverse_searches_both_operands_from_the_bank",
+      "test_three_faces_bind_and_search_the_same_pair"
+    ],
+    "old_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "new_sha256": "b02255efa91e4ba77e1e6edcab5f5ebcc8a56f6b08443598b11308e019d37fc3"
+  },
+  {
+    "file": "test/test_definition_attribution.py",
+    "old": "ports/test_definition_attribution.py/old.py.txt",
+    "new": "ports/test_definition_attribution.py/new.py.txt",
+    "reason": "The lightweight shared-bank fixture names its conceptual owner; stored object evidence assertions remain.",
+    "cases": [
+      {
+        "old": "test_descent_intersects_cases_with_the_present_field",
+        "new": "test_descent_intersects_cases_with_the_present_field",
+        "body_changed": false,
+        "old_lines": [
+          7,
+          22
+        ],
+        "new_lines": [
+          7,
+          22
+        ]
+      },
+      {
+        "old": "test_descent_without_a_field_chooses_one_case",
+        "new": "test_descent_without_a_field_chooses_one_case",
+        "body_changed": false,
+        "old_lines": [
+          25,
+          33
+        ],
+        "new_lines": [
+          25,
+          33
+        ]
+      },
+      {
+        "old": "test_descent_keeps_the_source_pole_and_scope",
+        "new": "test_descent_keeps_the_source_pole_and_scope",
+        "body_changed": false,
+        "old_lines": [
+          36,
+          46
+        ],
+        "new_lines": [
+          36,
+          46
+        ]
+      },
+      {
+        "old": "test_percept_attribution_follows_signed_definitions_without_complements",
+        "new": "test_percept_attribution_follows_signed_definitions_without_complements",
+        "body_changed": false,
+        "old_lines": [
+          49,
+          60
+        ],
+        "new_lines": [
+          49,
+          60
+        ]
+      },
+      {
+        "old": "test_passback_scales_unknown_parts_without_erasing_location",
+        "new": "test_passback_scales_unknown_parts_without_erasing_location",
+        "body_changed": true,
+        "old_lines": [
+          76,
+          93
+        ],
+        "new_lines": [
+          76,
+          93
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "1c5d050160c50fce59901e7138a00ab33cd4141f6fc38b2ca62738e4859abdb2",
+    "new_sha256": "01ecf0d4c2159200bb669086330916bbb27d116e781c82d748832be130a7df53"
+  },
+  {
+    "file": "test/test_free_reconstruction.py",
+    "old": "ports/test_free_reconstruction.py/old.py.txt",
+    "new": "ports/test_free_reconstruction.py/new.py.txt",
+    "reason": "Replace the retired two-term contract with only free_bytes. Neither the leaf values nor a retained reference may drive inversion.",
+    "cases": [
+      {
+        "old": "test_readback_uses_signed_activation_cosine_and_priming",
+        "new": "test_readback_uses_signed_activation_cosine_and_priming",
+        "body_changed": false,
+        "old_lines": [
+          5,
+          13
+        ],
+        "new_lines": [
+          5,
+          13
+        ]
+      },
+      {
+        "old": "test_readback_error_reaches_true_and_competing_codes_without_unit_constraint",
+        "new": "test_readback_error_reaches_true_and_competing_codes_without_unit_constraint",
+        "body_changed": false,
+        "old_lines": [
+          16,
+          25
+        ],
+        "new_lines": [
+          16,
+          25
+        ]
+      },
+      {
+        "old": "test_free_trial_uses_no_reference_or_offsets_and_keeps_both_terms",
+        "new": "test_free_trial_uses_no_reference_or_offsets_and_only_free_term",
+        "body_changed": true,
+        "old_lines": [
+          28,
+          63
+        ],
+        "new_lines": [
+          28,
+          60
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "fb64858892ddd41ef942a86d92e8b9c0bb1b14550268f2d844d2b4841ef407a9",
+    "new_sha256": "92e8a5195908b13fcaa9cc9fa057b9b807ee1cb4263d5337833dd916f54546a8"
+  },
+  {
+    "file": "test/test_gradient_factorization.py",
+    "old": "ports/test_gradient_factorization.py/old.py.txt",
+    "new": "ports/test_gradient_factorization.py/new.py.txt",
+    "reason": "Codes are optimizer parameters with reconstruction ownership. Physical identity finds an aliased parameter without assuming its first registered name.",
+    "cases": [
+      {
+        "old": "test_operator_cosine_reads_weighted_objectives_without_mutating_gradients",
+        "new": "test_operator_cosine_reads_weighted_objectives_without_mutating_gradients",
+        "body_changed": false,
+        "old_lines": [
+          13,
+          30
+        ],
+        "new_lines": [
+          13,
+          30
+        ]
+      },
+      {
+        "old": "test_sparse_operator_cosine_uses_touched_rows",
+        "new": "test_sparse_operator_cosine_uses_touched_rows",
+        "body_changed": false,
+        "old_lines": [
+          33,
+          43
+        ],
+        "new_lines": [
+          33,
+          43
+        ]
+      },
+      {
+        "old": "test_missing_or_zero_gradients_are_not_reported_as_agreement",
+        "new": "test_missing_or_zero_gradients_are_not_reported_as_agreement",
+        "body_changed": false,
+        "old_lines": [
+          46,
+          52
+        ],
+        "new_lines": [
+          46,
+          52
+        ]
+      },
+      {
+        "old": "test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned",
+        "new": "test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned",
+        "body_changed": false,
+        "old_lines": [
+          55,
+          61
+        ],
+        "new_lines": [
+          55,
+          61
+        ]
+      },
+      {
+        "old": "test_persistent_opposition_is_named_without_changing_training",
+        "new": "test_persistent_opposition_is_named_without_changing_training",
+        "body_changed": false,
+        "old_lines": [
+          64,
+          75
+        ],
+        "new_lines": [
+          64,
+          75
+        ]
+      },
+      {
+        "old": "test_large_finite_gradients_and_mixed_sparse_dense_cosine",
+        "new": "test_large_finite_gradients_and_mixed_sparse_dense_cosine",
+        "body_changed": false,
+        "old_lines": [
+          78,
+          86
+        ],
+        "new_lines": [
+          78,
+          86
+        ]
+      },
+      {
+        "old": "test_retired_projection_configuration_is_rejected",
+        "new": "test_retired_projection_configuration_is_rejected",
+        "body_changed": false,
+        "old_lines": [
+          89,
+          95
+        ],
+        "new_lines": [
+          89,
+          95
+        ]
+      },
+      {
+        "old": "test_policy_observation_and_checked_truth_effect_are_detached",
+        "new": "test_policy_observation_and_checked_truth_effect_are_detached",
+        "body_changed": false,
+        "old_lines": [
+          98,
+          116
+        ],
+        "new_lines": [
+          98,
+          116
+        ]
+      },
+      {
+        "old": "test_normal_batch_logs_owned_optimizer_gradients",
+        "new": "test_normal_batch_logs_owned_optimizer_gradients",
+        "body_changed": true,
+        "old_lines": [
+          119,
+          155
+        ],
+        "new_lines": [
+          119,
+          157
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "ccf08b3d99a47598109fbc300cff27a124c68cae568c2aeb671b278cf86da7fb",
+    "new_sha256": "25e368e5f1bf682788b37d893c5ac03a35acff01ef092d8e45f561ce25fba0b2"
+  },
+  {
+    "file": "test/test_grammar_reconstruction_gate.py",
+    "old": "ports/test_grammar_reconstruction_gate.py/old.py.txt",
+    "new": "ports/test_grammar_reconstruction_gate.py/new.py.txt",
+    "reason": "Product/mean expected pair includes same-row conjunction identity. Observer expects no occurrence reference and keeps bounds, fidelity and availability assertions.",
+    "cases": [
+      {
+        "old": "test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient",
+        "new": "test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient",
+        "body_changed": true,
+        "old_lines": [
+          5,
+          23
+        ],
+        "new_lines": [
+          5,
+          27
+        ]
+      },
+      {
+        "old": "test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+        "new": "test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+        "body_changed": true,
+        "old_lines": [
+          26,
+          76
+        ],
+        "new_lines": [
+          30,
+          81
+        ]
+      },
+      {
+        "old": "test_gate_captures_grammar_words_without_a_second_forward",
+        "new": "test_gate_captures_grammar_words_without_a_second_forward",
+        "body_changed": false,
+        "old_lines": [
+          79,
+          103
+        ],
+        "new_lines": [
+          84,
+          108
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "afe19575938129777c631738fad154b76d7e7613456a0c2a91b2cb624fe6c296",
+    "new_sha256": "df96de1a6dd50fa50a9adb02845cc5dc47547a7c1b33a3c809e287e26740b3aa"
+  },
+  {
+    "file": "test/test_grammar_separator.py",
+    "old": "ports/test_grammar_separator.py/old.py.txt",
+    "new": "ports/test_grammar_separator.py/new.py.txt",
+    "reason": "Observer forwards the new priming weights to the unchanged production scorer. Separator, punctuation and admission assertions remain.",
+    "cases": [
+      {
+        "old": "test_mixing_separator_is_perceived_but_not_pushed_or_read_back",
+        "new": "test_mixing_separator_is_perceived_but_not_pushed_or_read_back",
+        "body_changed": true,
+        "old_lines": [
+          9,
+          78
+        ],
+        "new_lines": [
+          9,
+          78
+        ]
+      },
+      {
+        "old": "test_whitespace_classification_keeps_unknown_words_and_punctuation",
+        "new": "test_whitespace_classification_keeps_unknown_words_and_punctuation",
+        "body_changed": false,
+        "old_lines": [
+          81,
+          102
+        ],
+        "new_lines": [
+          81,
+          102
+        ]
+      },
+      {
+        "old": "test_missing_word_text_row_uses_observed_bytes",
+        "new": "test_missing_word_text_row_uses_observed_bytes",
+        "body_changed": false,
+        "old_lines": [
+          105,
+          116
+        ],
+        "new_lines": [
+          105,
+          116
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "df048bc6fd57c09516829147f44acb2cab155c69ac971d9a2cfef3c1c494ec9e",
+    "new_sha256": "8ed3e6f294f8edd6d0081912e8c1fda9449d17a887e3b1f88af6d500b69d70bb"
+  },
+  {
+    "file": "test/test_heat_reverse_wiring.py",
+    "old": "ports/test_heat_reverse_wiring.py/old.py.txt",
+    "new": "ports/test_heat_reverse_wiring.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "TestHeatReverseWiringLiveON::test_off_baseline_picks_larger_norm_row",
+        "new": "TestHeatReverseWiringLiveON::test_off_baseline_picks_larger_norm_row",
+        "body_changed": true,
+        "old_lines": [
+          257,
+          270
+        ],
+        "new_lines": [
+          257,
+          270
+        ]
+      },
+      {
+        "old": "TestHeatReverseWiringLiveON::test_on_primer_steers_pick_to_hot_typed_row",
+        "new": "TestHeatReverseWiringLiveON::test_on_primer_steers_pick_to_hot_typed_row",
+        "body_changed": false,
+        "old_lines": [
+          272,
+          278
+        ],
+        "new_lines": [
+          272,
+          278
+        ]
+      },
+      {
+        "old": "TestHeatReverseWiringLiveON::test_on_and_off_differ",
+        "new": "TestHeatReverseWiringLiveON::test_on_and_off_differ",
+        "body_changed": false,
+        "old_lines": [
+          280,
+          286
+        ],
+        "new_lines": [
+          280,
+          286
+        ]
+      },
+      {
+        "old": "TestHeatReverseSelfPriming::test_selected_left_row_is_reprimed",
+        "new": "TestHeatReverseSelfPriming::test_selected_left_row_is_reprimed",
+        "body_changed": false,
+        "old_lines": [
+          295,
+          312
+        ],
+        "new_lines": [
+          295,
+          312
+        ]
+      },
+      {
+        "old": "TestHeatReverseSelfPriming::test_off_path_records_no_selection",
+        "new": "TestHeatReverseSelfPriming::test_off_path_records_no_selection",
+        "body_changed": false,
+        "old_lines": [
+          314,
+          324
+        ],
+        "new_lines": [
+          314,
+          324
+        ]
+      },
+      {
+        "old": "TestHeatReverseWiringIntersectionON::test_off_baseline_picks_smaller_norm_row",
+        "new": "TestHeatReverseWiringIntersectionON::test_off_baseline_picks_smaller_norm_row",
+        "body_changed": true,
+        "old_lines": [
+          400,
+          413
+        ],
+        "new_lines": [
+          400,
+          413
+        ]
+      },
+      {
+        "old": "TestHeatReverseWiringIntersectionON::test_on_primer_steers_pick_to_hot_typed_row",
+        "new": "TestHeatReverseWiringIntersectionON::test_on_primer_steers_pick_to_hot_typed_row",
+        "body_changed": false,
+        "old_lines": [
+          415,
+          421
+        ],
+        "new_lines": [
+          415,
+          421
+        ]
+      },
+      {
+        "old": "TestHeatReverseWiringIntersectionON::test_on_and_off_differ",
+        "new": "TestHeatReverseWiringIntersectionON::test_on_and_off_differ",
+        "body_changed": false,
+        "old_lines": [
+          423,
+          430
+        ],
+        "new_lines": [
+          423,
+          430
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "eb8cd4d702b3a044782b9421995cbdea594a97df36debd6b001933a13ad6aa78",
+    "new_sha256": "985e98dbf0fef7c8a4ce640d41c181207a0e3d9f69ec20541c400a8034c84525"
+  },
+  {
+    "file": "test/test_inverse_recommend.py",
+    "old": "ports/test_inverse_recommend.py/old.py.txt",
+    "new": "ports/test_inverse_recommend.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "TestMereologyHelpers::test_partOf_basic",
+        "new": "TestMereologyHelpers::test_partOf_basic",
+        "body_changed": false,
+        "old_lines": [
+          33,
+          39
+        ],
+        "new_lines": [
+          33,
+          39
+        ]
+      },
+      {
+        "old": "TestMereologyHelpers::test_wholeOf_basic",
+        "new": "TestMereologyHelpers::test_wholeOf_basic",
+        "body_changed": false,
+        "old_lines": [
+          41,
+          45
+        ],
+        "new_lines": [
+          41,
+          45
+        ]
+      },
+      {
+        "old": "TestMereologyHelpers::test_partOf_with_sentinels",
+        "new": "TestMereologyHelpers::test_partOf_with_sentinels",
+        "body_changed": false,
+        "old_lines": [
+          47,
+          56
+        ],
+        "new_lines": [
+          47,
+          56
+        ]
+      },
+      {
+        "old": "TestMereologyHelpers::test_wholeOf_with_sentinels",
+        "new": "TestMereologyHelpers::test_wholeOf_with_sentinels",
+        "body_changed": false,
+        "old_lines": [
+          58,
+          65
+        ],
+        "new_lines": [
+          58,
+          65
+        ]
+      },
+      {
+        "old": "TestMereologyHelpers::test_overlapOf_same_sign_min_magnitude",
+        "new": "TestMereologyHelpers::test_overlapOf_same_sign_min_magnitude",
+        "body_changed": false,
+        "old_lines": [
+          67,
+          73
+        ],
+        "new_lines": [
+          67,
+          73
+        ]
+      },
+      {
+        "old": "TestMereologyHelpers::test_overlapOf_sign_disagreement_collapses_to_zero",
+        "new": "TestMereologyHelpers::test_overlapOf_sign_disagreement_collapses_to_zero",
+        "body_changed": false,
+        "old_lines": [
+          75,
+          81
+        ],
+        "new_lines": [
+          75,
+          81
+        ]
+      },
+      {
+        "old": "TestUnionInverse::test_pair_satisfies_constraints_on_codebook_target",
+        "new": "TestUnionInverse::test_pair_satisfies_constraints_on_codebook_target",
+        "body_changed": true,
+        "old_lines": [
+          97,
+          109
+        ],
+        "new_lines": [
+          97,
+          109
+        ]
+      },
+      {
+        "old": "TestUnionInverse::test_batched_recovery",
+        "new": "TestUnionInverse::test_batched_recovery",
+        "body_changed": true,
+        "old_lines": [
+          111,
+          118
+        ],
+        "new_lines": [
+          111,
+          118
+        ]
+      },
+      {
+        "old": "TestUnionInverse::test_sentinels_keep_selection_non_empty",
+        "new": "TestUnionInverse::test_sentinels_keep_selection_non_empty",
+        "body_changed": true,
+        "old_lines": [
+          120,
+          129
+        ],
+        "new_lines": [
+          120,
+          129
+        ]
+      },
+      {
+        "old": "TestIntersectionInverse::test_pair_satisfies_constraints_on_codebook_target",
+        "new": "TestIntersectionInverse::test_pair_satisfies_constraints_on_codebook_target",
+        "body_changed": true,
+        "old_lines": [
+          144,
+          153
+        ],
+        "new_lines": [
+          144,
+          153
+        ]
+      },
+      {
+        "old": "TestIntersectionInverse::test_x2_minimises_overlap_with_x1",
+        "new": "TestIntersectionInverse::test_x2_minimises_overlap_with_x1",
+        "body_changed": true,
+        "old_lines": [
+          155,
+          174
+        ],
+        "new_lines": [
+          155,
+          174
+        ]
+      },
+      {
+        "old": "TestEmptyCodebook::test_union_inverse_empty_W_falls_back_to_identity_pair",
+        "new": "TestEmptyCodebook::test_union_inverse_empty_W_falls_back_to_identity_pair",
+        "body_changed": true,
+        "old_lines": [
+          180,
+          191
+        ],
+        "new_lines": [
+          180,
+          191
+        ]
+      },
+      {
+        "old": "TestEmptyCodebook::test_intersection_inverse_empty_W_falls_back_to_identity_pair",
+        "new": "TestEmptyCodebook::test_intersection_inverse_empty_W_falls_back_to_identity_pair",
+        "body_changed": true,
+        "old_lines": [
+          193,
+          197
+        ],
+        "new_lines": [
+          193,
+          197
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "5c55b9b782a48d394a42940737abb655c5570c344b9fbf4d28c7b29d9eedeeeb",
+    "new_sha256": "2787bcf5f8741b0c764d2193f61ef79e5f3c40d6fa59b6337ab788aa1960f8ea"
+  },
+  {
+    "file": "test/test_live_references.py",
+    "old": "ports/test_live_references.py/old.py.txt",
+    "new": "ports/test_live_references.py/new.py.txt",
+    "reason": "The chooser returns four values after offsets are removed. Gate expectations use the free inverse and test independence from retained leaf values; identity, gradients and bounded native storage checks remain.",
+    "cases": [
+      {
+        "old": "test_grammar_order_resolution_survives_the_numerical_journal",
+        "new": "test_grammar_order_resolution_survives_the_numerical_journal",
+        "body_changed": false,
+        "old_lines": [
+          5,
+          17
+        ],
+        "new_lines": [
+          5,
+          17
+        ]
+      },
+      {
+        "old": "test_existing_kind_point_is_resolved_before_the_operator",
+        "new": "test_existing_kind_point_is_resolved_before_the_operator",
+        "body_changed": false,
+        "old_lines": [
+          20,
+          35
+        ],
+        "new_lines": [
+          20,
+          35
+        ]
+      },
+      {
+        "old": "test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind",
+        "new": "test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind",
+        "body_changed": false,
+        "old_lines": [
+          38,
+          45
+        ],
+        "new_lines": [
+          38,
+          45
+        ]
+      },
+      {
+        "old": "test_occurrence_is_operand_and_predictor_gradient_is_live",
+        "new": "test_occurrence_is_operand_and_predictor_gradient_is_live",
+        "body_changed": false,
+        "old_lines": [
+          48,
+          61
+        ],
+        "new_lines": [
+          48,
+          61
+        ]
+      },
+      {
+        "old": "test_cold_reference_is_exact_and_pronoun_proposal_is_maskable",
+        "new": "test_cold_reference_is_exact_and_pronoun_proposal_is_maskable",
+        "body_changed": false,
+        "old_lines": [
+          64,
+          74
+        ],
+        "new_lines": [
+          64,
+          74
+        ]
+      },
+      {
+        "old": "test_operation_runs_on_the_selected_occurrence_eager_and_compiled",
+        "new": "test_operation_runs_on_the_selected_occurrence_eager_and_compiled",
+        "body_changed": true,
+        "old_lines": [
+          77,
+          111
+        ],
+        "new_lines": [
+          77,
+          111
+        ]
+      },
+      {
+        "old": "test_public_reading_fuses_the_reference_before_capture_and_write",
+        "new": "test_public_reading_fuses_the_reference_before_capture_and_write",
+        "body_changed": true,
+        "old_lines": [
+          114,
+          198
+        ],
+        "new_lines": [
+          114,
+          206
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "baba3e6b3a7d6558251880fa7b8d60851169f349f137acd9b2e68561989e9aaf",
+    "new_sha256": "473960a911fe1fcbb90262b1bd118590a925607c2461117c1fe5b615977b32c9"
+  },
+  {
+    "file": "test/test_objective_conflicts_slow.py",
+    "old": "ports/test_objective_conflicts_slow.py/old.py.txt",
+    "new": "ports/test_objective_conflicts_slow.py/new.py.txt",
+    "reason": "Require actual displacement artifacts and derivation-stability observations in the production audit, retaining all existing reach, finite-cost, batch-28 and no-seed assertions.",
+    "cases": [
+      {
+        "old": "test_native_production_objective_measurements",
+        "new": "test_native_production_objective_measurements",
+        "body_changed": true,
+        "old_lines": [
+          21,
+          63
+        ],
+        "new_lines": [
+          21,
+          67
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "c132f7454d740bfb078ba44b19d87ade7cc5e7a00ed1dd5655fcfa49acefe5a9",
+    "new_sha256": "e6949bddeef26a805767020603bef45b48a574e4d97920bcda3abbcd019d6024"
+  },
+  {
+    "file": "test/test_objective_optimizer_resume.py",
+    "old": "ports/test_objective_optimizer_resume.py/old.py.txt",
+    "new": "ports/test_objective_optimizer_resume.py/new.py.txt",
+    "reason": "New migration proof: preserve the reader Adam moments by name while discarding Adam code moments and starting reconstruction SGD without momentum history.",
+    "cases": [],
+    "added": [
+      "test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty"
+    ],
+    "old_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "new_sha256": "aa745641ce4dd54db00416f0a3b0adedc61611063603b18e97e94ca568d9f1b8"
+  },
+  {
+    "file": "test/test_ops_lift_lower.py",
+    "old": "ports/test_ops_lift_lower.py/old.py.txt",
+    "new": "ports/test_ops_lift_lower.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "TestLowerAND::test_point_form_default_kind_is_strict_min",
+        "new": "TestLowerAND::test_point_form_default_kind_is_strict_min",
+        "body_changed": false,
+        "old_lines": [
+          47,
+          51
+        ],
+        "new_lines": [
+          47,
+          51
+        ]
+      },
+      {
+        "old": "TestLowerAND::test_point_form_kind_strict_is_min",
+        "new": "TestLowerAND::test_point_form_kind_strict_is_min",
+        "body_changed": false,
+        "old_lines": [
+          53,
+          57
+        ],
+        "new_lines": [
+          53,
+          57
+        ]
+      },
+      {
+        "old": "TestLowerAND::test_point_form_is_elementwise_product",
+        "new": "TestLowerAND::test_point_form_is_elementwise_product",
+        "body_changed": false,
+        "old_lines": [
+          59,
+          63
+        ],
+        "new_lines": [
+          59,
+          63
+        ]
+      },
+      {
+        "old": "TestLowerAND::test_point_form_kind_radial_is_radmin",
+        "new": "TestLowerAND::test_point_form_kind_radial_is_radmin",
+        "body_changed": false,
+        "old_lines": [
+          65,
+          72
+        ],
+        "new_lines": [
+          65,
+          72
+        ]
+      },
+      {
+        "old": "TestLowerAND::test_region_form_is_max_lower_min_upper",
+        "new": "TestLowerAND::test_region_form_is_max_lower_min_upper",
+        "body_changed": false,
+        "old_lines": [
+          74,
+          81
+        ],
+        "new_lines": [
+          74,
+          81
+        ]
+      },
+      {
+        "old": "TestLowerAND::test_region_form_unchanged_by_kind",
+        "new": "TestLowerAND::test_region_form_unchanged_by_kind",
+        "body_changed": false,
+        "old_lines": [
+          83,
+          92
+        ],
+        "new_lines": [
+          83,
+          92
+        ]
+      },
+      {
+        "old": "TestLowerAND::test_point_promotes_to_degenerate_region",
+        "new": "TestLowerAND::test_point_promotes_to_degenerate_region",
+        "body_changed": false,
+        "old_lines": [
+          94,
+          103
+        ],
+        "new_lines": [
+          94,
+          103
+        ]
+      },
+      {
+        "old": "TestLiftOR::test_point_form_default_kind_is_strict_max",
+        "new": "TestLiftOR::test_point_form_default_kind_is_strict_max",
+        "body_changed": false,
+        "old_lines": [
+          109,
+          113
+        ],
+        "new_lines": [
+          109,
+          113
+        ]
+      },
+      {
+        "old": "TestLiftOR::test_point_form_kind_strict_is_max",
+        "new": "TestLiftOR::test_point_form_kind_strict_is_max",
+        "body_changed": false,
+        "old_lines": [
+          115,
+          119
+        ],
+        "new_lines": [
+          115,
+          119
+        ]
+      },
+      {
+        "old": "TestLiftOR::test_point_form_is_arithmetic_mean",
+        "new": "TestLiftOR::test_point_form_is_arithmetic_mean",
+        "body_changed": false,
+        "old_lines": [
+          121,
+          125
+        ],
+        "new_lines": [
+          121,
+          125
+        ]
+      },
+      {
+        "old": "TestLiftOR::test_point_form_kind_radial_is_radmax",
+        "new": "TestLiftOR::test_point_form_kind_radial_is_radmax",
+        "body_changed": false,
+        "old_lines": [
+          127,
+          138
+        ],
+        "new_lines": [
+          127,
+          138
+        ]
+      },
+      {
+        "old": "TestLiftOR::test_region_form_is_min_lower_max_upper",
+        "new": "TestLiftOR::test_region_form_is_min_lower_max_upper",
+        "body_changed": false,
+        "old_lines": [
+          140,
+          147
+        ],
+        "new_lines": [
+          140,
+          147
+        ]
+      },
+      {
+        "old": "TestLiftOR::test_region_form_unchanged_by_kind",
+        "new": "TestLiftOR::test_region_form_unchanged_by_kind",
+        "body_changed": false,
+        "old_lines": [
+          149,
+          157
+        ],
+        "new_lines": [
+          149,
+          157
+        ]
+      },
+      {
+        "old": "TestNOT::test_lift_not_is_sign_flip_default",
+        "new": "TestNOT::test_lift_not_is_sign_flip_default",
+        "body_changed": false,
+        "old_lines": [
+          163,
+          166
+        ],
+        "new_lines": [
+          163,
+          166
+        ]
+      },
+      {
+        "old": "TestNOT::test_lower_not_is_sign_flip_default",
+        "new": "TestNOT::test_lower_not_is_sign_flip_default",
+        "body_changed": false,
+        "old_lines": [
+          168,
+          171
+        ],
+        "new_lines": [
+          168,
+          171
+        ]
+      },
+      {
+        "old": "TestNOT::test_lift_not_self_inverse",
+        "new": "TestNOT::test_lift_not_self_inverse",
+        "body_changed": false,
+        "old_lines": [
+          173,
+          176
+        ],
+        "new_lines": [
+          173,
+          176
+        ]
+      },
+      {
+        "old": "TestNOT::test_lift_not_inverse_true_equals_forward",
+        "new": "TestNOT::test_lift_not_inverse_true_equals_forward",
+        "body_changed": false,
+        "old_lines": [
+          178,
+          182
+        ],
+        "new_lines": [
+          178,
+          182
+        ]
+      },
+      {
+        "old": "TestNOT::test_lift_not_monotonic_paired_index_flip",
+        "new": "TestNOT::test_lift_not_monotonic_paired_index_flip",
+        "body_changed": false,
+        "old_lines": [
+          184,
+          189
+        ],
+        "new_lines": [
+          184,
+          189
+        ]
+      },
+      {
+        "old": "TestInverse::test_lift_or_inverse_requires_W",
+        "new": "TestInverse::test_lift_or_inverse_requires_W",
+        "body_changed": false,
+        "old_lines": [
+          195,
+          199
+        ],
+        "new_lines": [
+          195,
+          199
+        ]
+      },
+      {
+        "old": "TestInverse::test_lower_and_inverse_requires_W",
+        "new": "TestInverse::test_lower_and_inverse_requires_W",
+        "body_changed": false,
+        "old_lines": [
+          201,
+          205
+        ],
+        "new_lines": [
+          201,
+          205
+        ]
+      },
+      {
+        "old": "TestInverse::test_lower_and_inverse_via_W_matches_conjunctionReverse",
+        "new": "TestInverse::test_lower_and_inverse_via_W_matches_intersectionReverse",
+        "body_changed": true,
+        "old_lines": [
+          207,
+          218
+        ],
+        "new_lines": [
+          207,
+          218
+        ]
+      },
+      {
+        "old": "TestRegionPromotion::test_as_region_promotes_point",
+        "new": "TestRegionPromotion::test_as_region_promotes_point",
+        "body_changed": false,
+        "old_lines": [
+          226,
+          231
+        ],
+        "new_lines": [
+          226,
+          231
+        ]
+      },
+      {
+        "old": "TestRegionPromotion::test_as_region_passes_through_existing_region",
+        "new": "TestRegionPromotion::test_as_region_passes_through_existing_region",
+        "body_changed": false,
+        "old_lines": [
+          233,
+          238
+        ],
+        "new_lines": [
+          233,
+          238
+        ]
+      },
+      {
+        "old": "TestModeRouting::test_lift_and_routes_to_lower",
+        "new": "TestModeRouting::test_lift_and_routes_to_lower",
+        "body_changed": false,
+        "old_lines": [
+          245,
+          252
+        ],
+        "new_lines": [
+          245,
+          252
+        ]
+      },
+      {
+        "old": "TestModeRouting::test_lower_or_routes_to_lift",
+        "new": "TestModeRouting::test_lower_or_routes_to_lift",
+        "body_changed": false,
+        "old_lines": [
+          254,
+          261
+        ],
+        "new_lines": [
+          254,
+          261
+        ]
+      },
+      {
+        "old": "TestConjunctionDisjunctionForwarders::test_conjunction_monotonic_equals_lower_strict",
+        "new": "TestConjunctionDisjunctionForwarders::test_conjunction_monotonic_equals_lower_strict",
+        "body_changed": true,
+        "old_lines": [
+          277,
+          280
+        ],
+        "new_lines": [
+          277,
+          280
+        ]
+      },
+      {
+        "old": "TestConjunctionDisjunctionForwarders::test_conjunction_bitonic_equals_lower_soft",
+        "new": "TestConjunctionDisjunctionForwarders::test_conjunction_bitonic_equals_lower_soft",
+        "body_changed": true,
+        "old_lines": [
+          282,
+          290
+        ],
+        "new_lines": [
+          282,
+          290
+        ]
+      },
+      {
+        "old": "TestConjunctionDisjunctionForwarders::test_disjunction_monotonic_equals_lift_strict",
+        "new": "TestConjunctionDisjunctionForwarders::test_disjunction_monotonic_equals_lift_strict",
+        "body_changed": true,
+        "old_lines": [
+          292,
+          295
+        ],
+        "new_lines": [
+          292,
+          295
+        ]
+      },
+      {
+        "old": "TestConjunctionDisjunctionForwarders::test_disjunction_bitonic_equals_lift_soft",
+        "new": "TestConjunctionDisjunctionForwarders::test_disjunction_bitonic_equals_lift_soft",
+        "body_changed": true,
+        "old_lines": [
+          297,
+          301
+        ],
+        "new_lines": [
+          297,
+          301
+        ]
+      },
+      {
+        "old": "TestConjunctionDisjunctionForwarders::test_conjunction_monotonic_matches_torch_min",
+        "new": "TestConjunctionDisjunctionForwarders::test_conjunction_monotonic_matches_torch_min",
+        "body_changed": true,
+        "old_lines": [
+          303,
+          306
+        ],
+        "new_lines": [
+          303,
+          306
+        ]
+      },
+      {
+        "old": "TestConjunctionDisjunctionForwarders::test_lower_radial_matches_pre_step2_radmin",
+        "new": "TestConjunctionDisjunctionForwarders::test_lower_radial_matches_pre_step2_radmin",
+        "body_changed": false,
+        "old_lines": [
+          308,
+          317
+        ],
+        "new_lines": [
+          308,
+          317
+        ]
+      },
+      {
+        "old": "TestConjunctionDisjunctionForwarders::test_disjunction_monotonic_matches_torch_max",
+        "new": "TestConjunctionDisjunctionForwarders::test_disjunction_monotonic_matches_torch_max",
+        "body_changed": true,
+        "old_lines": [
+          319,
+          322
+        ],
+        "new_lines": [
+          319,
+          322
+        ]
+      },
+      {
+        "old": "TestConjunctionDisjunctionForwarders::test_lift_radial_matches_pre_step2_radmax",
+        "new": "TestConjunctionDisjunctionForwarders::test_lift_radial_matches_pre_step2_radmax",
+        "body_changed": false,
+        "old_lines": [
+          324,
+          334
+        ],
+        "new_lines": [
+          324,
+          334
+        ]
+      },
+      {
+        "old": "TestRadHelpers::test_radmin_matches_pre_step2_bitonic_conjunction",
+        "new": "TestRadHelpers::test_radmin_matches_pre_step2_bitonic_conjunction",
+        "body_changed": false,
+        "old_lines": [
+          343,
+          348
+        ],
+        "new_lines": [
+          343,
+          348
+        ]
+      },
+      {
+        "old": "TestRadHelpers::test_radmax_matches_pre_step2_bitonic_disjunction",
+        "new": "TestRadHelpers::test_radmax_matches_pre_step2_bitonic_disjunction",
+        "body_changed": false,
+        "old_lines": [
+          350,
+          359
+        ],
+        "new_lines": [
+          350,
+          359
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "8be82e42b3d2687693e9e65d0de0276b838ebc59dfbda34beeb664612d1073e1",
+    "new_sha256": "217334efc024bb54aab5e4e7ee7fed51487589eacb927216255805edd2a672cd"
+  },
+  {
+    "file": "test/test_pi2_sigma2_folds.py",
+    "old": "ports/test_pi2_sigma2_folds.py/old.py.txt",
+    "new": "ports/test_pi2_sigma2_folds.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "test_binary_pi_below_min",
+        "new": "test_binary_pi_below_min",
+        "body_changed": false,
+        "old_lines": [
+          61,
+          70
+        ],
+        "new_lines": [
+          61,
+          70
+        ]
+      },
+      {
+        "old": "test_binary_sigma_above_max",
+        "new": "test_binary_sigma_above_max",
+        "body_changed": false,
+        "old_lines": [
+          73,
+          82
+        ],
+        "new_lines": [
+          73,
+          82
+        ]
+      },
+      {
+        "old": "test_unary_contraction_and_extension",
+        "new": "test_unary_contraction_and_extension",
+        "body_changed": false,
+        "old_lines": [
+          85,
+          93
+        ],
+        "new_lines": [
+          85,
+          93
+        ]
+      },
+      {
+        "old": "test_monotone_transport",
+        "new": "test_monotone_transport",
+        "body_changed": false,
+        "old_lines": [
+          96,
+          107
+        ],
+        "new_lines": [
+          96,
+          107
+        ]
+      },
+      {
+        "old": "test_binary_zero_operand_corner_still_ordered",
+        "new": "test_binary_zero_operand_corner_still_ordered",
+        "body_changed": false,
+        "old_lines": [
+          110,
+          117
+        ],
+        "new_lines": [
+          110,
+          117
+        ]
+      },
+      {
+        "old": "test_pi_absorber_is_a_theorem",
+        "new": "test_pi_absorber_is_a_theorem",
+        "body_changed": false,
+        "old_lines": [
+          124,
+          135
+        ],
+        "new_lines": [
+          124,
+          135
+        ]
+      },
+      {
+        "old": "test_sigma_absorber_is_a_theorem",
+        "new": "test_sigma_absorber_is_a_theorem",
+        "body_changed": false,
+        "old_lines": [
+          138,
+          147
+        ],
+        "new_lines": [
+          138,
+          147
+        ]
+      },
+      {
+        "old": "test_pi_identity_at_init",
+        "new": "test_pi_identity_at_init",
+        "body_changed": false,
+        "old_lines": [
+          150,
+          158
+        ],
+        "new_lines": [
+          150,
+          158
+        ]
+      },
+      {
+        "old": "test_sigma_identity_at_init",
+        "new": "test_sigma_identity_at_init",
+        "body_changed": false,
+        "old_lines": [
+          161,
+          167
+        ],
+        "new_lines": [
+          161,
+          167
+        ]
+      },
+      {
+        "old": "test_de_morgan_exact_with_shared_kernel",
+        "new": "test_de_morgan_exact_with_shared_kernel",
+        "body_changed": false,
+        "old_lines": [
+          174,
+          184
+        ],
+        "new_lines": [
+          174,
+          184
+        ]
+      },
+      {
+        "old": "test_sigma_owns_no_weights",
+        "new": "test_sigma_owns_no_weights",
+        "body_changed": false,
+        "old_lines": [
+          187,
+          197
+        ],
+        "new_lines": [
+          187,
+          197
+        ]
+      },
+      {
+        "old": "test_sigma_kernel_kwargs_exclusive",
+        "new": "test_sigma_kernel_kwargs_exclusive",
+        "body_changed": false,
+        "old_lines": [
+          200,
+          205
+        ],
+        "new_lines": [
+          200,
+          205
+        ]
+      },
+      {
+        "old": "test_unary_roundtrip_interior",
+        "new": "test_unary_roundtrip_interior",
+        "body_changed": false,
+        "old_lines": [
+          212,
+          218
+        ],
+        "new_lines": [
+          212,
+          218
+        ]
+      },
+      {
+        "old": "test_pi_roundtrip_at_zero_corner_under_eps_log",
+        "new": "test_pi_roundtrip_at_zero_corner_under_eps_log",
+        "body_changed": false,
+        "old_lines": [
+          221,
+          234
+        ],
+        "new_lines": [
+          221,
+          234
+        ]
+      },
+      {
+        "old": "test_sigma_roundtrip_at_zero_corner",
+        "new": "test_sigma_roundtrip_at_zero_corner",
+        "body_changed": false,
+        "old_lines": [
+          237,
+          251
+        ],
+        "new_lines": [
+          237,
+          251
+        ]
+      },
+      {
+        "old": "test_reverse_is_total_on_degenerate_input",
+        "new": "test_reverse_is_total_on_degenerate_input",
+        "body_changed": false,
+        "old_lines": [
+          254,
+          261
+        ],
+        "new_lines": [
+          254,
+          261
+        ]
+      },
+      {
+        "old": "test_gradients_flow_through_fold",
+        "new": "test_gradients_flow_through_fold",
+        "body_changed": false,
+        "old_lines": [
+          264,
+          270
+        ],
+        "new_lines": [
+          264,
+          270
+        ]
+      },
+      {
+        "old": "test_binary_pi_recommender_reversible",
+        "new": "test_binary_pi_recommender_reversible",
+        "body_changed": true,
+        "old_lines": [
+          293,
+          309
+        ],
+        "new_lines": [
+          293,
+          309
+        ]
+      },
+      {
+        "old": "test_binary_sigma_recommender_reversible",
+        "new": "test_binary_sigma_recommender_reversible",
+        "body_changed": true,
+        "old_lines": [
+          312,
+          327
+        ],
+        "new_lines": [
+          312,
+          327
+        ]
+      },
+      {
+        "old": "test_inner_layer_is_contractive",
+        "new": "test_inner_layer_is_contractive",
+        "body_changed": false,
+        "old_lines": [
+          336,
+          344
+        ],
+        "new_lines": [
+          336,
+          344
+        ]
+      },
+      {
+        "old": "test_compose_requires_binary_form",
+        "new": "test_compose_requires_binary_form",
+        "body_changed": false,
+        "old_lines": [
+          347,
+          350
+        ],
+        "new_lines": [
+          347,
+          350
+        ]
+      },
+      {
+        "old": "test_compose_is_forward_on_concat",
+        "new": "test_compose_is_forward_on_concat",
+        "body_changed": false,
+        "old_lines": [
+          353,
+          359
+        ],
+        "new_lines": [
+          353,
+          359
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "f2a7fc850e55586ee92df40f412c2d5e0ccbd49500c6921643bb604eb0392a51",
+    "new_sha256": "b4dea4c4095b4a4165cca48890fd5798e32a81246d037897e2f74369d16bc60f"
+  },
+  {
+    "file": "test/test_primed_reverse_combined.py",
+    "old": "ports/test_primed_reverse_combined.py/old.py.txt",
+    "new": "ports/test_primed_reverse_combined.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "test_identity_priming_matches_unprimed_disjunction",
+        "new": "test_identity_priming_matches_unprimed_disjunction",
+        "body_changed": true,
+        "old_lines": [
+          33,
+          47
+        ],
+        "new_lines": [
+          33,
+          47
+        ]
+      },
+      {
+        "old": "test_identity_priming_matches_unprimed_conjunction",
+        "new": "test_identity_priming_matches_unprimed_conjunction",
+        "body_changed": true,
+        "old_lines": [
+          50,
+          64
+        ],
+        "new_lines": [
+          50,
+          64
+        ]
+      },
+      {
+        "old": "test_none_priming_matches_identity_priming",
+        "new": "test_none_priming_matches_identity_priming",
+        "body_changed": true,
+        "old_lines": [
+          67,
+          76
+        ],
+        "new_lines": [
+          67,
+          76
+        ]
+      },
+      {
+        "old": "test_priming_lifts_argmax_choice_union_x1",
+        "new": "test_priming_lifts_argmax_choice_union_x1",
+        "body_changed": true,
+        "old_lines": [
+          82,
+          99
+        ],
+        "new_lines": [
+          82,
+          99
+        ]
+      },
+      {
+        "old": "test_priming_lifts_argmin_choice_intersection_x1",
+        "new": "test_priming_lifts_argmin_choice_intersection_x1",
+        "body_changed": true,
+        "old_lines": [
+          105,
+          123
+        ],
+        "new_lines": [
+          105,
+          123
+        ]
+      },
+      {
+        "old": "test_hard_mask_blocks_priming_in_disjunction",
+        "new": "test_hard_mask_blocks_priming_in_disjunction",
+        "body_changed": true,
+        "old_lines": [
+          129,
+          152
+        ],
+        "new_lines": [
+          129,
+          152
+        ]
+      },
+      {
+        "old": "test_hard_mask_blocks_priming_in_intersection",
+        "new": "test_hard_mask_blocks_priming_in_intersection",
+        "body_changed": true,
+        "old_lines": [
+          155,
+          171
+        ],
+        "new_lines": [
+          155,
+          171
+        ]
+      },
+      {
+        "old": "test_priming_does_not_apply_to_sentinels",
+        "new": "test_priming_does_not_apply_to_sentinels",
+        "body_changed": true,
+        "old_lines": [
+          177,
+          198
+        ],
+        "new_lines": [
+          177,
+          198
+        ]
+      },
+      {
+        "old": "test_empty_priming_tensor_treated_as_identity",
+        "new": "test_empty_priming_tensor_treated_as_identity",
+        "body_changed": true,
+        "old_lines": [
+          204,
+          212
+        ],
+        "new_lines": [
+          204,
+          212
+        ]
+      },
+      {
+        "old": "test_short_priming_tensor_pads_to_identity",
+        "new": "test_short_priming_tensor_pads_to_identity",
+        "body_changed": true,
+        "old_lines": [
+          215,
+          228
+        ],
+        "new_lines": [
+          215,
+          228
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "e255f123f93678a2cdb02d7b4f2ad89e1f8c2f21509397eb6b02e43899b475f0",
+    "new_sha256": "8bc7e91f2d5c784450a9bec08744c86de00f347d4a36289c14bce286b5cbf76d"
+  },
+  {
+    "file": "test/test_primed_reverse_hard_mask.py",
+    "old": "ports/test_primed_reverse_hard_mask.py/old.py.txt",
+    "new": "ports/test_primed_reverse_hard_mask.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "test_attach_allocates_priming_buffer",
+        "new": "test_attach_allocates_priming_buffer",
+        "body_changed": false,
+        "old_lines": [
+          54,
+          64
+        ],
+        "new_lines": [
+          54,
+          64
+        ]
+      },
+      {
+        "old": "test_attach_binds_view_for_propagation",
+        "new": "test_attach_binds_view_for_propagation",
+        "body_changed": false,
+        "old_lines": [
+          67,
+          73
+        ],
+        "new_lines": [
+          67,
+          73
+        ]
+      },
+      {
+        "old": "test_reattach_preserves_primed_values",
+        "new": "test_reattach_preserves_primed_values",
+        "body_changed": false,
+        "old_lines": [
+          76,
+          87
+        ],
+        "new_lines": [
+          76,
+          87
+        ]
+      },
+      {
+        "old": "test_attach_without_view_is_noop_on_priming",
+        "new": "test_attach_without_view_is_noop_on_priming",
+        "body_changed": false,
+        "old_lines": [
+          90,
+          95
+        ],
+        "new_lines": [
+          90,
+          95
+        ]
+      },
+      {
+        "old": "test_kwargs_returns_empty_without_knowledge",
+        "new": "test_kwargs_returns_empty_without_knowledge",
+        "body_changed": false,
+        "old_lines": [
+          101,
+          108
+        ],
+        "new_lines": [
+          101,
+          108
+        ]
+      },
+      {
+        "old": "test_kwargs_intersection_rows_for_binary_rule",
+        "new": "test_kwargs_intersection_rows_for_binary_rule",
+        "body_changed": false,
+        "old_lines": [
+          111,
+          127
+        ],
+        "new_lines": [
+          111,
+          127
+        ]
+      },
+      {
+        "old": "test_kwargs_priming_present_when_buffer_allocated",
+        "new": "test_kwargs_priming_present_when_buffer_allocated",
+        "body_changed": false,
+        "old_lines": [
+          130,
+          149
+        ],
+        "new_lines": [
+          130,
+          149
+        ]
+      },
+      {
+        "old": "test_kwargs_priming_reflects_primed_state",
+        "new": "test_kwargs_priming_reflects_primed_state",
+        "body_changed": false,
+        "old_lines": [
+          152,
+          164
+        ],
+        "new_lines": [
+          152,
+          164
+        ]
+      },
+      {
+        "old": "test_kwargs_empty_intersection_returns_empty_long_tensor",
+        "new": "test_kwargs_empty_intersection_returns_empty_long_tensor",
+        "body_changed": false,
+        "old_lines": [
+          167,
+          178
+        ],
+        "new_lines": [
+          167,
+          178
+        ]
+      },
+      {
+        "old": "test_kwargs_unary_omits_right",
+        "new": "test_kwargs_unary_omits_right",
+        "body_changed": false,
+        "old_lines": [
+          181,
+          193
+        ],
+        "new_lines": [
+          181,
+          193
+        ]
+      },
+      {
+        "old": "test_kwargs_per_batch_priming",
+        "new": "test_kwargs_per_batch_priming",
+        "body_changed": false,
+        "old_lines": [
+          196,
+          209
+        ],
+        "new_lines": [
+          196,
+          209
+        ]
+      },
+      {
+        "old": "test_helper_kwargs_drive_recommender_byte_for_byte",
+        "new": "test_helper_kwargs_drive_recommender_byte_for_byte",
+        "body_changed": true,
+        "old_lines": [
+          215,
+          236
+        ],
+        "new_lines": [
+          215,
+          236
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "546e02cb4137ae236dddf02ef90e6f69784e6cb2e1513b428e543c9c6281efc0",
+    "new_sha256": "8dcb79fe9497a88cd55e8971e5198c77ae7d963703951685b4fe51ee1f6acbcb"
+  },
+  {
+    "file": "test/test_primed_reverse_integration.py",
+    "old": "ports/test_primed_reverse_integration.py/old.py.txt",
+    "new": "ports/test_primed_reverse_integration.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "test_unprimed_disjunction_picks_larger_norm",
+        "new": "test_unprimed_disjunction_picks_larger_norm",
+        "body_changed": true,
+        "old_lines": [
+          92,
+          102
+        ],
+        "new_lines": [
+          92,
+          102
+        ]
+      },
+      {
+        "old": "test_primed_disjunction_picks_primed_candidate",
+        "new": "test_primed_disjunction_picks_primed_candidate",
+        "body_changed": true,
+        "old_lines": [
+          108,
+          121
+        ],
+        "new_lines": [
+          108,
+          121
+        ]
+      },
+      {
+        "old": "test_priming_disabled_matches_unprimed",
+        "new": "test_priming_disabled_matches_unprimed",
+        "body_changed": true,
+        "old_lines": [
+          127,
+          145
+        ],
+        "new_lines": [
+          127,
+          145
+        ]
+      },
+      {
+        "old": "test_priming_decays_between_calls",
+        "new": "test_priming_decays_between_calls",
+        "body_changed": false,
+        "old_lines": [
+          151,
+          160
+        ],
+        "new_lines": [
+          151,
+          160
+        ]
+      },
+      {
+        "old": "test_sentence_boundary_clears_priming",
+        "new": "test_sentence_boundary_clears_priming",
+        "body_changed": false,
+        "old_lines": [
+          166,
+          174
+        ],
+        "new_lines": [
+          166,
+          174
+        ]
+      },
+      {
+        "old": "test_hard_mask_excludes_primed_off_category_ref",
+        "new": "test_hard_mask_excludes_primed_off_category_ref",
+        "body_changed": true,
+        "old_lines": [
+          180,
+          197
+        ],
+        "new_lines": [
+          180,
+          197
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "3b785c014eea42d0f0612010d9122f87711402126fed3d2fda55045f016518b8",
+    "new_sha256": "bddef619a4d0957cfba5b35191054b2b4bfffa92560e10863703caa29e3e7035"
+  },
+  {
+    "file": "test/test_reader_trial_ownership.py",
+    "old": "ports/test_reader_trial_ownership.py/old.py.txt",
+    "new": "ports/test_reader_trial_ownership.py/new.py.txt",
+    "reason": "New exact-gradient checks for mixed winning rows, no Adam step for an empty losing reader trial, and row-preserving generate-lesson merge.",
+    "cases": [],
+    "added": [
+      "test_generation_lesson_merge_keeps_its_sentence_row",
+      "test_reader_backpropagates_only_kept_rows_and_skips_an_empty_trial"
+    ],
+    "old_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "new_sha256": "06b34344d8352276e359fc9a9e9b8b80950ceec368eddfa6bf1b765ca5b18356"
+  },
+  {
+    "file": "test/test_reconstruction_momentum.py",
+    "old": "ports/test_reconstruction_momentum.py/old.py.txt",
+    "new": "ports/test_reconstruction_momentum.py/new.py.txt",
+    "reason": "New proportional first step and compact sparse momentum versus dense SGD, untouched rows and checkpoint round-trip.",
+    "cases": [],
+    "added": [
+      "test_first_step_is_proportional_to_gradient_without_adaptive_division",
+      "test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips"
+    ],
+    "old_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "new_sha256": "97f4e23e1d4d4812f65d48dc0c84afafe950225db9f4f216d4ac38e149fcbde1"
+  },
+  {
+    "file": "test/test_reconstruction_precedence.py",
+    "old": "ports/test_reconstruction_precedence.py/old.py.txt",
+    "new": "ports/test_reconstruction_precedence.py/new.py.txt",
+    "reason": "The decided rule is strictly lower reconstruction alone; both answer/expectation are excluded and ties keep greedy.",
+    "cases": [
+      {
+        "old": "test_lower_total_explore_cannot_win_with_worse_reconstruction",
+        "new": "test_only_strictly_lower_reconstruction_wins_and_tie_keeps_greedy",
+        "body_changed": true,
+        "old_lines": [
+          6,
+          17
+        ],
+        "new_lines": [
+          6,
+          17
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "6c2a9354e9a92492390f652702d4ad26d00c2676327c8fda652d9965c8170d62",
+    "new_sha256": "5af0f6607e3b9968af6580c78fa0e412f6e29a1ba2f50f077c5e43467137294c"
+  },
+  {
+    "file": "test/test_restricted_candidate_inverse.py",
+    "old": "ports/test_restricted_candidate_inverse.py/old.py.txt",
+    "new": "ports/test_restricted_candidate_inverse.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "test_default_kwargs_match_unrestricted_baseline",
+        "new": "test_default_kwargs_match_unrestricted_baseline",
+        "body_changed": false,
+        "old_lines": [
+          40,
+          52
+        ],
+        "new_lines": [
+          40,
+          52
+        ]
+      },
+      {
+        "old": "test_left_rows_restricts_x1_to_subset",
+        "new": "test_left_rows_restricts_x1_to_subset",
+        "body_changed": false,
+        "old_lines": [
+          55,
+          72
+        ],
+        "new_lines": [
+          55,
+          72
+        ]
+      },
+      {
+        "old": "test_right_rows_restricts_x2_to_subset",
+        "new": "test_right_rows_restricts_x2_to_subset",
+        "body_changed": false,
+        "old_lines": [
+          75,
+          89
+        ],
+        "new_lines": [
+          75,
+          89
+        ]
+      },
+      {
+        "old": "test_both_restricted_picks_from_respective_subsets",
+        "new": "test_both_restricted_picks_from_respective_subsets",
+        "body_changed": false,
+        "old_lines": [
+          92,
+          109
+        ],
+        "new_lines": [
+          92,
+          109
+        ]
+      },
+      {
+        "old": "test_empty_left_rows_falls_back_to_sentinels",
+        "new": "test_empty_left_rows_falls_back_to_sentinels",
+        "body_changed": false,
+        "old_lines": [
+          112,
+          124
+        ],
+        "new_lines": [
+          112,
+          124
+        ]
+      },
+      {
+        "old": "test_intersection_respects_restriction",
+        "new": "test_intersection_respects_restriction",
+        "body_changed": false,
+        "old_lines": [
+          127,
+          141
+        ],
+        "new_lines": [
+          127,
+          141
+        ]
+      },
+      {
+        "old": "test_sentinels_always_feasible",
+        "new": "test_sentinels_always_feasible",
+        "body_changed": false,
+        "old_lines": [
+          144,
+          161
+        ],
+        "new_lines": [
+          144,
+          161
+        ]
+      },
+      {
+        "old": "test_kwarg_forwarding_through_disjunctionReverse",
+        "new": "test_kwarg_forwarding_through_unionReverse",
+        "body_changed": true,
+        "old_lines": [
+          164,
+          180
+        ],
+        "new_lines": [
+          164,
+          180
+        ]
+      },
+      {
+        "old": "test_kwarg_forwarding_through_conjunctionReverse",
+        "new": "test_kwarg_forwarding_through_intersectionReverse",
+        "body_changed": true,
+        "old_lines": [
+          183,
+          194
+        ],
+        "new_lines": [
+          183,
+          194
+        ]
+      },
+      {
+        "old": "test_typed_mask_from_knowledge_view_drives_recommender",
+        "new": "test_typed_mask_from_knowledge_view_drives_recommender",
+        "body_changed": true,
+        "old_lines": [
+          226,
+          260
+        ],
+        "new_lines": [
+          226,
+          260
+        ]
+      },
+      {
+        "old": "test_typed_mask_empty_intersection_falls_back_to_sentinels",
+        "new": "test_typed_mask_empty_intersection_falls_back_to_sentinels",
+        "body_changed": true,
+        "old_lines": [
+          263,
+          286
+        ],
+        "new_lines": [
+          263,
+          286
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "cfb9f70184447e107bef9be217cb1f1b621be833d397986bdd6db2507850fcaa",
+    "new_sha256": "751e928b6bae3c74bee85d77287f89ca747eacee32d1406f776367ca43161b63"
+  },
+  {
+    "file": "test/test_row_local_concept_optimizer.py",
+    "old": "ports/test_row_local_concept_optimizer.py/old.py.txt",
+    "new": "ports/test_row_local_concept_optimizer.py/new.py.txt",
+    "reason": "The model routes reconstruction to compact RowLocalSGD, with the separate dense/adaptive children; sparse untouched rows and standalone Adam contracts remain.",
+    "cases": [
+      {
+        "old": "test_sparse_cs_lookup_and_row_local_step_stay_compact",
+        "new": "test_sparse_cs_lookup_and_row_local_step_stay_compact",
+        "body_changed": false,
+        "old_lines": [
+          37,
+          74
+        ],
+        "new_lines": [
+          37,
+          74
+        ]
+      },
+      {
+        "old": "test_row_local_adam_matches_sparse_adam_on_touched_rows",
+        "new": "test_row_local_adam_matches_sparse_adam_on_touched_rows",
+        "body_changed": false,
+        "old_lines": [
+          77,
+          99
+        ],
+        "new_lines": [
+          77,
+          99
+        ]
+      },
+      {
+        "old": "test_compact_moments_roundtrip_and_normalizer_preserves_prefix",
+        "new": "test_compact_moments_roundtrip_and_normalizer_preserves_prefix",
+        "body_changed": false,
+        "old_lines": [
+          102,
+          132
+        ],
+        "new_lines": [
+          102,
+          132
+        ]
+      },
+      {
+        "old": "test_pre_moment_dtype_checkpoint_adopts_configured_bfloat16_storage",
+        "new": "test_pre_moment_dtype_checkpoint_adopts_configured_bfloat16_storage",
+        "body_changed": false,
+        "old_lines": [
+          135,
+          150
+        ],
+        "new_lines": [
+          135,
+          150
+        ]
+      },
+      {
+        "old": "test_bfloat16_moment_storage_uses_fp32_math_close_to_sparse_adam",
+        "new": "test_bfloat16_moment_storage_uses_fp32_math_close_to_sparse_adam",
+        "body_changed": false,
+        "old_lines": [
+          153,
+          198
+        ],
+        "new_lines": [
+          153,
+          198
+        ]
+      },
+      {
+        "old": "test_get_optimizer_routes_only_sparse_shared_cs_parameter_row_locally",
+        "new": "test_get_optimizer_routes_only_sparse_shared_cs_parameter_row_locally",
+        "body_changed": true,
+        "old_lines": [
+          201,
+          228
+        ],
+        "new_lines": [
+          201,
+          228
+        ]
+      },
+      {
+        "old": "test_sparse_decoder_leaves_shared_codebook_gradient_sparse",
+        "new": "test_sparse_decoder_leaves_shared_codebook_gradient_sparse",
+        "body_changed": false,
+        "old_lines": [
+          231,
+          248
+        ],
+        "new_lines": [
+          231,
+          248
+        ]
+      },
+      {
+        "old": "test_row_local_reconstruction_step_preserves_unconstrained_codes",
+        "new": "test_row_local_reconstruction_step_preserves_unconstrained_codes",
+        "body_changed": false,
+        "old_lines": [
+          251,
+          269
+        ],
+        "new_lines": [
+          251,
+          269
+        ]
+      },
+      {
+        "old": "test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode",
+        "new": "test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode",
+        "body_changed": false,
+        "old_lines": [
+          272,
+          296
+        ],
+        "new_lines": [
+          272,
+          296
+        ]
+      },
+      {
+        "old": "test_concept_index_read_coexists_without_densifying_shared_gradient",
+        "new": "test_concept_index_read_coexists_without_densifying_shared_gradient",
+        "body_changed": false,
+        "old_lines": [
+          299,
+          329
+        ],
+        "new_lines": [
+          299,
+          329
+        ]
+      },
+      {
+        "old": "test_model_debug_finite_check_accepts_sparse_codebook_gradient",
+        "new": "test_model_debug_finite_check_accepts_sparse_codebook_gradient",
+        "body_changed": false,
+        "old_lines": [
+          332,
+          343
+        ],
+        "new_lines": [
+          332,
+          343
+        ]
+      },
+      {
+        "old": "test_zero_valued_sparse_placeholder_does_not_decay_row_zero",
+        "new": "test_zero_valued_sparse_placeholder_does_not_decay_row_zero",
+        "body_changed": false,
+        "old_lines": [
+          346,
+          381
+        ],
+        "new_lines": [
+          346,
+          381
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "c37349e17bfa1bb78dd591f5b5bb2bc56e5119f46f06e96cd01055cf8ea402da",
+    "new_sha256": "7babca7ea4be31362cd43ebf052089c3551ed695cbe682b73fff7d8fbec4fe5d"
+  },
+  {
+    "file": "test/test_sentence_compose.py",
+    "old": "ports/test_sentence_compose.py/old.py.txt",
+    "new": "ports/test_sentence_compose.py/new.py.txt",
+    "reason": "Controlled costs are supplied through the reconstruction registry total. Both trials are still costed before either step, and selection/storage/order assertions remain.",
+    "cases": [
+      {
+        "old": "test_cached_perception_keeps_original_values_across_parameter_updates",
+        "new": "test_cached_perception_keeps_original_values_across_parameter_updates",
+        "body_changed": false,
+        "old_lines": [
+          6,
+          21
+        ],
+        "new_lines": [
+          6,
+          21
+        ]
+      },
+      {
+        "old": "test_sentence_winners_are_row_local_and_precede_the_next_perception",
+        "new": "test_sentence_winners_are_row_local_and_precede_the_next_perception",
+        "body_changed": false,
+        "old_lines": [
+          24,
+          56
+        ],
+        "new_lines": [
+          24,
+          56
+        ]
+      },
+      {
+        "old": "test_evaluation_has_one_trial_and_no_step",
+        "new": "test_evaluation_has_one_trial_and_no_step",
+        "body_changed": false,
+        "old_lines": [
+          59,
+          72
+        ],
+        "new_lines": [
+          59,
+          72
+        ]
+      },
+      {
+        "old": "test_real_packed_ends_train_before_the_next_sentence",
+        "new": "test_real_packed_ends_train_before_the_next_sentence",
+        "body_changed": true,
+        "old_lines": [
+          75,
+          186
+        ],
+        "new_lines": [
+          75,
+          187
+        ]
+      },
+      {
+        "old": "test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+        "new": "test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+        "body_changed": false,
+        "old_lines": [
+          189,
+          207
+        ],
+        "new_lines": [
+          190,
+          208
+        ]
+      },
+      {
+        "old": "test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+        "new": "test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+        "body_changed": false,
+        "old_lines": [
+          210,
+          238
+        ],
+        "new_lines": [
+          211,
+          239
+        ]
+      },
+      {
+        "old": "test_already_trained_observation_keeps_policy_and_skips_duplicate_loss",
+        "new": "test_already_trained_observation_keeps_policy_and_skips_duplicate_loss",
+        "body_changed": false,
+        "old_lines": [
+          243,
+          256
+        ],
+        "new_lines": [
+          244,
+          257
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "5033df7fa706dcd3d312ff02f81eee1fbe359a19f8e15c3d2d9c6c519b326173",
+    "new_sha256": "97ac252fb75cca99424663d742a618efdc5b3c24d8b6dd9502a28af10942ae65"
+  },
+  {
+    "file": "test/test_sentence_end_state.py",
+    "old": "ports/test_sentence_end_state.py/old.py.txt",
+    "new": "ports/test_sentence_end_state.py/new.py.txt",
+    "reason": "Direct sentence-state fixture removes the two witness-offset slabs and updates the surviving tuple positions. Exact clearing and inactive-row identity checks remain.",
+    "cases": [
+      {
+        "old": "test_reading_an_idea_returns_its_one_occupied_slot",
+        "new": "test_reading_an_idea_returns_its_one_occupied_slot",
+        "body_changed": false,
+        "old_lines": [
+          13,
+          22
+        ],
+        "new_lines": [
+          13,
+          22
+        ]
+      },
+      {
+        "old": "test_relation_stores_the_supplied_contents_without_rereading_references",
+        "new": "test_relation_stores_the_supplied_contents_without_rereading_references",
+        "body_changed": false,
+        "old_lines": [
+          25,
+          34
+        ],
+        "new_lines": [
+          25,
+          34
+        ]
+      },
+      {
+        "old": "test_no_clause_derivation_or_factored_target_is_checkpointed",
+        "new": "test_no_clause_derivation_or_factored_target_is_checkpointed",
+        "body_changed": false,
+        "old_lines": [
+          37,
+          50
+        ],
+        "new_lines": [
+          37,
+          50
+        ]
+      },
+      {
+        "old": "test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+        "new": "test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+        "body_changed": false,
+        "old_lines": [
+          53,
+          76
+        ],
+        "new_lines": [
+          53,
+          76
+        ]
+      },
+      {
+        "old": "test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+        "new": "test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+        "body_changed": false,
+        "old_lines": [
+          79,
+          95
+        ],
+        "new_lines": [
+          79,
+          95
+        ]
+      },
+      {
+        "old": "test_answer_and_recall_own_completed_fields_without_programs",
+        "new": "test_answer_and_recall_own_completed_fields_without_programs",
+        "body_changed": false,
+        "old_lines": [
+          98,
+          116
+        ],
+        "new_lines": [
+          98,
+          116
+        ]
+      },
+      {
+        "old": "test_closing_discards_operations_without_changing_other_live_rows",
+        "new": "test_closing_discards_operations_without_changing_other_live_rows",
+        "body_changed": true,
+        "old_lines": [
+          119,
+          131
+        ],
+        "new_lines": [
+          119,
+          131
+        ]
+      },
+      {
+        "old": "test_writer_takes_relation_kind_from_the_rel_identity",
+        "new": "test_writer_takes_relation_kind_from_the_rel_identity",
+        "body_changed": false,
+        "old_lines": [
+          134,
+          146
+        ],
+        "new_lines": [
+          134,
+          146
+        ]
+      },
+      {
+        "old": "test_idea_caches_the_operand_addresses_recorded_before_fusion",
+        "new": "test_idea_caches_the_operand_addresses_recorded_before_fusion",
+        "body_changed": false,
+        "old_lines": [
+          149,
+          164
+        ],
+        "new_lines": [
+          149,
+          164
+        ]
+      },
+      {
+        "old": "test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+        "new": "test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+        "body_changed": false,
+        "old_lines": [
+          169,
+          199
+        ],
+        "new_lines": [
+          169,
+          199
+        ]
+      },
+      {
+        "old": "test_program_meaning_reads_ended_points_from_their_rows",
+        "new": "test_program_meaning_reads_ended_points_from_their_rows",
+        "body_changed": false,
+        "old_lines": [
+          208,
+          220
+        ],
+        "new_lines": [
+          208,
+          220
+        ]
+      },
+      {
+        "old": "test_deep_clause_retains_exact_values_references_and_gradients",
+        "new": "test_deep_clause_retains_exact_values_references_and_gradients",
+        "body_changed": false,
+        "old_lines": [
+          223,
+          251
+        ],
+        "new_lines": [
+          223,
+          251
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "ac235dd4b03baad47affd48e146b1cb1930547fb6f32a02e3ce47a848aaf2042",
+    "new_sha256": "8edc4c3a7dfb4fbacad9b37b829d3715ad7c7df5e09019c5351d3fa9290749fc"
+  },
+  {
+    "file": "test/test_sparse_concept_e2e.py",
+    "old": "ports/test_sparse_concept_e2e.py/old.py.txt",
+    "new": "ports/test_sparse_concept_e2e.py/new.py.txt",
+    "reason": "The two-phase integration uses the actual terminal concept owner; sparse dictionary and late-registration assertions remain.",
+    "cases": [
+      {
+        "old": "test_interpreted_object_keeps_the_native_features_in_one_row",
+        "new": "test_interpreted_object_keeps_the_native_features_in_one_row",
+        "body_changed": false,
+        "old_lines": [
+          66,
+          81
+        ],
+        "new_lines": [
+          66,
+          81
+        ]
+      },
+      {
+        "old": "test_symbolic_order_does_not_admit_a_same_order_edge",
+        "new": "test_symbolic_order_does_not_admit_a_same_order_edge",
+        "body_changed": false,
+        "old_lines": [
+          86,
+          92
+        ],
+        "new_lines": [
+          86,
+          92
+        ]
+      },
+      {
+        "old": "test_population_inactive_is_noop",
+        "new": "test_population_inactive_is_noop",
+        "body_changed": false,
+        "old_lines": [
+          95,
+          103
+        ],
+        "new_lines": [
+          95,
+          103
+        ]
+      },
+      {
+        "old": "test_order_block_overflow_is_safe",
+        "new": "test_order_block_overflow_is_safe",
+        "body_changed": false,
+        "old_lines": [
+          106,
+          110
+        ],
+        "new_lines": [
+          106,
+          110
+        ]
+      },
+      {
+        "old": "test_symbolic_phase_unwritten_definitions_are_neither",
+        "new": "test_symbolic_phase_unwritten_definitions_are_neither",
+        "body_changed": false,
+        "old_lines": [
+          115,
+          130
+        ],
+        "new_lines": [
+          115,
+          130
+        ]
+      },
+      {
+        "old": "test_symbolic_phase_inactive_is_noop",
+        "new": "test_symbolic_phase_inactive_is_noop",
+        "body_changed": false,
+        "old_lines": [
+          133,
+          137
+        ],
+        "new_lines": [
+          133,
+          137
+        ]
+      },
+      {
+        "old": "test_sparse_concept_config_builds_and_stamps",
+        "new": "test_sparse_concept_config_builds_and_stamps",
+        "body_changed": false,
+        "old_lines": [
+          142,
+          154
+        ],
+        "new_lines": [
+          142,
+          154
+        ]
+      },
+      {
+        "old": "test_sparse_concept_forward_smoke",
+        "new": "test_sparse_concept_forward_smoke",
+        "body_changed": false,
+        "old_lines": [
+          157,
+          168
+        ],
+        "new_lines": [
+          157,
+          168
+        ]
+      },
+      {
+        "old": "test_getparameters_includes_csw_after_population",
+        "new": "test_getparameters_includes_csw_after_population",
+        "body_changed": false,
+        "old_lines": [
+          173,
+          183
+        ],
+        "new_lines": [
+          173,
+          183
+        ]
+      },
+      {
+        "old": "test_getparameters_byte_identical_when_inactive",
+        "new": "test_getparameters_byte_identical_when_inactive",
+        "body_changed": false,
+        "old_lines": [
+          186,
+          194
+        ],
+        "new_lines": [
+          186,
+          194
+        ]
+      },
+      {
+        "old": "test_model_optimizer_picks_up_csw_weights",
+        "new": "test_model_optimizer_picks_up_csw_weights",
+        "body_changed": false,
+        "old_lines": [
+          197,
+          213
+        ],
+        "new_lines": [
+          197,
+          213
+        ]
+      },
+      {
+        "old": "test_distributional_code_cost_is_off_in_reconstruction_round",
+        "new": "test_distributional_code_cost_is_off_in_reconstruction_round",
+        "body_changed": false,
+        "old_lines": [
+          216,
+          221
+        ],
+        "new_lines": [
+          216,
+          221
+        ]
+      },
+      {
+        "old": "test_csw_weights_update_under_optimizer_step",
+        "new": "test_csw_weights_update_under_optimizer_step",
+        "body_changed": false,
+        "old_lines": [
+          224,
+          241
+        ],
+        "new_lines": [
+          224,
+          241
+        ]
+      },
+      {
+        "old": "test_demux_feedback_is_views_of_the_mixed_carrier",
+        "new": "test_demux_feedback_is_views_of_the_mixed_carrier",
+        "body_changed": false,
+        "old_lines": [
+          244,
+          273
+        ],
+        "new_lines": [
+          244,
+          273
+        ]
+      },
+      {
+        "old": "test_two_phase_forward_cutover_stamps_terminal_activations",
+        "new": "test_two_phase_forward_cutover_stamps_terminal_activations",
+        "body_changed": true,
+        "old_lines": [
+          276,
+          309
+        ],
+        "new_lines": [
+          276,
+          309
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "a320042da2667dc8bfd1cda6fb419b9abbd86fabf53b581e46373de76ce61367",
+    "new_sha256": "eb69194b8318d8aecaeca87e9de335abd87da6c4a3bacd0b34b0a689708baca2"
+  },
+  {
+    "file": "test/test_stm_reverse_roundtrip_lift_lower.py",
+    "old": "ports/test_stm_reverse_roundtrip_lift_lower.py/old.py.txt",
+    "new": "ports/test_stm_reverse_roundtrip_lift_lower.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "TestNotSelfInverse::test_lift_not_reverse_of_forward_bitonic",
+        "new": "TestNotSelfInverse::test_lift_not_reverse_of_forward_bitonic",
+        "body_changed": false,
+        "old_lines": [
+          82,
+          84
+        ],
+        "new_lines": [
+          82,
+          84
+        ]
+      },
+      {
+        "old": "TestNotSelfInverse::test_lower_not_reverse_of_forward_bitonic",
+        "new": "TestNotSelfInverse::test_lower_not_reverse_of_forward_bitonic",
+        "body_changed": false,
+        "old_lines": [
+          86,
+          88
+        ],
+        "new_lines": [
+          86,
+          88
+        ]
+      },
+      {
+        "old": "TestNotSelfInverse::test_lift_not_forward_of_reverse_bitonic",
+        "new": "TestNotSelfInverse::test_lift_not_forward_of_reverse_bitonic",
+        "body_changed": false,
+        "old_lines": [
+          90,
+          94
+        ],
+        "new_lines": [
+          90,
+          94
+        ]
+      },
+      {
+        "old": "TestNotSelfInverse::test_lift_not_monotonic_paired_index_involution",
+        "new": "TestNotSelfInverse::test_lift_not_monotonic_paired_index_involution",
+        "body_changed": false,
+        "old_lines": [
+          96,
+          102
+        ],
+        "new_lines": [
+          96,
+          102
+        ]
+      },
+      {
+        "old": "TestLatticeCodebookReverse::test_or_strict_reverse_recloses_on_codebook_target",
+        "new": "TestLatticeCodebookReverse::test_or_strict_reverse_recloses_on_codebook_target",
+        "body_changed": false,
+        "old_lines": [
+          125,
+          132
+        ],
+        "new_lines": [
+          125,
+          132
+        ]
+      },
+      {
+        "old": "TestLatticeCodebookReverse::test_or_reverse_pair_obeys_mereology_invariants",
+        "new": "TestLatticeCodebookReverse::test_or_reverse_pair_obeys_mereology_invariants",
+        "body_changed": true,
+        "old_lines": [
+          134,
+          140
+        ],
+        "new_lines": [
+          134,
+          140
+        ]
+      },
+      {
+        "old": "TestLatticeCodebookReverse::test_or_forward_of_reverse_batched",
+        "new": "TestLatticeCodebookReverse::test_or_forward_of_reverse_batched",
+        "body_changed": false,
+        "old_lines": [
+          142,
+          146
+        ],
+        "new_lines": [
+          142,
+          146
+        ]
+      },
+      {
+        "old": "TestLatticeCodebookReverse::test_and_strict_reverse_recloses_on_codebook_target",
+        "new": "TestLatticeCodebookReverse::test_and_strict_reverse_recloses_on_codebook_target",
+        "body_changed": false,
+        "old_lines": [
+          149,
+          156
+        ],
+        "new_lines": [
+          149,
+          156
+        ]
+      },
+      {
+        "old": "TestLatticeCodebookReverse::test_and_reverse_pair_are_wholes_of_target",
+        "new": "TestLatticeCodebookReverse::test_and_reverse_pair_are_wholes_of_target",
+        "body_changed": false,
+        "old_lines": [
+          158,
+          162
+        ],
+        "new_lines": [
+          158,
+          162
+        ]
+      },
+      {
+        "old": "TestLatticeCodebookReverse::test_and_forward_of_reverse_batched",
+        "new": "TestLatticeCodebookReverse::test_and_forward_of_reverse_batched",
+        "body_changed": false,
+        "old_lines": [
+          164,
+          168
+        ],
+        "new_lines": [
+          164,
+          168
+        ]
+      },
+      {
+        "old": "TestLatticeCodebookReverse::test_or_soft_reverse_recloses_to_lattice",
+        "new": "TestLatticeCodebookReverse::test_or_soft_reverse_recloses_to_lattice",
+        "body_changed": false,
+        "old_lines": [
+          171,
+          184
+        ],
+        "new_lines": [
+          171,
+          184
+        ]
+      },
+      {
+        "old": "TestLatticeCodebookReverse::test_and_radial_reverse_recloses_to_lattice",
+        "new": "TestLatticeCodebookReverse::test_and_radial_reverse_recloses_to_lattice",
+        "body_changed": false,
+        "old_lines": [
+          186,
+          195
+        ],
+        "new_lines": [
+          186,
+          195
+        ]
+      },
+      {
+        "old": "TestReverseModeCoverageMatrix::test_cross_mode_routing_is_consistent",
+        "new": "TestReverseModeCoverageMatrix::test_cross_mode_routing_is_consistent",
+        "body_changed": false,
+        "old_lines": [
+          207,
+          213
+        ],
+        "new_lines": [
+          207,
+          213
+        ]
+      },
+      {
+        "old": "TestReverseModeCoverageMatrix::test_all_point_kinds_forward_then_codebook_reverse_run",
+        "new": "TestReverseModeCoverageMatrix::test_all_point_kinds_forward_then_codebook_reverse_run",
+        "body_changed": false,
+        "old_lines": [
+          215,
+          258
+        ],
+        "new_lines": [
+          215,
+          258
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "60a6ad88e391fb4f466ee55bbdbdb013478379f627e13a38ca08c16c5904c109",
+    "new_sha256": "2cdbc4729de7e25a9504bea355354520526d76f0fe5bc03dabc8c5e1513e89cd"
+  },
+  {
+    "file": "test/test_stm_reverse_roundtrip_union_intersection.py",
+    "old": "ports/test_stm_reverse_roundtrip_union_intersection.py/old.py.txt",
+    "new": "ports/test_stm_reverse_roundtrip_union_intersection.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "TestUnionReverseClosure::test_every_codebook_target_recloses",
+        "new": "TestUnionReverseClosure::test_every_codebook_target_recloses",
+        "body_changed": true,
+        "old_lines": [
+          70,
+          78
+        ],
+        "new_lines": [
+          70,
+          78
+        ]
+      },
+      {
+        "old": "TestUnionReverseClosure::test_recommended_pair_obeys_mereology",
+        "new": "TestUnionReverseClosure::test_recommended_pair_obeys_mereology",
+        "body_changed": true,
+        "old_lines": [
+          80,
+          86
+        ],
+        "new_lines": [
+          80,
+          86
+        ]
+      },
+      {
+        "old": "TestUnionReverseClosure::test_batched_targets_reclose",
+        "new": "TestUnionReverseClosure::test_batched_targets_reclose",
+        "body_changed": true,
+        "old_lines": [
+          88,
+          93
+        ],
+        "new_lines": [
+          88,
+          93
+        ]
+      },
+      {
+        "old": "TestIntersectionReverseClosure::test_every_codebook_target_recloses",
+        "new": "TestIntersectionReverseClosure::test_every_codebook_target_recloses",
+        "body_changed": true,
+        "old_lines": [
+          103,
+          111
+        ],
+        "new_lines": [
+          103,
+          111
+        ]
+      },
+      {
+        "old": "TestIntersectionReverseClosure::test_recommended_pair_are_wholes",
+        "new": "TestIntersectionReverseClosure::test_recommended_pair_are_wholes",
+        "body_changed": true,
+        "old_lines": [
+          113,
+          117
+        ],
+        "new_lines": [
+          113,
+          117
+        ]
+      },
+      {
+        "old": "TestIntersectionReverseClosure::test_batched_targets_reclose",
+        "new": "TestIntersectionReverseClosure::test_batched_targets_reclose",
+        "body_changed": true,
+        "old_lines": [
+          119,
+          123
+        ],
+        "new_lines": [
+          119,
+          123
+        ]
+      },
+      {
+        "old": "TestPrimingOffIsIdentity::test_union_unprimed_equals_unity_priming",
+        "new": "TestPrimingOffIsIdentity::test_union_unprimed_equals_unity_priming",
+        "body_changed": true,
+        "old_lines": [
+          135,
+          143
+        ],
+        "new_lines": [
+          135,
+          143
+        ]
+      },
+      {
+        "old": "TestPrimingOffIsIdentity::test_intersection_unprimed_equals_unity_priming",
+        "new": "TestPrimingOffIsIdentity::test_intersection_unprimed_equals_unity_priming",
+        "body_changed": true,
+        "old_lines": [
+          145,
+          153
+        ],
+        "new_lines": [
+          145,
+          153
+        ]
+      },
+      {
+        "old": "TestCandidateRestrictionStillCloses::test_union_restricted_to_natural_rows_recloses",
+        "new": "TestCandidateRestrictionStillCloses::test_union_restricted_to_natural_rows_recloses",
+        "body_changed": true,
+        "old_lines": [
+          165,
+          175
+        ],
+        "new_lines": [
+          165,
+          175
+        ]
+      },
+      {
+        "old": "TestCandidateRestrictionStillCloses::test_union_overrestricted_falls_back_to_sentinels",
+        "new": "TestCandidateRestrictionStillCloses::test_union_overrestricted_falls_back_to_sentinels",
+        "body_changed": true,
+        "old_lines": [
+          177,
+          188
+        ],
+        "new_lines": [
+          177,
+          188
+        ]
+      },
+      {
+        "old": "TestCandidateRestrictionStillCloses::test_intersection_restricted_recloses",
+        "new": "TestCandidateRestrictionStillCloses::test_intersection_restricted_recloses",
+        "body_changed": true,
+        "old_lines": [
+          190,
+          203
+        ],
+        "new_lines": [
+          190,
+          203
+        ]
+      },
+      {
+        "old": "TestCandidateRestrictionStillCloses::test_intersection_overrestricted_overshoots_above_y",
+        "new": "TestCandidateRestrictionStillCloses::test_intersection_overrestricted_overshoots_above_y",
+        "body_changed": true,
+        "old_lines": [
+          205,
+          222
+        ],
+        "new_lines": [
+          205,
+          222
+        ]
+      },
+      {
+        "old": "TestCandidateRestrictionStillCloses::test_empty_restriction_still_feasible_via_sentinels",
+        "new": "TestCandidateRestrictionStillCloses::test_empty_restriction_still_feasible_via_sentinels",
+        "body_changed": true,
+        "old_lines": [
+          224,
+          236
+        ],
+        "new_lines": [
+          224,
+          236
+        ]
+      },
+      {
+        "old": "TestEmptyCodebookFallback::test_union_none_codebook_is_identity_pair",
+        "new": "TestEmptyCodebookFallback::test_union_none_codebook_is_identity_pair",
+        "body_changed": true,
+        "old_lines": [
+          243,
+          247
+        ],
+        "new_lines": [
+          243,
+          247
+        ]
+      },
+      {
+        "old": "TestEmptyCodebookFallback::test_intersection_empty_codebook_is_identity_pair",
+        "new": "TestEmptyCodebookFallback::test_intersection_empty_codebook_is_identity_pair",
+        "body_changed": true,
+        "old_lines": [
+          249,
+          254
+        ],
+        "new_lines": [
+          249,
+          254
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "7d560c02a3750e38e303c4c47e22f799bd4aa365892ec4911634462ee47be0be",
+    "new_sha256": "8ecc5000911533f8df43b734162da4fe84fe89a155d916ae8d8135bfeeaa941a"
+  },
+  {
+    "file": "test/test_subspace_what_stm_contract.py",
+    "old": "ports/test_subspace_what_stm_contract.py/old.py.txt",
+    "new": "ports/test_subspace_what_stm_contract.py/new.py.txt",
+    "reason": "Fixtures whose subject requires coordinate min/max choose the newly named min/max catalogue operators explicitly. Their expected arithmetic and stack assertions are unchanged.",
+    "cases": [
+      {
+        "old": "test_subspace_has_no_parallel_stack_fields",
+        "new": "test_subspace_has_no_parallel_stack_fields",
+        "body_changed": false,
+        "old_lines": [
+          61,
+          67
+        ],
+        "new_lines": [
+          61,
+          67
+        ]
+      },
+      {
+        "old": "test_subspace_exposes_required_stack_modalities",
+        "new": "test_subspace_exposes_required_stack_modalities",
+        "body_changed": false,
+        "old_lines": [
+          70,
+          74
+        ],
+        "new_lines": [
+          70,
+          74
+        ]
+      },
+      {
+        "old": "test_subspace_setters_exist",
+        "new": "test_subspace_setters_exist",
+        "body_changed": false,
+        "old_lines": [
+          77,
+          82
+        ],
+        "new_lines": [
+          77,
+          82
+        ]
+      },
+      {
+        "old": "test_what_roundtrip_through_setter",
+        "new": "test_what_roundtrip_through_setter",
+        "body_changed": false,
+        "old_lines": [
+          89,
+          96
+        ],
+        "new_lines": [
+          89,
+          96
+        ]
+      },
+      {
+        "old": "test_where_roundtrip_through_setter",
+        "new": "test_where_roundtrip_through_setter",
+        "body_changed": false,
+        "old_lines": [
+          99,
+          113
+        ],
+        "new_lines": [
+          99,
+          113
+        ]
+      },
+      {
+        "old": "test_activation_roundtrip_through_setter",
+        "new": "test_activation_roundtrip_through_setter",
+        "body_changed": false,
+        "old_lines": [
+          116,
+          126
+        ],
+        "new_lines": [
+          116,
+          126
+        ]
+      },
+      {
+        "old": "test_dead_stack_slots_zero_in_materialized_event",
+        "new": "test_dead_stack_slots_zero_in_materialized_event",
+        "body_changed": false,
+        "old_lines": [
+          133,
+          150
+        ],
+        "new_lines": [
+          133,
+          150
+        ]
+      },
+      {
+        "old": "test_zero_activation_does_not_corrupt_raw_what",
+        "new": "test_zero_activation_does_not_corrupt_raw_what",
+        "body_changed": false,
+        "old_lines": [
+          153,
+          167
+        ],
+        "new_lines": [
+          153,
+          167
+        ]
+      },
+      {
+        "old": "test_grammar_registry_surface_exists",
+        "new": "test_grammar_registry_surface_exists",
+        "body_changed": false,
+        "old_lines": [
+          183,
+          191
+        ],
+        "new_lines": [
+          183,
+          191
+        ]
+      },
+      {
+        "old": "test_grammar_registry_where_id_namespaces_do_not_collide",
+        "new": "test_grammar_registry_where_id_namespaces_do_not_collide",
+        "body_changed": false,
+        "old_lines": [
+          194,
+          216
+        ],
+        "new_lines": [
+          194,
+          216
+        ]
+      },
+      {
+        "old": "test_grammar_registry_accessors_on_configured_grammar",
+        "new": "test_grammar_registry_accessors_on_configured_grammar",
+        "body_changed": true,
+        "old_lines": [
+          219,
+          247
+        ],
+        "new_lines": [
+          219,
+          247
+        ]
+      },
+      {
+        "old": "test_execute_arity1_dispatches_to_layer_forward",
+        "new": "test_execute_arity1_dispatches_to_layer_forward",
+        "body_changed": false,
+        "old_lines": [
+          274,
+          305
+        ],
+        "new_lines": [
+          274,
+          305
+        ]
+      },
+      {
+        "old": "test_execute_arity2_requires_right",
+        "new": "test_execute_arity2_requires_right",
+        "body_changed": true,
+        "old_lines": [
+          308,
+          337
+        ],
+        "new_lines": [
+          308,
+          337
+        ]
+      },
+      {
+        "old": "test_execute_superposed_independent_then_weighted_sum",
+        "new": "test_execute_superposed_independent_then_weighted_sum",
+        "body_changed": true,
+        "old_lines": [
+          340,
+          381
+        ],
+        "new_lines": [
+          340,
+          381
+        ]
+      },
+      {
+        "old": "test_rule_codebook_class_basics",
+        "new": "test_rule_codebook_class_basics",
+        "body_changed": false,
+        "old_lines": [
+          391,
+          403
+        ],
+        "new_lines": [
+          391,
+          403
+        ]
+      },
+      {
+        "old": "test_rule_codebook_attached_grammar_routes_through_namespace",
+        "new": "test_rule_codebook_attached_grammar_routes_through_namespace",
+        "body_changed": false,
+        "old_lines": [
+          406,
+          415
+        ],
+        "new_lines": [
+          406,
+          415
+        ]
+      },
+      {
+        "old": "test_rule_codebook_with_embedding_initializes_xavier",
+        "new": "test_rule_codebook_with_embedding_initializes_xavier",
+        "body_changed": false,
+        "old_lines": [
+          418,
+          425
+        ],
+        "new_lines": [
+          418,
+          425
+        ]
+      },
+      {
+        "old": "test_shift_writes_into_first_empty_slot",
+        "new": "test_shift_writes_into_first_empty_slot",
+        "body_changed": false,
+        "old_lines": [
+          495,
+          515
+        ],
+        "new_lines": [
+          495,
+          515
+        ]
+      },
+      {
+        "old": "test_shift_appends_after_existing_live_slots",
+        "new": "test_shift_appends_after_existing_live_slots",
+        "body_changed": false,
+        "old_lines": [
+          518,
+          534
+        ],
+        "new_lines": [
+          518,
+          534
+        ]
+      },
+      {
+        "old": "test_shift_raises_on_full_stack",
+        "new": "test_shift_raises_on_full_stack",
+        "body_changed": false,
+        "old_lines": [
+          537,
+          544
+        ],
+        "new_lines": [
+          537,
+          544
+        ]
+      },
+      {
+        "old": "test_reduce_writes_parent_in_left_zeros_right",
+        "new": "test_reduce_writes_parent_in_left_zeros_right",
+        "body_changed": true,
+        "old_lines": [
+          547,
+          596
+        ],
+        "new_lines": [
+          547,
+          596
+        ]
+      },
+      {
+        "old": "test_reduce_raises_on_stack_underflow",
+        "new": "test_reduce_raises_on_stack_underflow",
+        "body_changed": true,
+        "old_lines": [
+          599,
+          626
+        ],
+        "new_lines": [
+          599,
+          626
+        ]
+      },
+      {
+        "old": "test_reduce_gradient_flows_to_child_payloads_and_op_params",
+        "new": "test_reduce_gradient_flows_to_child_payloads_and_op_params",
+        "body_changed": true,
+        "old_lines": [
+          629,
+          702
+        ],
+        "new_lines": [
+          629,
+          702
+        ]
+      },
+      {
+        "old": "test_grammar_decode_where_roundtrips_through_namespace",
+        "new": "test_grammar_decode_where_roundtrips_through_namespace",
+        "body_changed": false,
+        "old_lines": [
+          726,
+          750
+        ],
+        "new_lines": [
+          726,
+          750
+        ]
+      },
+      {
+        "old": "test_grammar_decode_where_tolerates_float_carrier",
+        "new": "test_grammar_decode_where_tolerates_float_carrier",
+        "body_changed": false,
+        "old_lines": [
+          753,
+          765
+        ],
+        "new_lines": [
+          753,
+          765
+        ]
+      },
+      {
+        "old": "test_unreduce_calls_layer_reverse_and_writes_children",
+        "new": "test_unreduce_calls_layer_reverse_and_writes_children",
+        "body_changed": true,
+        "old_lines": [
+          768,
+          819
+        ],
+        "new_lines": [
+          768,
+          819
+        ]
+      },
+      {
+        "old": "test_unreduce_is_noop_on_terminal_slot",
+        "new": "test_unreduce_is_noop_on_terminal_slot",
+        "body_changed": false,
+        "old_lines": [
+          822,
+          858
+        ],
+        "new_lines": [
+          822,
+          858
+        ]
+      },
+      {
+        "old": "test_unreduce_raises_on_empty_stack",
+        "new": "test_unreduce_raises_on_empty_stack",
+        "body_changed": false,
+        "old_lines": [
+          861,
+          869
+        ],
+        "new_lines": [
+          861,
+          869
+        ]
+      },
+      {
+        "old": "test_unreduce_raises_on_full_stack",
+        "new": "test_unreduce_raises_on_full_stack",
+        "body_changed": true,
+        "old_lines": [
+          872,
+          911
+        ],
+        "new_lines": [
+          872,
+          911
+        ]
+      },
+      {
+        "old": "test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+        "new": "test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+        "body_changed": true,
+        "old_lines": [
+          914,
+          985
+        ],
+        "new_lines": [
+          914,
+          985
+        ]
+      },
+      {
+        "old": "test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+        "new": "test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+        "body_changed": true,
+        "old_lines": [
+          988,
+          1058
+        ],
+        "new_lines": [
+          988,
+          1058
+        ]
+      },
+      {
+        "old": "test_signal_router_is_a_layer_subclass",
+        "new": "test_signal_router_is_a_layer_subclass",
+        "body_changed": false,
+        "old_lines": [
+          1065,
+          1075
+        ],
+        "new_lines": [
+          1065,
+          1075
+        ]
+      },
+      {
+        "old": "test_signal_router_init_sets_layer_attributes",
+        "new": "test_signal_router_init_sets_layer_attributes",
+        "body_changed": false,
+        "old_lines": [
+          1078,
+          1086
+        ],
+        "new_lines": [
+          1078,
+          1086
+        ]
+      },
+      {
+        "old": "test_forward_dispatches_to_forward_stack_with_actions",
+        "new": "test_forward_dispatches_to_forward_stack_with_actions",
+        "body_changed": true,
+        "old_lines": [
+          1089,
+          1140
+        ],
+        "new_lines": [
+          1089,
+          1140
+        ]
+      },
+      {
+        "old": "test_forward_without_actions_raises_with_pointer",
+        "new": "test_forward_without_actions_raises_with_pointer",
+        "body_changed": false,
+        "old_lines": [
+          1143,
+          1150
+        ],
+        "new_lines": [
+          1143,
+          1150
+        ]
+      },
+      {
+        "old": "test_reverse_dispatches_to_reverse_stack",
+        "new": "test_reverse_dispatches_to_reverse_stack",
+        "body_changed": false,
+        "old_lines": [
+          1153,
+          1179
+        ],
+        "new_lines": [
+          1153,
+          1179
+        ]
+      },
+      {
+        "old": "test_forward_stack_orchestrates_shift_then_reduce",
+        "new": "test_forward_stack_orchestrates_shift_then_reduce",
+        "body_changed": true,
+        "old_lines": [
+          1194,
+          1232
+        ],
+        "new_lines": [
+          1194,
+          1232
+        ]
+      },
+      {
+        "old": "test_symbolic_space_instance_owns_rule_catalog",
+        "new": "test_symbolic_space_instance_owns_rule_catalog",
+        "body_changed": false,
+        "old_lines": [
+          1268,
+          1274
+        ],
+        "new_lines": [
+          1268,
+          1274
+        ]
+      },
+      {
+        "old": "test_word_admission_preserves_the_property_inventory",
+        "new": "test_word_admission_preserves_the_property_inventory",
+        "body_changed": false,
+        "old_lines": [
+          1277,
+          1282
+        ],
+        "new_lines": [
+          1277,
+          1282
+        ]
+      },
+      {
+        "old": "test_symbolic_space_owns_signal_router",
+        "new": "test_symbolic_space_owns_signal_router",
+        "body_changed": false,
+        "old_lines": [
+          1287,
+          1292
+        ],
+        "new_lines": [
+          1287,
+          1292
+        ]
+      },
+      {
+        "old": "test_shared_operation_writes_the_caller_owned_stack",
+        "new": "test_shared_operation_writes_the_caller_owned_stack",
+        "body_changed": false,
+        "old_lines": [
+          1297,
+          1309
+        ],
+        "new_lines": [
+          1297,
+          1309
+        ]
+      },
+      {
+        "old": "test_stack_router_does_not_touch_word_space_current_rules",
+        "new": "test_stack_router_does_not_touch_word_space_current_rules",
+        "body_changed": false,
+        "old_lines": [
+          1312,
+          1325
+        ],
+        "new_lines": [
+          1312,
+          1325
+        ]
+      },
+      {
+        "old": "test_stack_router_does_not_touch_conceptual_stm",
+        "new": "test_stack_router_does_not_touch_conceptual_stm",
+        "body_changed": false,
+        "old_lines": [
+          1328,
+          1333
+        ],
+        "new_lines": [
+          1328,
+          1333
+        ]
+      },
+      {
+        "old": "test_shared_compose_does_not_dispatch_a_cursor",
+        "new": "test_shared_compose_does_not_dispatch_a_cursor",
+        "body_changed": false,
+        "old_lines": [
+          1336,
+          1345
+        ],
+        "new_lines": [
+          1336,
+          1345
+        ]
+      },
+      {
+        "old": "test_property_forward_does_not_compose",
+        "new": "test_property_forward_does_not_compose",
+        "body_changed": false,
+        "old_lines": [
+          1348,
+          1357
+        ],
+        "new_lines": [
+          1348,
+          1357
+        ]
+      },
+      {
+        "old": "test_symbolic_space_stack_route_uses_canonical_forward",
+        "new": "test_symbolic_space_stack_route_uses_canonical_forward",
+        "body_changed": false,
+        "old_lines": [
+          1360,
+          1369
+        ],
+        "new_lines": [
+          1360,
+          1369
+        ]
+      },
+      {
+        "old": "test_symbolic_space_reverse_dispatches_to_declared_operator",
+        "new": "test_symbolic_space_reverse_dispatches_to_declared_operator",
+        "body_changed": false,
+        "old_lines": [
+          1372,
+          1381
+        ],
+        "new_lines": [
+          1372,
+          1381
+        ]
+      },
+      {
+        "old": "test_property_reverse_does_not_call_grammar",
+        "new": "test_property_reverse_does_not_call_grammar",
+        "body_changed": false,
+        "old_lines": [
+          1384,
+          1393
+        ],
+        "new_lines": [
+          1384,
+          1393
+        ]
+      },
+      {
+        "old": "test_symbolic_space_reverse_does_not_touch_generate_rules",
+        "new": "test_symbolic_space_reverse_does_not_touch_generate_rules",
+        "body_changed": false,
+        "old_lines": [
+          1396,
+          1407
+        ],
+        "new_lines": [
+          1396,
+          1407
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "36f4340835077f0cea2e6d7e04df9c4967fa1ffcda849d7ea369ae6d3733b063",
+    "new_sha256": "9b239fd0619c413fc476f673917d036f53ba263f2730fedef820744b55b2d087"
+  },
+  {
+    "file": "test/test_symbolic_heat_retrieval.py",
+    "old": "ports/test_symbolic_heat_retrieval.py/old.py.txt",
+    "new": "ports/test_symbolic_heat_retrieval.py/new.py.txt",
+    "reason": "Use the retained lattice operators under intersectionReverse/unionReverse, and intersection/union where appropriate. All numerical, candidate restriction, gradient and round-trip assertions are retained; concept-binding conjunction/disjunction have separate three-face tests.",
+    "cases": [
+      {
+        "old": "TestHeatMask::test_cold_rows_give_zero",
+        "new": "TestHeatMask::test_cold_rows_give_zero",
+        "body_changed": false,
+        "old_lines": [
+          54,
+          60
+        ],
+        "new_lines": [
+          54,
+          60
+        ]
+      },
+      {
+        "old": "TestHeatMask::test_hot_rows_give_excess",
+        "new": "TestHeatMask::test_hot_rows_give_excess",
+        "body_changed": false,
+        "old_lines": [
+          62,
+          71
+        ],
+        "new_lines": [
+          62,
+          71
+        ]
+      },
+      {
+        "old": "TestHeatMask::test_matches_priming_mask_formula",
+        "new": "TestHeatMask::test_matches_priming_mask_formula",
+        "body_changed": false,
+        "old_lines": [
+          73,
+          80
+        ],
+        "new_lines": [
+          73,
+          80
+        ]
+      },
+      {
+        "old": "TestHeatMask::test_batch_none_returns_all_rows",
+        "new": "TestHeatMask::test_batch_none_returns_all_rows",
+        "body_changed": false,
+        "old_lines": [
+          82,
+          88
+        ],
+        "new_lines": [
+          82,
+          88
+        ]
+      },
+      {
+        "old": "TestHeatMask::test_returns_only_live_slice",
+        "new": "TestHeatMask::test_returns_only_live_slice",
+        "body_changed": false,
+        "old_lines": [
+          90,
+          96
+        ],
+        "new_lines": [
+          90,
+          96
+        ]
+      },
+      {
+        "old": "TestHeatMask::test_returns_none_when_no_buffer",
+        "new": "TestHeatMask::test_returns_none_when_no_buffer",
+        "body_changed": false,
+        "old_lines": [
+          98,
+          102
+        ],
+        "new_lines": [
+          98,
+          102
+        ]
+      },
+      {
+        "old": "TestTopkHeat::test_excludes_slack_rows",
+        "new": "TestTopkHeat::test_excludes_slack_rows",
+        "body_changed": false,
+        "old_lines": [
+          110,
+          119
+        ],
+        "new_lines": [
+          110,
+          119
+        ]
+      },
+      {
+        "old": "TestTopkHeat::test_sorted_by_heat_descending",
+        "new": "TestTopkHeat::test_sorted_by_heat_descending",
+        "body_changed": false,
+        "old_lines": [
+          121,
+          129
+        ],
+        "new_lines": [
+          121,
+          129
+        ]
+      },
+      {
+        "old": "TestTopkHeat::test_returns_fewer_than_k_when_few_hot",
+        "new": "TestTopkHeat::test_returns_fewer_than_k_when_few_hot",
+        "body_changed": false,
+        "old_lines": [
+          131,
+          137
+        ],
+        "new_lines": [
+          131,
+          137
+        ]
+      },
+      {
+        "old": "TestTopkHeat::test_rows_restriction",
+        "new": "TestTopkHeat::test_rows_restriction",
+        "body_changed": false,
+        "old_lines": [
+          139,
+          148
+        ],
+        "new_lines": [
+          139,
+          148
+        ]
+      },
+      {
+        "old": "TestTopkHeat::test_rows_restriction_excludes_slack",
+        "new": "TestTopkHeat::test_rows_restriction_excludes_slack",
+        "body_changed": false,
+        "old_lines": [
+          150,
+          158
+        ],
+        "new_lines": [
+          150,
+          158
+        ]
+      },
+      {
+        "old": "TestTopkHeat::test_empty_when_nothing_hot",
+        "new": "TestTopkHeat::test_empty_when_nothing_hot",
+        "body_changed": false,
+        "old_lines": [
+          160,
+          164
+        ],
+        "new_lines": [
+          160,
+          164
+        ]
+      },
+      {
+        "old": "TestTopkHeat::test_empty_when_k_zero",
+        "new": "TestTopkHeat::test_empty_when_k_zero",
+        "body_changed": false,
+        "old_lines": [
+          166,
+          171
+        ],
+        "new_lines": [
+          166,
+          171
+        ]
+      },
+      {
+        "old": "TestTopkHeat::test_empty_when_no_buffer",
+        "new": "TestTopkHeat::test_empty_when_no_buffer",
+        "body_changed": false,
+        "old_lines": [
+          173,
+          178
+        ],
+        "new_lines": [
+          173,
+          178
+        ]
+      },
+      {
+        "old": "TestBuildSemanticHeat::test_matches_dense_reference",
+        "new": "TestBuildSemanticHeat::test_matches_dense_reference",
+        "body_changed": false,
+        "old_lines": [
+          191,
+          201
+        ],
+        "new_lines": [
+          191,
+          201
+        ]
+      },
+      {
+        "old": "TestBuildSemanticHeat::test_zeros_when_nothing_hot",
+        "new": "TestBuildSemanticHeat::test_zeros_when_nothing_hot",
+        "body_changed": false,
+        "old_lines": [
+          203,
+          207
+        ],
+        "new_lines": [
+          203,
+          207
+        ]
+      },
+      {
+        "old": "TestBuildSemanticHeat::test_rows_restriction",
+        "new": "TestBuildSemanticHeat::test_rows_restriction",
+        "body_changed": false,
+        "old_lines": [
+          209,
+          223
+        ],
+        "new_lines": [
+          209,
+          223
+        ]
+      },
+      {
+        "old": "TestBuildSemanticHeat::test_topk_restriction",
+        "new": "TestBuildSemanticHeat::test_topk_restriction",
+        "body_changed": false,
+        "old_lines": [
+          225,
+          245
+        ],
+        "new_lines": [
+          225,
+          245
+        ]
+      },
+      {
+        "old": "TestBuildSemanticHeat::test_returns_zeros_when_no_buffer",
+        "new": "TestBuildSemanticHeat::test_returns_zeros_when_no_buffer",
+        "body_changed": false,
+        "old_lines": [
+          247,
+          253
+        ],
+        "new_lines": [
+          247,
+          253
+        ]
+      },
+      {
+        "old": "TestBuildSemanticHeat::test_dtype_matches_codebook",
+        "new": "TestBuildSemanticHeat::test_dtype_matches_codebook",
+        "body_changed": false,
+        "old_lines": [
+          255,
+          261
+        ],
+        "new_lines": [
+          255,
+          261
+        ]
+      },
+      {
+        "old": "TestBuildOuterHeat::test_lowrank_U_times_q_equals_dense_C_times_q",
+        "new": "TestBuildOuterHeat::test_lowrank_U_times_q_equals_dense_C_times_q",
+        "body_changed": false,
+        "old_lines": [
+          274,
+          293
+        ],
+        "new_lines": [
+          274,
+          293
+        ]
+      },
+      {
+        "old": "TestBuildOuterHeat::test_dense_C_equals_UtU",
+        "new": "TestBuildOuterHeat::test_dense_C_equals_UtU",
+        "body_changed": false,
+        "old_lines": [
+          295,
+          304
+        ],
+        "new_lines": [
+          295,
+          304
+        ]
+      },
+      {
+        "old": "TestBuildOuterHeat::test_empty_S_low_rank_shape",
+        "new": "TestBuildOuterHeat::test_empty_S_low_rank_shape",
+        "body_changed": false,
+        "old_lines": [
+          306,
+          310
+        ],
+        "new_lines": [
+          306,
+          310
+        ]
+      },
+      {
+        "old": "TestBuildOuterHeat::test_empty_S_dense_is_zeros",
+        "new": "TestBuildOuterHeat::test_empty_S_dense_is_zeros",
+        "body_changed": false,
+        "old_lines": [
+          312,
+          317
+        ],
+        "new_lines": [
+          312,
+          317
+        ]
+      },
+      {
+        "old": "TestBuildOuterHeat::test_rows_restriction",
+        "new": "TestBuildOuterHeat::test_rows_restriction",
+        "body_changed": false,
+        "old_lines": [
+          319,
+          342
+        ],
+        "new_lines": [
+          319,
+          342
+        ]
+      },
+      {
+        "old": "TestBuildOuterHeat::test_dtype_matches_codebook",
+        "new": "TestBuildOuterHeat::test_dtype_matches_codebook",
+        "body_changed": false,
+        "old_lines": [
+          344,
+          350
+        ],
+        "new_lines": [
+          344,
+          350
+        ]
+      },
+      {
+        "old": "TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_no_typed_filter",
+        "new": "TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_no_typed_filter",
+        "body_changed": false,
+        "old_lines": [
+          411,
+          426
+        ],
+        "new_lines": [
+          411,
+          426
+        ]
+      },
+      {
+        "old": "TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_typed_admits_it",
+        "new": "TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_typed_admits_it",
+        "body_changed": false,
+        "old_lines": [
+          428,
+          443
+        ],
+        "new_lines": [
+          428,
+          443
+        ]
+      },
+      {
+        "old": "TestCandidateUnionIncludesHot::test_hot_distant_in_union_no_typed_filter",
+        "new": "TestCandidateUnionIncludesHot::test_hot_distant_in_union_no_typed_filter",
+        "body_changed": false,
+        "old_lines": [
+          471,
+          485
+        ],
+        "new_lines": [
+          471,
+          485
+        ]
+      },
+      {
+        "old": "TestCandidateUnionIncludesHot::test_hot_distant_in_union_typed_admits_it",
+        "new": "TestCandidateUnionIncludesHot::test_hot_distant_in_union_typed_admits_it",
+        "body_changed": false,
+        "old_lines": [
+          487,
+          502
+        ],
+        "new_lines": [
+          487,
+          502
+        ]
+      },
+      {
+        "old": "TestTypedMaskExcludesHotInadmissible::test_inadmissible_hot_excluded_from_rows",
+        "new": "TestTypedMaskExcludesHotInadmissible::test_inadmissible_hot_excluded_from_rows",
+        "body_changed": false,
+        "old_lines": [
+          535,
+          557
+        ],
+        "new_lines": [
+          535,
+          557
+        ]
+      },
+      {
+        "old": "TestTypedMaskExcludesHotInadmissible::test_priming_identity_for_non_candidates",
+        "new": "TestTypedMaskExcludesHotInadmissible::test_priming_identity_for_non_candidates",
+        "body_changed": false,
+        "old_lines": [
+          559,
+          580
+        ],
+        "new_lines": [
+          559,
+          580
+        ]
+      },
+      {
+        "old": "TestTypedMaskExcludesHotInadmissible::test_priming_above_unity_for_at_least_one_candidate",
+        "new": "TestTypedMaskExcludesHotInadmissible::test_priming_above_unity_for_at_least_one_candidate",
+        "body_changed": false,
+        "old_lines": [
+          582,
+          603
+        ],
+        "new_lines": [
+          582,
+          603
+        ]
+      },
+      {
+        "old": "TestRetrievalGracefulFallback::test_returns_empty_when_knowledge_none",
+        "new": "TestRetrievalGracefulFallback::test_returns_empty_when_knowledge_none",
+        "body_changed": false,
+        "old_lines": [
+          625,
+          632
+        ],
+        "new_lines": [
+          625,
+          632
+        ]
+      },
+      {
+        "old": "TestRetrievalGracefulFallback::test_returns_empty_when_basis_none",
+        "new": "TestRetrievalGracefulFallback::test_returns_empty_when_basis_none",
+        "body_changed": false,
+        "old_lines": [
+          634,
+          641
+        ],
+        "new_lines": [
+          634,
+          641
+        ]
+      },
+      {
+        "old": "TestRetrievalGracefulFallback::test_returns_empty_when_getW_returns_none",
+        "new": "TestRetrievalGracefulFallback::test_returns_empty_when_getW_returns_none",
+        "body_changed": false,
+        "old_lines": [
+          643,
+          651
+        ],
+        "new_lines": [
+          643,
+          651
+        ]
+      },
+      {
+        "old": "TestRetrievalGracefulFallback::test_returns_empty_when_basis_has_no_getW",
+        "new": "TestRetrievalGracefulFallback::test_returns_empty_when_basis_has_no_getW",
+        "body_changed": false,
+        "old_lines": [
+          653,
+          661
+        ],
+        "new_lines": [
+          653,
+          661
+        ]
+      },
+      {
+        "old": "TestTypedOnlyFallback::test_typed_only_fallback",
+        "new": "TestTypedOnlyFallback::test_typed_only_fallback",
+        "body_changed": false,
+        "old_lines": [
+          673,
+          702
+        ],
+        "new_lines": [
+          673,
+          702
+        ]
+      },
+      {
+        "old": "TestDiagnosticsConsistency::test_diagnostics_consistent_on_normal_path",
+        "new": "TestDiagnosticsConsistency::test_diagnostics_consistent_on_normal_path",
+        "body_changed": false,
+        "old_lines": [
+          714,
+          740
+        ],
+        "new_lines": [
+          714,
+          740
+        ]
+      },
+      {
+        "old": "TestUnityPrimingByteIdentical::test_disjunction_none_equals_unity",
+        "new": "TestUnityPrimingByteIdentical::test_disjunction_none_equals_unity",
+        "body_changed": true,
+        "old_lines": [
+          768,
+          780
+        ],
+        "new_lines": [
+          768,
+          780
+        ]
+      },
+      {
+        "old": "TestUnityPrimingByteIdentical::test_conjunction_none_equals_unity",
+        "new": "TestUnityPrimingByteIdentical::test_conjunction_none_equals_unity",
+        "body_changed": true,
+        "old_lines": [
+          782,
+          797
+        ],
+        "new_lines": [
+          782,
+          797
+        ]
+      },
+      {
+        "old": "TestUnityPrimingByteIdentical::test_disjunction_none_rows_equals_unity_rows",
+        "new": "TestUnityPrimingByteIdentical::test_disjunction_none_rows_equals_unity_rows",
+        "body_changed": true,
+        "old_lines": [
+          799,
+          812
+        ],
+        "new_lines": [
+          799,
+          812
+        ]
+      },
+      {
+        "old": "TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_disjunction",
+        "new": "TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_disjunction",
+        "body_changed": true,
+        "old_lines": [
+          839,
+          860
+        ],
+        "new_lines": [
+          839,
+          860
+        ]
+      },
+      {
+        "old": "TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_conjunction",
+        "new": "TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_conjunction",
+        "body_changed": true,
+        "old_lines": [
+          862,
+          887
+        ],
+        "new_lines": [
+          862,
+          887
+        ]
+      },
+      {
+        "old": "TestHeatContentPrefersExpectedCandidate::test_candidate_from_retrieval_boosts_expected_row",
+        "new": "TestHeatContentPrefersExpectedCandidate::test_candidate_from_retrieval_boosts_expected_row",
+        "body_changed": true,
+        "old_lines": [
+          889,
+          948
+        ],
+        "new_lines": [
+          889,
+          948
+        ]
+      },
+      {
+        "old": "TestSymbolicPrimingOffIsNoop::test_off_leaves_priming_at_unity",
+        "new": "TestSymbolicPrimingOffIsNoop::test_off_leaves_priming_at_unity",
+        "body_changed": false,
+        "old_lines": [
+          1010,
+          1027
+        ],
+        "new_lines": [
+          1010,
+          1027
+        ]
+      },
+      {
+        "old": "TestSymbolicPrimingOffIsNoop::test_off_no_op_even_for_valid_ref",
+        "new": "TestSymbolicPrimingOffIsNoop::test_off_no_op_even_for_valid_ref",
+        "body_changed": false,
+        "old_lines": [
+          1029,
+          1036
+        ],
+        "new_lines": [
+          1029,
+          1036
+        ]
+      },
+      {
+        "old": "TestSymbolicPrimingOnMakesRefHot::test_committed_ref_is_hot",
+        "new": "TestSymbolicPrimingOnMakesRefHot::test_committed_ref_is_hot",
+        "body_changed": false,
+        "old_lines": [
+          1045,
+          1052
+        ],
+        "new_lines": [
+          1045,
+          1052
+        ]
+      },
+      {
+        "old": "TestSymbolicPrimingOnMakesRefHot::test_neighbor_becomes_hot_via_propagate",
+        "new": "TestSymbolicPrimingOnMakesRefHot::test_neighbor_becomes_hot_via_propagate",
+        "body_changed": false,
+        "old_lines": [
+          1054,
+          1069
+        ],
+        "new_lines": [
+          1054,
+          1069
+        ]
+      },
+      {
+        "old": "TestSymbolicPrimingOnMakesRefHot::test_negative_ref_is_noop_when_on",
+        "new": "TestSymbolicPrimingOnMakesRefHot::test_negative_ref_is_noop_when_on",
+        "body_changed": false,
+        "old_lines": [
+          1071,
+          1080
+        ],
+        "new_lines": [
+          1071,
+          1080
+        ]
+      },
+      {
+        "old": "TestSentenceResetClearsHeat::test_reset_clears_row_heat_and_semantic",
+        "new": "TestSentenceResetClearsHeat::test_reset_clears_row_heat_and_semantic",
+        "body_changed": false,
+        "old_lines": [
+          1089,
+          1114
+        ],
+        "new_lines": [
+          1089,
+          1114
+        ]
+      },
+      {
+        "old": "TestConfigurePrimingFromSymbolicPriming::test_flag_flips_and_gate_respects_it",
+        "new": "TestConfigurePrimingFromSymbolicPriming::test_flag_flips_and_gate_respects_it",
+        "body_changed": false,
+        "old_lines": [
+          1123,
+          1138
+        ],
+        "new_lines": [
+          1123,
+          1138
+        ]
+      },
+      {
+        "old": "TestConfigurePrimingFromSymbolicPriming::test_missing_taxonomy_is_safe",
+        "new": "TestConfigurePrimingFromSymbolicPriming::test_missing_taxonomy_is_safe",
+        "body_changed": false,
+        "old_lines": [
+          1140,
+          1146
+        ],
+        "new_lines": [
+          1140,
+          1146
+        ]
+      },
+      {
+        "old": "TestReduceCommitPrimesChildRefs::test_child_refs_primed_when_on",
+        "new": "TestReduceCommitPrimesChildRefs::test_child_refs_primed_when_on",
+        "body_changed": false,
+        "old_lines": [
+          1157,
+          1167
+        ],
+        "new_lines": [
+          1157,
+          1167
+        ]
+      },
+      {
+        "old": "TestReduceCommitPrimesChildRefs::test_child_refs_noop_when_off",
+        "new": "TestReduceCommitPrimesChildRefs::test_child_refs_noop_when_off",
+        "body_changed": false,
+        "old_lines": [
+          1169,
+          1177
+        ],
+        "new_lines": [
+          1169,
+          1177
+        ]
+      },
+      {
+        "old": "TestPrimerModeByteIdentical::test_primer_equals_reference_formula",
+        "new": "TestPrimerModeByteIdentical::test_primer_equals_reference_formula",
+        "body_changed": false,
+        "old_lines": [
+          1213,
+          1236
+        ],
+        "new_lines": [
+          1213,
+          1236
+        ]
+      },
+      {
+        "old": "TestPrimerModeByteIdentical::test_primer_equals_default_call",
+        "new": "TestPrimerModeByteIdentical::test_primer_equals_default_call",
+        "body_changed": false,
+        "old_lines": [
+          1238,
+          1246
+        ],
+        "new_lines": [
+          1238,
+          1246
+        ]
+      },
+      {
+        "old": "TestPrimerModeByteIdentical::test_primer_mode_with_nonzero_gamma_delta_ignored",
+        "new": "TestPrimerModeByteIdentical::test_primer_mode_with_nonzero_gamma_delta_ignored",
+        "body_changed": false,
+        "old_lines": [
+          1248,
+          1258
+        ],
+        "new_lines": [
+          1248,
+          1258
+        ]
+      },
+      {
+        "old": "TestLowRankCarrierMatchesDense::test_lowrank_delta_equals_dense_delta",
+        "new": "TestLowRankCarrierMatchesDense::test_lowrank_delta_equals_dense_delta",
+        "body_changed": false,
+        "old_lines": [
+          1273,
+          1330
+        ],
+        "new_lines": [
+          1273,
+          1330
+        ]
+      },
+      {
+        "old": "TestCarrierChangesWeight::test_gamma_changes_weight",
+        "new": "TestCarrierChangesWeight::test_gamma_changes_weight",
+        "body_changed": false,
+        "old_lines": [
+          1343,
+          1374
+        ],
+        "new_lines": [
+          1343,
+          1374
+        ]
+      },
+      {
+        "old": "TestCarrierChangesWeight::test_delta_changes_weight",
+        "new": "TestCarrierChangesWeight::test_delta_changes_weight",
+        "body_changed": false,
+        "old_lines": [
+          1376,
+          1407
+        ],
+        "new_lines": [
+          1376,
+          1407
+        ]
+      },
+      {
+        "old": "TestMillionRowNoVVSmoke::test_large_codebook_primer_and_lowrank_no_vv",
+        "new": "TestMillionRowNoVVSmoke::test_large_codebook_primer_and_lowrank_no_vv",
+        "body_changed": false,
+        "old_lines": [
+          1442,
+          1491
+        ],
+        "new_lines": [
+          1442,
+          1491
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "690fbdddeef263b80b49fd4805db94c5930a7428b3494897e593a493d650db0d",
+    "new_sha256": "1a46ca943740b67780bb5518aa44941ffcc62c43fc5d208437f7f44c4444be9f"
+  },
+  {
+    "file": "test/test_tied_operator_reconstruction.py",
+    "old": "ports/test_tied_operator_reconstruction.py/old.py.txt",
+    "new": "ports/test_tied_operator_reconstruction.py/new.py.txt",
+    "reason": "The absorbed-operand fixture includes its passed-through parent among candidates. Both recovered operands must be actual bank entries; residual and operand-count bounds remain.",
+    "cases": [
+      {
+        "old": "test_word_scoring_honors_existing_nul_termination",
+        "new": "test_word_scoring_honors_existing_nul_termination",
+        "body_changed": false,
+        "old_lines": [
+          9,
+          38
+        ],
+        "new_lines": [
+          9,
+          38
+        ]
+      },
+      {
+        "old": "test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match",
+        "new": "test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match",
+        "body_changed": false,
+        "old_lines": [
+          41,
+          68
+        ],
+        "new_lines": [
+          41,
+          68
+        ]
+      },
+      {
+        "old": "test_byte_fidelity_penalizes_a_candidate_with_extra_suffix_bytes",
+        "new": "test_byte_fidelity_penalizes_a_candidate_with_extra_suffix_bytes",
+        "body_changed": false,
+        "old_lines": [
+          71,
+          92
+        ],
+        "new_lines": [
+          71,
+          92
+        ]
+      },
+      {
+        "old": "test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient",
+        "new": "test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient",
+        "body_changed": false,
+        "old_lines": [
+          95,
+          115
+        ],
+        "new_lines": [
+          95,
+          115
+        ]
+      },
+      {
+        "old": "test_tied_affine_inverse_uses_the_retained_operand",
+        "new": "test_tied_affine_inverse_uses_the_retained_operand",
+        "body_changed": false,
+        "old_lines": [
+          118,
+          144
+        ],
+        "new_lines": [
+          118,
+          144
+        ]
+      },
+      {
+        "old": "test_absorbed_marker_uses_its_own_reference",
+        "new": "test_absorbed_marker_uses_its_own_reference",
+        "body_changed": false,
+        "old_lines": [
+          147,
+          162
+        ],
+        "new_lines": [
+          147,
+          162
+        ]
+      },
+      {
+        "old": "test_product_recovers_nonzero_operand_residual",
+        "new": "test_product_recovers_nonzero_operand_residual",
+        "body_changed": false,
+        "old_lines": [
+          165,
+          177
+        ],
+        "new_lines": [
+          165,
+          177
+        ]
+      },
+      {
+        "old": "test_unselected_unary_is_not_evaluated",
+        "new": "test_unselected_unary_is_not_evaluated",
+        "body_changed": false,
+        "old_lines": [
+          180,
+          193
+        ],
+        "new_lines": [
+          180,
+          193
+        ]
+      },
+      {
+        "old": "test_snapshot_owns_values_across_same_shape_dictionary_update",
+        "new": "test_snapshot_owns_values_across_same_shape_dictionary_update",
+        "body_changed": false,
+        "old_lines": [
+          196,
+          216
+        ],
+        "new_lines": [
+          196,
+          216
+        ]
+      },
+      {
+        "old": "test_snapshot_preserves_backward_after_same_shape_dictionary_update",
+        "new": "test_snapshot_preserves_backward_after_same_shape_dictionary_update",
+        "body_changed": false,
+        "old_lines": [
+          219,
+          240
+        ],
+        "new_lines": [
+          219,
+          240
+        ]
+      },
+      {
+        "old": "test_candidate_search_executes_at_most_the_declared_pair_budget",
+        "new": "test_candidate_search_executes_at_most_the_declared_pair_budget",
+        "body_changed": false,
+        "old_lines": [
+          243,
+          262
+        ],
+        "new_lines": [
+          243,
+          262
+        ]
+      },
+      {
+        "old": "test_missing_absorbed_operand_uses_bounded_compose_candidates",
+        "new": "test_missing_absorbed_operand_uses_bounded_compose_candidates",
+        "body_changed": true,
+        "old_lines": [
+          265,
+          287
+        ],
+        "new_lines": [
+          265,
+          289
+        ]
+      },
+      {
+        "old": "test_unavailable_inverse_is_explicit_without_candidates",
+        "new": "test_unavailable_inverse_is_explicit_without_candidates",
+        "body_changed": false,
+        "old_lines": [
+          290,
+          302
+        ],
+        "new_lines": [
+          292,
+          304
+        ]
+      },
+      {
+        "old": "test_noninvertible_compose_transform_uses_the_bounded_candidate_path",
+        "new": "test_noninvertible_compose_transform_uses_the_bounded_candidate_path",
+        "body_changed": false,
+        "old_lines": [
+          305,
+          329
+        ],
+        "new_lines": [
+          307,
+          331
+        ]
+      },
+      {
+        "old": "test_adverb_uses_its_own_bounded_inverse_and_shared_parameters",
+        "new": "test_adverb_uses_its_own_bounded_inverse_and_shared_parameters",
+        "body_changed": false,
+        "old_lines": [
+          332,
+          353
+        ],
+        "new_lines": [
+          334,
+          355
+        ]
+      },
+      {
+        "old": "test_masked_candidate_values_do_not_poison_parent_gradient",
+        "new": "test_masked_candidate_values_do_not_poison_parent_gradient",
+        "body_changed": false,
+        "old_lines": [
+          356,
+          373
+        ],
+        "new_lines": [
+          358,
+          375
+        ]
+      },
+      {
+        "old": "test_inactive_batch_row_does_not_poison_the_selected_inverse_gradient",
+        "new": "test_inactive_batch_row_does_not_poison_the_selected_inverse_gradient",
+        "body_changed": false,
+        "old_lines": [
+          376,
+          388
+        ],
+        "new_lines": [
+          378,
+          390
+        ]
+      },
+      {
+        "old": "test_declared_identity_unary_is_available_on_opaque_concepts",
+        "new": "test_declared_identity_unary_is_available_on_opaque_concepts",
+        "body_changed": false,
+        "old_lines": [
+          391,
+          406
+        ],
+        "new_lines": [
+          393,
+          408
+        ]
+      },
+      {
+        "old": "test_byte_targets_survive_whole_word_and_prefix_promotion",
+        "new": "test_byte_targets_survive_whole_word_and_prefix_promotion",
+        "body_changed": false,
+        "old_lines": [
+          407,
+          459
+        ],
+        "new_lines": [
+          409,
+          461
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "25bb954d9179b5ee4973a059bdedd8666239863372e8d6e84d32e5544ef0b43c",
+    "new_sha256": "d5206a2dc6f727dc2d52d3c62b9a41fb315aeefb227933255953566c521bcf42"
+  },
+  {
+    "file": "test/test_tied_reconstruction_objective.py",
+    "old": "ports/test_tied_reconstruction_objective.py/old.py.txt",
+    "new": "ports/test_tied_reconstruction_objective.py/new.py.txt",
+    "reason": "Current optimizer round-trip checks shared weights and SGD momentum. Older Adam-to-new-owner migration is covered separately by test_objective_optimizer_resume.",
+    "cases": [
+      {
+        "old": "test_tied_runbatch_scores_the_same_owned_objective_once",
+        "new": "test_tied_runbatch_scores_the_same_owned_objective_once",
+        "body_changed": false,
+        "old_lines": [
+          6,
+          52
+        ],
+        "new_lines": [
+          6,
+          52
+        ]
+      },
+      {
+        "old": "test_production_configuration_selects_tied_input_objective",
+        "new": "test_production_configuration_selects_tied_input_objective",
+        "body_changed": false,
+        "old_lines": [
+          55,
+          64
+        ],
+        "new_lines": [
+          55,
+          64
+        ]
+      },
+      {
+        "old": "test_student_checkpoint_migrates_shared_weights_and_adam_by_name",
+        "new": "test_student_checkpoint_migrates_shared_weights_and_momentum_by_name",
+        "body_changed": true,
+        "old_lines": [
+          67,
+          132
+        ],
+        "new_lines": [
+          67,
+          132
+        ]
+      }
+    ],
+    "added": [],
+    "old_sha256": "e6673eabf313637a0adf70103749492d922caff4761d2a1ad2543d4f202a1963",
+    "new_sha256": "6f0f2a9931b3611a4d3805f8bf4a673ee7b7b5c2f7b4e3af7636b2b6414162b7"
+  }
+]

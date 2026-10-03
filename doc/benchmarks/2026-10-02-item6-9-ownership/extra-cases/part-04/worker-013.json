@@ -1,0 +1,103 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_words_summary_row_running_mean",
+    "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip"
+  ],
+  "completed": [
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_words_summary_row_running_mean",
+    "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip"
+  ],
+  "slow_selected": [
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_words_summary_row_running_mean",
+    "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_store.py::test_reading_promotes_the_batch_words",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.027042125002481043,
+      "message": "test/test_word_store.py:161: in test_reading_promotes_the_batch_words\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store0/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store0/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store0/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.011754709004890174,
+      "message": "test/test_word_store.py:198: in test_one_to_one_recognition_registers_under_words\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store1/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store1/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store1/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.012167915992904454,
+      "message": "test/test_word_store.py:266: in test_percept_extras_ride_the_checkpoint_envelope\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store2/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store2/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store2/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.011925541999517009,
+      "message": "test/test_word_store.py:297: in test_storeless_configs_emit_no_percept_key\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store3/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store3/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store3/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_words_summary_row_running_mean",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01193054199393373,
+      "message": "test/test_word_store.py:322: in test_words_summary_row_running_mean\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store4/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store4/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store4/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.012445416999980807,
+      "message": "test/test_word_store.py:369: in test_ws_word_whole_registry_resolves_to_rows\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store5/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store5/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store5/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.012033249993692152,
+      "message": "test/test_word_store.py:580: in test_grammar_reverse_ops_from_generate_section\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store6/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store6/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store6/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.011809667004854418,
+      "message": "test/test_word_store.py:599: in test_reverse_chooser_picks_fold_op_by_roundtrip\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store7/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store7/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store7/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

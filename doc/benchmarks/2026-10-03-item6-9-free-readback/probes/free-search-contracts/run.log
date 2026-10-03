@@ -1,0 +1,41 @@
+.........................F........................                       [100%]
+=================================== FAILURES ===================================
+________ test_missing_absorbed_operand_uses_bounded_compose_candidates _________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1188/test_missing_absorbed_operand_0')
+
+    def test_missing_absorbed_operand_uses_bounded_compose_candidates(tmp_path):
+        from Language import PartLayer
+        model = _model(tmp_path)
+        try:
+            parent = torch.tensor([[.2, .7]])
+            basis = torch.tensor([[[.1, .3], [.6, .2], [100., 100.]]])
+            left, right, unavailable = model.languageSpace.reverse_binary_step(
+                parent, torch.tensor([0]), torch.tensor([True]), ops=[PartLayer()],
+                basis=basis, basis_valid=torch.tensor([[True, True, False]]),
+                candidate_limit=2, return_status=True)
+            assert not unavailable.any()
+            # The parent contains no marker identity. The missing operand is
+            # one hard least-residual candidate from the bounded valid rows.
+            candidates = basis[:, :2]
+            assert (left[:, None, :] == candidates).all(-1).any(-1).all()
+            op = PartLayer()
+            residuals = (op.compose(candidates, parent[:, None, :]) - parent[:, None, :]).square().mean(-1)
+            residual = (op.compose(left, right) - parent).square().mean(-1)
+>           torch.testing.assert_close(residual, residuals.min(-1).values)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 1 / 1 (100.0%)
+E           Greatest absolute difference: 0.08499999344348907 at index (0,) (up to 1e-05 allowed)
+E           Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)
+
+test/test_tied_operator_reconstruction.py:283: AssertionError
+=============================== warnings summary ===============================
+test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_tied_operator_reconstruction.py::test_missing_absorbed_operand_uses_bounded_compose_candidates
+1 failed, 49 passed, 1 warning in 25.10s

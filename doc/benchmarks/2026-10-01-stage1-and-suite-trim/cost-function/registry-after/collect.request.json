@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_relative_error.py",
+    "test/test_subspace_context.py"
+  ],
+  "collect": true,
+  "keyword": "error",
+  "marker": null,
+  "recycle_file": null
+}

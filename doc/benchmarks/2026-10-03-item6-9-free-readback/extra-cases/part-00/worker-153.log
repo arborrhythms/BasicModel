@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_two_phase_forward_cutover_stamps_terminal_activations __________
+test/test_sparse_concept_e2e.py:302: in test_two_phase_forward_cutover_stamps_terminal_activations
+    assert acts[start0:end0].count_nonzero() == 0
+E   assert tensor(8) == 0
+E    +  where tensor(8) = <built-in method count_nonzero of Tensor object at 0x1231ec820>()
+E    +    where <built-in method count_nonzero of Tensor object at 0x1231ec820> = tensor([[[[0., 0.]],\n\n         [[1., 1.]],\n\n         [[1., 1.]],\n\n         [[1., 1.]]],\n\n\n        [[[0., 0.]],\n\n      ...],\n\n\n        [[[0., 0.]],\n\n         [[0., 0.]],\n\n         [[0., 0.]],\n\n         [[0., 0.]]]], grad_fn=<SliceBackward0>).count_nonzero
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations
+1 failed, 1 warning in 2.45s

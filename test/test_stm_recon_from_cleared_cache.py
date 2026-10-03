@@ -1,87 +1,12 @@
-"""Full integration: reconstruct words from the held STM idea ALONE,
-after deleting SymbolSubSpace's syntactic cache.
+"""Clear the syntactic cache and reconstruct the owned understanding.
 
-Task 9 (plan §6) of the STM serial/parallel modes plan. The deliverable
-goal (verbatim): *"deleting SymbolSubSpace's syntactic cache and running
-reverse should reconstruct the words that best match the held STM idea.
-... assert top-k recovered words at each position overlap with input
-above the existing atol=2e-1 closeness threshold."*
-
-Harness (mirrors ``test/test_router_fires_per_word.py``):
-  * Build the cheap serial-grammar model from ``data/MM_xor_loopback.xml``
-    (``<symbolicOrder>1</symbolicOrder>``), load the ``xor`` data.
-  * Run ONE real per-word ``model.forward`` -- this fills the C-space_role STM,
-    populates ``symbolSpace.current_rules`` / ``generate_rules``, and
-    reduces the STM to the single sentence idea ``S = model._stm_single_S``
-    (``[B, D_c]``).
-  * Snapshot ``S`` and the per-position forward word indices
-    (``perceptualSpace.subspace._index[:, :, 0]`` -- the frozen-lexicon
-    MPHF index the forward placed at each slot).
-  * DELETE the SymbolSubSpace syntactic cache (``current_rules`` -> {} ,
-    ``generate_rules`` -> {} , ``recur_pass`` -> 0).
-  * Drive the reverse-from-STM legs and decode the top-``k`` nearest
-    words per position against the perceptual MPHF codebook, asserting
-    top-``k`` overlap with the input above ``atol=2e-1``.
-
-==========  STATUS: Findings A/B FIXED; recon criterion still XFAILS  ==========
-
-Driving the integration on a fresh (untrained) ``MM_xor_loopback`` serial
-model originally surfaced TWO numerical issues that blocked per-position
-word recovery. BOTH are now FIXED (bin/Layers.py ``PiLayer``), and they
-turned out to be the SAME root cause -- the ``nonlinear=False`` PiLayer
-fold took ``log`` of a value that can be ``<= 0``:
-
-FINDING A (FIXED) -- forward left the STM (and ``_stm_single_S``) as NaN.
-  The per-word forward filled the C-space_role STM with NaN because
-  ``PiLayer._to_mult`` (``(1+x)/(1-x)``, which then feeds ``log``) clamped
-  its input to ``(-1, 1)`` ONLY when ``nonlinear=True``. A percept landing
-  outside [-1, 1] (legitimate -- percept normalization runs AFTER
-  ``pi.forward``) drove the ratio ``<= 0`` and injected ``log(<=0) = NaN``.
-  Fix: the ``_to_mult`` clamp is now unconditional. Regression:
-  ``test_forward_stm_idea_is_finite`` (here) + ``test_pilayer_log_domain_finite``.
-
-FINDING B (FIXED) -- the reverse perceptual leg turned a finite seed NaN.
-  ``_reverse_body`` preserved finiteness but ``_reverse_perceptual`` ->
-  ``PartSpace.reverse`` -> ``_reverse_text`` -> ``PiLayer.reverse``
-  did a BARE ``log(y)`` on the signed reverse signal (``nonlinear=False``
-  branch). Fix: clamp the reverse log to its positive domain and use the
-  overflow-safe ``tanh(lx/2)`` exit (== ``_from_mult(exp(lx))``).
-  Regression: ``test_reverse_perceptual_preserves_finiteness_on_finite_seed``
-  (here) + ``test_pilayer_log_domain_finite``.
-
-Both guards are DOMAIN clamps, not NaN scrubs: ``clamp`` leaves NaN/Inf
-untouched, so a genuine upstream divergence still propagates and fails
-loud (user memory: never silently nan_to_num / gate away Inf/NaN).
-
-The remaining blocker is SEPARATE and out of scope: the reverse per-op
-inverses are *identity stubs* by design (``SyntacticLayer.reverse``
-returns the parent / lossy ``(parent, parent)`` for layers with no
-authored inverse -- ``bin/Language.py`` ~4150; ``_reverse_from_S``
-docstring: *"we do NOT author per-op reverse math"*). ``_reverse_from_S``
-therefore returns a position-COLLAPSED ``[B, 1, D_c]`` surface rather than
-fanning ``S`` back across the original word positions -- so even though
-the recon is now FINITE, the top-k word overlap is ~0.0. Per the task's
-instruction (*"a failing recon test that reveals a real invertibility gap
-is more valuable than a vacuous passing one ... do NOT weaken the
-assertion just to make it green"*), the end-to-end overlap check stays
-pinned as ``xfail`` (NOT relaxed) until the per-op reverses reconstruct
-``[B, N, D_c]``.
-
-The NON-xfail assertions below pin everything that DOES hold today: the
-forward produces a usable ``S`` shape, finite per-position targets, and a
-FINITE held idea; clearing the cache works and the
-``_chart_generate_from_stm`` re-derive site re-fires
-``symbolSpace.generate`` from the STM snapshot ALONE (rebuilding
-``generate_rules``); the ``_reverse_from_S`` leg is drivable from the
-cleared-cache state and returns a finite, decodable-width surface; and
-both the body AND perceptual reverse legs preserve finiteness. When the
-per-op reverses reconstruct ``[B, N, D_c]``, the xfail check will xpass
-and its marker should be removed.
-
-TEST-ONLY harness here; the PiLayer fix lives in ``bin/Layers.py``. Uses
-the REAL model forward / reverse and the REAL perceptual codebook for word
-decode (no reimplementation). NaN is never swallowed (user memory: fail
-loud on numerical divergence).
+The historical STM plan's top-k overlap criterion remains unchanged: every
+forward position must be recovered with overlap at least .8. Unseeded
+results still vary across that bar, so the original xfail stays. The retired D3
+root replay is replaced by the retained Understanding-owned inverse, and
+nearest-percept decoding uses the native store's codebook. No target is used
+as a reverse carrier. The earlier PiLayer finiteness regressions and cache
+re-derivation assertions remain below.
 """
 
 import os
@@ -181,13 +106,17 @@ def _run_forward(model):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         with torch.no_grad():
-            model.forward(x)
+            result = model.forward(x)
+            model._test_understanding = model._capture_understanding(result)
     S = getattr(model, "_stm_single_S", None)
-    ps = model.perceptualSpace
-    sub = getattr(ps, "subspace", None)
-    active = getattr(sub, "_index", None) if sub is not None else None
-    fwd_idx = (active[:, :, 0].long().clone()
-               if active is not None and active.dim() == 3 else None)
+    isp = model.inputSpace
+    rows = isp._ar_grammar_object_rows
+    active = isp._ar_grammar_leaf_mask & isp._word_active_mask
+    # Grammar leaves now denote OBJECT rows. The native percept dictionary
+    # no longer manufactures one word ID per input position.
+    model._test_word_columns = torch.stack([row.nonzero().reshape(-1) for row in active])
+    fwd_idx = rows.gather(1, model._test_word_columns).clone()
+    assert bool((fwd_idx >= 0).all()), "each presented word must be admitted"
     return (S.clone() if torch.is_tensor(S) else None), fwd_idx
 
 
@@ -200,7 +129,7 @@ def _clear_word_cache(ss):
 
 def _codebook_W(model):
     ps = model.perceptualSpace
-    cb = ps._mphf_codebook() if ps is not None else None
+    cb = ps.percept_store._basis if ps is not None else None
     return cb.getW() if cb is not None else None
 
 
@@ -211,7 +140,7 @@ def _topk_decode(W, recon, k=TOPK):
         return None
     if recon.shape[-1] != W.shape[-1]:
         # "6+2+2": the reversed surface carries the full event width
-        # (.what + .where + .when), while the MPHF word codebook is the bare
+        # (.what + .where + .when), while the native percept codebook is the bare
         # content (.what) width. Word decode matches on the .what slice, so
         # demux a wider recon down to the codebook width.
         if recon.shape[-1] > W.shape[-1]:
@@ -258,7 +187,7 @@ def test_forward_produces_single_S_and_targets():
         "forward must set model._stm_single_S (the held STM idea)."
     assert S.dim() == 2, f"S must be [B, D_c]; got {tuple(S.shape)}"
     assert fwd_idx is not None and fwd_idx.dim() == 2, \
-        "forward must expose per-position word indices (PS._index[:, :, 0])."
+        "forward must expose the native object row of each grammar word."
     assert int(fwd_idx.numel()) > 0
 
 
@@ -300,23 +229,23 @@ def test_cache_clears_and_chart_generate_rederives_from_stm():
 
 
 def test_reverse_from_cleared_cache_is_drivable_and_decodable():
-    """After clearing the cache, ``_reverse_from_S(S)`` runs from S ALONE
+    """After clearing the cache, reverseReconstruct reads its owned understanding
     and returns a surface whose width matches the perceptual codebook, so
     a nearest-word decode is at least well-defined (shape contract). This
     pins that the reverse-from-STM leg is DRIVABLE end-to-end; the QUALITY
-    of the recovered words is the xfail below (Findings A/B)."""
+    of the recovered words is the .8 overlap assertion below."""
     model = _make_serial_model()
     S, _ = _run_forward(model)
     ss = model.symbolSpace
     _clear_word_cache(ss)
     with torch.no_grad():
-        recon = model._reverse_from_S(S)
+        recon, _ = model.reverseReconstruct(model._test_understanding)
     assert recon is not None and torch.is_tensor(recon) and recon.dim() == 3, \
         f"reverse-from-S must return a [B, N, D] surface; got {recon!r}"
     W = _codebook_W(model)
     topk = _topk_decode(W, recon)
     assert topk is not None, \
-        "reconstruction width must match the MPHF codebook for word decode."
+        "reconstruction width must match the native percept codebook for word decode."
     assert topk.shape[-1] == min(TOPK, W.shape[0])
 
 
@@ -411,43 +340,33 @@ def test_reverse_perceptual_preserves_finiteness_on_finite_seed():
         f"[{mp.min().item():.4f}, {mp.max().item():.4f}]")
 
 
-@pytest.mark.xfail(
-    reason="PLAN RECON CRITERION still blocked -- but now ONLY by the "
-           "per-op reverse identity stubs (out of scope: '_reverse_from_S' "
-           "does NOT author per-op reverse math). FINDING A (forward STM "
-           "NaN) and FINDING B (perceptual reverse NaN) are FIXED (the "
-           "PiLayer log-domain guard), so the recon is now FINITE -- but "
-           "SyntacticLayer.reverse is an identity stub, so _reverse_from_S "
-           "returns a position-COLLAPSED [B,1,D_c] surface (no per-position "
-           "fan-out vs the N>1 forward positions). The top-k recovered-word "
-           "overlap is therefore 0.0, below atol=2e-1. NOT a cache-clear "
-           "fault and NOT a NaN. Remove this xfail once the per-op reverses "
-           "reconstruct [B,N,D_c].")
+@pytest.mark.xfail(strict=False, reason="Historical .8 per-position top-k reconstruction criterion remains unsettled: recorded runs reached .8 and .5. Same bar on the retained inverse; §16.6 permits XPASS.")
 def test_topk_recovered_words_overlap_input():
-    """PLAN SUCCESS CRITERION: top-k recovered words at each position
-    overlap the input above the atol=2e-1 closeness threshold, running
-    reverse from the STM snapshot ALONE (cache cleared).
+    """Recover each word from the owned inverse after clearing syntactic caches.
 
-    Asserted HONESTLY (not weakened): the recon is now finite (Findings
-    A/B fixed) but the identity-stub per-op reverses collapse it to a
-    single position, so the overlap is ~0.0 and this xfails -- documenting
-    the remaining real gap rather than passing vacuously."""
+    Keep the historical top-k overlap bar of 1-atol=.8. The grammar now
+    consumes object codes, so compare against those same object rows.
+    """
     model = _make_serial_model()
     S, fwd_idx = _run_forward(model)
     ss = model.symbolSpace
     _clear_word_cache(ss)
     with torch.no_grad():
-        recon = model._reverse_from_S(S)
+        # Consuming the owned inverse after clearing syntactic caches must
+        # preserve the per-word grammar result. Only occurrence positions,
+        # never target leaf values, select its word columns.
+        model.reverseReconstruct(model._test_understanding)
+        ideas = model._test_understanding.input_reconstruction.ideas
+        columns = model._test_word_columns
+        recon = ideas.gather(1, columns[..., None].expand(*columns.shape, ideas.shape[-1]))
     # Defensive: if the recon were non-finite the decode would be
     # meaningless -- treat overlap as 0.0 so the criterion fails honestly
     # (do NOT mask any NaN by sanitizing it into a passing comparison).
-    # Post-fix the recon IS finite; the 0.0 overlap comes from the
-    # position collapse, not from NaN.
     if recon is None or not torch.is_tensor(recon) \
             or not bool(torch.isfinite(recon).all()):
         overlap = 0.0
     else:
-        W = _codebook_W(model)
+        W = model._concept_owner().similarity_codebook.getW()
         topk = _topk_decode(W, recon)
         overlap = _topk_overlap(fwd_idx, topk)
         overlap = 0.0 if overlap is None else overlap
@@ -457,8 +376,7 @@ def test_topk_recovered_words_overlap_input():
     assert overlap >= (1.0 - ATOL_RECON), (
         f"top-k recovered-word overlap with input = {overlap:.3f}; "
         f"expected >= {1.0 - ATOL_RECON:.3f} (atol={ATOL_RECON}). Reverse "
-        f"from S alone is not reconstructing the per-position words "
-        f"(Findings A/B + identity-stub per-op reverses).")
+        f"from the owned understanding is not reconstructing the per-position words.")
 
 
 if __name__ == "__main__":

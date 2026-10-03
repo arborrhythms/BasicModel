@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step5a-native-field-red/run/worker-000.recycle.json"
+}

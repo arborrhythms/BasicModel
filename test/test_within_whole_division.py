@@ -7,10 +7,9 @@ parts that tile it. An attested whole is preferred over its parts (longest
 match); an unattested run with no complete attested tiling keeps the existing
 byte fallback unchanged.
 
-Two seams are covered: the LIVE one (``WholeSpace.stage_analysis_spans`` ->
-``Spaces._divide_spans_into_attested``, attestation = the peer PS RadixLayer
-store; knob ``<WholeSpace><divideWithinWhole>``, default ON) and the
-standalone ``MeronymicAnalyzer`` mirror (``granularity="type"``).
+The live seam is ``WholeSpace.stage_analysis_spans`` ->
+``Spaces._divide_spans_into_attested``; attestation comes from the peer
+percept store and ``<WholeSpace><divideWithinWhole>`` defaults on.
 """
 
 import os
@@ -28,87 +27,16 @@ if _BIN not in sys.path:
 import torch
 
 
-def _oss(cap=64, dim=4):
-    from Language import IdeaSubSpace
-    return IdeaSubSpace(percept_dim=dim, capacity=cap, batch=1)
 
 
-def _terminals(oss):
-    """Host view of the emitted terminals: list of (part_id, start, end)."""
-    return [(oss.get(0, i)["part_id"],
-             oss.get(0, i)["span_start"], oss.get(0, i)["span_end"])
-            for i in range(oss.depth(0))]
 
 
-def test_unattested_punct_run_divides_into_attested_parts():
-    """`")."` is ONE punct-whole but divides into two concepts `)` + `.` when
-    each is independently attested (the T3 example)."""
-    from perceptual_analyzer import MeronymicAnalyzer
-    known = {")": (torch.ones(4), 41), ".": (torch.ones(4) * 2, 46)}
-    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),
-                           divide_within_whole=True)
-    oss = _oss()
-    an.analyze(").", oss, granularity="type")
-    assert oss.depth(0) == 2, _terminals(oss)
-    # Two attested concepts, IN ORDER, each a STOP terminal (its part id).
-    assert oss.get(0, 0)["part_id"] == 41            # ")"
-    assert oss.get(0, 1)["part_id"] == 46            # "."
-    assert (oss.get(0, 0)["span_start"], oss.get(0, 0)["span_end"]) == (0, 1)
-    assert (oss.get(0, 1)["span_start"], oss.get(0, 1)["span_end"]) == (1, 2)
 
 
-def test_attested_whole_preferred_over_parts():
-    """`"..."` attested as its own entry stays ONE concept even though `"."` is
-    also attested -- longest match prefers the whole over its parts."""
-    from perceptual_analyzer import MeronymicAnalyzer
-    known = {"...": (torch.ones(4), 100), ".": (torch.ones(4) * 2, 46)}
-    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),
-                           divide_within_whole=True)
-    oss = _oss()
-    an.analyze("...", oss, granularity="type")
-    assert oss.depth(0) == 1, _terminals(oss)
-    assert oss.get(0, 0)["part_id"] == 100           # the ellipsis whole
-    assert (oss.get(0, 0)["span_start"], oss.get(0, 0)["span_end"]) == (0, 3)
 
 
-def test_no_complete_tiling_keeps_byte_fallback():
-    """An unattested run with NO complete attested tiling keeps the EXISTING
-    fallback: divide-on and divide-off yield byte-identical terminals."""
-    from perceptual_analyzer import MeronymicAnalyzer
-    # "." attested but neither "@" nor "#" is, so the punct-whole "@#" has no
-    # complete attested tiling and no attested byte -> pure byte fallback.
-    known = {".": (torch.ones(4) * 2, 46)}
-    surface = "@#"
-
-    off = _oss()
-    MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),
-                      divide_within_whole=False).analyze(
-        surface, off, granularity="type")
-
-    on = _oss()
-    MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),
-                      divide_within_whole=True).analyze(
-        surface, on, granularity="type")
-
-    assert _terminals(on) == _terminals(off), (_terminals(on), _terminals(off))
-    # And it IS the byte fallback (every terminal an unknown byte).
-    assert on.depth(0) == 2
-    assert all(on.get(0, i)["part_id"] == -1 for i in range(2))
 
 
-def test_attested_run_is_never_divided():
-    """A run that is itself attested stays ONE concept regardless of whether
-    its characters are also attested standalone."""
-    from perceptual_analyzer import MeronymicAnalyzer
-    known = {"book": (torch.ones(4), 11),
-             "b": (torch.ones(4), 1), "o": (torch.ones(4), 2),
-             "k": (torch.ones(4), 3)}
-    an = MeronymicAnalyzer(percept_lookup=lambda t: known.get(t),
-                           divide_within_whole=True)
-    oss = _oss()
-    an.analyze("book", oss, granularity="type")
-    assert oss.depth(0) == 1, _terminals(oss)
-    assert oss.get(0, 0)["part_id"] == 11
 
 
 # -- LIVE seam: WholeSpace.stage_analysis_spans + the RadixLayer store ---------
@@ -130,7 +58,7 @@ def _whole_space(nS=32, **cfg_extra):
         nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
         nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
     )
-    Models.TheXMLConfig._data["WholeSpace"]["analysis"] = "word"
+    Models.TheXMLConfig._data["WholeSpace"]["analysis"] = "meronomy"
     Models.TheXMLConfig._data["WholeSpace"].update(cfg_extra)
     return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])
 

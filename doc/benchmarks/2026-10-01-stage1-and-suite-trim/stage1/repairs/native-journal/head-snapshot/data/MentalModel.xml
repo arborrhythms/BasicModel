@@ -1,0 +1,90 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MentalModel: iterative [Percept,Symbol]→Concept→Symbol loop.
+       ConceptualSpace receives [percepts, symbols] (symbols=0 at T=1).
+       SyntacticSpace runs composeSyntax over symbol activations each iteration.
+       OutputSpace is fed by the final ConceptualSpace output. -->
+  <architecture>
+    <l1Lambda>0.01</l1Lambda>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <symbolicOrder>1</symbolicOrder>
+    <weightsPath>MentalModel.ckpt</weightsPath>
+    <data>
+      <dataType>embedding</dataType>
+      <shardDir>data/fineweb</shardDir>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numEpochs>2</numEpochs>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>BACKPROP</trainEmbedding>
+      <autoload>false</autoload>
+      <autosave>true</autosave>
+
+      <!-- Inter-sentence (discourse) prediction: ring buffer of
+           [S|W] snapshots + per-row linear predictor. -->
+      <sentenceExpectation>true</sentenceExpectation>
+    </training>
+
+    <server>
+      <port>8002</port>
+    </server>
+
+    <!-- Shared 4-valued (catuskoti) balance policy inherited by
+         ConceptualSpace and WholeSpace unless their
+         <tetralemmaOverride enabled="true"> opts out. -->
+    <TetralemmaPolicy>
+      <allowExcludedMiddle>1</allowExcludedMiddle>
+      <allowContradiction>0</allowContradiction>
+      <neitherThreshold>0.1</neitherThreshold>
+    </TetralemmaPolicy>
+
+  </architecture>
+
+  <SymbolSpace>
+    <language>
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+
+  <InputSpace>
+    <nDim>104</nDim>
+    <nVectors>128</nVectors>
+    <nOutput>128</nOutput>
+    <codebook>quantize</codebook>
+  </InputSpace>
+
+  <PartSpace>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>256</nVectors>
+  </PartSpace>
+
+  <!-- ConceptualSpace: matches percept/symbol row count; state mixing
+       happens via iterative Sigma-Pi (not concatenation). -->
+  <ConceptualSpace>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>128</nVectors>
+    <invertible>true</invertible>
+    <tetralemmaOverride enabled="false" />
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>sentence</analysis>
+    <nOutput>128</nOutput>
+    <nDim>104</nDim>
+    <nVectors>128</nVectors>
+    <tetralemmaOverride enabled="false" />
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>100</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+</model>

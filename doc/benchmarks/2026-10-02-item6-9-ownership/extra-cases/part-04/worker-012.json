@@ -1,0 +1,26 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement"
+  ],
+  "completed": [
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement"
+  ],
+  "slow_selected": [
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 6.151559499994619,
+      "message": "test/test_where_attention_handoff.py:53: in test_mereology_raise_enables_conceptual_refinement\n    assert torch.equal(out1, out2), \"the dark pass-back must be deterministic\"\nE   AssertionError: the dark pass-back must be deterministic\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10aa493a0>(tensor([[[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]]]), tensor([[[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]]]))\nE    +    where <built-in method equal of type object at 0x10aa493a0> = torch.equal",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

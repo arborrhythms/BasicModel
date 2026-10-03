@@ -1,0 +1,661 @@
+F.....FF.....                                                            [100%]
+=================================== FAILURES ===================================
+_ test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning _
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-820/test_enable_after_disabled_con0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10749f9b0>
+
+    @pytest.mark.usefixtures('eager_reading')
+    @pytest.mark.slow
+    def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning(tmp_path, monkeypatch):
+        from test_meronomy_ladder import _build_ladder_variant
+        monkeypatch.setenv("MODEL_COMPILE", "none")
+        model = _build_ladder_variant(tmp_path, "toggle_expectation", [
+            ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+            ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+            ("<interLossWeight>0.0</interLossWeight>", "<interLossWeight>0.1</interLossWeight>"),
+        ])
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model._install_unit_span_fn()
+        monkeypatch.setattr(model.inputSpace.data, "has_supervised_outputs", False)
+        model.eval()
+        optimizer = model.getOptimizer(lr=1e-5)
+        owner = model._what_memory()
+        assert model.symbolSpace.discourse is None
+        try:
+            for enabled in (True, False, True):
+                model.set_sentence_expectation(enabled)
+                discourse = model.symbolSpace.discourse
+                parameters = list(discourse._inter_predictor.parameters())
+                before = [p.detach().clone() for p in parameters]
+                count = discourse.expectation_metrics()["predicted_targets"]
+                inputs = model.inputSpace.prepPackedInput([["1 plus 2", "3 plus 4"]])
+                result, _ = model.runBatch(train=True, batchSize=1, optimizer=optimizer,
+                                          batch_override=(inputs, torch.zeros(1, 1, 0)))
+                assert model._what_memory() is owner
+                assert result.lossIn is not None
+                changes = [not torch.equal(p, old) for p, old in zip(parameters, before)]
+>               assert any(changes) if enabled else not any(changes)
+E               assert False
+
+test/test_expectation_defaults.py:206: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+____________ test_serial_words_use_the_shared_operation_layer[both] ____________
+
+mode = 'both'
+
+    @pytest.mark.parametrize('mode', ['both', 'per-word'])
+    def test_serial_words_use_the_shared_operation_layer(mode):
+        model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+>       probe = _run_forward_spying_fold(model)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_router_fires_per_word.py:207: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_router_fires_per_word.py:174: in _run_forward_spying_fold
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8646: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23915: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17972: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22381: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21932: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:21090: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:140: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21055: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20580: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20566: in _reconstruct_trial
+    return self._compiled_reconstruct()(record.root.clone(), record.word_values,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[-0.1885,  0.1255,  0.3605, -0.3753,  0.3240,  0.1855, -0.3587, -0.3240,
+         -0.3900, -0.4490,  0.2677, ....0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]]), tensor([1]), ...)
+kwargs = {'understanding': SentenceUnderstanding(root=tensor([[-0.1885,  0.1255,  0.3605, -0.3753,  0.3240,  0.1855, -0.3587, -...alse, False, False, False, False, False],
+         [False, False, False, False, False, False]]])), sentence=tensor(0))}
+
+    @functools.wraps(fn)
+    def compile_wrapper(*args: Any, **kwargs: Any) -> Any:
+        # NB: function calls here could change global state (e.g. random state)
+        # and that can result in different behavior between eager and compiled!
+        # In particular, we don't have control over internal functions like justknobs_check
+        # called in _maybe_set_eval_frame.
+        # Unlike in eval_frame_cpp.cpp/convert_frame.py, we don't attempt to restore global state
+        # due to additional overhead costs.
+        prior = set_eval_frame(None)
+        prior_error_on_nested_compile: bool | None = None
+        fullgraph_count_enabled = False
+        # Fake propagation and AOT metadata collection execute user
+        # subclass code under active fake/functional modes. Nested compile
+        # must run the original function in those regions.  Still honor
+        # explicit/internal requests to compile during FX tracing: HOP export
+        # depends on its internal compile to preserve HOPs, and some tests
+        # intentionally enable force_compile_during_fx_trace to get nested
+        # subgraphs.
+        if (
+            _is_eager_on_nested_compile()
+            and not config.force_compile_during_fx_trace
+        ):
+            from torch._higher_order_ops.utils import _in_hop_compile
+    
+            if not _in_hop_compile():
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    _maybe_set_eval_frame(prior)
+    
+        if self.fullgraph:
+            prior_error_on_nested_compile = set_fullgraph_error_on_nested_compile(
+                torch._dynamo.config.error_on_dynamo_callback_in_fullgraph_compiled_code
+            )
+            if not self.export:
+                fullgraph_count_enabled = set_fullgraph_compiled_frame_count(0) < 0
+                if fullgraph_count_enabled:
+                    reset_skip_reasons()
+        try:
+            # We shouldn't compile inside kernel invocation.
+            if tracing_context := torch._guards.TracingContext.try_get():
+                if (
+                    tracing_context.fake_mode is not None
+                    and tracing_context.fake_mode.in_kernel_invocation
+                ):
+                    return fn(*args, **kwargs)
+            # Skip nested compile during export (but not HOP internal compile)
+            # Only skip if there's an active TracingContext (nested), not for top-level export
+            if (
+                torch.compiler.is_exporting()
+                and not config.force_compile_during_fx_trace
+            ):
+                from torch._higher_order_ops.utils import _in_hop_compile
+    
+                if not _in_hop_compile():
+                    if torch._guards.TracingContext.try_get() is not None:
+                        return fn(*args, **kwargs)
+            # Skip nested compile - just inline the function
+            if (
+                is_fx_symbolic_tracing()
+                and not config.force_compile_during_fx_trace
+            ):
+                if config.error_on_nested_fx_trace:
+                    raise RuntimeError(
+                        "Detected that you are using FX to symbolically trace "
+                        "a dynamo-optimized function. This is not supported at the moment."
+                    )
+                else:
+                    return fn(*args, **kwargs)
+    
+            if is_jit_tracing():
+                raise RuntimeError(
+                    "Detected that you are using FX to torch.jit.trace "
+                    "a dynamo-optimized function. This is not supported at the moment."
+                )
+    
+            cleanups = [enter() for enter in self.enter_exit_hooks]
+            prior_skip_guard_eval_unsafe = set_skip_guard_eval_unsafe(
+                _is_skip_guard_eval_unsafe_stance()
+            )
+            prior_isolate_recompiles_id = set_eval_frame_isolate_recompiles_id(
+                self._isolate_recompiles_id
+            )
+            prior_error_on_graph_break = None
+            if not self.fullgraph and self.error_on_graph_break is not None:
+                current_error_on_graph_break = _get_error_on_graph_break()
+                if current_error_on_graph_break != self.error_on_graph_break:
+                    prior_error_on_graph_break = current_error_on_graph_break
+                    _set_error_on_graph_break(self.error_on_graph_break)
+    
+            # Ensure that if an assertion occurs after graph pushes
+            # something onto the DynamicLayerStack then we pop it off (the
+            # constructed graph code isn't guarded with try/finally).
+            #
+            # This used to be a context but putting a `with` here is a noticeable
+            # perf regression (#126293)
+            saved_dynamic_layer_stack_depth = (
+                torch._C._functorch.get_dynamic_layer_stack_depth()
+            )
+    
+            _maybe_set_eval_frame(_callback_from_stance(callback))
+    
+            # Snapshot the local dispatch key set onto a C++ thread-local
+            # stack so it can be restored after the compiled call, matching
+            # the old _ForceDispatchKeyGuard behavior. Keeping the snapshot
+            # in C++ avoids constructing pybind11 DispatchKeySet /
+            # context-manager instances on every compiled call. The restore
+            # runs in the outer finally below (after the inner finally, i.e.
+            # after pop_dynamic_layer_stack) so the save/restore stack stays
+            # balanced even if the inner finally itself raises (e.g. the
+            # fullgraph "found no compiled frames" error).
+            torch._C._dynamo_save_local_dispatch_key_set()
+            try:
+                call_succeeded = False
+                try:
+                    result = fn(*args, **kwargs)
+                    call_succeeded = True
+                except (Unsupported, UncapturedHigherOrderOpError, UserError) as e:
+                    if config.verbose:
+                        raise
+                    # strip internal tracebacks from causes
+                    cur_exn: BaseException = e
+                    while cur_exn.__cause__ is not None:
+                        cur_exn.__cause__.with_traceback(None)
+                        cur_exn = cur_exn.__cause__
+    
+>                   raise e.with_traceback(
+                        None
+                    ) from e.__cause__  # User compiler error
+E                   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)
+E                   
+E                   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.
+E                   Caused by: while bool(condition(*values)):  # test/test_router_fires_per_word.py:142 in eager_while (_dynamo/variables/tensor.py:2849 in evaluate_expr)
+E                   For more information, run with TORCH_LOGS="dynamic"
+E                   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL="u0"
+E                   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E                   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing
+E                   
+E                   User Stack (most recent call last):
+E                     (snipped, see stack below for prefix)
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12584, in _reconstruct_sentences
+E                       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(
+E                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 379, in _reconstruction_while_loop
+E                       return torch.while_loop(condition, body, values)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py", line 142, in eager_while
+E                       while bool(condition(*values)):
+E                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E                   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example
+E                   
+E                   from user code:
+E                      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12584, in _reconstruct_sentences
+E                       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(
+E                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 379, in _reconstruction_while_loop
+E                       return torch.while_loop(condition, body, values)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py", line 142, in eager_while
+E                       while bool(condition(*values)):
+E                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: UserError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+__________ test_serial_words_use_the_shared_operation_layer[per-word] __________
+
+mode = 'per-word'
+
+    @pytest.mark.parametrize('mode', ['both', 'per-word'])
+    def test_serial_words_use_the_shared_operation_layer(mode):
+        model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+>       probe = _run_forward_spying_fold(model)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_router_fires_per_word.py:207: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_router_fires_per_word.py:174: in _run_forward_spying_fold
+    model.forward(x)
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8646: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23915: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17972: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22381: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21932: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:21090: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:140: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21055: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20580: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20566: in _reconstruct_trial
+    return self._compiled_reconstruct()(record.root.clone(), record.word_values,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[-0.6011,  0.3990, -0.1881, -0.6518, -0.5126,  0.5210, -0.2378,  0.3905,
+         -0.3495, -0.5868,  0.4886, ....0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]]), tensor([1]), ...)
+kwargs = {'understanding': SentenceUnderstanding(root=tensor([[-0.6011,  0.3990, -0.1881, -0.6518, -0.5126,  0.5210, -0.2378,  ...alse, False, False, False, False, False],
+         [False, False, False, False, False, False]]])), sentence=tensor(0))}
+
+    @functools.wraps(fn)
+    def compile_wrapper(*args: Any, **kwargs: Any) -> Any:
+        # NB: function calls here could change global state (e.g. random state)
+        # and that can result in different behavior between eager and compiled!
+        # In particular, we don't have control over internal functions like justknobs_check
+        # called in _maybe_set_eval_frame.
+        # Unlike in eval_frame_cpp.cpp/convert_frame.py, we don't attempt to restore global state
+        # due to additional overhead costs.
+        prior = set_eval_frame(None)
+        prior_error_on_nested_compile: bool | None = None
+        fullgraph_count_enabled = False
+        # Fake propagation and AOT metadata collection execute user
+        # subclass code under active fake/functional modes. Nested compile
+        # must run the original function in those regions.  Still honor
+        # explicit/internal requests to compile during FX tracing: HOP export
+        # depends on its internal compile to preserve HOPs, and some tests
+        # intentionally enable force_compile_during_fx_trace to get nested
+        # subgraphs.
+        if (
+            _is_eager_on_nested_compile()
+            and not config.force_compile_during_fx_trace
+        ):
+            from torch._higher_order_ops.utils import _in_hop_compile
+    
+            if not _in_hop_compile():
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    _maybe_set_eval_frame(prior)
+    
+        if self.fullgraph:
+            prior_error_on_nested_compile = set_fullgraph_error_on_nested_compile(
+                torch._dynamo.config.error_on_dynamo_callback_in_fullgraph_compiled_code
+            )
+            if not self.export:
+                fullgraph_count_enabled = set_fullgraph_compiled_frame_count(0) < 0
+                if fullgraph_count_enabled:
+                    reset_skip_reasons()
+        try:
+            # We shouldn't compile inside kernel invocation.
+            if tracing_context := torch._guards.TracingContext.try_get():
+                if (
+                    tracing_context.fake_mode is not None
+                    and tracing_context.fake_mode.in_kernel_invocation
+                ):
+                    return fn(*args, **kwargs)
+            # Skip nested compile during export (but not HOP internal compile)
+            # Only skip if there's an active TracingContext (nested), not for top-level export
+            if (
+                torch.compiler.is_exporting()
+                and not config.force_compile_during_fx_trace
+            ):
+                from torch._higher_order_ops.utils import _in_hop_compile
+    
+                if not _in_hop_compile():
+                    if torch._guards.TracingContext.try_get() is not None:
+                        return fn(*args, **kwargs)
+            # Skip nested compile - just inline the function
+            if (
+                is_fx_symbolic_tracing()
+                and not config.force_compile_during_fx_trace
+            ):
+                if config.error_on_nested_fx_trace:
+                    raise RuntimeError(
+                        "Detected that you are using FX to symbolically trace "
+                        "a dynamo-optimized function. This is not supported at the moment."
+                    )
+                else:
+                    return fn(*args, **kwargs)
+    
+            if is_jit_tracing():
+                raise RuntimeError(
+                    "Detected that you are using FX to torch.jit.trace "
+                    "a dynamo-optimized function. This is not supported at the moment."
+                )
+    
+            cleanups = [enter() for enter in self.enter_exit_hooks]
+            prior_skip_guard_eval_unsafe = set_skip_guard_eval_unsafe(
+                _is_skip_guard_eval_unsafe_stance()
+            )
+            prior_isolate_recompiles_id = set_eval_frame_isolate_recompiles_id(
+                self._isolate_recompiles_id
+            )
+            prior_error_on_graph_break = None
+            if not self.fullgraph and self.error_on_graph_break is not None:
+                current_error_on_graph_break = _get_error_on_graph_break()
+                if current_error_on_graph_break != self.error_on_graph_break:
+                    prior_error_on_graph_break = current_error_on_graph_break
+                    _set_error_on_graph_break(self.error_on_graph_break)
+    
+            # Ensure that if an assertion occurs after graph pushes
+            # something onto the DynamicLayerStack then we pop it off (the
+            # constructed graph code isn't guarded with try/finally).
+            #
+            # This used to be a context but putting a `with` here is a noticeable
+            # perf regression (#126293)
+            saved_dynamic_layer_stack_depth = (
+                torch._C._functorch.get_dynamic_layer_stack_depth()
+            )
+    
+            _maybe_set_eval_frame(_callback_from_stance(callback))
+    
+            # Snapshot the local dispatch key set onto a C++ thread-local
+            # stack so it can be restored after the compiled call, matching
+            # the old _ForceDispatchKeyGuard behavior. Keeping the snapshot
+            # in C++ avoids constructing pybind11 DispatchKeySet /
+            # context-manager instances on every compiled call. The restore
+            # runs in the outer finally below (after the inner finally, i.e.
+            # after pop_dynamic_layer_stack) so the save/restore stack stays
+            # balanced even if the inner finally itself raises (e.g. the
+            # fullgraph "found no compiled frames" error).
+            torch._C._dynamo_save_local_dispatch_key_set()
+            try:
+                call_succeeded = False
+                try:
+                    result = fn(*args, **kwargs)
+                    call_succeeded = True
+                except (Unsupported, UncapturedHigherOrderOpError, UserError) as e:
+                    if config.verbose:
+                        raise
+                    # strip internal tracebacks from causes
+                    cur_exn: BaseException = e
+                    while cur_exn.__cause__ is not None:
+                        cur_exn.__cause__.with_traceback(None)
+                        cur_exn = cur_exn.__cause__
+    
+>                   raise e.with_traceback(
+                        None
+                    ) from e.__cause__  # User compiler error
+E                   torch._dynamo.exc.UserError: Consider annotating your code using torch._check*(). Could not guard on data-dependent expression Eq(u0, 1) (unhinted: Eq(u0, 1)).  (Size-like symbols: none)
+E                   
+E                   consider using data-dependent friendly APIs such as guard_or_false, guard_or_true and statically_known_true.
+E                   Caused by: while bool(condition(*values)):  # test/test_router_fires_per_word.py:142 in eager_while (_dynamo/variables/tensor.py:2849 in evaluate_expr)
+E                   For more information, run with TORCH_LOGS="dynamic"
+E                   For extended logs when we create symbols, also add TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL="u0"
+E                   If you suspect the guard was triggered from C++, add TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E                   For more debugging help, see https://docs.google.com/document/d/1HSuTTVvYH1pTew89Rtpeu84Ht3nQEFTYhAX3Ypa_xJs/edit?usp=sharing
+E                   
+E                   User Stack (most recent call last):
+E                     (snipped, see stack below for prefix)
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12584, in _reconstruct_sentences
+E                       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(
+E                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 379, in _reconstruction_while_loop
+E                       return torch.while_loop(condition, body, values)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py", line 142, in eager_while
+E                       while bool(condition(*values)):
+E                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                   For C++ stack trace, run with TORCHDYNAMO_EXTENDED_DEBUG_CPP=1
+E                   For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#constrain-as-size-example
+E                   
+E                   from user code:
+E                      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12584, in _reconstruct_sentences
+E                       _, _, _, occurrence_left, occurrence_right, malformed = _reconstruction_while_loop(
+E                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 379, in _reconstruction_while_loop
+E                       return torch.while_loop(condition, body, values)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/test/test_router_fires_per_word.py", line 142, in eager_while
+E                       while bool(condition(*values)):
+E                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: UserError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]
+3 failed, 10 passed, 1 warning in 108.48s (0:01:48)

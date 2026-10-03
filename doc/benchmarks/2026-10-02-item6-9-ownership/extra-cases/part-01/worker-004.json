@@ -1,0 +1,30 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]"
+  ],
+  "completed": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]"
+  ],
+  "slow_selected": [
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+    "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[sparse_concept]"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 8.047470874997089,
+      "message": "test/test_config_matrix.py:63: in test_config_builds_runs_and_reconstructs\n    assert DECODE_NOTE not in rec.notes, (cfg, rec.notes.get(DECODE_NOTE))\nE   AssertionError: ('data/MM_ladder.xml', 'text decode unavailable: RuntimeError: reconstruct_data() called before reverse()')\nE   assert 'decode_note' not in {'decode_mode': 'blind', 'decode_note': 'text decode unavailable: RuntimeError: reconstruct_data() called before reverse()', 'where_recovery_note': 'span metric unavailable (no decode)', 'decoded_rows': 0, ...}\nE    +  where {'decode_mode': 'blind', 'decode_note': 'text decode unavailable: RuntimeError: reconstruct_data() called before reverse()', 'where_recovery_note': 'span metric unavailable (no decode)', 'decoded_rows': 0, ...} = RunRecord(config='data/MM_ladder.xml', seed=0, epochs=1, wall_s_per_epoch=3.075758083999972, output_loss=0.13521881401...oss and not exposed on the model', 'epoch_times_s': [3.075758083999972], 'wall_note': 'single epoch includes warm-up'}).notes",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 3.075s; word units 83.3% of 24 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=4.554s, 100.00%)\r\nrunEpoch(test): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 4.695s; word units 86.5% of 192 words (letters-only 100.0% of 64).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[grammar_reading]",
+  "device": "cpu"
+}

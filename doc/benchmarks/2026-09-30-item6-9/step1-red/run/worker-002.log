@@ -1,0 +1,20 @@
+.                                                                        [100%]
+=============================== warnings summary ===============================
+doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:141: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:160: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:197: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py:215: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 4 warnings in 0.50s

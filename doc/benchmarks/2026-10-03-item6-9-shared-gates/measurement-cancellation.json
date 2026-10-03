@@ -1,0 +1,236 @@
+{
+  "stopped_at": "2026-10-03T16:00:24.382456+00:00",
+  "reason": "Alec: (And no need to retest after that consolidation)",
+  "controller_exit_code": 130,
+  "completed_jobs": [
+    {
+      "kind": "xor",
+      "gate": null,
+      "trial": 2,
+      "name": "xor-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-02"
+        ],
+        "pid": 69583,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1164561264,
+        "elapsed_seconds": 206.6245136250218,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-02/driver.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "gate": null,
+      "trial": 3,
+      "name": "xor-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-03"
+        ],
+        "pid": 69584,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1158286216,
+        "elapsed_seconds": 208.1707232919871,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-03/driver.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "gate": null,
+      "trial": 1,
+      "name": "xor-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-01"
+        ],
+        "pid": 69582,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1213909944,
+        "elapsed_seconds": 214.57526120799594,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-01/driver.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "gate": null,
+      "trial": 4,
+      "name": "xor-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-04"
+        ],
+        "pid": 70262,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1153665880,
+        "elapsed_seconds": 208.45443929199246,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-04/driver.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "gate": null,
+      "trial": 5,
+      "name": "xor-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-05"
+        ],
+        "pid": 70270,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1153076056,
+        "elapsed_seconds": 207.91719270902104,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-05/driver.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "gate": null,
+      "trial": 6,
+      "name": "xor-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-06"
+        ],
+        "pid": 70296,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1237421008,
+        "elapsed_seconds": 207.38776004200918,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-06/driver.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "gate": null,
+      "trial": 8,
+      "name": "xor-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-08"
+        ],
+        "pid": 70944,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1160055640,
+        "elapsed_seconds": 208.46915162500227,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-08/driver.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "gate": null,
+      "trial": 7,
+      "name": "xor-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-07"
+        ],
+        "pid": 70943,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1159170904,
+        "elapsed_seconds": 210.0182309160009,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-07/driver.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "gate": null,
+      "trial": 9,
+      "name": "xor-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py",
+          "child",
+          "--kind",
+          "xor",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-09"
+        ],
+        "pid": 70981,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1154140992,
+        "elapsed_seconds": 207.3282093750022,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measurements/xor-09/driver.log"
+      }
+    }
+  ],
+  "interrupted": [
+    {
+      "name": "xor-10",
+      "pid": 71649,
+      "memory_bytes": 1000393368
+    },
+    {
+      "name": "sum-01",
+      "pid": 71659,
+      "memory_bytes": 858851416
+    },
+    {
+      "name": "sum-02",
+      "pid": 71674,
+      "memory_bytes": 854100008
+    }
+  ],
+  "not_started": 30,
+  "full_campaign_complete": false,
+  "no_remaining_measurement_processes": true,
+  "source_matched": true,
+  "baseline": "../2026-10-03-item6-9-free-readback/README.md"
+}

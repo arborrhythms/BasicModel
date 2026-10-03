@@ -1,0 +1,16 @@
+...F..                                                                   [100%]
+=================================== FAILURES ===================================
+_______________ test_conceptual_sbow_situates_live_sparse_codes ________________
+test/test_sparse_concept_e2e.py:251: in test_conceptual_sbow_situates_live_sparse_codes
+    assert got, "SBOW gradient must reach the sparse family values"
+E   AssertionError: SBOW gradient must reach the sparse family values
+E   assert False
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes
+1 failed, 5 passed, 1 warning in 3.55s

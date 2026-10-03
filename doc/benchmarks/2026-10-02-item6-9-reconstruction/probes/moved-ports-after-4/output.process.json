@@ -1,0 +1,22 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_per_word_ss_padding_noop.py",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_global_consume.py",
+    "test/test_concept_code_ownership.py",
+    "test/test_row_local_concept_optimizer.py",
+    "test/test_conceptual_recurrence.py",
+    "--tb=short"
+  ],
+  "pid": 88082,
+  "exit_code": 137,
+  "reason": "memory",
+  "peak_memory_bytes": 8766054536,
+  "elapsed_seconds": 34.442288749996806,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/moved-ports-after-4/output.log"
+}

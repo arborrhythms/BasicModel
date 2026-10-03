@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_paired_row_api_is_retired"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-232.recycle.json"
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_concept_readout_l1.py",
+    "test/test_expectation_kind.py"
+  ],
+  "pid": 13479,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 775194232,
+  "elapsed_seconds": 9.435398292000173,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/l1-and-mask-after/pytest.log"
+}

@@ -1,0 +1,318 @@
+{
+  "rows": [
+    {
+      "trial": 1,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 1.9539925233402755e-14,
+      "ending_training_predictions": [
+        -1.7881393432617188e-07,
+        1.0,
+        0.9999998807907104,
+        -1.7881393432617188e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 162.8098340409997,
+      "after_900_updates_mse": 1.7763568394002505e-15,
+      "after_900_updates_predictions": [
+        -5.960464477539063e-08,
+        1.0,
+        1.0,
+        -5.960464477539063e-08
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 2,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 8.268941087408166e-13,
+      "ending_training_predictions": [
+        -8.940696716308594e-07,
+        0.9999990463256836,
+        0.9999991059303284,
+        -8.940696716308594e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 155.03284129199892,
+      "after_900_updates_mse": 1.3864465131518955e-12,
+      "after_900_updates_predictions": [
+        1.1920928955078125e-06,
+        1.0000011920928955,
+        1.0000011920928955,
+        1.1324882507324219e-06
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 3,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 3.606452914084457e-10,
+      "ending_training_predictions": [
+        3.0547380447387695e-05,
+        0.999988317489624,
+        0.9999806880950928,
+        8.940696716308594e-08
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 158.59234470800038,
+      "after_900_updates_mse": 3.488367372739276e-10,
+      "after_900_updates_predictions": [
+        3.013014793395996e-05,
+        0.9999886751174927,
+        0.9999810457229614,
+        5.960464477539063e-08
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 4,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 7.30882021571233e-12,
+      "ending_training_predictions": [
+        2.562999725341797e-06,
+        1.0000029802322388,
+        0.9999972581863403,
+        -2.5033950805664062e-06
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 153.23268612500033,
+      "after_900_updates_mse": 7.182920924719838e-12,
+      "after_900_updates_predictions": [
+        2.7120113372802734e-06,
+        1.0000022649765015,
+        0.9999974966049194,
+        -3.159046173095703e-06
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 5,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 1.4499512701604544e-13,
+      "ending_training_predictions": [
+        3.2782554626464844e-07,
+        0.9999997615814209,
+        0.9999996423721313,
+        5.364418029785156e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 147.12152379200052,
+      "after_900_updates_mse": 1.6986412276764895e-13,
+      "after_900_updates_predictions": [
+        3.2782554626464844e-07,
+        0.9999997615814209,
+        0.9999995231628418,
+        5.364418029785156e-07
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 6,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 0.004164293874055147,
+      "ending_training_predictions": [
+        0.06853985786437988,
+        0.9315029978752136,
+        0.9395924210548401,
+        0.06015437841415405
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 154.59367649999876,
+      "after_900_updates_mse": 0.004137377254664898,
+      "after_900_updates_predictions": [
+        0.06831598281860352,
+        0.9317228198051453,
+        0.9397861361503601,
+        0.059957921504974365
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 7,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 0.125,
+      "ending_training_predictions": [
+        0.0,
+        0.5,
+        1.0,
+        0.5
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 178.45365154200044,
+      "after_900_updates_mse": 0.125,
+      "after_900_updates_predictions": [
+        0.0,
+        0.5,
+        1.0,
+        0.5
+      ],
+      "store_owner_present": true,
+      "store_rows": 1020,
+      "definition_rows": 4
+    },
+    {
+      "trial": 8,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 0.125,
+      "ending_training_predictions": [
+        0.5,
+        0.5,
+        1.0,
+        0.0
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 162.0779939999993,
+      "after_900_updates_mse": 0.125,
+      "after_900_updates_predictions": [
+        0.5,
+        0.5,
+        1.0,
+        0.0
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 9,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 0.005595038644969463,
+      "ending_training_predictions": [
+        -0.006258726119995117,
+        1.0081682205200195,
+        0.894072949886322,
+        0.1051366925239563
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 152.58115866699882,
+      "after_900_updates_mse": 0.005567514803260565,
+      "after_900_updates_predictions": [
+        -0.006243288516998291,
+        1.008148431777954,
+        0.8943337798118591,
+        0.10487771034240723
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    },
+    {
+      "trial": 10,
+      "epochs": 900,
+      "seed": null,
+      "configuration": "data/MM_grammar.xml",
+      "completed_epochs": 900,
+      "ending_training_mse": 7.904787935331115e-14,
+      "ending_training_predictions": [
+        1.7881393432617188e-07,
+        1.0,
+        1.000000238418579,
+        4.76837158203125e-07
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "elapsed_seconds": 146.91769866700088,
+      "after_900_updates_mse": 7.549516567451064e-15,
+      "after_900_updates_predictions": [
+        8.940696716308594e-08,
+        0.9999998807907104,
+        1.0,
+        8.940696716308594e-08
+      ],
+      "store_owner_present": true,
+      "store_rows": 1024,
+      "definition_rows": 4
+    }
+  ],
+  "median_ending_training_mse": 1.8397705581207902e-10,
+  "median_after_900_updates_mse": 1.7800982909932372e-10,
+  "accepted_item7_baseline_median": 0.1066,
+  "meaning": "Same raw-forward 900-update measurement as the accepted receipt; descriptive, not a sentence-trial grammar-learning proof."
+}

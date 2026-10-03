@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/endpoint_probe.py", line 53, in <module>
+    assert record['outcome']['evaluation_batches'] > 0, 'Native endpoint was never evaluated'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Native endpoint was never evaluated

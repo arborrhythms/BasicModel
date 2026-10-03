@@ -1,0 +1,125 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward",
+    "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent"
+  ],
+  "completed": [
+    "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+    "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run/worker-000.json"
+      ],
+      "pid": 36694,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 477775192,
+      "elapsed_seconds": 4.133469791000607,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent"
+      ],
+      "completed": [
+        "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.2468509999998787,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run/worker-001.json"
+      ],
+      "pid": 36695,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 675710416,
+      "elapsed_seconds": 5.921659666999403,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward"
+      ],
+      "completed": [
+        "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.2668217080008617,
+          "message": "contents, 1, %safe_249), kwargs = {})\nE           %sid : [num_users=3] = call_method[target=reshape](args = (%gather_249, 4), kwargs = {})\nE           %clamp_288 : [num_users=1] = call_method[target=clamp](args = (%sid, 0, 0), kwargs = {})\nE           %getitem_173 : [num_users=1] = call_function[target=operator.getitem](args = (%clamp_288, (slice(None, None, None), None)), kwargs = {})\nE           %gather_250 : [num_users=1] = call_method[target=gather](args = (%l_args_1_closure_0_cell_contents_closure_12_cell_contents, 1, %getitem_173), kwargs = {})\nE           %expected : [num_users=1] = call_method[target=reshape](args = (%gather_250, 4), kwargs = {})\nE           %reshape_636 : [num_users=1] = call_method[target=reshape](args = (%l_args_1_closure_0_cell_contents_closure_6_cell_contents, 4), kwargs = {})\nE           %expected_1 : [num_users=1] = call_function[target=torch.where](args = (%final, %reshape_636, %expected), kwargs = {})\nE           %ne_76 : [num_users=1] = call_function[target=operator.ne](args = (%depth_19, %expected_1), kwargs = {})\nE           %and__418 : [num_users=1] = call_function[target=operator.and_](args = (%ending, %ne_76), kwargs = {})\nE           %or__112 : [num_users=1] = call_function[target=operator.or_](args = (%bad_95, %and__418), kwargs = {})\nE           %lt_20 : [num_users=1] = call_function[target=operator.lt](args = (%sid, 0), kwargs = {})\nE           %ge_57 : [num_users=1] = call_function[target=operator.ge](args = (%sid, 1), kwargs = {})\nE           %or__113 : [num_users=1] = call_function[target=operator.or_](args = (%lt_20, %ge_57), kwargs = {})\nE           %and__419 : [num_users=1] = call_function[target=operator.and_](args = (%wa, %or__113), kwargs = {})\nE           %bad_96 : [num_users=1] = call_function[target=operator.or_](args = (%or__112, %and__419), kwargs = {})\nE           %getitem_174 : [num_users=1] = call_function[target=operator.getitem](args = (%ending, (slice(None, None, None), None)), kwargs = {})\nE           %full_like_57 : [num_users=1] = call_function[target=torch.full_like](args = (%stack_38, -1), kwargs = {})\nE           %stack_39 : [num_users=1] = call_function[target=torch.where](args = (%getitem_174, %full_like_57, %stack_38), kwargs = {})\nE           %zeros_like : [num_users=1] = call_function[target=torch.zeros_like](args = (%depth_19,), kwargs = {})\nE           %depth_20 : [num_users=1] = call_function[target=torch.where](args = (%ending, %zeros_like, %depth_19), kwargs = {})\nE           %child : [num_users=1] = call_function[target=operator.add](args = (%child_6, 1), kwargs = {})\nE           %child_12 : [num_users=1] = call_method[target=clone](args = (%stack_39,), kwargs = {})\nE           %child_13 : [num_users=1] = call_method[target=clone](args = (%depth_20,), kwargs = {})\nE           %child_14 : [num_users=1] = call_method[target=clone](args = (%lefts_18,), kwargs = {})\nE           %child_15 : [num_users=1] = call_method[target=clone](args = (%rights_18,), kwargs = {})\nE           %child_16 : [num_users=1] = call_method[target=clone](args = (%bad_96,), kwargs = {})\nE           return (child, child_12, child_13, child_14, child_15, child_16)\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0040.html\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py\", line 250, in _while_loop_op_wrapper\nE       return while_loop_op(*args, **kwargs)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\nE       return func(*args, **kwargs)\nE              ^^^^^^^^^^^^^^^^^^^^^\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run",
+  "elapsed_seconds": 9.986450874999719,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1072532192,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run/collect.json"
+    ],
+    "pid": 36686,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431031496,
+    "elapsed_seconds": 3.6179712920002203,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/step6-capture-corrected/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward",
+        "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

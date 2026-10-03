@@ -1,0 +1,19 @@
+.....sF                                                                  [100%]
+=================================== FAILURES ===================================
+______________ test_normal_batch_trains_supplied_grammar_lessons _______________
+test/test_surface_grammar.py:242: in test_normal_batch_trains_supplied_grammar_lessons
+    assert any(not torch.equal(old, new) for old, new in zip(original, owner.parameters()))
+E   assert False
+E    +  where False = any(<generator object test_normal_batch_trains_supplied_grammar_lessons.<locals>.<genexpr> at 0x147501700>)
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons
+1 failed, 5 passed, 1 skipped, 1 warning in 4.34s

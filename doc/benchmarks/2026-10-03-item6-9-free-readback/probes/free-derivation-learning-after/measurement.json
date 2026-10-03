@@ -1,0 +1,27 @@
+{
+  "config": "data/MM_ladder.xml",
+  "seed": 1807882285,
+  "epochs": 3,
+  "wall_s_per_epoch": 47.272038124501705,
+  "output_loss": 0.018455134704709053,
+  "recon_loss": 5.008122444152832,
+  "exact_match_rate": 0.0,
+  "where_recovery": 0.09451219512195122,
+  "channel_losses": {},
+  "device": "cpu",
+  "compile_mode": "none",
+  "host": "ArborStudio.local",
+  "timestamp": "20261003-053646",
+  "notes": {
+    "decode_mode": "free-derivation",
+    "decoded_rows": 64,
+    "compiled_step": false,
+    "torch_compile_mode": "max-autotune",
+    "channel_losses_note": "per-channel what/where/when terms are summed inline in ModelLoss and not exposed on the model",
+    "epoch_times_s": [
+      47.608525541989366,
+      46.87712016599835,
+      47.66695608300506
+    ]
+  }
+}

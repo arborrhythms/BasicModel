@@ -1,0 +1,6 @@
+{
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "baseline": "doc/benchmarks/2026-10-03-item6-9-free-readback",
+  "production_matches_baseline": true,
+  "scope": "Plan 23: focused cases, eight sweep and six moved failures, one shared XOR training/audit, collection, documentation links. No campaign/native/MM/attribution."
+}

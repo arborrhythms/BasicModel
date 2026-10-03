@@ -1,0 +1,47 @@
+[
+  {
+    "file": "test/test_reconstruction_precedence.py",
+    "test": "test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection",
+    "reason": "\u00a715.4 retires supplied-answer gradient projection; selection precedence stays."
+  },
+  {
+    "file": "test/test_reconstruction_precedence.py",
+    "test": "test_sparse_answer_projection_preserves_the_sparse_code_gradient",
+    "reason": "\u00a715.4 retires supplied-answer gradient projection; selection precedence stays."
+  },
+  {
+    "file": "test/test_reconstruction_precedence.py",
+    "test": "test_nonopposing_answer_and_absent_reconstruction_need_no_correction",
+    "reason": "\u00a715.4 retires supplied-answer gradient projection; selection precedence stays."
+  },
+  {
+    "file": "test/test_reconstruction_precedence.py",
+    "test": "test_projection_includes_the_trial_perception_pullback",
+    "reason": "\u00a715.4 retires supplied-answer gradient projection; selection precedence stays."
+  },
+  {
+    "file": "test/test_reconstruction_precedence.py",
+    "test": "test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+    "reason": "\u00a715.4 retires supplied-answer gradient projection; selection precedence stays."
+  },
+  {
+    "file": "test/test_supplied_answer_training.py",
+    "test": "test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+    "reason": "Uncut step-5a training path retired (\u00a715.4); cut variants covered by test_understanding_readout and objective_ownership."
+  },
+  {
+    "file": "test/test_supplied_answer_training.py",
+    "test": "test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+    "reason": "Uncut step-5a training path retired (\u00a715.4); cut variants covered by test_understanding_readout and objective_ownership."
+  },
+  {
+    "file": "test/test_training_diagnostic_contracts.py",
+    "test": "test_direct_supervised_head_warns_about_unfactored_state",
+    "reason": "\u00a715.4 replaces cross-objective operator diagnostic and unfactored answer path with ownership."
+  },
+  {
+    "file": "test/test_training_diagnostic_contracts.py",
+    "test": "test_opposition_survives_integrated_checkpoint",
+    "reason": "\u00a715.4 replaces cross-objective operator diagnostic and unfactored answer path with ownership."
+  }
+]

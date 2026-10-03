@@ -1,0 +1,29 @@
+{
+  "results": [
+    {
+      "config": "data/matrix/MM_20M_grammar_reading.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/matrix/MM_20M_grammar_reading.xml",
+      "arm": "after",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/matrix/MM_20M_grammar_wordstore.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/matrix/MM_20M_grammar_wordstore.xml",
+      "arm": "after",
+      "exit_code": 137,
+      "reason": "memory"
+    }
+  ],
+  "source_matched": true
+}

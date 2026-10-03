@@ -1,0 +1,24 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+________ test_lower_total_explore_cannot_win_with_worse_reconstruction _________
+test/test_reconstruction_precedence.py:13: in test_lower_total_explore_cannot_win_with_worse_reconstruction
+    chosen, _, wins = sentence_pair(None, compose, score, lambda loss: None,
+E   TypeError: sentence_pair() got an unexpected keyword argument 'reconstruction'
+__ test_projection_preserves_reconstruction_other_objectives_and_reading_map ___
+test/test_reconstruction_precedence.py:20: in test_projection_preserves_reconstruction_other_objectives_and_reading_map
+    from SentenceCompose import reconstruction_answer_correction
+E   ImportError: cannot import name 'reconstruction_answer_correction' from 'SentenceCompose' (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py)
+____________ test_projection_includes_the_trial_perception_pullback ____________
+test/test_reconstruction_precedence.py:37: in test_projection_includes_the_trial_perception_pullback
+    from SentenceCompose import fork_perception, reconstruction_answer_correction
+E   ImportError: cannot import name 'reconstruction_answer_correction' from 'SentenceCompose' (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py)
+_____ test_nonopposing_answer_and_absent_reconstruction_need_no_correction _____
+test/test_reconstruction_precedence.py:49: in test_nonopposing_answer_and_absent_reconstruction_need_no_correction
+    from SentenceCompose import reconstruction_answer_correction
+E   ImportError: cannot import name 'reconstruction_answer_correction' from 'SentenceCompose' (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py)
+=========================== short test summary info ============================
+FAILED test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction
+FAILED test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map
+FAILED test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback
+FAILED test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction
+4 failed in 2.17s

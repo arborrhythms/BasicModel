@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_readback_operand_unaries.py"
+  ],
+  "pid": 73959,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1530410016,
+  "elapsed_seconds": 57.30155375000322,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-corrections/probes/unary-compiled-bound/run.log"
+}

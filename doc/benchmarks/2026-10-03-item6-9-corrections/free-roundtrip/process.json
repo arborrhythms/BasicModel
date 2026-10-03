@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip"
+  ],
+  "pid": 74653,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 4652701144,
+  "elapsed_seconds": 237.8149834999931,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-corrections/free-roundtrip/run.log"
+}

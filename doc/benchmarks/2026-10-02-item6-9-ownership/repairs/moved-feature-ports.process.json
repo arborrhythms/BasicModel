@@ -1,0 +1,21 @@
+{
+  "command": [
+    "env",
+    "RUN_SLOW=1",
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_sparse_concept_e2e.py",
+    "test/test_masked_semantic.py",
+    "test/test_frozen_concepts.py",
+    "test/test_relevance_bases.py",
+    "test/test_priming_energy.py"
+  ],
+  "pid": 22611,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 855836376,
+  "elapsed_seconds": 10.093618250000873,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/moved-feature-ports.log"
+}

@@ -1,0 +1,92 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row"
+  ],
+  "completed": [
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-red/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-red/worker-000.json"
+      ],
+      "pid": 8851,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 438699352,
+      "elapsed_seconds": 3.7615196670012665,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-red/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row"
+      ],
+      "completed": [
+        "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00010724999447120354,
+          "message": "test/test_sentence_journal.py:120: in test_functional_prediction_cost_does_not_mutate_an_inactive_row\n    layer = IntraSentenceLayer(concept_dim=2, working_dim=2, stm_capacity=3)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: IntraSentenceLayer.__init__() missing 1 required positional argument: 'routing_dim'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-red",
+  "elapsed_seconds": 7.876400416003889,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 438699352,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-red/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-red/collect.json"
+    ],
+    "pid": 8839,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 433489072,
+    "elapsed_seconds": 3.7517624579995754,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-red/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

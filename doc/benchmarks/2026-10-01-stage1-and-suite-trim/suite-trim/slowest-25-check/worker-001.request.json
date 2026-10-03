@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-001.recycle.json"
+}

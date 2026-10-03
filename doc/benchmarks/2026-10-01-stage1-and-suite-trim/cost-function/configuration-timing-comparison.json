@@ -1,0 +1,1658 @@
+[
+  {
+    "config": "data/BasicModel_answers_benchmark.xml",
+    "before": {
+      "training_seconds": 3.5542591249977704,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/BasicModel_answers_benchmark.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/BasicModel_answers_benchmark.json"
+        ],
+        "pid": 88855,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7842815416,
+        "elapsed_seconds": 7.752539832996263,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/BasicModel_answers_benchmark.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/BasicModel_answers_benchmark.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/BasicModel_answers_benchmark.json"
+        ],
+        "pid": 89638,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 8788877760,
+        "elapsed_seconds": 5.685391708997486,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/BasicModel_answers_benchmark.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/BasicModel_expectation_benchmark.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('complete sentence exceeds the packed word capacity: source index 23968 has 72 words, capacity is 64; refusing to clip it')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/BasicModel_expectation_benchmark.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/BasicModel_expectation_benchmark.json"
+        ],
+        "pid": 88875,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1735821472,
+        "elapsed_seconds": 5.4094528749992605,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/BasicModel_expectation_benchmark.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('complete sentence exceeds the packed word capacity: source index 23968 has 72 words, capacity is 64; refusing to clip it')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/BasicModel_expectation_benchmark.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/BasicModel_expectation_benchmark.json"
+        ],
+        "pid": 89674,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1738492088,
+        "elapsed_seconds": 5.690433166004368,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/BasicModel_expectation_benchmark.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/HeadEmission.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('unresolved generate rule: S -> C')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/HeadEmission.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/HeadEmission.json"
+        ],
+        "pid": 88898,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 405259392,
+        "elapsed_seconds": 3.3416899160001776,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/HeadEmission.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('unresolved generate rule: S -> C')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/HeadEmission.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/HeadEmission.json"
+        ],
+        "pid": 89695,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 405718168,
+        "elapsed_seconds": 3.352398582996102,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/HeadEmission.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/LM_5M.xml",
+    "before": {
+      "training_seconds": 2.343710207998811,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/LM_5M.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/LM_5M.json"
+        ],
+        "pid": 88907,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2832190344,
+        "elapsed_seconds": 5.936743500002194,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/LM_5M.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "RuntimeError('tied reconstruction bank requires staged word and sentence masks')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/LM_5M.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/LM_5M.json"
+        ],
+        "pid": 89706,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 526238920,
+        "elapsed_seconds": 3.862199082999723,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/LM_5M.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/LM_5M_IR.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/LM_5M_IR.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/LM_5M_IR.json"
+        ],
+        "pid": 88916,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 402293864,
+        "elapsed_seconds": 3.3463505000036093,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/LM_5M_IR.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/LM_5M_IR.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/LM_5M_IR.json"
+        ],
+        "pid": 89722,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 400131200,
+        "elapsed_seconds": 3.338574916997459,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/LM_5M_IR.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_20M_fineweb.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_20M_fineweb.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_20M_fineweb.json"
+        ],
+        "pid": 88927,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 9678954200,
+        "elapsed_seconds": 21.240208082999743,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_20M_fineweb.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "RuntimeError('tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_20M_fineweb.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_20M_fineweb.json"
+        ],
+        "pid": 89732,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 8551291816,
+        "elapsed_seconds": 21.75630333400477,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_20M_fineweb.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_20M_grammar.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_20M_grammar.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_20M_grammar.json"
+        ],
+        "pid": 88942,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 8793627632,
+        "elapsed_seconds": 11.643061750000925,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_20M_grammar.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_20M_grammar.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_20M_grammar.json"
+        ],
+        "pid": 89757,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 8810863744,
+        "elapsed_seconds": 11.915885499998694,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_20M_grammar.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_400M.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "AssertionError(\"Embedding.insert: lexicon is full (65536 >= capacity=65536); the where-space slice allocated for this Embedding only covers ``lexicon_capacity`` prototypes. Raise <nVectors> on the owning Space's XML (or the Embedding._LEXICON_DEFAULT_CAPACITY default) and reload.\")",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_400M.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_400M.json"
+        ],
+        "pid": 88948,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1598162912,
+        "elapsed_seconds": 12.959469125002215,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_400M.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "AssertionError(\"Embedding.insert: lexicon is full (65536 >= capacity=65536); the where-space slice allocated for this Embedding only covers ``lexicon_capacity`` prototypes. Raise <nVectors> on the owning Space's XML (or the Embedding._LEXICON_DEFAULT_CAPACITY default) and reload.\")",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_400M.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_400M.json"
+        ],
+        "pid": 89777,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 1603700728,
+        "elapsed_seconds": 13.210158957997919,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_400M.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_5M_AR.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_5M_AR.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_5M_AR.json"
+        ],
+        "pid": 88976,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 399950928,
+        "elapsed_seconds": 3.3438623340043705,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_5M_AR.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_5M_AR.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_5M_AR.json"
+        ],
+        "pid": 89810,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 400950376,
+        "elapsed_seconds": 3.3516022080002585,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_5M_AR.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_5M_IR.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_5M_IR.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_5M_IR.json"
+        ],
+        "pid": 88985,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 400311448,
+        "elapsed_seconds": 3.3545796660037013,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_5M_IR.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_5M_IR.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_5M_IR.json"
+        ],
+        "pid": 89819,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 400311424,
+        "elapsed_seconds": 3.3306635830012965,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_5M_IR.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_add_verb.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_add_verb.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_add_verb.json"
+        ],
+        "pid": 88994,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 9522995072,
+        "elapsed_seconds": 12.963432125005056,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_add_verb.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_add_verb.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_add_verb.json"
+        ],
+        "pid": 89830,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 9050070504,
+        "elapsed_seconds": 12.954075791996729,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_add_verb.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_boolean.xml",
+    "before": {
+      "training_seconds": 0.9422272910014726,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_boolean.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_boolean.json"
+        ],
+        "pid": 89004,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1004308088,
+        "elapsed_seconds": 4.377588499999547,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_boolean.log"
+      }
+    },
+    "after": {
+      "training_seconds": 1.102934082999127,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_boolean.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_boolean.json"
+        ],
+        "pid": 89884,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1016497808,
+        "elapsed_seconds": 4.3809499999988475,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_boolean.log"
+      }
+    },
+    "delta_seconds": 0.16070679199765436
+  },
+  {
+    "config": "data/MM_bpe.xml",
+    "before": {
+      "training_seconds": 0.34317608399578603,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_bpe.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_bpe.json"
+        ],
+        "pid": 89013,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 464913656,
+        "elapsed_seconds": 3.6056754589953925,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_bpe.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "RuntimeError('tied reconstruction bank requires staged word and sentence masks')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_bpe.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_bpe.json"
+        ],
+        "pid": 89893,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 458835096,
+        "elapsed_seconds": 3.6041392920014914,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_bpe.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_decode.xml",
+    "before": {
+      "training_seconds": 3.202650041996094,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_decode.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_decode.json"
+        ],
+        "pid": 89022,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5137142320,
+        "elapsed_seconds": 11.098790834003012,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_decode.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "RuntimeError('tied reconstruction requires completed sentence state')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_decode.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_decode.json"
+        ],
+        "pid": 89903,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 4808691912,
+        "elapsed_seconds": 10.881269124998653,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_decode.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_grammar.xml",
+    "before": {
+      "training_seconds": 0.531384750000143,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_grammar.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_grammar.json"
+        ],
+        "pid": 89059,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 587171208,
+        "elapsed_seconds": 3.8565589589998126,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_grammar.log"
+      }
+    },
+    "after": {
+      "training_seconds": 0.5186846670039813,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_grammar.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_grammar.json"
+        ],
+        "pid": 89937,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 589120832,
+        "elapsed_seconds": 3.8639660000044387,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_grammar.log"
+      }
+    },
+    "delta_seconds": -0.012700082996161655
+  },
+  {
+    "config": "data/MM_ladder.xml",
+    "before": {
+      "training_seconds": 2.3811257089982973,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ladder.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ladder.json"
+        ],
+        "pid": 89068,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1522878528,
+        "elapsed_seconds": 5.939173250000749,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ladder.log"
+      }
+    },
+    "after": {
+      "training_seconds": 2.554954874998657,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ladder.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder.json"
+        ],
+        "pid": 89971,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1628702856,
+        "elapsed_seconds": 6.213803958999051,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder.log"
+      }
+    },
+    "delta_seconds": 0.1738291660003597
+  },
+  {
+    "config": "data/MM_ladder_idiom.xml",
+    "before": {
+      "training_seconds": 4.172502416004136,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ladder_idiom.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ladder_idiom.json"
+        ],
+        "pid": 89077,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2749254488,
+        "elapsed_seconds": 7.7421201250035665,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ladder_idiom.log"
+      }
+    },
+    "after": {
+      "training_seconds": 4.0333385830017505,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ladder_idiom.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder_idiom.json"
+        ],
+        "pid": 89996,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2575846064,
+        "elapsed_seconds": 7.492684582997754,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder_idiom.log"
+      }
+    },
+    "delta_seconds": -0.13916383300238522
+  },
+  {
+    "config": "data/MM_ladder_text.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ladder_text.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ladder_text.json"
+        ],
+        "pid": 89088,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 8640847168,
+        "elapsed_seconds": 14.231049583999265,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ladder_text.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ladder_text.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder_text.json"
+        ],
+        "pid": 90005,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 8913378792,
+        "elapsed_seconds": 12.172667834005551,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder_text.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_ladder_textpacked.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ladder_textpacked.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ladder_textpacked.json"
+        ],
+        "pid": 89108,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 9086573816,
+        "elapsed_seconds": 7.471504583001661,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ladder_textpacked.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ladder_textpacked.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder_textpacked.json"
+        ],
+        "pid": 90029,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 9366298016,
+        "elapsed_seconds": 7.5070332499963115,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ladder_textpacked.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+    "before": {
+      "training_seconds": 0.5545382499985863,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ltm_consolidation_serial_fixture.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ltm_consolidation_serial_fixture.json"
+        ],
+        "pid": 89116,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 620889480,
+        "elapsed_seconds": 3.857882541997242,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ltm_consolidation_serial_fixture.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "RuntimeError('tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_ltm_consolidation_serial_fixture.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ltm_consolidation_serial_fixture.json"
+        ],
+        "pid": 90035,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 491553968,
+        "elapsed_seconds": 3.868950375006534,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_ltm_consolidation_serial_fixture.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_mereology_serial.xml",
+    "before": {
+      "training_seconds": 9.015825333000976,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_mereology_serial.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_mereology_serial.json"
+        ],
+        "pid": 89125,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 6812096248,
+        "elapsed_seconds": 16.854195540996443,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_mereology_serial.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "RuntimeError('tied reconstruction requires completed sentence state')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_mereology_serial.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_mereology_serial.json"
+        ],
+        "pid": 90044,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 6680188472,
+        "elapsed_seconds": 11.124103874994034,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_mereology_serial.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_meronomy_smoke.xml",
+    "before": {
+      "training_seconds": 4.753789375004999,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_meronomy_smoke.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_meronomy_smoke.json"
+        ],
+        "pid": 89150,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7491819856,
+        "elapsed_seconds": 12.658895374996064,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_meronomy_smoke.log"
+      }
+    },
+    "after": {
+      "training_seconds": 4.950103208000655,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_meronomy_smoke.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_meronomy_smoke.json"
+        ],
+        "pid": 90070,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7954144096,
+        "elapsed_seconds": 12.953577041000244,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_meronomy_smoke.log"
+      }
+    },
+    "delta_seconds": 0.1963138329956564
+  },
+  {
+    "config": "data/MM_nanochat_grammar_gate.xml",
+    "before": {
+      "training_seconds": 8.445214958002907,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_nanochat_grammar_gate.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_nanochat_grammar_gate.json"
+        ],
+        "pid": 89174,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 3156282440,
+        "elapsed_seconds": 12.417944957996951,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_nanochat_grammar_gate.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "RuntimeError('tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_nanochat_grammar_gate.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_nanochat_grammar_gate.json"
+        ],
+        "pid": 90082,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 757974432,
+        "elapsed_seconds": 4.395030665997183,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_nanochat_grammar_gate.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_nanochat_grammar_pilot.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_nanochat_grammar_pilot.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_nanochat_grammar_pilot.json"
+        ],
+        "pid": 89200,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 8915590344,
+        "elapsed_seconds": 11.903479833999882,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_nanochat_grammar_pilot.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_nanochat_grammar_pilot.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_nanochat_grammar_pilot.json"
+        ],
+        "pid": 90114,
+        "exit_code": 137,
+        "reason": "memory",
+        "peak_memory_bytes": 9223560608,
+        "elapsed_seconds": 12.15871920799691,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_nanochat_grammar_pilot.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_phrase_decode.xml",
+    "before": {
+      "training_seconds": 4.737314750003861,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_phrase_decode.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_phrase_decode.json"
+        ],
+        "pid": 89208,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7610128840,
+        "elapsed_seconds": 12.67359695900086,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_phrase_decode.log"
+      }
+    },
+    "after": {
+      "training_seconds": 4.921882832997653,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_phrase_decode.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_phrase_decode.json"
+        ],
+        "pid": 90137,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 7916935936,
+        "elapsed_seconds": 12.952442875000997,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_phrase_decode.log"
+      }
+    },
+    "delta_seconds": 0.1845680829937919
+  },
+  {
+    "config": "data/MM_query_reasoning.xml",
+    "before": {
+      "training_seconds": 4.177947916999983,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_query_reasoning.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_query_reasoning.json"
+        ],
+        "pid": 89219,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 5999252520,
+        "elapsed_seconds": 7.764746041997569,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_query_reasoning.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "ValueError('a TruthSet cannot assert an interrogative clause')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_query_reasoning.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_query_reasoning.json"
+        ],
+        "pid": 90171,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 896353744,
+        "elapsed_seconds": 4.377371249996941,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_query_reasoning.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_sequence_predict.xml",
+    "before": {
+      "training_seconds": 100.92385337500309,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_sequence_predict.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_sequence_predict.json"
+        ],
+        "pid": 89231,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 3390852432,
+        "elapsed_seconds": 104.367552583004,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_sequence_predict.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "RuntimeError('tied reconstruction bank requires staged word and sentence masks')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_sequence_predict.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_sequence_predict.json"
+        ],
+        "pid": 90200,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 525206728,
+        "elapsed_seconds": 3.8558059589995537,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_sequence_predict.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/MM_shamatha.xml",
+    "before": {
+      "training_seconds": 0.43801479199464666,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_shamatha.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_shamatha.json"
+        ],
+        "pid": 89338,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 589464968,
+        "elapsed_seconds": 3.8518458750040736,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_shamatha.log"
+      }
+    },
+    "after": {
+      "training_seconds": 0.4749247080035275,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_shamatha.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_shamatha.json"
+        ],
+        "pid": 90209,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 588301656,
+        "elapsed_seconds": 3.861727333001909,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_shamatha.log"
+      }
+    },
+    "delta_seconds": 0.03690991600888083
+  },
+  {
+    "config": "data/MM_xor_loopback.xml",
+    "before": {
+      "training_seconds": 0.4311281250047614,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_xor_loopback.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_xor_loopback.json"
+        ],
+        "pid": 89347,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 584353088,
+        "elapsed_seconds": 3.861900541000068,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_xor_loopback.log"
+      }
+    },
+    "after": {
+      "training_seconds": 0.4796978750018752,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_xor_loopback.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_xor_loopback.json"
+        ],
+        "pid": 90218,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 588399984,
+        "elapsed_seconds": 3.8611557080002967,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_xor_loopback.log"
+      }
+    },
+    "delta_seconds": 0.04856974999711383
+  },
+  {
+    "config": "data/MM_xor_step3.xml",
+    "before": {
+      "training_seconds": 0.43716170900006546,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_xor_step3.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_xor_step3.json"
+        ],
+        "pid": 89356,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 588727640,
+        "elapsed_seconds": 3.866099665996444,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_xor_step3.log"
+      }
+    },
+    "after": {
+      "training_seconds": 0.4813760410033865,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_xor_step3.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_xor_step3.json"
+        ],
+        "pid": 90229,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 590595440,
+        "elapsed_seconds": 3.867872916998749,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_xor_step3.log"
+      }
+    },
+    "delta_seconds": 0.04421433200332103
+  },
+  {
+    "config": "data/MM_xor_step4.xml",
+    "before": {
+      "training_seconds": 0.4693336249983986,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_xor_step4.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_xor_step4.json"
+        ],
+        "pid": 89365,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 589907312,
+        "elapsed_seconds": 3.867510999996739,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_xor_step4.log"
+      }
+    },
+    "after": {
+      "training_seconds": 0.5117087500038906,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MM_xor_step4.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_xor_step4.json"
+        ],
+        "pid": 90239,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 589317488,
+        "elapsed_seconds": 3.864410249996581,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MM_xor_step4.log"
+      }
+    },
+    "delta_seconds": 0.04237512500549201
+  },
+  {
+    "config": "data/MentalModel.xml",
+    "before": {
+      "training_seconds": 0.7623309580012574,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MentalModel.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MentalModel.json"
+        ],
+        "pid": 89374,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2232437280,
+        "elapsed_seconds": 4.121947749998071,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MentalModel.log"
+      }
+    },
+    "after": {
+      "training_seconds": 0.8187202499975683,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/MentalModel.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MentalModel.json"
+        ],
+        "pid": 90250,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2241727008,
+        "elapsed_seconds": 4.392889125003421,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/MentalModel.log"
+      }
+    },
+    "delta_seconds": 0.05638929199631093
+  },
+  {
+    "config": "data/POS_smoke.xml",
+    "before": {
+      "training_seconds": 0.9566087920029531,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/POS_smoke.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/POS_smoke.json"
+        ],
+        "pid": 89385,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 997263016,
+        "elapsed_seconds": 4.384300291996624,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/POS_smoke.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "RuntimeError('tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction')",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/POS_smoke.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/POS_smoke.json"
+        ],
+        "pid": 90259,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 461636784,
+        "elapsed_seconds": 3.6036475420041825,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/POS_smoke.log"
+      }
+    },
+    "delta_seconds": null
+  },
+  {
+    "config": "data/RamsifiedModel.xml",
+    "before": {
+      "training_seconds": 0.6892397089977749,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/RamsifiedModel.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/RamsifiedModel.json"
+        ],
+        "pid": 89394,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2211432968,
+        "elapsed_seconds": 4.124426875001518,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/RamsifiedModel.log"
+      }
+    },
+    "after": {
+      "training_seconds": 0.7388727919969824,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/RamsifiedModel.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/RamsifiedModel.json"
+        ],
+        "pid": 90284,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 2226063880,
+        "elapsed_seconds": 4.12380933300301,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/RamsifiedModel.log"
+      }
+    },
+    "delta_seconds": 0.049633082999207545
+  },
+  {
+    "config": "data/XOR_grammar.xml",
+    "before": {
+      "training_seconds": 0.43966674999683164,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/XOR_grammar.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/XOR_grammar.json"
+        ],
+        "pid": 89403,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 586761560,
+        "elapsed_seconds": 3.8592121670008055,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/XOR_grammar.log"
+      }
+    },
+    "after": {
+      "training_seconds": 0.48104958399926545,
+      "completed": true,
+      "error": null,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/XOR_grammar.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/XOR_grammar.json"
+        ],
+        "pid": 90293,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 585778520,
+        "elapsed_seconds": 3.8676625420048367,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/XOR_grammar.log"
+      }
+    },
+    "delta_seconds": 0.04138283400243381
+  },
+  {
+    "config": "data/model.xml",
+    "before": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "AssertionError()",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/model.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/model.json"
+        ],
+        "pid": 89414,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2599144088,
+        "elapsed_seconds": 4.3728640410045045,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/model.log"
+      }
+    },
+    "after": {
+      "training_seconds": null,
+      "completed": false,
+      "error": "AssertionError()",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+          "--worker",
+          "data/model.xml",
+          "--output",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/model.json"
+        ],
+        "pid": 90302,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 2599701144,
+        "elapsed_seconds": 4.119441082999401,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-after/model.log"
+      }
+    },
+    "delta_seconds": null
+  }
+]

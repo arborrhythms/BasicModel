@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_tied_reconstruction_migration.py::test_repeated_row_references_keep_their_occurrence_activations"
+  ],
+  "completed": [
+    "test/test_tied_reconstruction_migration.py::test_repeated_row_references_keep_their_occurrence_activations"
+  ],
+  "slow_selected": [
+    "test/test_tied_reconstruction_migration.py::test_repeated_row_references_keep_their_occurrence_activations"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_tied_reconstruction_migration.py::test_repeated_row_references_keep_their_occurrence_activations",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00015475000327569433,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_tied_reconstruction_migration.py', 143, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

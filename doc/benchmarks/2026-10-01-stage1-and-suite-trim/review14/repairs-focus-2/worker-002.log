@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_sentence_generation_lesson_keeps_its_weighted_output_gradient ______
+test/test_generation_lesson.py:36: in test_sentence_generation_lesson_keeps_its_weighted_output_gradient
+    gradient, = torch.autograd.grad(output, generate, retain_graph=True)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad
+    result_tuple = handle_torch_function(
+.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:567: in grad
+    grad_outputs_ = _make_grads(
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:208: in _make_grads
+    raise RuntimeError(
+E   RuntimeError: grad can be implicitly created only for scalar outputs
+=========================== short test summary info ============================
+FAILED test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient
+1 failed in 2.40s

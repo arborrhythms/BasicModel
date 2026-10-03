@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_sentence_comparison.py",
+    "test/test_sentence_compose.py",
+    "test/test_compose_pair_driver.py",
+    "test/test_compose_review.py",
+    "test/test_closing_gradient_diagnostics.py",
+    "test/test_understanding_readout.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

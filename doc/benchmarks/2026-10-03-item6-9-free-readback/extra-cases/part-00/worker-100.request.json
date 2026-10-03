@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-100.recycle.json"
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py",
+    "--worker",
+    "data/MM_ltm_consolidation_serial_fixture.xml",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ltm_consolidation_serial_fixture.json"
+  ],
+  "pid": 89116,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 620889480,
+  "elapsed_seconds": 3.857882541997242,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration-timing-before/MM_ltm_consolidation_serial_fixture.log"
+}

@@ -1,0 +1,39 @@
+{
+  "candidate_source_matched": true,
+  "unique_attempted": 3660,
+  "first_attempt_completed": 3657,
+  "untouched_remaining": 1400,
+  "duplicate_cases": 10,
+  "extra_attempts": 17,
+  "duplicate_cases_with_completed_first_attempt": 8,
+  "duplicate_cases_with_interrupted_first_attempt": 2,
+  "process_failures": [
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "process",
+      "outcome": "process_failed",
+      "reason": "memory",
+      "exit_code": 137,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-575.log"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]",
+      "phase": "process",
+      "outcome": "process_failed",
+      "reason": "aborted",
+      "exit_code": 125,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-623.log"
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+      "phase": "process",
+      "outcome": "process_failed",
+      "reason": "interrupted",
+      "exit_code": 125,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-01/worker-012.log"
+    }
+  ],
+  "pending_excludes_every_started_case": true,
+  "complete_source_before": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/peer-accounting-before/full_sweep.py",
+  "complete_source_after": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/resume_sweep.py"
+}

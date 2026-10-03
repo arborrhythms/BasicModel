@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-3]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-767.recycle.json"
+}

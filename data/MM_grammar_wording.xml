@@ -42,11 +42,10 @@
       <packSentences>false</packSentences>
       <numWorkers>0</numWorkers>
       <learningRate>0.003</learningRate>
-      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
+      <conceptualContextLearningRate>0</conceptualContextLearningRate>
       <conceptualContextNegatives>4</conceptualContextNegatives>
       <reconstructionScale>1.0</reconstructionScale>
       <teacherReconstruction>true</teacherReconstruction>
-      <detachedReverse>false</detachedReverse>
       <reconstructInLoop>true</reconstructInLoop>
       <reconstructionPlacement>compiled</reconstructionPlacement>
       <reconstructionBasisLimit>16</reconstructionBasisLimit>

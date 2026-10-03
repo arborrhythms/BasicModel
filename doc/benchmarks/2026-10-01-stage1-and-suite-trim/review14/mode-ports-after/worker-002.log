@@ -1,0 +1,10 @@
+............F...                                                         [100%]
+=================================== FAILURES ===================================
+______________________ test_stage_byte_mode_returns_none _______________________
+test/test_type_run_spans.py:148: in test_stage_byte_mode_returns_none
+    assert _stage(mode, "abc def") is None
+E   AssertionError: assert tensor([[[0, 3],\n         [4, 7]]]) is None
+E    +  where tensor([[[0, 3],\n         [4, 7]]]) = _stage('byte', 'abc def')
+=========================== short test summary info ============================
+FAILED test/test_type_run_spans.py::test_stage_byte_mode_returns_none - Asser...
+1 failed, 15 passed in 2.17s

@@ -1,0 +1,25 @@
+{
+  "completed": [
+    {
+      "config": "data/matrix/MM_20M_grammar_reading.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/matrix/MM_20M_grammar_reading.xml",
+      "arm": "after",
+      "exit_code": 137,
+      "reason": "memory"
+    },
+    {
+      "config": "data/matrix/MM_20M_grammar_wordstore.xml",
+      "arm": "before",
+      "exit_code": 137,
+      "reason": "memory"
+    }
+  ],
+  "active": "MM_20M_grammar_wordstore-after",
+  "pid": 12601,
+  "memory_bytes": 8099879608
+}

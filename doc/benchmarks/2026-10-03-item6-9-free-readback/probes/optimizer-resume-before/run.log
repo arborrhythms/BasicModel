@@ -1,0 +1,105 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty __
+
+    def test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty():
+        code=torch.nn.Parameter(torch.tensor([1.,2.])); reader=torch.nn.Parameter(torch.tensor([3.]))
+        named=[('codes',code),('reader',reader)]
+        old=Adam([code,reader],lr=.02)
+        (code.square().sum()+reader.square().sum()).backward();old.step();old.zero_grad()
+        live=MultiOptimizer([Adam([reader],lr=.02),SGD([code],lr=.02,momentum=.9)])
+>       result=remap_optimizer_state_by_name(old.state_dict(),build_optimizer_param_manifest(old,named),
+            live.state_dict(),build_optimizer_param_manifest(live,named))
+
+test/test_objective_optimizer_resume.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+saved_optimizer_state = {'state': {0: {'step': tensor(1.), 'exp_avg': tensor([0.2000, 0.4000]), 'exp_avg_sq': tensor([0.0040, 0.0160])}, 1: {'...g_sq': tensor([0.0360])}}, 'param_groups': [{'lr': 0.02, 'betas': (0.9, 0.999), 'eps': 1e-08, 'weight_decay': 0, ...}]}
+saved_manifest = {'version': 1, 'leaves': [{'param_groups': [[{'name': 'codes', 'shape': [...]}, {'name': 'reader', 'shape': [...]}]]}]}
+live_optimizer_state = {'optimizers': [{'state': {}, 'param_groups': [{'lr': 0.02, 'betas': (0.9, 0.999), 'eps': 1e-08, 'weight_decay': 0, ..... 0.999), 'eps': 1e-08, 'weight_decay': 0, ...}, {'lr': 0.02, 'momentum': 0.9, 'dampening': 0, 'weight_decay': 0, ...}]}
+live_manifest = {'version': 1, 'leaves': [{'param_groups': [[{'name': 'reader', 'shape': [...]}]]}, {'param_groups': [[{'name': 'codes', 'shape': [...]}]]}]}
+reset_wholespace = False, parameter_row_maps = None, reset_parameters = ()
+
+    def remap_optimizer_state_by_name(
+        saved_optimizer_state: Mapping[str, Any],
+        saved_manifest: Mapping[str, Any],
+        live_optimizer_state: Mapping[str, Any],
+        live_manifest: Mapping[str, Any],
+        *,
+        reset_wholespace: bool = False,
+        parameter_row_maps: Mapping[str, tuple[int, ...]] | None = None,
+        reset_parameters: tuple[str, ...] = (),
+    ) -> OptimizerRemapResult:
+        """Return optimizer state aligned to the live named parameter layout.
+    
+        ``reset_wholespace`` is true only at the schema-1 -> schema-2 semantic
+        boundary.  Future schema-2 resumes must leave it false: the small dynamic
+        property basis is a legitimate trainable inventory and its named moments
+        remain valid checkpoint state.
+        """
+    
+        saved_leaves = _optimizer_state_leaves(saved_optimizer_state)
+        live_leaves = _optimizer_state_leaves(live_optimizer_state)
+        saved_mleaves = _manifest_leaves(saved_manifest)
+        live_mleaves = _manifest_leaves(live_manifest)
+        if len(saved_leaves) != len(saved_mleaves):
+            raise ValueError("saved optimizer state/manifest leaf counts differ")
+        if len(live_leaves) != len(live_mleaves):
+            raise ValueError("live optimizer state/manifest leaf counts differ")
+    
+        # A storage owner can deliberately retire an entire optimizer family.
+        # The contextual ConceptualSpace dictionary is one example: it used to be
+        # the sole RowLocalAdam leaf, and is now a persistent, non-autograd buffer
+        # rotated by the contextual reducer.  Preserve the ordinary Adam moments
+        # from an older checkpoint, but only discard a whole saved leaf when every
+        # manifest name in it is absent from the live optimizer.  In particular,
+        # do not let a topology mismatch conceal a leaf that still owns a live
+        # parameter.
+        dropped_from_retired_leaves: list[str] = []
+        if len(saved_leaves) != len(live_leaves):
+            def _leaf_entries(state_leaf, manifest_leaf):
+                groups = state_leaf.get("param_groups")
+                manifest_groups = manifest_leaf.get("param_groups")
+                if not (
+                    isinstance(groups, list)
+                    and isinstance(manifest_groups, list)
+                    and len(groups) == len(manifest_groups)
+                ):
+                    raise ValueError("optimizer parameter-group layout differs")
+                entries = []
+                state = state_leaf.get("state") or {}
+                for group, manifest_entries in zip(groups, manifest_groups):
+                    ids = list(group.get("params", ()))
+                    if len(ids) != len(manifest_entries):
+                        raise ValueError(
+                            "optimizer manifest group length differs")
+                    for parameter_id, entry in zip(ids, manifest_entries):
+                        entries.append((_entry_name(entry), state.get(parameter_id)))
+                return entries
+    
+            live_names = {
+                name
+                for leaf, manifest_leaf in zip(live_leaves, live_mleaves)
+                for name, _state in _leaf_entries(leaf, manifest_leaf)
+            }
+            retained_saved = []
+            for leaf, manifest_leaf in zip(saved_leaves, saved_mleaves):
+                entries = _leaf_entries(leaf, manifest_leaf)
+                names = {name for name, _state in entries}
+                if names and names.isdisjoint(live_names):
+                    dropped_from_retired_leaves.extend(
+                        name for name, state in entries
+                        if isinstance(state, Mapping))
+                    continue
+                retained_saved.append((leaf, manifest_leaf))
+            saved_leaves = [leaf for leaf, _manifest in retained_saved]
+            saved_mleaves = [manifest for _leaf, manifest in retained_saved]
+    
+        if len(saved_leaves) != len(live_leaves):
+>           raise ValueError("optimizer state/manifest leaf counts differ")
+E           ValueError: optimizer state/manifest leaf counts differ
+
+bin/checkpoint_migrations.py:716: ValueError
+=========================== short test summary info ============================
+FAILED test/test_objective_optimizer_resume.py::test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty
+1 failed in 2.00s

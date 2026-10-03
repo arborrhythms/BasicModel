@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
+    "test/test_mixing_reconstruction_bank.py",
+    "test/test_meronomy_utf8.py",
+    "test/test_query_phase_fullgraph.py",
+    "test/test_sentence_journal.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

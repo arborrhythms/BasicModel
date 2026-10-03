@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_boolean.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 1.4698444579989882,
+  "batch": 16,
+  "serial": true,
+  "tied": true,
+  "training_seconds": 1.102934082999127,
+  "output_loss": 0.16608083248138428,
+  "reconstruction_loss": 0.5901201367378235,
+  "completed": true,
+  "total_seconds": 2.5727828329982003
+}

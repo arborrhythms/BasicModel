@@ -171,13 +171,3 @@ def test_property_spans_none_passthrough():
 
 
 # -- live cross-tower binding (reads subspace.where + WS whole spans) ----------
-
-
-
-
-
-
-
-def test_retired_wholespace_taxonomy_writer_is_absent():
-    from Spaces import WholeSpace
-    assert not hasattr(WholeSpace, "insert_meta")

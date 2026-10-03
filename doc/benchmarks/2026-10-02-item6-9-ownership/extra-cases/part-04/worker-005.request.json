@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-005.recycle.json"
+}

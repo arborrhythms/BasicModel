@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_overlap_tiling.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 6.274482207998517,
+  "batch": 12,
+  "scope": "perception: no grammar",
+  "reconstruct_in_loop": false,
+  "training_seconds": 1.7529757079901174,
+  "output_loss": 0.1750030666589737,
+  "reconstruction_loss": 0.00013835314894095063,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": null,
+  "total_seconds": 8.028149624995422
+}

@@ -1,0 +1,16 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -12786,9 +12786,11 @@
+         basis = atoms[None].expand(B, -1, -1)
+         valid = torch.ones(basis.shape[:2], dtype=torch.bool, device=reference.device)
+         lang = state[1]
+-        end = lang[13][:, sid].reshape(B, 3, D)
++        # Higher-order loops lift both the bank and the current sentence;
++        # independent storage avoids input aliases at that graph boundary.
++        end = lang[13][:, sid].reshape(B, 3, D).clone()
+         result = self._reconstruct_sentences(
+-            lang[9][:, sid], reference, lang[13], lang[14], end, lang[14][:, sid],
++            lang[9][:, sid].clone(), reference, lang[13], lang[14], end, lang[14][:, sid].clone(),
+             torch.tensor(sid, device=reference.device),
+             candidate_basis=(basis, valid), keep_ideas=True)
+         scope = self._sentence_scope(sid) & active[:, None]

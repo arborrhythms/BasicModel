@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_retired_names.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

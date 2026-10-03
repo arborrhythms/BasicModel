@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.021646624998538755,
+      "message": "test/test_compiled_word_chunk.py:433: in test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks\n    legacy = _tiny_canonical_model(tmp_path, monkeypatch, input_width=16, word_buckets=\"8\",\ntest/test_compiled_word_chunk.py:396: in _tiny_canonical_model\n    model, _ = Models.BasicModel.from_config(\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7111: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1838: in create_from_config\n    ModelFactory.validate_config(cfg)\nbin/Models.py:25340: in validate_config\n    raise ValueError(\nE   ValueError: XML config inconsistencies:\nE     - serialObjectMeta field/workspace mismatch: PartSpace.nOutput=8 and ConceptualSpace.nOutput=8 must both equal stmCapacity=3. The independent outer sentence limit belongs in <serialWordCapacity>.",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

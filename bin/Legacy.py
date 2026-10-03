@@ -1,7 +1,6 @@
 """Retired / parked compatibility code, kept for easy revival.
 
-The canonical model imports this module only when an older PartSpace synthesis
-mode is explicitly requested. The MATLAB-era ``Mem`` memory primitives,
+The live reading does not import this module. The MATLAB-era ``Mem`` memory primitives,
 ``DecisionBoundaryLayer``, and the retired ``QKVAttentionLayer``, along with
 the documented-dormant grammar operators ``true`` / ``false`` / ``swap`` /
 ``copy`` / ``area`` / ``luminosity`` / ``isaPart``, were moved out of
@@ -31,95 +30,6 @@ from Layers import (
     isa_part_op,
     luminosity_op,
 )
-
-
-# ---------------------------------------------------------------------------
-# Parked PartSpace synthesis front ends
-# ---------------------------------------------------------------------------
-#
-# The live architecture has one synthesis law: mereology.  Historical input
-# front ends remain loadable for old experiments/checkpoints, but their mode
-# selection and dispatch live here so adding a legacy tokenizer cannot change
-# the canonical PartSpace branch or its compiled serial word loop.
-
-LEGACY_PART_SYNTHESIS_MODES = frozenset({
-    "bpe", "mphf", "lexicon", "none", "byte", "radix",
-})
-
-# The WholeSpace analysis cuts other than ``meronomy`` (meronomy fold-ladder
-# plan, Phase 0): ``byte`` / ``raw`` / ``sentence`` stage no division;
-# ``word`` / ``grammatical`` stage the type-run cut.  Their dispatch lives
-# here so the canonical WholeSpace branch reads one mode.
-LEGACY_WHOLE_ANALYSIS_MODES = frozenset({
-    "byte", "raw", "sentence", "word", "grammatical",
-})
-
-
-def normalize_whole_analysis_mode(mode):
-    """Validate one parked WholeSpace analysis spelling."""
-    value = str(mode or "").strip().lower()
-    if value not in LEGACY_WHOLE_ANALYSIS_MODES:
-        raise ValueError(
-            "legacy WholeSpace analysis must be "
-            "byte|raw|sentence|word|grammatical, "
-            f"got {mode!r}")
-    return value
-
-
-def stage_analysis_spans_legacy(whole_space, IS_concepts, mode):
-    """Run a parked analysis cut for an older configuration.
-
-    ``byte`` / ``raw`` / ``sentence``: no division (the analyzer stages no
-    spans; the pooling default needs none).  ``word`` / ``grammatical``: the
-    type-run cut, byte-identical to the canonical ``meronomy`` cut.
-    """
-    value = normalize_whole_analysis_mode(mode)
-    if value in ("byte", "raw", "sentence") or IS_concepts is None:
-        object.__setattr__(whole_space, "_staged_property_signatures", None)
-        return None
-    from Spaces import WholeSpace   # lazy: Spaces imports this module
-    return WholeSpace._stage_type_run_spans(whole_space, IS_concepts)
-
-
-def normalize_part_synthesis_mode(mode):
-    """Validate and normalize one parked PartSpace synthesis spelling."""
-    value = str(mode or "").strip().lower()
-    if value == "byte":
-        value = "none"
-    if value not in LEGACY_PART_SYNTHESIS_MODES:
-        raise ValueError(
-            "legacy PartSpace synthesis must be "
-            "bpe|mphf|lexicon|byte|none|radix, "
-            f"got {mode!r}")
-    return value
-
-
-def validate_part_synthesis(part_space, mode):
-    """Validate requirements that belong only to parked front ends."""
-    value = normalize_part_synthesis_mode(mode)
-    if value in ("bpe", "mphf", "none"):
-        if int(part_space.nVectors) < 256:
-            raise ValueError(
-                f"legacy PartSpace synthesis={value!r} requires "
-                f"nVectors>=256; got nVectors={part_space.nVectors}")
-        if part_space.model_type != "embedding":
-            raise ValueError(
-                f"legacy PartSpace synthesis={value!r} requires "
-                "<dataType>embedding</dataType>")
-    return value
-
-
-def embed_part_stem(part_space, upstream_vspace, mode):
-    """Run a parked eager synthesis front end for an older configuration."""
-    value = normalize_part_synthesis_mode(mode)
-    dispatch = {
-        "lexicon": part_space._embed_lexicon,
-        "bpe": part_space._embed_bpe,
-        "none": part_space._embed_byte,
-        "mphf": part_space._embed_mphf,
-        "radix": part_space._embed_radix,
-    }
-    return dispatch[value](upstream_vspace)
 
 
 class TrueLayer(GrammarLayer):
@@ -1032,3 +942,138 @@ class CorrMem(Mem):
 from Layers import T5_BINARY_ELISION  # noqa: E402
 CopyLayer.surface_schema = T5_BINARY_ELISION
 SwapLayer.surface_schema = T5_BINARY_ELISION
+
+
+if __name__ == "__main__":
+    import unittest
+    import warnings
+    import matplotlib
+    matplotlib.use("Agg")
+    from Language import GRAMMAR_LAYER_CLASSES
+    util.init_device("cpu")
+
+    class TestQKVAttentionLayer(unittest.TestCase):
+        def test_asymmetric_forward_shape(self):
+            layer = QKVAttentionLayer(nInput=8, nOutput=4, type="asymmetric")
+            x = torch.randn(2, 5, 8).to(TheDevice.get())
+            y = layer(x)
+            self.assertEqual(y.shape, (2, 5, 4))
+
+        def test_symmetric_forward_shape(self):
+            layer = QKVAttentionLayer(nInput=8, nOutput=4, type="symmetric")
+            x = torch.randn(2, 5, 8).to(TheDevice.get())
+            y = layer(x)
+            self.assertEqual(y.shape, (2, 5, 4))
+
+        def test_transformer_forward_shape(self):
+            layer = QKVAttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
+            x = torch.randn(2, 5, 8).to(TheDevice.get())
+            y = layer(x)
+            self.assertEqual(y.shape, (2, 5, 4))
+
+        def test_transformer_single_object(self):
+            """Single-object 3D input [B, 1, D] -> [B, 1, nOut]."""
+            layer = QKVAttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
+            x = torch.randn(2, 1, 8).to(TheDevice.get())
+            y = layer(x)
+            self.assertEqual(y.shape, (2, 1, 4))
+
+        def test_inline(self):
+            QKVAttentionLayer.test()
+
+
+    class TestMemory(unittest.TestCase):
+        def test_mem_update(self):
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="FigureCanvasAgg")
+                Mem.test()  # Runs the built-in test
+
+
+    class TestIntrospectionLayers(unittest.TestCase):
+        """Layer-wrapper classes plug into the chart via GRAMMAR_LAYER_CLASSES."""
+
+        def test_layer_classes_parked_in_legacy(self):
+            # These ops were parked in bin/Legacy.py (2026-07-17): documented-
+            # dormant, dispatched by no live grammar. They must NOT be in the
+            # live registry; revival re-registers them in GRAMMAR_LAYER_CLASSES.
+            for name in ('area', 'luminosity', 'isaPart'):
+                self.assertNotIn(name, GRAMMAR_LAYER_CLASSES,
+                                 f"{name!r} should be parked in Legacy, not live")
+
+        def test_arity_metadata(self):
+            self.assertEqual(AreaLayer.arity, 1)
+            self.assertEqual(LuminosityLayer.arity, 2)
+            self.assertEqual(IsaPartLayer.arity, 2)
+
+        def test_layers_lossy(self):
+            # Introspective ops produce scalars from vectors; reverse is
+            # by definition lossy.
+            for cls in (AreaLayer, LuminosityLayer, IsaPartLayer):
+                self.assertTrue(cls.lossy, f"{cls.__name__} should be lossy")
+                self.assertFalse(cls.invertible,
+                                 f"{cls.__name__} should be non-invertible")
+
+        def test_forward_shapes(self):
+            x = torch.randn(2, 3, 4)
+            y = torch.randn(2, 3, 4)
+            self.assertEqual(AreaLayer().forward(x).dim(), 0)
+            self.assertEqual(LuminosityLayer().forward(x, y).dim(), 0)
+            self.assertEqual(IsaPartLayer().forward(x, y).dim(), 0)
+
+
+    class TestCopyLayer(unittest.TestCase):
+        def test_copy_layer_forward_returns_left(self):
+            layer = CopyLayer()
+            a = torch.tensor([[1.0, 2.0]])
+            b = torch.tensor([[3.0, 4.0]])
+            self.assertTrue(torch.equal(layer.forward(a, b), a))
+
+        def test_copy_layer_reverse_pseudo_inverse(self):
+            layer = CopyLayer()
+            parent = torch.tensor([[1.0, 2.0]])
+            left, right = layer.reverse(parent)
+            self.assertTrue(torch.equal(left, parent))
+            self.assertTrue(torch.equal(right, parent))
+
+        def test_copy_layer_parked_in_legacy(self):
+            # 'copy' was parked in bin/Legacy.py (2026-07-17): a retained
+            # utility, but dispatched by no live grammar, so it is no longer
+            # in the live registry.
+            self.assertNotIn('copy', GRAMMAR_LAYER_CLASSES)
+
+        def test_swap_and_copy_dual(self):
+            a = torch.tensor([[1.0, 2.0]])
+            b = torch.tensor([[3.0, 4.0]])
+            self.assertTrue(torch.equal(SwapLayer().forward(a, b), b))
+            self.assertTrue(torch.equal(CopyLayer().forward(a, b), a))
+
+        def test_introspection_layers_parked_in_legacy(self):
+            # ``area`` / ``luminosity`` / ``isaPart`` were parked in
+            # bin/Legacy.py (2026-07-17): documented-dormant, no live grammar
+            # dispatches them. The measures still live on the Mereology mixin;
+            # the wrapper layers are revivable from
+            for name in ('area', 'luminosity', 'isaPart'):
+                self.assertNotIn(name, GRAMMAR_LAYER_CLASSES)
+
+
+    class TestParkedSurfaceSchema(unittest.TestCase):
+        def test_copy_swap_use_elision_template(self):
+            """copy / swap are the T5 BINARY_ELISION surface policies. They were
+            parked in bin/Legacy.py (2026-07-17) — retired from the live symbolic
+            grammar, kept as the absorb/emit elision primitives — so the schema is
+            now asserted on the Legacy classes, not the live registry."""
+            assert CopyLayer.surface_schema.template_id == "T5"
+            assert SwapLayer.surface_schema.template_id == "T5"
+
+
+    class TestParkedLayerSelfTests(unittest.TestCase):
+        def test_qkv(self):
+            QKVAttentionLayer.test()
+
+        def test_memory(self):
+            Mem.test()
+
+        def test_decision_boundary(self):
+            DecisionBoundaryLayer.test()
+
+    unittest.main()

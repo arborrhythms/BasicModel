@@ -1,0 +1,16 @@
+{
+  "selectors": [
+    "test/test_meronomy_utf8.py",
+    "test/test_within_whole_division.py",
+    "test/test_where_bracket.py",
+    "test/test_conceptual_introspection.py",
+    "test/test_mereology.py",
+    "test/test_surface_schema.py",
+    "test/test_sigmapi.py",
+    "test/test_retired_names.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

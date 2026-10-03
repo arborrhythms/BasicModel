@@ -114,7 +114,7 @@ Override on the command line, e.g. `make run XML1=data/ergodic.xml`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `MODEL` | `data/MM_20M_fineweb.xml` | XML config for training |
+| `MODEL` | `data/BasicModel.xml` | XML config for training |
 | `XML1` | `data/simple.xml` | Primary config for `make run` / `compare` |
 | `XML2` | `data/ergodic-only.xml` | Secondary config for `make compare` |
 
@@ -129,7 +129,7 @@ training).
 
 | Flag | Default | Description |
 |---|---|---|
-| `--model`, `-m` | `data/MM_20M_fineweb.xml` | XML config |
+| `--model`, `-m` | `data/BasicModel.xml` | XML config |
 | `--data` | *(from XML)* | Override dataset/data source selector |
 | `--max-docs` | *(from XML)* | Override `maxDocs` |
 | `--num-shards` | *(from XML)* | Override `numShards` |

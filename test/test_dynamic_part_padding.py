@@ -31,7 +31,7 @@ def serial_model():
     """Build the smallest committed serial-radix integration fixture."""
     init_device("cpu")
     torch.manual_seed(0)
-    cfg = _ROOT / "data" / "MM_mereology_serial.xml"
+    cfg = _ROOT / "data" / "MM_ladder.xml"
     init_config(path=str(cfg), defaults_path=str(_ROOT / "data" / "model.xml"))
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():

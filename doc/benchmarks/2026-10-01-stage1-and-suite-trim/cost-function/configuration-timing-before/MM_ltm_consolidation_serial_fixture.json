@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 1.4823703340007341,
+  "batch": 64,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 0.5545382499985863,
+  "output_loss": 0.17510858178138733,
+  "reconstruction_loss": 0.5691083073616028,
+  "completed": true,
+  "total_seconds": 2.036912666997523
+}

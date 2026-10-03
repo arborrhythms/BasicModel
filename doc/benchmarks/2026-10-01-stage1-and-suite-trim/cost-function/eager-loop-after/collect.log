@@ -1,0 +1,5 @@
+test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences
+test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body
+test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients
+
+3 tests collected in 0.45s

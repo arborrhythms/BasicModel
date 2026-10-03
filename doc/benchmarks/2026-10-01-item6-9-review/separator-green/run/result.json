@@ -1,0 +1,580 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+    "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient",
+    "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+    "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward",
+    "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently"
+  ],
+  "completed": [
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient",
+    "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+    "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward",
+    "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently",
+    "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-002.json"
+      ],
+      "pid": 53782,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 502269320,
+      "elapsed_seconds": 4.262566458000947,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]"
+      ],
+      "completed": [
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.13736149999749614,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-000.json"
+      ],
+      "pid": 53780,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 621413864,
+      "elapsed_seconds": 5.407413125001767,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]"
+      ],
+      "completed": [
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.3370763340026315,
+          "message": "test/test_grammar_separator.py:61: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert not bool(unavailable.any())\nE   assert not True\nE    +  where True = bool(tensor(True))\nE    +    where tensor(True) = <built-in method any of Tensor object at 0x1244f2f30>()\nE    +      where <built-in method any of Tensor object at 0x1244f2f30> = tensor([True, True, True, True]).any",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-001.json"
+      ],
+      "pid": 53781,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 621266408,
+      "elapsed_seconds": 6.382486457998311,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True]"
+      ],
+      "completed": [
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.3348664169971016,
+          "message": "test/test_grammar_separator.py:61: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert not bool(unavailable.any())\nE   assert not True\nE    +  where True = bool(tensor(True))\nE    +    where tensor(True) = <built-in method any of Tensor object at 0x12b2bbe30>()\nE    +      where <built-in method any of Tensor object at 0x12b2bbe30> = tensor([True, True, True, True]).any",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-003.json"
+      ],
+      "pid": 53797,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429851968,
+      "elapsed_seconds": 3.71014491599999,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]"
+      ],
+      "completed": [
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.012294624997593928,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-004.json"
+      ],
+      "pid": 53805,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430769424,
+      "elapsed_seconds": 4.04596354199748,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]"
+      ],
+      "completed": [
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.013261459000204923,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-005.json"
+      ],
+      "pid": 53806,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 553829792,
+      "elapsed_seconds": 5.020857207997324,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]"
+      ],
+      "completed": [
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.18420704099844443,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-006.json"
+      ],
+      "pid": 53812,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 280347536,
+      "elapsed_seconds": 4.379300790998968,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]"
+      ],
+      "completed": [
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.18673841700001503,
+          "message": "",
+          "stdout": "Starting with dynamic 6-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-008.json"
+      ],
+      "pid": 53829,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 428901696,
+      "elapsed_seconds": 4.116656166999746,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient"
+      ],
+      "completed": [
+        "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.013034999999945285,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-009.json"
+      ],
+      "pid": 53830,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 554173856,
+      "elapsed_seconds": 5.092745707999711,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal"
+      ],
+      "completed": [
+        "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.22378904099969077,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-011.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-011.json"
+      ],
+      "pid": 53848,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 429049104,
+      "elapsed_seconds": 4.097334250000131,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "completed": [
+        "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.013265124998724787,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-010.json"
+      ],
+      "pid": 53847,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 724944360,
+      "elapsed_seconds": 10.669215416000952,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward"
+      ],
+      "completed": [
+        "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.282219499997154,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-013.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-013.json"
+      ],
+      "pid": 53868,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 607733224,
+      "elapsed_seconds": 5.003265917002864,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-013.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "completed": [
+        "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6646558339998592,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-014.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-014.json"
+      ],
+      "pid": 53879,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 428983592,
+      "elapsed_seconds": 4.130449709002278,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-014.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently"
+      ],
+      "completed": [
+        "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.014396124999620952,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-007.json"
+      ],
+      "pid": 53826,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1027098376,
+      "elapsed_seconds": 33.150848833000055,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+      ],
+      "completed": [
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 28.52742420800132,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-012.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-012.json"
+      ],
+      "pid": 53858,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2038614944,
+      "elapsed_seconds": 269.373269290998,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-012.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "completed": [
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 261.5837318329977,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run",
+  "elapsed_seconds": 293.5916887090025,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 2115982304,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/collect.json"
+    ],
+    "pid": 53765,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180536112,
+    "elapsed_seconds": 1.8977506249975704,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+        "test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]",
+        "test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient",
+        "test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal",
+        "test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward",
+        "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+        "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+        "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

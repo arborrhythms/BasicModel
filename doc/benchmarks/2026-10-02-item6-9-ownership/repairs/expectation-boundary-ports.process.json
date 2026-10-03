@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_compiled_expectation_boundary.py"
+  ],
+  "pid": 24011,
+  "exit_code": 143,
+  "reason": "signal",
+  "peak_memory_bytes": 4044345976,
+  "elapsed_seconds": 826.3178547499992,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/expectation-boundary-ports.log"
+}

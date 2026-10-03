@@ -192,8 +192,3 @@ def test_structural_constraint_residuals():
     assert float(res.max()) > 1.0, "functional inconsistency must show"
     rs.reset()
     assert len(rs) == 0 and rs.constraint_residuals().numel() == 0
-
-
-def test_retired_relative_store_is_absent():
-    import Layers
-    assert not hasattr(Layers, 'RelativeTruthStore')

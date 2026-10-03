@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<!--
+  shamatha grammar, role-only format. Same C / S operator set as
+  default.grammar. Declares ONLY operator roles (op_I[n] inputs,
+  op_O1 output).
+
+  RELOCATED 2026-07-12 to complete.grammar's operator form, exactly as in
+  default.grammar: relations (part / equal) are structural operators whose
+  checked thought faces derive from the same grammar declarations.
+  See default.grammar's header for the measurement history.
+-->
+<grammar name="shamatha">
+
+  <PartSpace>
+    <!-- Analyzer root U; marker-free structural cover. Contiguity-aware
+         meronymic ops are added when doc/plans/2026-04-28-shamatha-speech-
+         contiguity-handoff.md is implemented. -->
+    <start name="everything">U</start>
+    <Synthesize>
+      <rule>U = stop.forward(U)</rule>
+      <rule>U = boundary.forward(U, U)</rule>
+      <rule>U = uniform.forward(U, U)</rule>
+    </Synthesize>
+    <Analyze>
+      <rule>U = stop.reverse(U)</rule>
+      <rule>U, U = boundary.reverse(U)</rule>
+      <rule>U, U = uniform.reverse(U)</rule>
+    </Analyze>
+  </PartSpace>
+
+  <Symbolic>
+    <start name="relative_truth">equal_O1</start>
+    <start name="relative_truth">part_O1</start>
+
+    <compose>
+      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+      <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
+      <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
+      <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
+      <rule>not_O1 = not.forward(not_I1)</rule>
+      <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
+      <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
+      <rule>part_O1 = part.forward(part_I1, part_I2)</rule>
+      <rule>equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
+    </compose>
+
+    <thought>
+      <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
+      <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
+    </thought>
+
+    <generate>
+      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+      <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
+      <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
+      <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
+      <rule>not_I1 = not.reverse(not_O1)</rule>
+      <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
+      <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
+      <rule>equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
+      <rule>part_I1, part_I2 = part.reverse(part_O1)</rule>
+    </generate>
+  </Symbolic>
+
+</grammar>

@@ -1,0 +1,34 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite",
+    "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite",
+    "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.051181125003495254,
+      "message": "test/test_compiled_word_chunk.py:982: in test_tiny_canonical_detached_reverse_train_step_is_finite\n    before = [p.detach().clone() for p in chooser.parameters()]\n                                          ^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'parameters'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20123012500698678,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

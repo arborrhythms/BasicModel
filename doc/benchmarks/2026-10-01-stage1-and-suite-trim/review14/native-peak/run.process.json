@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/native_peak.py",
+    "--child"
+  ],
+  "pid": 45941,
+  "exit_code": 137,
+  "reason": "memory",
+  "peak_memory_bytes": 26719217320,
+  "elapsed_seconds": 701.7284339579928,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/native-peak/run.log"
+}

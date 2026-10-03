@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_subspace.py::test_pop_clears_slot_and_decrements_depth"
+  ],
+  "completed": [
+    "test/test_idea_subspace.py::test_pop_clears_slot_and_decrements_depth"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_subspace.py::test_pop_clears_slot_and_decrements_depth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000584375000471482,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,100 @@
+{
+  "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology": {
+    "classification": "Persistent unseeded learning shortfall; unwaived",
+    "cause": "The best accuracy observed at the test's fixed ten-epoch checkpoints through 40 epochs is 0.96875, below the unchanged 1.0 bar at learning rate .001. It reaches the learning assertion, not a setup, capture or ownership exception.",
+    "comparison": "The \u00a720 closing result is the same 0.96875 shortfall. The present round's earlier focused diagnostic passed, so that pass does not establish consistent convergence or replace this first closing outcome. The saved outcome alone does not identify which example or mechanism accounts for the error.",
+    "action": "Keep the closing failure. No retry, seed, epoch, learning-rate or assertion change.",
+    "evidence": "extra-cases/part-00/worker-067.json"
+  },
+  "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it": {
+    "classification": "Remaining direct-scorer fixture contract; unwaived",
+    "cause": "At the saved own-row assertion, six costs are .000775869, .001756995, .015291639, .001587996, .015291639, .000775869. The maximum exceeds the unchanged .01 bound. The test calls _byte_word_cost directly on _snapshot_tables with no priming argument, hence unit priming; it is not the production primed-record traversal. No exception or missing term occurs.",
+    "comparison": "The prior \u00a720 moved sweep passed this unchanged test function. The saved source diff shows the earlier no-priming branch discarded activation using absolute cosine; the candidate consistently applies activation \u00d7 cosine with unit priming. The deterministic arithmetic counterexample in byte-fidelity-contract-diagnostic.json shows why a correctly directed low-activation leaf need no longer have error below .01. The actual failed code/activation geometry was not retained, so the exact .015291639 is not reproduced and no replacement fixture is claimed verified.",
+    "action": "Preserve the first failure and both assertions. Do not retry, weaken the .01/.5 bounds, or label the remaining assertion passed.",
+    "evidence": "extra-cases/part-00/worker-126.json"
+  },
+  "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words": {
+    "classification": "Remaining synthetic inverse fixture port; unwaived",
+    "cause": "The fixture stages real numeric words, then substitutes unrelated random a,b,c and a+b+c without putting those vectors or their intermediate compounds in the search bank. The retired reference inverse could read them from the reference argument; free search reads the bank. The first exact-leaf assertion differs by 3.091318; later compound-routing assertions are not reached.",
+    "comparison": "The \u00a720 direct helper default was witnessed reconstruction. This fixture still assumes that contract; it does not test free routing with an adequate bank.",
+    "action": "Preserve the first outcome, original assertions and budget. No repair or selected rerun after the source freeze.",
+    "evidence": "extra-cases/part-00/worker-135.json"
+  },
+  "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip": {
+    "classification": "Remaining operator fixture port; unwaived",
+    "cause": "The fixture constructs an Ops._radmax parent and expects disjunction to recover its exact pair. Disjunction now composes the mean on every face. The name assertion passes, but one distinct expected leaf is missing.",
+    "comparison": "The prior \u00a720 grammar supplied the former disjunction semantics. The current fixture still explicitly describes and constructs a radmax parent, so it is not a passing test of the new mean inverse.",
+    "action": "Preserve the first outcome, original assertions and budget. No repair or selected rerun after the source freeze.",
+    "evidence": "extra-cases/part-00/worker-160.json"
+  },
+  "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations": {
+    "classification": "Incomplete terminal-field observer port; unwaived",
+    "cause": "The corrected terminal owner and shape check pass, as does the unchanged-code assertion. The next assertion expects zeroes in a physical order_slice(0) applied to the gathered field and finds eight nonzero entries. Models stamps _concept_inventory_rows; Spaces distinguishes physical order_slice from _field_order_slice. A physical dictionary slice is not generally a field-slot identity.",
+    "comparison": "The \u00a720 test stopped earlier at the first-stage capacity check (15 versus the actual 8). That port is repaired, but the newly reached zero-evidence check remains unresolved. Exact field identities were not saved here; the nonzero evidence is not asserted correct or blamed on a dictionary write.",
+    "action": "Preserve the first outcome, original assertions and budget. No repair or selected rerun after the source freeze.",
+    "evidence": "extra-cases/part-00/worker-153.json"
+  },
+  "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip": {
+    "classification": "Persistent free-derivation learning/recovery gap; unwaived",
+    "cause": "Exact match is 0/64 after the fixed three epochs. Saved final tensors have all 346 own unit candidates and no truncation, but only 42 units recover their original surface and none of 128 whitespace positions does. Read-back picks 1 in 279 positions. Two-digit inputs already split before inversion account for 26 extra unit positions. Arithmetic on the same tensors puts 548/884 true byte/end probabilities below the existing 1e-6 clamp; see saved-free-derivation-analysis.json.",
+    "comparison": "Both earlier ownership rounds also observed zero exact recovery. These tensors establish repeated-digit and whitespace errors, not merely an absent measurement. They do not establish how another budget, scale, operator choice or unclipped objective would behave.",
+    "action": "Preserve the first outcome, original assertions and budget. No repair or selected rerun after the source freeze.",
+    "evidence": "extra-cases/part-00/worker-116.json"
+  },
+  "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul": {
+    "classification": "New numerical compiled/eager parity regression; unwaived",
+    "cause": "On fixed inputs, Inductor differs from eager by 4.6052039e-5 on one of two costs, above unchanged absolute 1e-5 and relative 1.3e-6 tolerances. The gradient-parity assertion is not reached. The unified scorer retains activation, so these arange-valued leaves produce much larger logits than the retired absolute-cosine branch.",
+    "comparison": "The \u00a720 sweep passed. This compares the same function in eager and compiled execution on deterministic data; the exact floating-point transformation responsible has not been isolated.",
+    "action": "Preserve the first outcome, original assertions and budget. No repair or selected rerun after the source freeze.",
+    "evidence": "full-sweep/part-00/worker-060.json"
+  },
+  "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments": {
+    "classification": "Remaining optimizer-state observer port; unwaived",
+    "cause": "The test indexes exp_avg for a reconstruction-owned feature parameter. Momentum SGD has no Adam exp_avg. It stops before the state-growth and frozen/live-row assertions.",
+    "comparison": "The \u00a720 reconstruction optimizer was Adam. This fixture must inspect momentum state while retaining its state-preservation, enlistment and frozen-gradient assertions. No compatibility Adam state was added.",
+    "action": "Preserve the first outcome, original assertions and budget. No repair or selected rerun after the source freeze.",
+    "evidence": "full-sweep/part-00/worker-112.json"
+  },
+  "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser": {
+    "classification": "New one-batch chooser-displacement failure; unwaived",
+    "cause": "After the fixed unlabeled batch, operand_order.weight changed, but no mlp.* chooser parameter differs bitwise. The unchanged assertion requires an MLP update. Later enlistment, finished-state and output-policy checks are not reached.",
+    "comparison": "The \u00a720 Adam case passed. Momentum SGD scales with the gradient, and the separate XOR audit shows sub-resolution gradients; however this case did not save its MLP gradients, so neither that explanation nor an ownership/enlistment defect is established.",
+    "action": "Preserve the first outcome, original assertions and budget. No repair or selected rerun after the source freeze.",
+    "evidence": "full-sweep/part-00/worker-283.json"
+  },
+  "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input": {
+    "classification": "New production regression: input search also changes answer generation; unwaived",
+    "cause": "The new early branch in LanguageSpace._reverse_of_binary_op searches both operands whenever reference is None and basis is a tensor, including sum. Models._output_generate_walk calls the same reverse_binary_step with no reference and a basis, so it also enters this input-only search. If no candidate split is available, the requested expansion stays pending until the budget and emits no leaves. The prepared-answer result is [0,1] instead of [4,1]; the stamped sum-only result is [0] instead of [3].",
+    "comparison": "Both assertions passed in \u00a720. Their subject is answer generation and the generate-only inventory, not input reconstruction. Product/mean were intended to change on all faces; making other output inverses require the input bank was not the requested scope. These are not classified as old-operator fixtures.",
+    "action": "Keep both first failures and all assertions. The failed source and call chain are recorded for repair after review; no source change or partial rerun during the matched campaign.",
+    "evidence": "full-sweep/part-00/worker-525.json"
+  },
+  "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule": {
+    "classification": "New production regression: input search also changes answer generation; unwaived",
+    "cause": "The new early branch in LanguageSpace._reverse_of_binary_op searches both operands whenever reference is None and basis is a tensor, including sum. Models._output_generate_walk calls the same reverse_binary_step with no reference and a basis, so it also enters this input-only search. If no candidate split is available, the requested expansion stays pending until the budget and emits no leaves. The prepared-answer result is [0,1] instead of [4,1]; the stamped sum-only result is [0] instead of [3].",
+    "comparison": "Both assertions passed in \u00a720. Their subject is answer generation and the generate-only inventory, not input reconstruction. Product/mean were intended to change on all faces; making other output inverses require the input bank was not the requested scope. These are not classified as old-operator fixtures.",
+    "action": "Keep both first failures and all assertions. The failed source and call chain are recorded for repair after review; no source change or partial rerun during the matched campaign.",
+    "evidence": "full-sweep/part-00/worker-470.json"
+  },
+  "test/test_partspace_dynamic_capacity.py::test_checkpoint_restores_fixed_owner_and_optimizer_by_name": {
+    "classification": "Remaining checkpoint optimizer-state observer port; unwaived",
+    "cause": "The fixed perceptual owner restores by identity with its shape, store and single optimizer enlistment intact. The final observer then indexes exp_avg for that reconstruction-owned parameter, which now uses momentum SGD and has no Adam exp_avg.",
+    "comparison": "The \u00a720 checkpoint used Adam for reconstruction. The current failure occurs after the weight-identity and optimizer-enlistment checks; it is not evidence that the restored parameter was replaced. State-shape preservation needs the SGD state observer.",
+    "action": "Preserve the first failure and original state-shape assertion; add no compatibility Adam state and do not retry this round.",
+    "evidence": "full-sweep/part-00/worker-487.json"
+  },
+  "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty": {
+    "classification": "New production regression: grammatical mean changes truth union; unwaived",
+    "cause": "TruthLayer.falsity_penalty calls Ops._disjunction_kernel to extend its stored-truth union. That kernel is now the grammar's mean. The stored eight-dimensional .5 vector averages with an agreeing .3 vector to .4, reducing the norm by sqrt(8)*.1=.2828427; averaging with zero halves its norm and charges .7071068. These are exactly the saved failures. The penalty's stated agreeing/unknown invariants require the retained union behavior, not averaging.",
+    "comparison": "Both cases passed in \u00a720. The failure is a shared-kernel production coupling, not an obsolete assertion or a training fluctuation. Other explicit lattice kernels remain available, but this consumer was not separated in the candidate.",
+    "action": "Keep both failures and the zero-penalty assertions. No source repair or partial resweep during the closing measurement.",
+    "evidence": "full-sweep/part-00/worker-572.json"
+  },
+  "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty": {
+    "classification": "New production regression: grammatical mean changes truth union; unwaived",
+    "cause": "TruthLayer.falsity_penalty calls Ops._disjunction_kernel to extend its stored-truth union. That kernel is now the grammar's mean. The stored eight-dimensional .5 vector averages with an agreeing .3 vector to .4, reducing the norm by sqrt(8)*.1=.2828427; averaging with zero halves its norm and charges .7071068. These are exactly the saved failures. The penalty's stated agreeing/unknown invariants require the retained union behavior, not averaging.",
+    "comparison": "Both cases passed in \u00a720. The failure is a shared-kernel production coupling, not an obsolete assertion or a training fluctuation. Other explicit lattice kernels remain available, but this consumer was not separated in the candidate.",
+    "action": "Keep both failures and the zero-penalty assertions. No source repair or partial resweep during the closing measurement.",
+    "evidence": "full-sweep/part-00/worker-572.json"
+  }
+}

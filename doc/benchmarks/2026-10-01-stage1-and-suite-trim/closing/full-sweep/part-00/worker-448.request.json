@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]",
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[cut]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/part-00/worker-448.recycle.json"
+}

@@ -34,7 +34,7 @@ import torch
 _P = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_P / "bin"))
 
-from Spaces import (WhenRangeEncoding, _WHEN_PERIOD, _WHEN_TENSE_DEFAULT,
+from Spaces import (WhenRangeEncoding, _WHEN_PERIOD,
                     _WHEN_TENSE_STEP)
 
 

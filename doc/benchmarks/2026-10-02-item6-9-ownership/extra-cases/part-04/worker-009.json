@@ -1,0 +1,103 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+    "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+    "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+    "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+    "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+    "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+    "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+    "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index"
+  ],
+  "completed": [
+    "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+    "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+    "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+    "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+    "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+    "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+    "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+    "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index"
+  ],
+  "slow_selected": [
+    "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+    "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+    "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+    "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+    "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+    "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+    "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+    "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5845277080079541,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5522122090042103,
+      "message": "test/test_serial_object_meta.py:145: in test_serial_radix_has_distinct_word_and_local_part_axes\n    assert ie._word_active_mask.sum(dim=1).tolist() == [2, 2, 2, 2]\nE   assert [3, 3, 3, 3] == [2, 2, 2, 2]\nE     \nE     At index 0 diff: 3 != 2\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2809607910021441,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5524747499875957,
+      "message": "test/test_serial_object_meta.py:202: in test_partspace_runs_once_per_word_per_pass_not_per_constituent\n    assert local_calls == [\nE   assert [] == [(4, 1, 1024)...1, 1024), ...]\nE     \nE     Right contains 10 more items, first extra item: (4, 1, 1024)\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.27110020800319035,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5437320000055479,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5390866249945248,
+      "message": "test/test_serial_object_meta.py:269: in test_word_prediction_and_physical_push_share_one_commit_boundary\n    assert pushed[0] == int(commits.sum().item())\nE   assert 0 == 12\nE    +  where 12 = int(12)\nE    +    where 12 = <built-in method item of Tensor object at 0x1284a72a0>()\nE    +      where <built-in method item of Tensor object at 0x1284a72a0> = tensor(12).item\nE    +        where tensor(12) = <built-in method sum of Tensor object at 0x12839b890>()\nE    +          where <built-in method sum of Tensor object at 0x12839b890> = tensor([3, 3, 3, 3]).sum",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.48376358300447464,
+      "message": "test/test_serial_object_meta.py:289: in test_serial_object_meta_off_does_not_build_word_index\n    assert m.inputSpace._word_index_N is None\nE   assert tensor([[ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1]]) is None\nE    +  where tensor([[ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._word_index_N\nE    +    where InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...ing): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n  (answer_record_reader): SentenceRecordReader()\\n).inputSpace",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

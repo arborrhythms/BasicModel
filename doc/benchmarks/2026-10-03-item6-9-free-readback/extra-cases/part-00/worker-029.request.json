@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-029.recycle.json"
+}

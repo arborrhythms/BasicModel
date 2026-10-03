@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_relevance_bases.py::test_seen_bump_and_decay"
+  ],
+  "completed": [
+    "test/test_relevance_bases.py::test_seen_bump_and_decay"
+  ],
+  "slow_selected": [
+    "test/test_relevance_bases.py::test_seen_bump_and_decay"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_relevance_bases.py::test_seen_bump_and_decay",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07024370899307542,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

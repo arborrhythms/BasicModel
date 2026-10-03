@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-item6-9-free-readback/native_stride_probe.py::test_functional_ldu_cond_backward_is_dense_and_exact"
+  ],
+  "pid": 45699,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 352126512,
+  "elapsed_seconds": 3.345821666007396,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/native-functional-before/run.log"
+}

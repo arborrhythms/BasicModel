@@ -1,0 +1,16 @@
+....                                                                     [100%]
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_reconstruction_optimizer_is_gradient_descent_with_momentum
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_reconstruction_optimizer_is_gradient_descent_with_momentum
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_reconstruction_optimizer_is_gradient_descent_with_momentum
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 1 deselected, 3 warnings in 2.12s

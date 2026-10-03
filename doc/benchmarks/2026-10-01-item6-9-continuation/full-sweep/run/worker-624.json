@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_train_compile_target.py::test_default_mlx_output_path_uses_model_stem"
+  ],
+  "completed": [
+    "test/test_train_compile_target.py::test_default_mlx_output_path_uses_model_stem"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_train_compile_target.py::test_default_mlx_output_path_uses_model_stem",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018458300110069104,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

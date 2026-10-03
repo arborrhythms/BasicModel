@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/part-00/worker-341.recycle.json"
+}

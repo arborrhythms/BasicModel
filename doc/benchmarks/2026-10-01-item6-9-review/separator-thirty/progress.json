@@ -1,0 +1,607 @@
+{
+  "done": [
+    {
+      "kind": "sum",
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-02",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54223,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 714098152,
+        "elapsed_seconds": 71.5435718330009,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-02/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-03",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54224,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 711837208,
+        "elapsed_seconds": 72.60691041600148,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-03/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-01",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54222,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 714261968,
+        "elapsed_seconds": 73.93703233300039,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-01/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-04",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54463,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 714524088,
+        "elapsed_seconds": 71.47655908399975,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-04/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-05",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54464,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 713524688,
+        "elapsed_seconds": 72.50893637499757,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-05/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-06",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54472,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 706725328,
+        "elapsed_seconds": 72.2327484999987,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-06/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-08",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54710,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 716490240,
+        "elapsed_seconds": 72.36054983299982,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-08/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-09",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54711,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 714425832,
+        "elapsed_seconds": 73.42569274999914,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-09/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-07",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54709,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 715048400,
+        "elapsed_seconds": 74.73999995899794,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-07/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-10",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/XOR_grammar_sum_control.xml"
+        ],
+        "pid": 54975,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 716097000,
+        "elapsed_seconds": 72.07516300000134,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/sum-10/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-01",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 54976,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 735905280,
+        "elapsed_seconds": 77.79907479200119,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-01/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-02",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 54985,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 733988304,
+        "elapsed_seconds": 79.35632783399706,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-02/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-03",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55208,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 736069072,
+        "elapsed_seconds": 78.62016404199676,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-03/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-04",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55226,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 729171408,
+        "elapsed_seconds": 79.13576916699822,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-04/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-05",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55235,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 733873616,
+        "elapsed_seconds": 79.39525279100053,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-05/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-06",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55474,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 742622696,
+        "elapsed_seconds": 79.66740120800023,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-06/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-07",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55494,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 742131248,
+        "elapsed_seconds": 78.37816466699951,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-07/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-08",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55505,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 731104744,
+        "elapsed_seconds": 78.90182062500025,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-08/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-09",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55743,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 743867880,
+        "elapsed_seconds": 78.38506312499885,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-09/run.log"
+      }
+    },
+    {
+      "kind": "class",
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "class",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-10",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55760,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 746505776,
+        "elapsed_seconds": 79.4277484589984,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/class-10/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-01",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 55796,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 735200744,
+        "elapsed_seconds": 79.67210949999935,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-01/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-02",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56017,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 742933992,
+        "elapsed_seconds": 77.34409295899968,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-02/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-03",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56035,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 736150992,
+        "elapsed_seconds": 78.38204662499993,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-03/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-04",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56048,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 743638504,
+        "elapsed_seconds": 77.87694499999998,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-04/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-05",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56248,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 734168552,
+        "elapsed_seconds": 79.14800666699739,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-05/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-06",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56275,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 736134608,
+        "elapsed_seconds": 79.38926129200263,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-06/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-07",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56288,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 731055592,
+        "elapsed_seconds": 80.15154350000012,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-07/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-08",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56712,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 741803496,
+        "elapsed_seconds": 79.39953491600318,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-08/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-09",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56735,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 733283792,
+        "elapsed_seconds": 78.37048904100084,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-09/run.log"
+      }
+    },
+    {
+      "kind": "reconstruction",
+      "trial": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py",
+          "child",
+          "reconstruction",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-10",
+          "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml"
+        ],
+        "pid": 56774,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 730056216,
+        "elapsed_seconds": 77.34067887499987,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-thirty/reconstruction-10/run.log"
+      }
+    }
+  ],
+  "pending": 0,
+  "seconds": 774.0134162089998,
+  "active": []
+}

@@ -8,7 +8,7 @@ from PerceptProperties import PrimitiveProperties
 from Spaces import _CANONICAL_PROPERTY_ROWS
 
 
-def property_reader(*, analysis_mode="word", **attributes):
+def property_reader(*, analysis_mode="meronomy", **attributes):
     definitions = PrimitiveProperties(len(_CANONICAL_PROPERTY_ROWS))
     byte_ids = torch.arange(256)
     for row, (_name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS):

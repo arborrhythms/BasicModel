@@ -1,0 +1,10 @@
+[collect] 17 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.2s; peak 0.46 GiB
+[worker-000] 96 selectors; limit 1800s, 8.0 GiB
+[worker-001] 39 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 5.1s; peak 0.47 GiB
+[worker-002] 31 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 6.2s; peak 1.77 GiB
+[worker-002] exit 1; 5.0s; peak 0.59 GiB
+Result: test_failure, exit 1; 166/166 cases completed.
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/item-6-check/result.json

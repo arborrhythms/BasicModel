@@ -1,0 +1,18 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -12483,7 +12483,6 @@
+         active = isp._word_active_mask.to(dtype=torch.bool)
+         dev = S.device
+         leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
+-        leaves = active & leaf_mask if torch.is_tensor(leaf_mask) else active
+         packed = bool(getattr(isp, "_sentence_pack_enabled", False))
+         ids = getattr(isp, "_packed_sentence_ids", None)
+         if packed and torch.is_tensor(ids):
+@@ -12500,6 +12499,7 @@
+         last_index = torch.where(active, positions, torch.full_like(positions, -1)).amax(dim=1)
+         if sentence_slot is not None:
+             active = active & (ids == sentence_slot)
++        leaves = active & leaf_mask if torch.is_tensor(leaf_mask) else active
+         keep_ideas = (bool(self.reconstruct_in_loop or getattr(self, "_recon_keep_ideas", False))
+                       if keep_ideas is None else bool(keep_ideas))
+         required = ((rule_ids.unsqueeze(-1) == binary_map.reshape(1, 1, -1))

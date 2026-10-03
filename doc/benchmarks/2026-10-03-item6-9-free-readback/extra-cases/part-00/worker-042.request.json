@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-042.recycle.json"
+}

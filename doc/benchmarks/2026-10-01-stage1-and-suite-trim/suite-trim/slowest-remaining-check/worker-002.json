@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+  ],
+  "completed": [
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.04343229199730558,
+      "message": "test/test_sentence_compose.py:79: in test_real_packed_ends_train_before_the_next_sentence\n    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',\ntest/test_compiled_word_chunk.py:396: in _tiny_canonical_model\n    model, _ = Models.BasicModel.from_config(\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7111: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1838: in create_from_config\n    ModelFactory.validate_config(cfg)\nbin/Models.py:25340: in validate_config\n    raise ValueError(\nE   ValueError: XML config inconsistencies:\nE     - serialObjectMeta field/workspace mismatch: PartSpace.nOutput=8 and ConceptualSpace.nOutput=8 must both equal stmCapacity=3. The independent outer sentence limit belongs in <serialWordCapacity>.",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

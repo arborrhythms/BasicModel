@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_init_scale.py::test_init_scale_shrinks_rows_dot_product"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-417.recycle.json"
+}

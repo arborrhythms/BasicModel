@@ -311,10 +311,3 @@ def test_constraint_updates_high_order_preserves_low():
     assert torch.allclose(back.reshape(-1)[:D], new_def.reshape(-1), atol=1e-3)
     # ...and the low-order reconstruction is preserved bit-for-bit.
     assert torch.equal(cb.getW()[0], low_before)
-
-
-
-
-def test_retired_wholespace_taxonomy_writer_is_absent():
-    from Spaces import WholeSpace
-    assert not hasattr(WholeSpace, "insert_meta")

@@ -1,0 +1,1 @@
+Saved failure: trim_6.py first invocation removed only InterSentenceLayer.snapshot/contrastive_loss/predictive_loss, then receipt definitions(body) raised IndentationError on an indented method. No tests ran on the partial edit. Resume dedents standalone bodies before parsing; the original complete source is preserved in pre-trim-source.zip.

@@ -1,0 +1,19 @@
+..F.
+=================================== FAILURES ===================================
+___________________ test_forward_parks_typed_obs_over_spaces ___________________
+test/test_global_attention.py:194: in test_forward_parks_typed_obs_over_spaces
+    assert torch.equal(out1, out2), "dark global attention stays deterministic"
+E   AssertionError: dark global attention stays deterministic
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10a1913a0>(tensor([[[0.5001]],\n\n        [[0.5001]],\n\n        [[0.5001]],\n\n        [[0.5001]]]), tensor([[[0.5001]],\n\n        [[0.5001]],\n\n        [[0.5001]],\n\n        [[0.5001]]]))
+E    +    where <built-in method equal of type object at 0x10a1913a0> = torch.equal
+=============================== warnings summary ===============================
+test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces
+1 failed, 3 passed, 1 warning in 25.34s
+! _pytest.outcomes.Exit: Resource boundary: recycle worker after this completed test !

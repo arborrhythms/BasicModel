@@ -1,0 +1,12 @@
+{
+  "arms": [
+    "step5a",
+    "cut"
+  ],
+  "trial_costs_reached": false,
+  "optimizer_steps_reached": false,
+  "old_worker_gib": 12,
+  "new_worker_gib": 24,
+  "aggregate_gib": 24,
+  "authorization": "Evening hand-off: a slow per-worker ceiling that fits the production batch; sweep guard unchanged."
+}

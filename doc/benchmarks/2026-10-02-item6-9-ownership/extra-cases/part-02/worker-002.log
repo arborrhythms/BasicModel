@@ -1,0 +1,80 @@
+.FF.FFFF                                                                 [100%]
+=================================== FAILURES ===================================
+____________ test_subsymbolic_passes_keep_the_same_native_geometry _____________
+test/test_dual_towers.py:66: in test_subsymbolic_passes_keep_the_same_native_geometry
+    assert got == want, (cfg, got)
+E   AssertionError: ('data/MM_ladder.xml', [4096, 4096, 4096, 4096])
+E   assert [4096, 4096, 4096, 4096] == [8, 8, 8]
+E     
+E     At index 0 diff: 4096 != 8
+E     Left contains one more item: 4096
+E     Use -v to get more diff
+_________ test_default_expectation_adds_only_its_owned_checkpoint_keys _________
+test/test_dual_towers.py:75: in test_default_expectation_adds_only_its_owned_checkpoint_keys
+    assert discourse is not None
+E   assert None is not None
+___________________ test_ws_routes_universe_on_parallel_path ___________________
+test/test_dual_towers.py:145: in test_ws_routes_universe_on_parallel_path
+    assert stamps == ["universe"] * len(stamps), stamps
+E   AssertionError: ['universe', 'property-neutral', 'property-neutral']
+E   assert ['universe', ...erty-neutral'] == ['universe', ...', 'universe']
+E     
+E     At index 1 diff: 'property-neutral' != 'universe'
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 1.112s; word units 100.0% of 12 words (letters-only 100.0% of 4).
+____________________ test_ws_routing_after_serial_migration ____________________
+test/test_dual_towers.py:163: in test_ws_routing_after_serial_migration
+    assert stamps[-1] == "universe", stamps     # LIVE unity, per-word
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: [None, None, None, None]
+E   assert None == 'universe'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 1.614s; word units 83.3% of 12 words (letters-only 100.0% of 4).
+_________ test_written_order0_words_are_present_after_one_smoke_epoch __________
+test/test_dual_towers.py:192: in test_written_order0_words_are_present_after_one_smoke_epoch
+    assert a0 is not None and torch.is_tensor(a0)
+E   assert (None is not None)
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (Δ=2.320s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 0.646s; word units 100.0% of 12 words (letters-only 100.0% of 4).
+batch = 0 (Δ=0.655s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 0.547s; word units 100.0% of 12 words (letters-only 100.0% of 4).
+__________________________ test_pyramid_replaces_wave __________________________
+test/test_dual_towers.py:223: in test_pyramid_replaces_wave
+    assert lv is not None and len(lv) >= 1, "per-rung stats must populate"
+E   AssertionError: per-rung stats must populate
+E   assert (None is not None)
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (Δ=0.537s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 0.619s; word units 100.0% of 12 words (letters-only 100.0% of 4).
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7523: RuntimeWarning: output_shape_gate [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_ladder.xml]: head pred (4, 1, 1) vs labels (4, 1, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7523: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_ladder.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 1024)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry
+FAILED test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys
+FAILED test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path - A...
+FAILED test/test_dual_towers.py::test_ws_routing_after_serial_migration - Ass...
+FAILED test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch
+FAILED test/test_dual_towers.py::test_pyramid_replaces_wave - AssertionError:...
+6 failed, 2 passed, 3 warnings in 12.34s

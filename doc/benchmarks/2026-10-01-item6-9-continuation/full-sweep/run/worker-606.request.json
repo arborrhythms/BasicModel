@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mereology.py::TestPeaceful::test_empty_truthset_is_unknown"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-606.recycle.json"
+}

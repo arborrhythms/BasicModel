@@ -1,0 +1,200 @@
+[
+  {
+    "nodeid": "test/test_definition_attribution.py::test_passback_scales_unknown_parts_without_erasing_location",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_definition_attribution.py::test_passback_scales_unknown_parts_without_erasing_location",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00039062497671693563,
+      "message": "test/test_definition_attribution.py:88: in test_passback_scales_unknown_parts_without_erasing_location\n    result = BasicModel._passback_scope_ps(model, 1, sub, None).materialize()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22925: in _passback_scope_ps\n    owner = self._concept_owner()\n            ^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_concept_owner'",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.5769420830183662,
+      "message": "test/test_gradient_factorization.py:145: in test_normal_batch_logs_owned_optimizer_gradients\n    assert not isinstance(dictionary, torch.nn.Parameter)\nE   AssertionError: assert not True\nE    +  where True = isinstance(Parameter containing:\\ntensor([[ 0.4174, -0.1215,  0.0847,  ...,  0.0928,  0.1297, -0.0410],\\n        [ 0.3710,  0.2972,...7,  0.0954, -0.4577],\\n        [-0.0284,  0.0474, -0.1007,  ..., -0.4393,  0.1128,  0.2205]],\\n       requires_grad=True), <class 'torch.nn.parameter.Parameter'>)\nE    +    where <class 'torch.nn.parameter.Parameter'> = <module 'torch.nn' from '/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/__init__.py'>.Parameter\nE    +      where <module 'torch.nn' from '/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/__init__.py'> = torch.nn",
+      "stdout": "\", \"parameter\": \"conceptualSpaces.2.layers.0.routing_proj.bias\", \"writers\": []}, {\"elements\": 256, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.pi.layer.raw_L\", \"writers\": []}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.pi.layer.d\", \"writers\": []}, {\"elements\": 256, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.pi.layer.raw_U\", \"writers\": []}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.pi.layer.biasWeight\", \"writers\": []}, {\"elements\": 256, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.sigma.layer.raw_L\", \"writers\": []}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.sigma.layer.d\", \"writers\": []}, {\"elements\": 256, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.sigma.layer.raw_U\", \"writers\": []}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.sigma.layer.biasWeight\", \"writers\": []}, {\"elements\": 928, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.routing_proj.weight\", \"writers\": []}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.routing_proj.bias\", \"writers\": []}, {\"elements\": 3584, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.0.weight\", \"writers\": []}, {\"elements\": 32, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.0.bias\", \"writers\": []}, {\"elements\": 512, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.2.weight\", \"writers\": []}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.2.bias\", \"writers\": []}, {\"elements\": 102, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.kind_weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.kind_bias\", \"writers\": []}, {\"elements\": 41616, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.0.weight\", \"writers\": []}, {\"elements\": 102, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.0.bias\", \"writers\": []}, {\"elements\": 5202, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.2.weight\", \"writers\": []}, {\"elements\": 51, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.2.bias\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace._readout_bias\", \"writers\": []}, {\"elements\": 128, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.W\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.biasWeight\", \"writers\": []}, {\"elements\": 128, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.W\", \"writers\": []}, {\"elements\": 128, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.biasWeight\", \"writers\": []}, {\"elements\": 448, \"owner\": \"output\", \"parameter\": \"symbolSpace.languageSpace.generate_policy.weight\", \"writers\": [\"output\"]}, {\"elements\": 28, \"owner\": \"output\", \"parameter\": \"symbolSpace.languageSpace.generate_policy.bias\", \"writers\": [\"output\"]}, {\"elements\": 8304, \"owner\": \"output\", \"parameter\": \"answer_record_reader.weight\", \"writers\": []}, {\"elements\": 464, \"owner\": \"output\", \"parameter\": \"question_conditioners.16.weight\", \"writers\": []}, {\"elements\": 256, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_L\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.d\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_U\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.biasWeight\", \"writers\": []}]}\r\n"
+    }
+  },
+  {
+    "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.1823004579928238,
+      "message": "test/test_grammar_separator.py:55: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    model(model.inputSpace.prepInput(texts))\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8290: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23579: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17633: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22045: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21603: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20759: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:140: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20724: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20247: in _sentence_path_cost\n    reconstruction = self._reconstruct_trial(record)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20231: in _reconstruct_trial\n    witnessed, free = reconstruct(False), reconstruct(True)\n                      ^^^^^^^^^^^^^^^^^^\nbin/Models.py:20228: in reconstruct\n    return self._compiled_reconstruct()(record.root.clone(), record.word_values,\nbin/Models.py:12430: in _reconstruct_sentences\n    recovered) = _reconstruction_while_loop(\nbin/Models.py:381: in _reconstruction_while_loop\n    values = body(*values)\n             ^^^^^^^^^^^^^\nbin/Models.py:12407: in body\n    byte_d = self._byte_word_cost(\nE   TypeError: test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.observed_cost() got an unexpected keyword argument 'priming'",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.20772941599716432,
+      "message": "test/test_grammar_separator.py:55: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    model(model.inputSpace.prepInput(texts))\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8290: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23579: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17633: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22045: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21603: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20759: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:140: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20724: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20247: in _sentence_path_cost\n    reconstruction = self._reconstruct_trial(record)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20231: in _reconstruct_trial\n    witnessed, free = reconstruct(False), reconstruct(True)\n                      ^^^^^^^^^^^^^^^^^^\nbin/Models.py:20228: in reconstruct\n    return self._compiled_reconstruct()(record.root.clone(), record.word_values,\nbin/Models.py:12430: in _reconstruct_sentences\n    recovered) = _reconstruction_while_loop(\nbin/Models.py:381: in _reconstruction_while_loop\n    values = body(*values)\n             ^^^^^^^^^^^^^\nbin/Models.py:12407: in body\n    byte_d = self._byte_word_cost(\nE   TypeError: test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.observed_cost() got an unexpected keyword argument 'priming'",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.1353524999867659,
+      "message": "test/test_grammar_separator.py:55: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    model(model.inputSpace.prepInput(texts))\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8290: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23579: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17633: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22045: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21603: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20759: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:140: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20724: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20247: in _sentence_path_cost\n    reconstruction = self._reconstruct_trial(record)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20231: in _reconstruct_trial\n    witnessed, free = reconstruct(False), reconstruct(True)\n                      ^^^^^^^^^^^^^^^^^^\nbin/Models.py:20228: in reconstruct\n    return self._compiled_reconstruct()(record.root.clone(), record.word_values,\nbin/Models.py:12430: in _reconstruct_sentences\n    recovered) = _reconstruction_while_loop(\nbin/Models.py:381: in _reconstruction_while_loop\n    values = body(*values)\n             ^^^^^^^^^^^^^\nbin/Models.py:12407: in body\n    byte_d = self._byte_word_cost(\nE   TypeError: test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.observed_cost() got an unexpected keyword argument 'priming'",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.13806745799956843,
+      "message": "test/test_grammar_separator.py:55: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    model(model.inputSpace.prepInput(texts))\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8290: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23579: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17633: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22045: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21603: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20759: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:140: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20724: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20247: in _sentence_path_cost\n    reconstruction = self._reconstruct_trial(record)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20231: in _reconstruct_trial\n    witnessed, free = reconstruct(False), reconstruct(True)\n                      ^^^^^^^^^^^^^^^^^^\nbin/Models.py:20228: in reconstruct\n    return self._compiled_reconstruct()(record.root.clone(), record.word_values,\nbin/Models.py:12430: in _reconstruct_sentences\n    recovered) = _reconstruction_while_loop(\nbin/Models.py:381: in _reconstruction_while_loop\n    values = body(*values)\n             ^^^^^^^^^^^^^\nbin/Models.py:12407: in body\n    byte_d = self._byte_word_cost(\nE   TypeError: test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.observed_cost() got an unexpected keyword argument 'priming'",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.4108467500191182,
+      "message": "test/test_live_references.py:192: in test_public_reading_fuses_the_reference_before_capture_and_write\n    torch.testing.assert_close(model._recon_ideas[active], entry.leaves, rtol=1e-4, atol=1e-4)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 408 / 408 (100.0%)\nE   Greatest absolute difference: 0.19456695020198822 at index (0, 75) (up to 0.0001 allowed)\nE   Greatest relative difference: 573.937255859375 at index (1, 63) (up to 0.0001 allowed)",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::testreverse_via_terminal_stm",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::testreverse_via_terminal_stm",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.05334433398093097,
+      "message": ".venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2038: in _compile\n    raise_unimplemented_cache_limit_exceeded()\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2022: in raise_unimplemented_cache_limit_exceeded\n    unimplemented(\n.venv/lib/python3.12/site-packages/torch/_dynamo/exc.py:775: in unimplemented\n    raise Unsupported(msg, gb_type, skip_frame)\nE   torch._dynamo.exc.Unsupported: Dynamo recompile limit exceeded\nE     Explanation: Dynamo attempted to recompile the code object too many times, exceeding the recompile_limit cache size limit (currently set to 8). Excessive recompilations can degrade performance due to the compilation overhead of each recompilation.\nE     Hint: To monitor recompilations, enable TORCH_LOGS=recompiles. If recompilations are expected, consider increasing torch._dynamo.config.recompile_limit to an appropriate value.\nE     Hint: See https://docs.pytorch.org/docs/main/user_guide/torch_compiler/compile/programming_model.recompilation.html for tips on dealing with recompilations.\nE   \nE     Developer debug context: Limit type: recompile_limit\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0039.html\n\nThe above exception was the direct cause of the following exception:\ntest/test_stage_caches_retired.py:147: in testreverse_via_terminal_stm\n    model.forward(x)\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8290: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23579: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17633: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22045: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21603: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20759: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:140: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20724: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20247: in _sentence_path_cost\n    reconstruction = self._reconstruct_trial(record)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20231: in _reconstruct_trial\n    witnessed, free = reconstruct(False), reconstruct(True)\n                      ^^^^^^^^^^^^^^^^^^\nbin/Models.py:20228: in reconstruct\n    return self._compiled_reconstruct()(record.root.clone(), record.word_values,\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1261: in compile_wrapper\n    result = fn(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2649: in __call__\n    result = self._torchdynamo_orig_backend(\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:778: in __call__\n    result = _compile(\n.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2045: in _compile\n    raise FailOnRecompileLimitHit(\nE   torch._dynamo.exc.FailOnRecompileLimitHit: Hard failure due to fullgraph=True",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+      "phase": "call",
+      "outcome": "xpassed",
+      "duration": 47.31630295899231,
+      "message": "",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 64.22273095897981,
+      "message": "test/test_output_path_supervised.py:134: in test_output_path_memorizes_supervised_labels_on_the_serial_topology\n    assert _memorize(m, epochs=40, lr=1e-3) >= 1.0\nE   assert 0.96875 >= 1.0\nE    +  where 0.96875 = _memorize(BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=136, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\\n), epochs=40, lr=0.001)",
+      "stdout": " of 16).\r\nbatch = 0 (\u0394=2.040s, 100.00%)\r\nTraining throughput: 1 batches in 1.541s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.656s, 100.00%)\r\nTraining throughput: 1 batches in 1.654s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.507s, 100.00%)\r\nTraining throughput: 1 batches in 1.506s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.489s, 100.00%)\r\nTraining throughput: 1 batches in 1.487s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.503s, 100.00%)\r\nTraining throughput: 1 batches in 1.501s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.507s, 100.00%)\r\nTraining throughput: 1 batches in 1.505s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.589s, 100.00%)\r\nTraining throughput: 1 batches in 1.587s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.493s, 100.00%)\r\nTraining throughput: 1 batches in 1.491s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.522s, 100.00%)\r\nTraining throughput: 1 batches in 1.520s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.503s, 100.00%)\r\nTraining throughput: 1 batches in 1.502s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.976s, 100.00%)\r\nTraining throughput: 1 batches in 1.481s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.603s, 100.00%)\r\nTraining throughput: 1 batches in 1.601s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.539s, 100.00%)\r\nTraining throughput: 1 batches in 1.537s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.497s, 100.00%)\r\nTraining throughput: 1 batches in 1.495s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.509s, 100.00%)\r\nTraining throughput: 1 batches in 1.508s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.553s, 100.00%)\r\nTraining throughput: 1 batches in 1.552s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.616s, 100.00%)\r\nTraining throughput: 1 batches in 1.614s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.508s, 100.00%)\r\nTraining throughput: 1 batches in 1.506s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.524s, 100.00%)\r\nTraining throughput: 1 batches in 1.522s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.504s, 100.00%)\r\nTraining throughput: 1 batches in 1.503s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=2.136s, 100.00%)\r\nTraining throughput: 1 batches in 1.623s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.535s, 100.00%)\r\nTraining throughput: 1 batches in 1.533s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.531s, 100.00%)\r\nTraining throughput: 1 batches in 1.529s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.540s, 100.00%)\r\nTraining throughput: 1 batches in 1.539s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.537s, 100.00%)\r\nTraining throughput: 1 batches in 1.535s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.627s, 100.00%)\r\nTraining throughput: 1 batches in 1.625s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.525s, 100.00%)\r\nTraining throughput: 1 batches in 1.524s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.538s, 100.00%)\r\nTraining throughput: 1 batches in 1.536s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.537s, 100.00%)\r\nTraining throughput: 1 batches in 1.535s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.540s, 100.00%)\r\nTraining throughput: 1 batches in 1.539s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\n"
+    }
+  },
+  {
+    "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 244.34066016599536,
+      "message": "test/test_reconstruction_roundtrip.py:459: in test_mm20m_grammar_free_derivation_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.0 == 1.0\nE    +  where 0.0 = RunRecord(config='data/MM_ladder.xml', seed=4045216278, epochs=3, wall_s_per_epoch=76.56520506298693, output_loss=0.06...n ModelLoss and not exposed on the model', 'epoch_times_s': [86.36264687500079, 81.87587404198712, 71.25453608398675]}).exact_match_rate",
+      "stdout": "batch = 0 (warm-up, 12.50%)\r\nbatch = 8 (\u0394=2.805s, 15.62%)\r\nbatch = 16 (\u0394=2.769s, 18.75%)\r\nbatch = 24 (\u0394=2.830s, 21.88%)\r\nbatch = 32 (\u0394=2.658s, 25.00%)\r\nbatch = 40 (\u0394=2.705s, 28.12%)\r\nbatch = 48 (\u0394=2.853s, 31.25%)\r\nbatch = 56 (\u0394=2.728s, 34.38%)\r\nbatch = 64 (\u0394=2.773s, 37.50%)\r\nbatch = 72 (\u0394=2.659s, 40.62%)\r\nbatch = 80 (\u0394=2.631s, 43.75%)\r\nbatch = 88 (\u0394=2.765s, 46.88%)\r\nbatch = 96 (\u0394=2.651s, 50.00%)\r\nbatch = 104 (\u0394=2.643s, 53.12%)\r\nbatch = 112 (\u0394=2.805s, 56.25%)\r\nbatch = 120 (\u0394=2.750s, 59.38%)\r\nbatch = 128 (\u0394=2.810s, 62.50%)\r\nbatch = 136 (\u0394=2.534s, 65.62%)\r\nbatch = 144 (\u0394=2.205s, 68.75%)\r\nbatch = 152 (\u0394=2.414s, 71.88%)\r\nbatch = 160 (\u0394=2.577s, 75.00%)\r\nbatch = 168 (\u0394=2.643s, 78.12%)\r\nbatch = 176 (\u0394=2.726s, 81.25%)\r\nbatch = 184 (\u0394=2.906s, 84.38%)\r\nbatch = 192 (\u0394=2.744s, 87.50%)\r\nbatch = 200 (\u0394=2.871s, 90.62%)\r\nbatch = 208 (\u0394=2.576s, 93.75%)\r\nbatch = 216 (\u0394=2.622s, 96.88%)\r\nbatch = 224 (\u0394=2.773s, 100.00%)\r\nbatch = 232 (\u0394=2.626s, 100.00%)\r\nbatch = 240 (\u0394=2.603s, 100.00%)\r\nbatch = 248 (\u0394=2.846s, 100.00%)\r\nTraining throughput: 32 batches in 86.362s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=2.689s, 12.50%)\r\nbatch = 8 (\u0394=2.517s, 15.62%)\r\nbatch = 16 (\u0394=2.668s, 18.75%)\r\nbatch = 24 (\u0394=2.604s, 21.88%)\r\nbatch = 32 (\u0394=2.700s, 25.00%)\r\nbatch = 40 (\u0394=2.599s, 28.12%)\r\nbatch = 48 (\u0394=2.605s, 31.25%)\r\nbatch = 56 (\u0394=2.834s, 34.38%)\r\nbatch = 64 (\u0394=2.730s, 37.50%)\r\nbatch = 72 (\u0394=2.619s, 40.62%)\r\nbatch = 80 (\u0394=2.703s, 43.75%)\r\nbatch = 88 (\u0394=2.590s, 46.88%)\r\nbatch = 96 (\u0394=2.578s, 50.00%)\r\nbatch = 104 (\u0394=2.776s, 53.12%)\r\nbatch = 112 (\u0394=2.613s, 56.25%)\r\nbatch = 120 (\u0394=2.843s, 59.38%)\r\nbatch = 128 (\u0394=2.647s, 62.50%)\r\nbatch = 136 (\u0394=2.680s, 65.62%)\r\nbatch = 144 (\u0394=2.728s, 68.75%)\r\nbatch = 152 (\u0394=2.587s, 71.88%)\r\nbatch = 160 (\u0394=2.604s, 75.00%)\r\nbatch = 168 (\u0394=2.766s, 78.12%)\r\nbatch = 176 (\u0394=2.640s, 81.25%)\r\nbatch = 184 (\u0394=2.578s, 84.38%)\r\nbatch = 192 (\u0394=2.509s, 87.50%)\r\nbatch = 200 (\u0394=2.144s, 90.62%)\r\nbatch = 208 (\u0394=2.109s, 93.75%)\r\nbatch = 216 (\u0394=2.179s, 96.88%)\r\nbatch = 224 (\u0394=2.195s, 100.00%)\r\nbatch = 232 (\u0394=2.203s, 100.00%)\r\nbatch = 240 (\u0394=2.365s, 100.00%)\r\nbatch = 248 (\u0394=2.274s, 100.00%)\r\nTraining throughput: 32 batches in 81.875s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=2.281s, 12.50%)\r\nbatch = 8 (\u0394=2.283s, 15.62%)\r\nbatch = 16 (\u0394=2.267s, 18.75%)\r\nbatch = 24 (\u0394=2.146s, 21.88%)\r\nbatch = 32 (\u0394=2.205s, 25.00%)\r\nbatch = 40 (\u0394=2.197s, 28.12%)\r\nbatch = 48 (\u0394=2.205s, 31.25%)\r\nbatch = 56 (\u0394=2.284s, 34.38%)\r\nbatch = 64 (\u0394=2.316s, 37.50%)\r\nbatch = 72 (\u0394=2.261s, 40.62%)\r\nbatch = 80 (\u0394=2.189s, 43.75%)\r\nbatch = 88 (\u0394=2.163s, 46.88%)\r\nbatch = 96 (\u0394=2.198s, 50.00%)\r\nbatch = 104 (\u0394=2.264s, 53.12%)\r\nbatch = 112 (\u0394=2.162s, 56.25%)\r\nbatch = 120 (\u0394=2.244s, 59.38%)\r\nbatch = 128 (\u0394=2.242s, 62.50%)\r\nbatch = 136 (\u0394=2.288s, 65.62%)\r\nbatch = 144 (\u0394=2.176s, 68.75%)\r\nbatch = 152 (\u0394=2.269s, 71.88%)\r\nbatch = 160 (\u0394=2.184s, 75.00%)\r\nbatch = 168 (\u0394=2.195s, 78.12%)\r\nbatch = 176 (\u0394=2.196s, 81.25%)\r\nbatch = 184 (\u0394=2.215s, 84.38%)\r\nbatch = 192 (\u0394=2.358s, 87.50%)\r\nbatch = 200 (\u0394=2.282s, 90.62%)\r\nbatch = 208 (\u0394=2.171s, 93.75%)\r\nbatch = 216 (\u0394=2.167s, 96.88%)\r\nbatch = 224 (\u0394=2.194s, 100.00%)\r\nbatch = 232 (\u0394=2.256s, 100.00%)\r\nbatch = 240 (\u0394=2.187s, 100.00%)\r\nbatch = 248 (\u0394=2.208s, 100.00%)\r\nTraining throughput: 32 batches in 71.254s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=4.447s, 100.00%)\r\nTraining throughput: 1 batches in 4.591s; word units 86.5% of 192 words (letters-only 100.0% of 64).\r\n"
+    }
+  },
+  {
+    "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.19922929198946804,
+      "message": "test/test_sparse_concept_e2e.py:300: in test_two_phase_forward_cutover_stamps_terminal_activations\n    assert acts is not None and int(acts.shape[0]) == sum(cs0._field_caps())\nE   assert (tensor([[[[0., 0.]],\\n\\n         [[1., 1.]],\\n\\n         [[1., 1.]],\\n\\n         [[1., 1.]]],\\n\\n\\n        [[[0., 0.]],\\n\\n      ...]]],\\n\\n\\n        [[[0., 0.]],\\n\\n         [[0., 0.]],\\n\\n         [[0., 0.]],\\n\\n         [[0., 0.]]]], grad_fn=<CatBackward0>) is not None and 8 == 15)\nE    +  where 8 = int(8)\nE    +  and   15 = sum((8, 4, 2, 1))\nE    +    where (8, 4, 2, 1) = _field_caps()\nE    +      where _field_caps = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ... (concept_source_readout): SigmaConceptsFromPercepts(\\n    (sigma): SigmaLayer(\\n      (layer): LinearLayer()\\n    )\\n  )\\n)._field_caps",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 43.154917667008704,
+      "message": "test/test_reverse_traversal.py:344: in test_packed_rows_reconstruct_each_sentence_separately\n    assert torch.allclose(compiled_costs, eager_costs, atol=1e-4)\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10cc053a0>(tensor([[2.5534, 3.9381, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.00...000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]), tensor([[ 7.4876, 10.8459,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,\\n          0.0000,  0.0000,  0.0000,  ...  0.0000,  0.0000,  0.0000,  0.0000,\\n          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]), atol=0.0001)\nE    +    where <built-in method allclose of type object at 0x10cc053a0> = torch.allclose",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 29.428125042002648,
+      "message": "test/test_reverse_traversal.py:360: in test_traversal_compiles_into_the_one_sentence_graph\n    assert torch.allclose(compiled_costs.sum(-1), eager_cost, atol=1e-4)\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10cc053a0>(tensor([0.0003, 0.0003]), tensor([5.7567, 6.9080]), atol=0.0001)\nE    +    where <built-in method allclose of type object at 0x10cc053a0> = torch.allclose\nE    +    and   tensor([0.0003, 0.0003]) = <built-in method sum of Tensor object at 0x13bb82ee0>(-1)\nE    +      where <built-in method sum of Tensor object at 0x13bb82ee0> = tensor([[0.0003, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],\\n        [0.0003, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]).sum",
+      "stdout": ""
+    }
+  },
+  {
+    "nodeid": "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+      "reason": "memory",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/extra-cases/part-00/worker-032.log",
+      "outcome": "process_failed"
+    }
+  },
+  {
+    "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+      "reason": "aborted",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/extra-cases/part-00/worker-001.log",
+      "outcome": "process_failed"
+    }
+  },
+  {
+    "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+      "reason": "aborted",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/extra-cases/part-00/worker-002.log",
+      "outcome": "process_failed"
+    }
+  }
+]

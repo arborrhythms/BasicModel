@@ -1,0 +1,713 @@
+................................F..FF....Fs...FF............F........... [ 54%]
+....................................................s.......F            [100%]
+=================================== FAILURES ===================================
+_________ TestOutputSpaceTextReconstruction.test_reconstruct_to_buffer _________
+
+self = <test_basicmodel.TestOutputSpaceTextReconstruction testMethod=test_reconstruct_to_buffer>
+
+    def test_reconstruct_to_buffer(self):
+        """The retained percept inverse renders known words at their offsets."""
+        Models.TheData.load("xor")
+        _populate_test_config(inputDim=10, perceptDim=10, nInput=8,
+            nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
+            flatten=True)
+        _inp, psp = _build_text_pair(8)
+        vocabulary = psp.vocabulary
+        words = ["hello", "world"]
+        rows = [vocabulary.insert(word.encode()) for word in words]
+        vectors = torch.zeros(1, 2, psp.muxedSize)
+        for slot, row in enumerate(rows):
+            vectors[0, slot, :vocabulary.dim] = vocabulary.vector_for(row).detach()
+            psp.subspace.whereEncoding.stamp(vectors, 0, slot, slot * 6)
+        object.__setattr__(psp, '_recovered_input', None)
+        object.__setattr__(psp, '_recovered_input_thunk',
+                           ('radix', vocabulary, vectors, psp.subspace))
+        self.assertEqual(psp.reconstruct_data()[0], words)
+        text = psp.reconstruct_to_buffer()
+        self.assertIsInstance(text[0], str)
+        self.assertIn(words[0], text[0])
+        self.assertIn(words[1], text[0])
+>       self.assertEqual(text[0], 'hello world')
+E       AssertionError: 'helloworld' != 'hello world'
+E       - helloworld
+E       + hello world
+E       ?      +
+
+test/test_basicmodel.py:1421: AssertionError
+________ test_model_taxonomy_entries_skip_global_vector_proposal_setup _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1233678c0>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_model_taxonomy_entries_sk0')
+
+    def test_model_taxonomy_entries_skip_global_vector_proposal_setup(monkeypatch, tmp_path):
+        from test_ltm_consolidation import _make_model
+        from test_thought_model_fixture import thought_config
+>       model = _make_model(thought_config(tmp_path))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_taxonomy_boundary.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_model_taxonomy_entries_sk0')
+
+    def thought_config(tmp_path):
+        import xml.etree.ElementTree as ET
+>       from test_ltm_consolidation import _STATEFUL_CONFIG
+E       ImportError: cannot import name '_STATEFUL_CONFIG' from 'test_ltm_consolidation' (/Users/arogers/github/WikiOracle/basicmodel/test/test_ltm_consolidation.py)
+
+test/test_thought_model_fixture.py:28: ImportError
+________ test_actual_model_entry_and_checkpoint_keep_taxonomy_identity _________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_actual_model_entry_and_ch0')
+
+    def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
+        from test_ltm_consolidation import _make_model
+        from test_thought_model_fixture import thought_config
+>       config = thought_config(tmp_path)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_taxonomy_entry.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_actual_model_entry_and_ch0')
+
+    def thought_config(tmp_path):
+        import xml.etree.ElementTree as ET
+>       from test_ltm_consolidation import _STATEFUL_CONFIG
+E       ImportError: cannot import name '_STATEFUL_CONFIG' from 'test_ltm_consolidation' (/Users/arogers/github/WikiOracle/basicmodel/test/test_ltm_consolidation.py)
+
+test/test_thought_model_fixture.py:28: ImportError
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_real_packed_ends_train_be0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1234c5580>
+compiled = False
+
+    @pytest.mark.parametrize('compiled', [False, pytest.param(True, marks=pytest.mark.slow)])
+    def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, compiled):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from test_reverse_traversal import _select_completed_binary_path
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+            concept_rows=128, part_rows=64, input_width=16, training_overrides={'intraLossWeight': 0},
+            stm_capacity=3, chooser_depth=1,
+            architecture_overrides={'ltmConsolidation': True, 'symbolicOrder': 1})
+        # Completion is a fixture for this causal mechanism test. Both winners
+        # must leave a real predecessor, regardless of the untrained chooser.
+        _select_completed_binary_path(model)
+        optimizer = model.getOptimizer(lr=1e-4)
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model.reconstruction_placement = 'eager'
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        if compiled:
+            import SentenceCompose
+            monkeypatch.setattr(SentenceCompose, 'compile_word_brick',
+                lambda fn: torch.compile(fn, backend='eager', fullgraph=True))
+        # Sentence ends land at different word columns in the two rows; the
+        # first row's one-word sentence also exercises its dedicated closing trace.
+        raw = model.inputSpace.prepPackedInput([['a', 'c d'], ['e f', 'g']])
+        events = []
+        candidates, prior_context = {}, []
+        path_cost = model._sentence_path_cost
+        def controlled_cost(path, sid, active):
+            cost, recon, observation, pending = path_cost(path, sid, active)
+            alternative = model._sentence_trial == 'explore'
+            candidates[sid, alternative] = observation
+            if sid == 1:
+                # The second sentence sees exactly the chain committed by the
+                # first, including its occurrence identity, in both trials.
+                disc = model.symbolSpace.discourse
+                assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+            fixed = cost.new_tensor([1., 2.] if alternative else [2., 1.])
+            # This causal fixture fixes the comparison, not the numerical reading.
+            # Give the two trials equal reconstruction so the decided precedence
+            # rule permits the same controlled winners; keep its live derivative.
+            recon = (*recon[:2], recon[2] - recon[2].detach() + 1., *recon[3:])
+            # The comparison reads R from Error and the supplied-answer value;
+            # expectation and lessons no longer enter it. Inject the same fixed
+            # row ordering at that boundary, leaving every trained term intact.
+            reconstruction = model._sentence_cost_registry.total(objective='reconstruction')
+            model._sentence_answer_cost = fixed - reconstruction.detach()
+            return cost - cost.detach() + fixed, recon, observation, pending
+        monkeypatch.setattr(model, '_sentence_path_cost', controlled_cost)
+        perceived = []
+        # The perception owner must see the committed predecessor before it is
+        # called for the next sentence. The second compose must not call it again.
+        perceive = model.perceptualSpace.synthesize_word_parts
+        def perception(*args, **kwargs):
+            # Input staging also builds a detached reporting slab. Count the
+            # live word perception shared by the two compose/backward paths.
+            if torch.is_grad_enabled() and not torch.compiler.is_compiling():
+                perceived.append(len(model._sentence_fields))
+                if len(model._sentence_fields) == 1:
+                    disc = model.symbolSpace.discourse
+                    assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+            return perceive(*args, **kwargs)
+        if not compiled:
+            monkeypatch.setattr(model.perceptualSpace, 'synthesize_word_parts', perception)
+        original = model._sentence_train_step
+        def step(loss):
+            events.append(('step', float(loss.detach())))
+            return original(loss)
+        monkeypatch.setattr(model, '_sentence_train_step', step)
+        commit = model._commit_sentence
+        def observe(*args):
+            events.append(('commit', args[1]))
+            result = commit(*args)
+            disc = model.symbolSpace.discourse
+            context = tuple(tuple(row) for row in disc._inter_context_occurrences)
+            assert [len(row) for row in context] == [args[1] + 1] * 2
+            assert all(occurrence is not None for row in context for occurrence in row)
+            for b, alternative in enumerate((True, False)):
+                expected = candidates[args[1], alternative]
+                roles, occupied = disc._canonical_meaning(
+                    expected['observed'][b], expected['observed_depths'][b], expected['layout'],
+                    None if expected['roles'] is None else expected['roles'][b])
+                depth, payload, mask = disc._inter_context[b][-1]
+                assert depth == int(occupied.sum())
+                torch.testing.assert_close(payload, roles)
+                torch.testing.assert_close(mask, occupied)
+            if args[1] == 0:
+                prior_context.append(context)
+            return result
+        monkeypatch.setattr(model, '_commit_sentence', observe)
+        try:
+>           model.runBatch(train=True, optimizer=optimizer, batchSize=2,
+                batch_override=(raw, torch.empty(2, 0)), split='runtime')
+
+test/test_sentence_compose.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14260: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14434: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14804: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9166: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10649: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8863: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8673: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23971: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:18018: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22437: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21988: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:21144: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:153: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:21142: in train_trial
+    self._sentence_train_step(loss)
+test/test_sentence_compose.py:144: in step
+    return original(loss)
+           ^^^^^^^^^^^^^^
+bin/Models.py:20510: in _sentence_train_step
+    optimizer.step()
+bin/Optimizer.py:792: in step
+    return self._step_without_finite_preflight()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Optimizer.py:770: in _step_without_finite_preflight
+    results.append(unchecked())
+                   ^^^^^^^^^^^
+bin/Optimizer.py:616: in _step_without_finite_preflight
+    return self._inner.step()
+           ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/optim/optimizer.py:549: in wrapper
+    out = func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = _RowLocalAdam (
+Parameter Group 0
+    betas: (0.9, 0.999)
+    eps: 1e-08
+    lr: 0.0001
+    maximize: False
+    moment_dtype: torch.bfloat16
+    weight_decay: 0.0
+)
+closure = None
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+    
+        proximal, self._l1_proximal = self._l1_proximal, {}
+        for group in self.param_groups:
+            beta1, beta2 = group["betas"]
+            moment_dtype = group.get("moment_dtype", torch.float32)
+            for param in group["params"]:
+                grad = param.grad
+                if grad is None:
+                    continue
+                if param.ndim < 1:
+                    raise RuntimeError(
+                        "RowLocalAdam requires a parameter with a row axis")
+                if not grad.is_sparse:
+>                   raise RuntimeError(
+                        "RowLocalAdam requires sparse COO gradients; a dense "
+                        "gradient would defeat its memory guarantee")
+E                   RuntimeError: RowLocalAdam requires sparse COO gradients; a dense gradient would defeat its memory guarantee
+
+bin/Optimizer.py:436: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_______ test_normal_supervised_output_respects_gradient_contract[False] ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_normal_supervised_output_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x146d32930>
+output_loop = False, eager_reading = None
+
+    @pytest.mark.parametrize("output_loop", [False, True])
+    def test_normal_supervised_output_respects_gradient_contract(tmp_path, monkeypatch, output_loop, eager_reading):
+        """A real runBatch/Adam step, with no forced generate actions or answer seeds."""
+        import json
+        import util
+        from What import What
+        from test_output_path_supervised import _native_answer_model
+    
+        monkeypatch.setattr(util, "TheCompileBackend", "none")
+        model = _native_answer_model(tmp_path, output_loop)
+        optimizer = model.getOptimizer(lr=.001)
+        recorded, observed = {}, {}
+        record, backward = model.record_loss, model._backward_training_loss
+        sentence_sources = []
+        path_cost = model._sentence_path_cost
+    
+        def capture_sentence_source(path, *args):
+            sentence_sources.append(path[0][0])
+            return path_cost(path, *args)
+    
+        monkeypatch.setattr(model, '_sentence_path_cost', capture_sentence_source)
+    
+        def record_loss(name, value, **kwargs):
+            recorded[name] = value
+            return record(name, value, **kwargs)
+    
+        def check_gradients(total, amp_scaler=None, **kwargs):
+            if getattr(model, '_sentence_backward', False):
+                assert 'output' not in recorded
+                return backward(total, amp_scaler, **kwargs)
+            construction = model._last_answer_construction
+            loss = recorded["output"]
+            assert loss.requires_grad and float(loss.detach()) > 0
+            assert all(not field.end_state.requires_grad
+                       for field in construction.derivation.sentence_states if field is not None)
+            # The committed field is detached at its closing. Keep the actual
+            # pre-commit tensors to check that answer loss cannot revisit them.
+            sources = [value for value in sentence_sources if value.requires_grad]
+            assert sources, "the sentence trials must carry live compose conclusions"
+            groups = model._shared_operator_parameter_groups(optimizer)
+            named = [(name, p) for name, params in groups.items() for p in params]
+            conditioner = model.question_conditioners[str(model.conceptualSpace.stm.concept_dim)].weight
+            gradients = torch.autograd.grad(loss, [conditioner] + sources + [p for _, p in named],
+                                            retain_graph=True, allow_unused=True)
+            assert gradients[0] is not None and bool(gradients[0].any())
+            assert all(g is None or not bool(g.any()) for g in gradients[1:1 + len(sources)])
+            reached = [(name, p, float(g.detach().norm())) for (name, p), g in
+                       zip(named, gradients[1 + len(sources):]) if g is not None and bool(g.any())]
+            # An unselected walk may stop or use parameter-free operators. Record
+            # absent shared credit as absent. The fixed-action mechanism case in
+            # test_prepared_answer_boundary requires nonzero shared-inverse credit;
+            # this ordinary run must not select a seed just to visit that branch.
+            assert all(g is None or bool(torch.isfinite(g).all()) for g in gradients)
+            observed["reached"] = [(name, p, p.detach().clone(), norm) for name, p, norm in reached]
+            observed["conditioner"] = (conditioner, conditioner.detach().clone())
+            observed["loss"] = float(loss.detach())
+            return backward(total, amp_scaler, **kwargs)
+    
+        monkeypatch.setattr(model, "record_loss", record_loss)
+        monkeypatch.setattr(model, "_backward_training_loss", check_gradients)
+        try:
+            batch = (model.inputSpace.prepInput(["1 plus 2", "3 plus 4"]), torch.zeros(2, 1, 1))
+>           model.runBatch(train=True, batchSize=2, split="train", optimizer=optimizer,
+                           batch_override=batch, questions=(What.supervised(0), What.supervised(1)))
+
+test/test_generation_catalog.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14260: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14434: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15496: in _run_batch_once
+    self._backward_training_loss(
+test/test_generation_catalog.py:238: in check_gradients
+    groups = model._shared_operator_parameter_groups(optimizer)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...=29, out_features=264, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=264, bias=False)
+)
+name = '_shared_operator_parameter_groups'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_shared_operator_parameter_groups'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+________ test_normal_supervised_output_respects_gradient_contract[True] ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_normal_supervised_output_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123640e30>
+output_loop = True, eager_reading = None
+
+    @pytest.mark.parametrize("output_loop", [False, True])
+    def test_normal_supervised_output_respects_gradient_contract(tmp_path, monkeypatch, output_loop, eager_reading):
+        """A real runBatch/Adam step, with no forced generate actions or answer seeds."""
+        import json
+        import util
+        from What import What
+        from test_output_path_supervised import _native_answer_model
+    
+        monkeypatch.setattr(util, "TheCompileBackend", "none")
+        model = _native_answer_model(tmp_path, output_loop)
+        optimizer = model.getOptimizer(lr=.001)
+        recorded, observed = {}, {}
+        record, backward = model.record_loss, model._backward_training_loss
+        sentence_sources = []
+        path_cost = model._sentence_path_cost
+    
+        def capture_sentence_source(path, *args):
+            sentence_sources.append(path[0][0])
+            return path_cost(path, *args)
+    
+        monkeypatch.setattr(model, '_sentence_path_cost', capture_sentence_source)
+    
+        def record_loss(name, value, **kwargs):
+            recorded[name] = value
+            return record(name, value, **kwargs)
+    
+        def check_gradients(total, amp_scaler=None, **kwargs):
+            if getattr(model, '_sentence_backward', False):
+                assert 'output' not in recorded
+                return backward(total, amp_scaler, **kwargs)
+            construction = model._last_answer_construction
+            loss = recorded["output"]
+            assert loss.requires_grad and float(loss.detach()) > 0
+            assert all(not field.end_state.requires_grad
+                       for field in construction.derivation.sentence_states if field is not None)
+            # The committed field is detached at its closing. Keep the actual
+            # pre-commit tensors to check that answer loss cannot revisit them.
+            sources = [value for value in sentence_sources if value.requires_grad]
+            assert sources, "the sentence trials must carry live compose conclusions"
+            groups = model._shared_operator_parameter_groups(optimizer)
+            named = [(name, p) for name, params in groups.items() for p in params]
+            conditioner = model.question_conditioners[str(model.conceptualSpace.stm.concept_dim)].weight
+            gradients = torch.autograd.grad(loss, [conditioner] + sources + [p for _, p in named],
+                                            retain_graph=True, allow_unused=True)
+            assert gradients[0] is not None and bool(gradients[0].any())
+            assert all(g is None or not bool(g.any()) for g in gradients[1:1 + len(sources)])
+            reached = [(name, p, float(g.detach().norm())) for (name, p), g in
+                       zip(named, gradients[1 + len(sources):]) if g is not None and bool(g.any())]
+            # An unselected walk may stop or use parameter-free operators. Record
+            # absent shared credit as absent. The fixed-action mechanism case in
+            # test_prepared_answer_boundary requires nonzero shared-inverse credit;
+            # this ordinary run must not select a seed just to visit that branch.
+            assert all(g is None or bool(torch.isfinite(g).all()) for g in gradients)
+            observed["reached"] = [(name, p, p.detach().clone(), norm) for name, p, norm in reached]
+            observed["conditioner"] = (conditioner, conditioner.detach().clone())
+            observed["loss"] = float(loss.detach())
+            return backward(total, amp_scaler, **kwargs)
+    
+        monkeypatch.setattr(model, "record_loss", record_loss)
+        monkeypatch.setattr(model, "_backward_training_loss", check_gradients)
+        try:
+            batch = (model.inputSpace.prepInput(["1 plus 2", "3 plus 4"]), torch.zeros(2, 1, 1))
+>           model.runBatch(train=True, batchSize=2, split="train", optimizer=optimizer,
+                           batch_override=batch, questions=(What.supervised(0), What.supervised(1)))
+
+test/test_generation_catalog.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14260: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14434: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15496: in _run_batch_once
+    self._backward_training_loss(
+test/test_generation_catalog.py:238: in check_gradients
+    groups = model._shared_operator_parameter_groups(optimizer)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...=29, out_features=264, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=264, bias=False)
+)
+name = '_shared_operator_parameter_groups'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_shared_operator_parameter_groups'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+____ test_runbatch_does_not_train_generate_policy_without_supplied_answers _____
+
+eager_reading = None
+
+    def test_runbatch_does_not_train_generate_policy_without_supplied_answers(eager_reading):
+        """No supervised target means no output-policy update, including Adam
+        momentum left by a preceding supervised batch."""
+        from What import What
+        m = _model()
+        m._tensor_peer_while_eager = True
+        m._chart_compose_per_word = lambda: None
+        m.output_policy_weight = 1.0
+        opt = m.getOptimizer(lr=1e-3)
+        data = m.inputSpace.data
+        had_outputs = data.has_supervised_outputs
+        try:
+            learned = _policy_training_probe(
+                m, opt, (What.supervised(0), What.supervised(1)))
+            assert all(learned["changed"])
+            data.has_supervised_outputs = False
+            unlabelled = _policy_training_probe(
+                m, opt, (What.supervised(0), What.supervised(1)))
+            assert not any(unlabelled["changed"])
+            assert all(g is None or not bool(g.abs().any())
+                       for g in unlabelled["total_grads"])
+            present = _policy_training_probe(
+                m, opt, (What.present(0), What.present(1)))
+            assert not any(present["changed"])
+            # A batch that does not run reverseOutput must not reuse the last
+            # batch's graph or policy credit.
+            m.answer_synthesis = False
+            before = [p.detach().clone() for p in m.languageSpace.generate_policy.parameters()]
+            batch = (m.inputSpace.prepInput(["12 plus 1", "3 plus 4"]),
+                     torch.zeros(2, 1, 1))
+>           m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+                       batch_override=batch,
+                       questions=(What.supervised(0), What.supervised(1)))
+
+test/test_output_walk.py:387: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:14260: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14434: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14804: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:9166: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10649: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8863: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8673: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24011: in _forward_per_stage
+    if sentence_state is not None else self._forward_head(body_sub))
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:17886: in _forward_head
+    result.set_event(value + reader(record).reshape_as(value))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x14d7f0860>
+func = <method 'reshape_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[ 3.8523e-01,  4.8710e-01, -5.7127e-02, -3.9325e-01, -2.1254e-01,
+         -2.4501e-01, -4.6994e-01, -1.1987e...      [ 3.4259e-04],
+         [-3.6389e-04],
+         [-3.4959e-04],
+         [-4.3746e-04]]], grad_fn=<MulBackward0>))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[2, 16, 1]' is invalid for input of size 816
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=1.082s)
+batch = 0 (Δ=1.331s)
+______________ test_normal_batch_trains_supplied_grammar_lessons _______________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_normal_batch_trains_suppl0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14ef74980>
+eager_reading = None
+
+    def test_normal_batch_trains_supplied_grammar_lessons(tmp_path, monkeypatch, eager_reading):
+        import json
+        from pathlib import Path
+        from test_compiled_word_chunk import _tiny_canonical_model
+        curriculum = json.loads((Path(__file__).resolve().parents[1] / "data/grammar_wording.json").read_text())
+        chosen = ("wheels belong to bicycles", "bicycles are equal to wheels")
+        lessons = [next(row for row in curriculum["train"] if row["text"] == text) for text in chosen]
+        torch.manual_seed(942)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8")
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        data = model.inputSpace.data
+        data.grammar_lessons = {"train": lessons}
+        data.has_supervised_outputs = False
+        chooser = model.languageSpace._tree_layer(2).chooser
+        generator = model.languageSpace.generate_policy
+        surface = next(op.gl for op in model.languageSpace._tree_layer(2).ops
+                       if getattr(getattr(op, "gl", op), "rule_name", None) == "surface")
+        owners = (chooser, generator, surface.marker_map, surface.marker_prior)
+        before = [[p.detach().clone() for p in owner.parameters()] for owner in owners]
+        optimizer = model.getOptimizer(lr=.003)
+        try:
+            inputs = model.inputSpace.prepInput(list(chosen))
+            from reading_fixtures import capture_readings
+            with capture_readings(model) as readings:
+                result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,
+                    split="train", optimizer=optimizer, source_rows=[0, 1],
+                    batch_override=(inputs, torch.empty(2, 0)))
+            assert result is not None
+            for owner, original in zip(owners, before):
+>               assert any(not torch.equal(old, new) for old, new in zip(original, owner.parameters())), type(owner).__name__
+E               AssertionError: Sequential
+E               assert False
+E                +  where False = any(<generator object test_normal_batch_trains_supplied_grammar_lessons.<locals>.<genexpr> at 0x150285ee0>)
+
+test/test_surface_grammar.py:242: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7531: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_normal_supervised_output_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7531: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_normal_supervised_output_1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7531: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp437fs0y_/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7531: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxcyc_n5b/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7531: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpw4o1ze8o/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7531: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp3ikpymt9/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7531: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpo3tdmnik/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7531: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-999/test_sentence_trials_keep_thei0/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_to_buffer
+FAILED test/test_taxonomy_boundary.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup
+FAILED test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+FAILED test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+FAILED test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+FAILED test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers
+FAILED test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons
+8 failed, 123 passed, 2 skipped, 1 deselected, 10 warnings in 57.57s

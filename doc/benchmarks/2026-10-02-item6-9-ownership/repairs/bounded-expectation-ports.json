@@ -1,0 +1,21 @@
+{
+  "command": [
+    "env",
+    "RUN_SLOW=1",
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "test/test_category_em_smoke.py",
+    "test/test_router_fires_per_word.py",
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary"
+  ],
+  "pid": 21561,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2276117600,
+  "elapsed_seconds": 110.57970454099996,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/bounded-expectation-ports.log"
+}

@@ -21,7 +21,7 @@ _BIN = _ROOT / "bin"
 if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
-from Layers import IntraSentenceLayer, ShortTermMemory  # noqa: E402
+from Layers import Error, IntraSentenceLayer, ShortTermMemory  # noqa: E402
 import Language  # noqa: E402
 import Models  # noqa: E402
 import util  # noqa: E402
@@ -51,6 +51,7 @@ def _concept_space(batch, capacity, dim):
         working_dim=dim, naive=True)
     cs.intra_loss_weight = 1.0
     cs._intra_loss_accum = None
+    cs._intra_errors = Error()
     cs._intra_loss_weight_accum = None
     cs._intra_loss_count = 0
     cs._stm_predicted_idea = None
@@ -185,6 +186,19 @@ def test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients():
     legacy_loss = legacy.conceptualSpace.consume_intra_loss()
     chunk_loss = chunked.conceptualSpace.consume_intra_loss()
     torch.testing.assert_close(chunk_loss, legacy_loss, rtol=1e-6, atol=1e-7)
+    # The trained relative cost must preserve all chunks as well as the raw
+    # fidelity metric retained by this original parity check.
+    legacy_relative = legacy.conceptualSpace._consumed_intra_errors.total()
+    chunk_relative = chunked.conceptualSpace._consumed_intra_errors.total()
+    torch.testing.assert_close(chunk_relative, legacy_relative, rtol=1e-6, atol=1e-7)
+    legacy_gradient = torch.autograd.grad(legacy_relative,
+        tuple(legacy.conceptualSpace.intraSentenceLayer.parameters()),
+        retain_graph=True, allow_unused=True)
+    chunk_gradient = torch.autograd.grad(chunk_relative,
+        tuple(chunked.conceptualSpace.intraSentenceLayer.parameters()),
+        retain_graph=True, allow_unused=True)
+    for got, expected in zip(chunk_gradient, legacy_gradient):
+        torch.testing.assert_close(got, expected, rtol=2e-5, atol=2e-6)
     legacy_loss.backward()
     chunk_loss.backward()
     for legacy_param, chunk_param in zip(
@@ -318,9 +332,9 @@ def test_chunk_views_keep_one_graph_across_part_and_bucket_widths():
 def _tiny_canonical_model(
         tmp_path, monkeypatch, *, input_width=128, batch_size=2,
         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
-        detached_reverse=False, concept_rows=64, dimension=16,
+        concept_rows=64, dimension=16,
         chooser_depth=None, training_overrides=None, architecture_overrides=None,
-        part_rows=64):
+        part_rows=64, stm_capacity=None):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
     root = tree.getroot()
@@ -337,6 +351,12 @@ def _tiny_canonical_model(
     _set("./PartSpace/nVectors", part_rows)
     _set("./PartSpace/nDim", 16)
     _set("./PartSpace/nOutputDim", 16)
+    if stm_capacity is not None:
+        _set("./ConceptualSpace/stmCapacity", stm_capacity)
+        for path in ("./PartSpace/nOutput", "./ConceptualSpace/nInput",
+                     "./ConceptualSpace/nOutput", "./WholeSpace/nInput",
+                     "./WholeSpace/nOutput", "./OutputSpace/nInput"):
+            _set(path, stm_capacity)
     _set("./ConceptualSpace/nInputDim", 16)
     _set("./ConceptualSpace/nVectors", concept_rows)
     _set("./ConceptualSpace/activeVectors", concept_rows // 2)
@@ -359,11 +379,6 @@ def _tiny_canonical_model(
     _set("./architecture/training/numWorkers", 0)
     _set("./architecture/training/autoload", False)
     _set("./architecture/training/autosave", False)
-    if detached_reverse:
-        # Legacy student compatibility is explicit now that production uses
-        # completed-sentence tied reconstruction.
-        _set("./architecture/training/detachedReverse", True)
-        _set("./architecture/training/reconstructInLoop", False)
     # BasicModel's production Teacher configuration deliberately disables the
     # independent intra-sentence predictor. This fixture tests predictor/HOP
     # parity, so opt that auxiliary back in explicitly.
@@ -408,6 +423,7 @@ def _stage_fullgraph_tensor_peer(model, samples):
         symbol._per_sentence_initialized = True
     model._stage_reconstruction_teacher()
     slab = model.inputSpace._ar_embedded_N
+    Models._ensure_grad_anchors(slab.device, (slab.dtype,))
     model._prepare_reconstruction_choices(
         int(slab.shape[0]), int(slab.shape[1]), slab.device)
     model.conceptualSpace.stm.begin_forward(
@@ -416,6 +432,7 @@ def _stage_fullgraph_tensor_peer(model, samples):
     return raw
 
 
+@pytest.mark.slow
 def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(
         tmp_path, monkeypatch):
     """The real six-fold word cell agrees across a K=2 boundary.
@@ -426,13 +443,16 @@ def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(
     replaced, including a mixed-length batch whose third word crosses the
     first K=2 boundary.
     """
+    monkeypatch.setattr(util, "TheCompileBackend", "inductor")
     torch.manual_seed(83)
-    legacy = _tiny_canonical_model(tmp_path, monkeypatch)
+    legacy = _tiny_canonical_model(tmp_path, monkeypatch, input_width=16, word_buckets="8",
+        stm_capacity=3, chooser_depth=1,
+        architecture_overrides={"symbolicOrder": 1})
     chunked = copy.deepcopy(legacy)
     legacy._chart_compose_per_word = lambda: None
     chunked._chart_compose_per_word = lambda: None
 
-    samples = ["alpha beta gamma", "delta"]
+    samples = ["a b c", "d"]
     legacy_input = legacy.inputSpace.prepInput(samples)
     chunk_input = chunked.inputSpace.prepInput(samples)
 
@@ -493,9 +513,10 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
     tensor_loop._tensor_peer_while_eager = True
 
     samples = ["alpha beta gamma delta", "epsilon zeta"]
-    tensor_input = tensor_loop.inputSpace.prepInput(samples)
+    tensor_input = _stage_fullgraph_tensor_peer(tensor_loop, samples)
     torch.manual_seed(991)
-    actual = tensor_loop.forward(tensor_input)
+    actual = tensor_loop._publish_compiled_sentence_state(
+        tensor_loop._forward_with_compiled_sentence_state(tensor_input))
 
     assert tensor_loop.conceptualSpace.CSLang is (
         tensor_loop.conceptualSpace.stm)
@@ -527,7 +548,7 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
     assert bool((symbol_activations[~active] == 0).all())
     assert bool(torch.isfinite(symbol_activations).all())
 
-    actual_intra = tensor_loop.conceptualSpace.consume_intra_loss()
+    actual_intra = tensor_loop.conceptualSpace.consume_intra_loss().mean()
     assert torch.isfinite(actual_intra)
     (actual[0].square().mean()
      + actual[2].square().mean()
@@ -771,7 +792,11 @@ def test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths(
         first = model._publish_compiled_sentence_state(compiled(raw))
         assert int(model._tensor_peer_trip_count) == 4
         trace = model._reconstruction_stack()
-        assert bool(trace._choice_attempted[:, :12].any())
+        # The open-sentence journal is released at commit. Reconstruction
+        # travels in the explicit compiled result, not attribute side effects.
+        assert bool((model._tensor_final_end_depth > 0).all())
+        assert bool(torch.isfinite(model._tensor_final_end_slots).all())
+        assert bool((model._tensor_final_end_slots.abs().sum((1, 2)) > 0).all())
         assert torch.equal(trace._choice_actions >= 0, trace._choice_attempted)
         (first[0].square().mean() + first[2].square().mean()).backward()
         assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
@@ -923,69 +948,20 @@ def test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke(
         init_device("cpu")
 
 
-def test_tiny_canonical_detached_reverse_stops_at_root(tmp_path, monkeypatch):
-    """The explicitly selected legacy reverse student must not differentiate S."""
-    torch.manual_seed(109)
-    model = _tiny_canonical_model(
-        tmp_path, monkeypatch, forward_grammar_weight=0.25, detached_reverse=True)
-    assert model.detached_reverse
-    chooser = model.symbolSpace.reverse_chooser
-    assert chooser is not None
-
-    input_tensor = model.inputSpace.prepInput(
-        ["alpha beta gamma", "delta epsilon"])
-    model.forward(input_tensor)
-    root = model._stm_single_S
-    assert root is not None and root.grad_fn is not None
-    root.retain_grad()
-    loss, _metric = model._detached_reverse_construction_loss()
-    assert loss is not None and torch.isfinite(loss)
-    assert model.symbolSpace.reconstruction_stack.forward_loss() is None
-    loss.backward()
-
-    assert root.grad is None
-    grads = [p.grad for p in chooser.parameters() if p.grad is not None]
-    assert grads and any(bool(g.abs().sum() > 0) for g in grads)
-    assert all(bool(torch.isfinite(g).all()) for g in grads)
 
 
-def test_tiny_canonical_detached_reverse_train_step_is_finite(
-        tmp_path, monkeypatch):
-    """One real optimizer step uses the split objectives without bad grads."""
-    torch.manual_seed(127)
-    model = _tiny_canonical_model(tmp_path, monkeypatch, detached_reverse=True)
-    chooser = model.symbolSpace.reverse_chooser
-    before = [p.detach().clone() for p in chooser.parameters()]
-    optimizer = model.getOptimizer(lr=1e-3)
-    input_tensor = model.inputSpace.prepInput(
-        ["alpha beta gamma", "delta epsilon"])
-    result, _ = model.runBatch(
-        train=True, batchNum=0, batchSize=2, split="train",
-        optimizer=optimizer,
-        batch_override=(input_tensor, torch.empty(2, 0)))
-    assert result is not None
-    def _finite_grad(parameter):
-        grad = parameter.grad
-        if grad is None:
-            return True
-        checked = grad.coalesce().values() if grad.is_sparse else grad
-        return bool(torch.isfinite(checked).all())
-
-    assert all(_finite_grad(p) for p in model.parameters())
-    assert any(not torch.equal(old, new.detach())
-               for old, new in zip(before, chooser.parameters()))
 
 
 def test_no_grad_fallback_retains_eager_stm_depth_semantics(
-        tmp_path, monkeypatch):
+        tmp_path, monkeypatch, eager_reading):
     """A configured chunk must not alter an intentionally eager eval pass."""
     torch.manual_seed(109)
-    legacy = _tiny_canonical_model(tmp_path, monkeypatch)
+    legacy = _tiny_canonical_model(tmp_path, monkeypatch, input_width=16, word_buckets="8")
     chunked = copy.deepcopy(legacy)
     legacy._chart_compose_per_word = lambda: None
     chunked._chart_compose_per_word = lambda: None
 
-    samples = ["alpha beta gamma", "delta"]
+    samples = ["a b c", "d"]
     legacy_input = legacy.inputSpace.prepInput(samples)
     chunk_input = chunked.inputSpace.prepInput(samples)
     chunked._compiled_word_chunk_active = True

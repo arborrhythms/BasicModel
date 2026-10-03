@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view"
+  ],
+  "slow_selected": [
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.981744583004911,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions0-True]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions0-True]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions0-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0016284170560538769,
+      "message": "doc/benchmarks/2026-09-30-item6-9/probe_step1.py:23: in test_gate_measures_answers_not_placeholder\n    case.test_xor_class_accuracy()\ntest/test_explicit_dimensions.py:248: in test_xor_class_accuracy\n    self.assertGreaterEqual(\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py:1275: in assertGreaterEqual\n    self.fail(self._formatMessage(msg, standardMsg))\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py:715: in fail\n    raise self.failureException(msg)\nE   AssertionError: tensor(0.) not greater than or equal to 0.5 : Expected >=0.5 accuracy on class 0 from an unselected initialization, got 0.0",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

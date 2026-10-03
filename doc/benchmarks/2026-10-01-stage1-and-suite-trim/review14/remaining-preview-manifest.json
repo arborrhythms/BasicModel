@@ -1,0 +1,13 @@
+[
+  "bin/Models.py",
+  "bin/Language.py",
+  "bin/Layers.py",
+  "data/MM_grammar_wording.xml",
+  "data/BasicModel_expectation_benchmark.xml",
+  "data/BasicModel_answers_benchmark.xml",
+  "data/BasicModel_output_tied_benchmark.xml",
+  "data/BasicModel_answers_tied_benchmark.xml",
+  "data/BasicModel_long_tied_benchmark.xml",
+  "data/BasicModel.xml",
+  "data/model.xsd"
+]

@@ -1,0 +1,134 @@
+sF..F.                                                                   [100%]
+=================================== FAILURES ===================================
+_____________________ test_false_gate_preserves_stm_buffer _____________________
+
+    @pytest.mark.slow
+    def test_false_gate_preserves_stm_buffer():
+        m = _build_gate_model()
+        isp = m.inputSpace
+        inp, _ = isp.getTrainData()
+        isp.Start()
+        inputTensor = isp.prepInput(list(inp[:1]))
+        in_sub = m._lex_embed_stem(inputTensor)
+        m._per_word_prelude(in_sub)
+        m._stage_reconstruction_teacher()
+        m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
+            isp._word_active_mask.shape[1], isp._word_active_mask.device)
+        stm = m.conceptualSpace.stm
+        if stm is None:
+            pytest.skip("model has no STM")
+        buf_before = stm._buffer.clone()
+        depth_before = stm._depth.clone()
+        out_slot = m._per_word_contributions
+        w = isp.word_at(0)
+        B = w.shape[0]
+        gate_false = torch.zeros(B, 1, dtype=torch.bool)
+        m._per_word_body_step(w, 0, gate_false, out_slot)
+>       assert torch.equal(stm._buffer, buf_before), "STM buffer changed under gate=False"
+E       AssertionError: STM buffer changed under gate=False
+E       assert False
+E        +  where False = <built-in method equal of type object at 0x10a9213a0>(tensor([[[1., 1., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ... 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]], grad_fn=<WhereBackward0>), tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]))
+E        +    where <built-in method equal of type object at 0x10a9213a0> = torch.equal
+E        +    and   tensor([[[1., 1., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ... 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]], grad_fn=<WhereBackward0>) = ShortTermMemory()._buffer
+
+test/test_rule_gate_isolates_side_effects.py:90: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)
+__________________ test_per_word_step_runs_eagerly_end_to_end __________________
+
+    @pytest.mark.slow
+    def test_per_word_step_runs_eagerly_end_to_end():
+        """SANITY gate (eager mode): the extracted per-word step must run
+        end-to-end without raising. This catches regressions in the
+        refactor that the production targeted suite misses (those tests
+        check structural properties, not runtime behaviour of the body).
+    
+        Updated 2026-05-20 for the static per-word loop refactor: the body
+        signature is now ``(w, p, gate_b_1, out_slot, active_host=True)``.
+        """
+        m = _build_gate_model()
+        if not hasattr(m, "_per_word_body_step"):
+            pytest.skip("extraction not yet landed")
+>       isp = _stage_for_per_word(m)
+              ^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_per_word_capture_gate.py:140: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_per_word_capture_gate.py:96: in _stage_for_per_word
+    in_sub = m._lex_embed_stem(inputTensor)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13712: in _lex_embed_stem
+    self.inputSpace.select_word_loop_bucket(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = InputSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+    (whe...yers): ModuleList(
+      (0-1): 2 x LinearLayer()
+    )
+    (linear1): LinearLayer()
+    (linear2): LinearLayer()
+  )
+)
+sub = SubSpace(), buckets = (8,)
+perceptual_space = PartSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Codebook()
+    (wh...Layer()
+  (chunk_layer): ChunkLayer()
+  (_percept_store): RadixLayer(
+    (byte_fallback): BytesFallbackEncoder()
+  )
+)
+
+    def select_word_loop_bucket(self, sub, buckets, *, perceptual_space=None):
+        """Choose the smallest compiled W bucket that contains this batch.
+    
+        Selection is eager and host-side, before PartSpace builds its
+        rectangular word-major tensors.  A row must fit a configured bucket:
+        silently dropping its tail would corrupt the recurrent sentence
+        state, so an overlong row is rejected before representation emission.
+        """
+        widths = tuple(sorted(set(int(v) for v in buckets)))
+        if not widths or widths[0] < 1:
+            raise ValueError("serial word-loop buckets must be positive")
+        host_tokens = getattr(sub, "_host_tokens", None)
+        max_words = 0
+        if host_tokens is not None:
+            import Meronomy
+            for row in host_tokens:
+                raw = b"".join(
+                    (text.encode("utf-8") if isinstance(text, str)
+                     else bytes(text))
+                    for text in row if text is not None)
+                fn = getattr(self, "_unit_span_fn", None)
+                max_words = max(max_words, len(fn(raw)) if fn is not None
+                                else len(Meronomy.word_spans(raw)))
+        needed = max(1, int(max_words))
+        if needed > widths[-1]:
+>           raise ValueError(
+                "sentence has %d words but the largest configured serial "
+                "word bucket is W=%d; add a bucket before training rather "
+                "than clipping the sentence" % (needed, widths[-1]))
+E           ValueError: sentence has 13 words but the largest configured serial word bucket is W=8; add a bucket before training rather than clipping the sentence
+
+bin/Spaces.py:10659: ValueError
+----------------------------- Captured stdout call -----------------------------
+Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)
+=============================== warnings summary ===============================
+test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer
+FAILED test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end
+2 failed, 3 passed, 1 skipped, 1 warning in 6.65s

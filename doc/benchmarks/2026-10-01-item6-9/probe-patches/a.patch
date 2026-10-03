@@ -1,0 +1,41 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -14385,6 +14385,7 @@
+             )
+         batch = batch_override
+         inputTensor, outputTensor = batch
++        self._probe_supplied_answers = outputTensor
+         self._stage_expectation_documents(
+             split, source_rows, int(inputTensor.shape[0])
+             if isinstance(inputTensor, torch.Tensor) else len(inputTensor))
+@@ -20605,7 +20606,30 @@
+             self._sentence_gradient_objectives = dict(
+                 reconstruction=reconstruction_cost, expectation=expectation_cost,
+                 output=output_cost)
++        answer_error = self._probe_trial_answer_error(state, sid)
++        if answer_error is not None:
++            cost = cost + answer_error
+         return cost, reconstruction, observation, pending
++
++    def _probe_trial_answer_error(self, state, sid):
++        """Measurement only: supplied numeric-answer MSE in output units."""
++        target = getattr(self, '_probe_supplied_answers', None)
++        if (not self._sentence_training or not torch.is_tensor(target)
++                or not target.numel() or not self.inputSpace.data.has_supervised_outputs):
++            return None
++        _stm, lang, _feedback = state
++        root = lang[9][:, sid]
++        slots = lang[13][:, sid].reshape(root.shape[0], 3, root.shape[-1])
++        depth = lang[14][:, sid]
++        answer = self._forward_head(None, sentence_state=(root, slots, depth))
++        pred = self.normalizer.denormalize(answer.materialize(), which='output')
++        pred = self._align_output_pred(pred, target)
++        if pred is None:
++            raise RuntimeError('probe answer and supplied target do not align')
++        error = (pred - target.to(pred)).square().reshape(root.shape[0], -1).mean(-1)
++        self._probe_answer_component = error.detach()
++        return self._probe_answer_component
++
+ 
+     @staticmethod
+     def _clause_end_state(state, sid, clauses, row_ids):

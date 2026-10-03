@@ -1,0 +1,8 @@
+START a-01
+START b-01
+START c-01
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/run_measurements.py", line 84, in <module>
+    assert result['exit_code'] == 0, f"failed probe: {job['job']['name']}"
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: failed probe: a-01

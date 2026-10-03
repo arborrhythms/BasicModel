@@ -1,0 +1,53 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+    "test/test_item9b_followup.py::test_interleave_cursor_preserves_document_boundaries",
+    "test/test_item9b_followup.py::test_failed_context_restores_serial_mode_input_and_teacher"
+  ],
+  "completed": [
+    "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+    "test/test_item9b_followup.py::test_interleave_cursor_preserves_document_boundaries",
+    "test/test_item9b_followup.py::test_failed_context_restores_serial_mode_input_and_teacher"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036737499976879917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018962499962071888,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_interleave_cursor_preserves_document_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001815409996197559,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item9b_followup.py::test_failed_context_restores_serial_mode_input_and_teacher",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.283572832999198,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

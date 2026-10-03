@@ -573,6 +573,15 @@ after item 6."
 
 ## Credit to the chooser from a supplied answer (noted 2026-09-29)
 
+*Historical decision (Alec, 2026-10-01), superseded by October 2 ownership below:*
+step 5a trained the whole path for a sentence with a supplied answer,
+including the chooser and the object codes
+([6.9 plan §4 step 5a](plans/2026-09-29-item-6-9-xor-grammar.md#4-the-plan)).
+Credit by choice alone was measured and does not suffice: 0 of 10 runs met
+XOR_grammar's bar, also with four explore trials; the whole path met it in
+9 of 10 ([§3.13](plans/2026-09-29-item-6-9-xor-grammar.md#313-after-step-5-what-holds-xor-back-measured-2026-09-30-and-10-01)).
+The note as written on 2026-09-29 follows.
+
 In item 6.9's configuration the answer's error trains only the map that
 reads the concluded idea. The state is cut at the concluded idea (decided
 2026-09-20), and the chooser is trained by what the sentence's two trials
@@ -584,6 +593,159 @@ trials: credit by choice, which the cut allows, since no gradient passes
 through the idea. Whether the grammar's choices should answer to a teacher
 at all, or only to reconstruction and expectation, is Alec's to decide when
 it is taken up.
+
+<a id="separate-gradient-ownership"></a>
+
+## Separate gradient ownership for reconstruction, expectation and output (taken up in item 6.9, Alec, 2026-10-02)
+
+**Taken up by [6.9 plan §15](plans/2026-09-29-item-6-9-xor-grammar.md#15-one-writer-for-each-weight-alec-2026-10-02).**
+Alec approved the structural split: reconstruction owns perception, parameterized
+object codes, compose operators/tied inverses and the compose chooser;
+expectation owns only predictors; the supplied answer owns only its readers.
+Both consumers share one understanding record. Expectation detaches sources
+and targets, and the answer detaches that understanding. Backward is restricted
+to the owners. Lessons train choosers without moving operators. The current [§22 decision](plans/2026-09-29-item-6-9-xor-grammar.md#223-witnesses-and-the-optimizer-b-decided)
+selects only by strictly lower reconstruction, ties to greedy, and trains
+the reader on the kept trial alone. Reconstruction uses momentum descent;
+its witnessed inverse is retired. Product and mean replace conjunction
+and disjunction, while min/max remain separate catalogue operators.
+[GradientFlow](GradientFlow.md) records the implementation and its audit;
+[the receipt](benchmarks/2026-10-02-item6-9-ownership/README.md) records measurements.
+The closing ownership candidate reached each primary gate in 1/10 runs.
+Its zero recorded ownership conflicts do not establish improved learning;
+the ownership round was not accepted (§18). The [§20 receipt](benchmarks/2026-10-02-item6-9-reconstruction/README.md)
+measures reconstruction as the sole writer of unconstrained codes, the
+witnessed and free read-back terms, and answer ownership of XOR_exact's
+reader coefficients. Its primary class gate passes **0/10** and reconstruction
+**2/10**, against §14's 8/10 and 3/10; both audits still record zero ownership
+conflicts. Conditional attribution also leaves reconstruction incomplete with
+expectation and answer writers disabled. Its small, unpaired arms do not
+identify a causal improvement; none of the 40 attribution runs meets both
+existing bars. The sweep and moved cases expose remaining ports and failures,
+so this is not an acceptance claim. The
+[§20.3 catalog](plans/2026-09-29-item-6-9-xor-grammar.md#203-catalog-set-aside-now-to-return-once-reconstruction-and-xor-hold)
+records what is set aside: unit-sphere codes, distributional pressure,
+activation geometry and the answer's reach into the understanding. VQ EMA
+is not planned to return, and the contextual rotation is retired.
+The [§21.6 field proposal](plans/2026-09-29-item-6-9-xor-grammar.md#216-witnesses-operators-and-the-field-alec-2026-10-03)
+and the §20.3 alternatives remain catalogued. The
+[§§21–22 receipt](benchmarks/2026-10-03-item6-9-free-readback/README.md)
+adds code/anchor displacement and modal-derivation stability to the ownership
+audit. Its class gate passes 9/10 and reconstruction 5/10, against §14's
+8/10 and 3/10; the sum-only control passes 10/10. The required attribution
+condition is not triggered. In the audited XOR run the codes and chooser
+anchors have zero displacement at float32 precision, so the answer's learning
+does not demonstrate learning in those weights. Saved tensors also show an
+inner negation whose intermediate operand is absent from the raw primed bank:
+free pair search chooses a repeated word instead. These are measured limits
+for review, not permission to restore any catalogued mechanism or alter a
+gradient scale. The audit does not infer stability from a small gradient.
+The closing sweep and moved cases remain red, including unintended effects
+of the shared inverse on answer generation and of the mean kernel on truth
+penalties. The saved moved-case inverse also exposes target probabilities
+below the existing byte clamp. These issues and the incomplete rule-only
+journal scope remain in the receipt; the improved gate counts do not close
+6.9 or authorize reintroducing the catalogued mechanisms.
+
+The [§25 closing receipt](benchmarks/2026-10-03-item6-9-closing/README.md)
+supersedes those historical status statements and closes 6.9 as a measured
+baseline. Reconstruction now owns the single generate decoder and the antipode
+term; output owns only its readers/conditioner. The echoic snapshot stays after
+the seen write: the §24.4 pre-write proposal is withdrawn. The earlier §22
+9/10 class and 5/10 reconstruction counts remain prior measurements, not the
+new candidate's result. The closing receipt records its one shared training.
+
+Forward dependence remains: reconstruction can change the evidence the answer
+or expectation has learned to read. Future work can measure that drift and
+compare it with learning speed and read-back. Disjoint writers remove direct
+competition over an optimizer parameter; they do not prove that every block's
+objective decreases together. No new norm-matching rule is implied.
+
+### Earlier optimization proposal (deferred)
+
+The earlier joint-update proposal is retained below as a secondary direction,
+not an implementation decision. Alec deferred it here in favor of investigating
+structural separation. It changes no 6.9 code, configuration, optimizer,
+threshold or measurement and supplies no implemented guarantee.
+
+The earlier §14 candidate demonstrated that accurate answers and accurate
+read-back could coexist: three of its ten class-gate runs met both bars.
+That historical result says nothing about their simultaneous expectation cost
+or the later ownership candidate. A low reconstruction pass count alone cannot
+diagnose interference.
+
+#### Establish where interference occurs
+
+Use reconstruction, expectation and supplied-output errors from the existing
+Error registry, with the same uninformed baselines and declared weights.
+At each actual sentence update, record each gradient's dot product with the
+actual parameter displacement, plus each objective's cost before and after on
+the same targets and recorded derivation. Report shared parameter groups and
+private reading-map parameters separately. Keep selection's effect separate
+from the optimizer's effect. This would be a new diagnostic after review,
+not a reinterpretation of the existing stage-1 gradient measurements.
+
+The earlier, now retired correction addressed only output versus reconstruction.
+Expectation then retained its own gradient. Adam, the proximal operation and the subsequent
+parameter projections all contribute to the final displacement. Both trial
+references are computed before the first update, so the second update also
+needs an audit at its actual starting parameters. A favorable raw-gradient
+cosine is therefore insufficient evidence of a favorable completed update.
+
+An algebraic example illustrates the optimizer issue, without claiming it
+occurred in these runs. Let `gR = (1, 1)` and `gO = (-2, 2)`: their dot product
+is zero. The combined gradient is `(-1, 3)`, whose negative lowers reconstruction
+locally. Applying a positive coordinate scaling `diag(10, 1)` produces the
+displacement `(10, -3)` instead, and `gR · d = 7 > 0`: reconstruction rises
+locally despite the earlier orthogonality.
+
+#### Proposed update rule to test
+
+Choose the shared update jointly from all three objectives, seeking a direction
+that helps each active objective. Preserve each private module's own update.
+For a parameter displacement `d` and objective gradient `g_i`, the local
+no-increase condition is `g_i · d <= 0`. A concrete candidate is to find the
+displacement closest to the optimizer's proposed displacement subject to those
+conditions on the shared parameters. This is a joint calculation; independently
+correcting pairs can undo an earlier correction.
+
+The chooser uses a straight-through gradient. A local constraint on that
+surrogate does not guarantee what a different hard derivation will do. Record
+fixed-derivation costs and subsequent policy-selected costs separately.
+
+Evaluate the completed candidate displacement, including the optimizer's
+stateful scaling and the model's required parameter projections, against the
+same three costs. Local linear constraints do not guarantee finite-step cost
+improvement. A rejected trial update must also restore optimizer state and
+state/version side effects; rejecting only the parameter values is incomplete.
+
+If there is no useful common improvement, report the conflict explicitly and
+retain reconstruction's declared precedence. Do not quietly choose another
+objective's priority by gradient magnitude. Strictly forbidding any cost
+increase can stall at a compromise even when useful progress elsewhere remains;
+the fallback trade-off therefore needs an explicit design decision. This note
+does not introduce tolerances, a new step count, a new learning rate, or a new
+training budget. Both sentence trials must still be compared at identical
+parameters before either is trained.
+
+Keep the existing relative errors; do not normalize every gradient to unit
+length. A nearly solved objective should not acquire a large update merely
+because its residual is small. Targetless penalties keep their own strengths
+and category, and remain visible in the audit of the completed update.
+
+#### Basis and limits
+
+Joint gradient choices are an established approach to multi-objective training;
+[Sener and Koltun (2018)](https://papers.nips.cc/paper/2018/hash/432aca3a1e345e339f35a30c8f65edce-Abstract.html)
+study that formulation. [CAGrad (2021)](https://proceedings.neurips.cc/paper/2021/hash/9d27fdf2477ffbff837d73ef7ae23db9-Abstract.html)
+balances aggregate progress with the worst local task improvement and discusses
+the risk of stopping at an arbitrary compromise. Neither citation supplies a
+guarantee for this model's Adam/proximal/projection sequence. The completed-step
+check and reconstruction priority above are proposed integration requirements.
+
+The first decision should be informed by the completed-step diagnostic. It can
+separate objective interference from discrete derivation changes, inadequate
+inverse learning, or read-back quality remaining poor despite decreasing cost.
 
 ## A snapshot where a sentence's two trials branch (future work, Alec, 2026-09-30)
 
@@ -765,3 +927,163 @@ permanence in 3½- and 4½-month-old infants", *Developmental Psychology*
 23(5), 655–664; Huebner & Willits (2021) and Huebner, Sulem, Fisher & Roth
 (2021) for AO-CHILDES. The stages' ages and contents were checked against
 secondary sources on 2026-09-29; page numbers were not.
+
+## Ergodic exploration everywhere (future work, Alec, 2026-10-02)
+
+Alec: "Keep Ergodic, it's better in principle than random weight init; if it
+works, we'd prefer everything is Ergodic (but that can be future work)."
+
+**What it is today** ([Ergodic](Ergodic.md)). `ErgodicLayer` gives a layer
+the effective weight `bias·W + var·ε`: the learned weight, trusted by
+`bias`, plus sampled noise scaled by `var`, with `bias + var ≈ 1`. The
+optimizer does not train the two scalars. After each backward,
+`paramUpdate()` sets them from the observed gradient energy `s`:
+`var = s/(s+κ)`, at most .95. So exploration is high where the gradient is
+still large and falls as learning settles.
+
+An ergodic layer starts from structure, not from chance:
+
+- `LinearLayer(ergodic=True)` starts at the identity.
+- `InvertibleLinearLayer` starts with identity LDU factors. Its noise enters
+  the factors, so its inverse stays exact.
+
+**Where it runs today.**
+
+- The `<ergodic>` flag turns it on for the layers built on `ErgodicLayer` in
+  `Layers.py`: `LinearLayer`, `InvertibleLinearLayer`, `LDUReadout` and four
+  others.
+- Two MNIST configurations turn it on, `ergodic.xml` and `ergodic-only.xml`,
+  and `test_basicmodel.py` tests its layers.
+- No language configuration turns it on.
+
+**What "everything is Ergodic" would mean.** Every learned map starts from
+the identity, or from the structured start its kind admits, and explores by
+gradient-energy noise rather than starting from random weights. These start
+from randomness today:
+
+- the concept dictionary's rows (random signed rows on the hypersphere);
+- the chooser and scorer networks;
+- the expectation predictors;
+- the answer's readers;
+- the operators' projections from code to operation.
+
+**To settle when taken up.**
+
+- **Dictionaries.** A codebook with more rows than dimensions cannot start
+  at the identity, so exploration there means noise on rows from a structured
+  (for example orthogonal) start. Item 6.9 found that random signed codes
+  make XOR readable almost for free
+  ([6.9 plan §3.11 and §3.13](plans/2026-09-29-item-6-9-xor-grammar.md#311-whether-the-bar-can-be-reached-at-all)).
+  A structured start must not lose that.
+- **Ownership.** The energy sensor should read the gradient of the weight's
+  own objective. With one writer for each weight
+  ([6.9 plan §15](plans/2026-09-29-item-6-9-xor-grammar.md#15-one-writer-for-each-weight-alec-2026-10-02)),
+  it does so by construction.
+- **Run to run.** The noise is sampled on every forward. Runs are compared
+  as unseeded measurements, with no seed pinning.
+
+**Evidence first.**
+
+1. The kept MNIST test, run with `ergodic` on and off. This is the A/B that
+   `simple.xml` against `ergodic-only.xml` used to give.
+2. Then the XOR proofs with ergodic layers.
+3. Then a BasicModel stage-1 comparison.
+
+"If it works" means equal or better learning at equal updates, unseeded and
+repeated.
+
+## Multi-resolution `.where` tiling (future work, Alec, 2026-10-02)
+
+Alec, of the overlapping tiling retired in item 6.9's configuration cleanup:
+"in principle, this is the kind of multi-resolution .where tiling that makes
+JPEG efficient. Let's at least add it as future work, with enough detail
+that it could be [revived] without difficulty."
+
+**The idea.** JPEG spends its bits where an image has detail: coarse
+structure is coded once, and refinement is added only where it is needed.
+The `.where` analogue holds the input at several granularities at once
+(sentence, word, separator run, typed run). Each region settles at the
+coarsest whole that accounts for it, and is refined only where parts and
+wholes disagree. A fixed budget of wholes then covers the whole input
+coarsely and spends the rest where detail is needed.
+
+**What was built.** It was added in `c113ff9d` (2026-07-15, "an automatic
+granularity algorithm") and is intact at `d679df2b`, the last commit before
+the 6.9 cleanup. Restore it from there.
+
+- **The setting.** `<overlapWhereTiling>`, default false, requires
+  `<mereologyRaise>`. The configuration `data/MM_overlap_tiling.xml` is
+  MM_mereology with this one flag.
+- **`WholeSpace.stage_overlapping_spans`** (`Spaces.py`) builds the
+  lattice: four kinds of whole per row, deduplicated.
+  1. a typed run, the maximal run of one character type (wholes are types);
+  2. a word bounded by separators;
+  3. a separator run;
+  4. the enclosing sentence.
+
+  Words and separators are placed first, so the fixed WholeSpace event
+  budget always holds a complete tiling of the surface. Typed refinements and
+  the sentence parent follow. The metadata lattice is never truncated.
+- **`WhereTilingLayer`** (`Layers.py`) finds where PartSpace's parts and
+  WholeSpace's wholes agree, over overlapping candidates, with fixed shapes,
+  in parallel. For every local family it computes:
+  - equality;
+  - immediate containment;
+  - coverage (one gap-free cover for each container);
+  - a route: null, settled, sigma (fold the parts up), pi, or raise.
+
+  A part may equal a whole and also be an immediate part of a larger whole,
+  so a settled word stays available as a constituent of its phrase or
+  sentence.
+- **`build_schedule(part_spans, whole_spans, passes)`** runs a fixed number
+  of refinement passes, refining the frontier of unsettled parts at each
+  pass. It returns the observations of each pass, the accepted wholes and the
+  overflow counts.
+- **`WholeSpace.stage_where_tiling` and `where_tiling_for_pass`** hand the
+  schedule to each subsymbolic pass. The hooks are in
+  `Models._lex_embed_stem`.
+- **`bin/eval_where_tiling.py`** is a corpus evaluator that does not depend
+  on the lexer. It reads JSONL `text` with gold UTF-8 byte `spans`. PartSpace
+  starts from byte atoms, WholeSpace proposes the overlapping wholes, and the
+  layer must settle the gold surface objects within its passes.
+- **`test/test_where_tiling.py`** holds its tests.
+
+**How it fits item 6.8.** Item 6.8 narrows one bracket over time: the open
+read, then `divide`, `descend` or `gloss`. Multi-resolution tiling holds the
+same hierarchy at once. Revived inside 6.8, the lattice would become the
+open read's multi-scale field:
+
+- each bracket's children are already tiled, so `divide` and `descend`
+  choose among existing tiles instead of computing cuts;
+- `gloss` settles a region at its coarsest pure whole;
+- 6.8's word whole, a maximal run of letters (6.8 plan §3a), is the second
+  kind refined by the first.
+
+**What would show that it works.** At a fixed budget of wholes, compared
+with the flat tiling:
+
+- reconstruction fidelity;
+- the number of bracket operations per sentence;
+- the evaluator's accuracy on settled objects, on a corpus with gold spans.
+
+## Set aside during item 6.9, to return once reconstruction and XOR hold (Alec, 2026-10-02)
+
+Alec: "let's create a catalog of what we want to reintroduce after getting
+things working." The catalog is
+[6.9 plan §20.3](plans/2026-09-29-item-6-9-xor-grammar.md#203-catalog-set-aside-now-to-return-once-reconstruction-and-xor-hold):
+unit-sphere codes (magnitude as certainty under inner product);
+distributional pressure on the codes (co-activation, one mechanism); the
+primed bank as context and candidates; a spatial representation of the
+priming field; and two things recorded as not returning (the VQ EMA refresh)
+or as fallback only (the answer's reach into the understanding). Each entry
+names the condition for its return.
+
+The catalog is extended by [§24.5](plans/2026-09-29-item-6-9-xor-grammar.md#245-what-decoding-needs-and-where-each-part-comes-from-alec-and-claude-2026-10-03)
+and [§25](plans/2026-09-29-item-6-9-xor-grammar.md#25-decoding-from-conceptual-space-and-closing-69-alec-2026-10-03).
+The antipode's pull-apart half is implemented inside reconstruction; co-activation
+attraction remains deferred. The operators update is to supply identities from
+conceptual space and the remaining catalogue. Item 6.8 owns the open read and
+MM_xor's word-level XOR proof. Surface markers own operand-order recovery.
+The standing XOR rule is no regression against the [closing record](benchmarks/2026-10-03-item6-9-closing/README.md),
+including its explicit red gates; this is not a claim that every gate is green.
+Next: the operators update, then 6.8 (no conference freeze; Alec, 2026-10-03).

@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-10-03T15:15:50.872938+00:00",
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "head_unchanged": true,
+  "port_files": 33,
+  "port_body_errors": [],
+  "source_files": 669,
+  "source_matches": true,
+  "environment_unchanged": true,
+  "diff_check_exit_code": 0,
+  "documentation_check": {
+    "passed": 267,
+    "log": "probes/doc-links-final/run.log"
+  },
+  "campaign_complete": {
+    "source_matched": true,
+    "completed": true
+  }
+}

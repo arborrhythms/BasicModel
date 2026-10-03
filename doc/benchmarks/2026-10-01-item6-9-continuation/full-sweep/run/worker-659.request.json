@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-659.recycle.json"
+}

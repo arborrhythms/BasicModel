@@ -1,0 +1,20 @@
+{
+  "epochs": 900,
+  "seed": null,
+  "configuration": "data/MM_grammar.xml",
+  "completed_epochs": 300,
+  "ending_training_mse": 0.007994506508111954,
+  "ending_training_predictions": [
+    0.12665832042694092,
+    0.9975292682647705,
+    0.8738123774528503,
+    0.0025056004524230957
+  ],
+  "targets": [
+    0.0,
+    1.0,
+    1.0,
+    0.0
+  ],
+  "elapsed_seconds": 51.13758124993183
+}

@@ -1,0 +1,309 @@
+"""End-to-end: the shared untyped square concept store (v3).
+
+Population (at mint) writes untyped edges onto ONE shared ConceptualAttentionLayer;
+the forward (gated on symbolicOrder>0 + parallel) runs the iterated wave
+encoder + dictionary decoder. Byte-identical when off.
+"""
+
+import pytest
+import os
+import sys
+import warnings
+
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+os.environ.setdefault("MODEL_COMPILE", "eager")
+
+_BIN = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
+if _BIN not in sys.path:
+    sys.path.insert(0, _BIN)
+
+import torch
+from definition_fixtures import with_definitions
+from test_cs_sparse_weights import _evidence
+
+import Spaces
+import Language
+from Layers import WORD
+from test_basicmodel import _populate_test_config
+
+_DATA = os.path.join(os.path.dirname(_BIN), "data")
+_DEFAULTS = os.path.join(_DATA, "model.xml")
+_D = 8
+
+
+def _cs_active(nS=64, order=3):
+    nP = 4
+    _populate_test_config(
+        inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
+        wordDim=_D, outputDim=_D,
+        nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
+        nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
+    )
+    cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
+    object.__setattr__(cs, "_symbolic_order", order)
+    object.__setattr__(cs, "_serial", False)
+    return with_definitions(cs)
+
+
+def _build(name):
+    import Models
+    from util import init_config
+    from configuration_fixtures import parallel_concepts
+    assert name == 'MM_20M_xor.xml'
+    with parallel_concepts() as path:
+        init_config(path=path, defaults_path=_DEFAULTS)
+        Language.TheGrammar._configured = False
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            model, _ = Models.BasicModel.from_config(path)
+    return model
+
+
+# -- population at mint, keyed by ramsified order -----------------------------
+
+def test_interpreted_object_keeps_the_native_features_in_one_row():
+    cs = _cs_active()
+    A, B = cs.interpret_word([1, 2], WORD, key="cat")
+    # A reads native features. B's standing bounds are no perceptual
+    # definition: only testimony can give the object its membership.
+    assert cs._concept_source_order(A) == 0
+    a_row = cs._csw_row_of(B)
+    assert a_row is not None
+    assert cs.concept_weights(a_row) == []          # no edges at order 0
+    assert set(cs.concept_parts(A)) == {1, 2}       # the reference store
+    assert cs.concept_wholes(A) == [int(WORD)]
+    features = Spaces._concept_alloc_of(cs).layer().features
+    assert {col for row, col in features._index if row == a_row} == {4, 4 * int(WORD) + 2}
+    assert Spaces._concept_alloc_of(cs).layer().feature_groups[a_row, 4] == (1, 2)
+    b_row = cs._csw_concept_row(0, B)
+    assert b_row == a_row and cs._csw_row_of(A) is None
+
+
+
+
+def test_symbolic_order_does_not_admit_a_same_order_edge():
+    cs = _cs_active(order=1)
+    target = cs._csw_concept_row(1, 100)
+    source = cs._csw_concept_row(1, 101)
+    with pytest.raises(ValueError, match='preceding order'):
+        cs.add_concept_edge(target, source, 1.)
+    assert cs.concept_weights(target) == []
+
+
+def test_population_inactive_is_noop():
+    nP = 4
+    _populate_test_config(
+        inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D, wordDim=_D,
+        outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64, nSymbols=64,
+        nWords=64, nOutput=64, nWhere=0, nWhen=0)
+    cs = with_definitions(Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D]))
+    cs.interpret_word([1, 2], WORD, key="cat")
+    assert Spaces._concept_alloc_of(cs).layer().features.nnz > 0
+
+
+def test_order_block_overflow_is_safe():
+    cs = _cs_active(nS=8, order=3)                     # order 0 cap = 4
+    rows = [cs._csw_concept_row(0, c) for c in range(6)]
+    assert rows[:4] == [0, 1, 2, 3]                    # fills the block
+    assert rows[4] is None and rows[5] is None         # overflow -> None (safe)
+
+
+# -- the forward glue ---------------------------------------------------------
+
+def test_symbolic_phase_unwritten_definitions_are_neither():
+    cs = _cs_active()
+    cs.eval()
+    D = int(cs.similarity_codebook.getW().shape[-1])
+    settled = torch.randn(2, 64, D)
+    raw = torch.full((2, 64), 65, dtype=torch.long)
+    ix = torch.arange(64)
+    spans = torch.stack((ix, ix + 1), -1)[None].expand(2, -1, -1)
+    extents = torch.tensor([[[0, 64]]]).expand(2, -1, -1)
+    content, acts = cs.cs_symbolic_phase(settled, extents=extents,
+                                        percepts=(raw, spans, None, raw, spans))
+    assert acts.shape == (sum(cs._field_caps()), 2, 1, 2)
+    assert acts.count_nonzero() == 0
+    assert cs._percept_field.events.shape[1:] == (2, 1, 128, 2)
+    assert not hasattr(cs, "_cs_position_evidence")
+    assert content.shape == (2, 2 * sum(cs._field_caps()), D)
+
+
+def test_symbolic_phase_inactive_is_noop():
+    cs = _cs_active(order=0)                            # symbolicOrder=0
+    settled = torch.randn(2, 64, _D)
+    out, acts = cs.cs_symbolic_phase(settled)
+    assert out is settled and acts is None
+
+
+# -- driver config ------------------------------------------------------------
+
+@pytest.mark.slow
+def test_sparse_concept_config_builds_and_stamps():
+    m = _build("MM_20M_xor.xml")
+    # symbolicOrder=3: the wave iteration budget K (task 8.3, K=1 leaves deep links dark)
+    assert m.serial is False and m.symbolicOrder == 3 and m.symbol_tower is True
+    css = [cs for cs in m.conceptualSpaces if cs._sparse_active()]
+    assert css
+    cs = css[-1]
+    # P2/P3: the _n_ps_codes/_n_ws_codes source-layout stamps retired with
+    # the percept families, _sparse_replace with the two-phase cutover; the
+    # sparse gates ride _symbolic_order/_serial alone.
+    assert not hasattr(cs, "_n_ps_codes") and not hasattr(cs, "_n_ws_codes")
+    assert not hasattr(cs, "_sparse_replace")
+
+
+@pytest.mark.slow
+def test_sparse_concept_forward_smoke():
+    import Models
+    from util import TheXMLConfig
+    m = _build("MM_20M_xor.xml")
+    Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
+    loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+    items, _ = next(iter(loader))
+    x = m.inputSpace.prepInput(items)
+    m.train()
+    out = m.forward(x)                                 # runs the parallel loop
+    assert out is not None
+
+
+# -- follow-up 2: sparse weights are trainable (in the optimizer) -------------
+
+def test_getparameters_includes_csw_after_population():
+    cs = _cs_active()
+    base = set(id(p) for p in cs.getParameters())
+    cs.interpret_word([1, 2], WORD, key="cat")     # populates weights
+    after = cs.getParameters()
+    csw = [matrix.values for matrix in Spaces._concept_alloc_of(cs).layer().definition_matrices()
+           if matrix.values is not None]
+    assert csw                                              # weights exist
+    after_ids = set(id(p) for p in after)
+    assert all(id(p) in after_ids for p in csw)             # all included
+    assert len(after) >= len(base)
+
+
+def test_getparameters_byte_identical_when_inactive():
+    nP = 4
+    _populate_test_config(
+        inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D, wordDim=_D,
+        outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64, nSymbols=64,
+        nWords=64, nOutput=64, nWhere=0, nWhen=0)
+    cs = with_definitions(Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D]))
+    # No admitted word: forced interpret now activates feature parameters.
+    assert [id(p) for p in cs.getParameters()] == [id(p) for p in cs.params]
+
+
+@pytest.mark.slow
+def test_model_optimizer_picks_up_csw_weights():
+    m = _build("MM_20M_xor.xml")
+    cs = [c for c in m.conceptualSpaces if c._sparse_active()][-1]
+    # Witness actual native parts, then check every definition matrix,
+    # including the feature weights of the newly fused word parts.
+    for word in (b'cat', b'dog'):
+        parts = m.perceptualSpace.percept_store.spell_out(word)
+        cs.interpret_word(parts, WORD, key=word)
+    csw_ptrs = {ly.values.data_ptr()
+                for ly in Spaces._concept_alloc_of(cs).layer().definition_matrices()
+                if ly.values is not None}
+    assert csw_ptrs
+    opt = m.getOptimizer(lr=0.01)
+    opt_ptrs = {p.data_ptr()
+                for g in opt.param_groups for p in g["params"]}
+    assert csw_ptrs <= opt_ptrs                            # all weights optimized
+
+
+@pytest.mark.slow
+def test_distributional_code_cost_is_off_in_reconstruction_round():
+    """§20.3 sets aside SBOW; reconstruction is the only code objective."""
+    m = _build("MM_20M_xor.xml")
+    assert m.loss.conceptual_similarity_scale == 0
+    assert m.conceptual_sbow_loss() is None
+
+
+def test_csw_weights_update_under_optimizer_step():
+    """Edge values train under the optimizer (dual-towers rev 2: grads reach
+    the store only through ALLOCATED+selected rung rows -- mint first)."""
+    cs = _cs_active(nS=16, order=1)                    # taper caps (8, 4)
+    r1 = cs._csw_concept_row(1, 101)                   # allocated -> selected
+    r2 = cs._csw_concept_row(1, 102)
+    cs.add_concept_edge(r1, 0, weight=0.5)
+    cs.add_concept_edge(r2, 2, weight=1.0)
+    what = torch.randn(16, _D)
+    a_0 = torch.rand(8, 2)
+    vals = cs._sparse_families(1)[1].values
+    before = vals.detach().clone()
+    opt = torch.optim.SGD([vals], lr=1.0)
+    content, _ = cs.cs_forward_content(_evidence(a_0), what)
+    opt.zero_grad()
+    content.sum().backward()
+    opt.step()
+    assert not torch.allclose(vals.detach(), before)              # trained
+
+
+@pytest.mark.slow
+def test_demux_feedback_is_views_of_the_mixed_carrier():
+    """P3 decision 7 (EXECUTION NOTES 4): the pump's C->P / C->S handoffs
+    carry the per-tower WINDOWS of the MIXED carrier (combine.views), NEVER
+    combine.reverse -- the exact inverse returns each tower its OWN input
+    (zero information transfer; the root-caused sO=1 frozen-loss defect)."""
+    import Models
+    from util import TheXMLConfig
+    m = _build("MM_20M_xor.xml")
+    Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
+    loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+    items, _ = next(iter(loader))
+    x = m.inputSpace.prepInput(items)
+    m.eval()
+    with torch.no_grad():
+        m.forward(x)
+    cs = m.body_stages[-1]["cs"]
+    assert cs._sparse_active()
+    carrier = getattr(cs.subspace, "_bind_carrier", None)
+    assert carrier is not None
+    views = cs.combine.views(carrier)
+    part_fb = cs._subspaceForPS.materialize()
+    assert torch.allclose(part_fb, views[0], atol=1e-6)     # part window
+    ws_fb = getattr(cs, "_subspaceForWSDemux", None)
+    assert ws_fb is not None and cs._subspaceForWS is ws_fb
+    assert torch.allclose(ws_fb.materialize(), views[1], atol=1e-6)
+    # ...and NOT the exact-inverse legs (the killed mutation): the windows
+    # of the mix differ from the recovered pre-mix inputs.
+    legs = cs.combine.reverse(carrier)
+    assert not torch.allclose(views[0], legs[0], atol=1e-4)
+
+
+@pytest.mark.slow
+def test_two_phase_forward_cutover_stamps_terminal_activations():
+    """The post-pump membership field reaches the terminal CS and SS leg.
+
+    Repeated forwards cannot invent a feature definition by moving codes.
+    Codes follow written definitions at the sentence boundary.
+    """
+    import Models
+    from util import TheXMLConfig
+    m = _build("MM_20M_xor.xml")
+    Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
+    loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+    items, _ = next(iter(loader))
+    x = m.inputSpace.prepInput(items)
+    cs0 = m.body_stages[0]["cs"]
+    assert cs0._sparse_active()
+    W = cs0.similarity_codebook.getW()
+    start0, end0 = cs0.order_slice(0)
+    before = W.detach().clone()
+    m.train()
+    m.forward(x)
+    last_cs = getattr(m, "_combine_last_cs_sub", None)
+    assert last_cs is not None
+    acts = getattr(last_cs, "_concept_activations", None)
+    assert acts is not None and int(acts.shape[0]) == sum(cs0._field_caps())
+    assert torch.equal(W.detach(), before)
+    assert acts[start0:end0].count_nonzero() == 0
+    for _ in range(3):
+        m.End()
+        m.forward(x)
+        acts = m._combine_last_cs_sub._concept_activations
+        assert acts[start0:end0].count_nonzero() == 0
+        assert torch.equal(W.detach(), before)
+    m.End()

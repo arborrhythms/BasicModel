@@ -74,16 +74,19 @@ def test_expectation_names_and_production_defaults():
         assert float(training.findtext("interLossWeight")) == .1
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_provisioning_keeps_its_existing_hard_reset_of_what_episode():
     from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
     model = _make_model(_SERIAL_CONFIG)
     memory = model._what_memory()
-    memory.begin_what_episode(0)
-    memory.append_what_slot(LTMSlot(input=torch.ones(4)))
+    from Meaning import ConceptualMeaning
+    meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool), mode="interrogative")
+    memory.begin_thought_episode(meaning, work_budget=2)
     assert memory.in_episode(0)
     model.provision_ltm()
     assert not memory.in_episode(0)
     assert memory.get_what_slots(b=0) == []
+    assert memory.thought_history() == []
 
 
 @pytest.mark.slow

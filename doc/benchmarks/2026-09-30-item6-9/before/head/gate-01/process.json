@@ -1,0 +1,11 @@
+{
+  "label": "head",
+  "kind": "xor",
+  "reserved_bytes": 1868162006.4,
+  "gate": 1,
+  "trial": null,
+  "exit_code": 0,
+  "peak_memory_bytes": 1199196632,
+  "reason": "exit",
+  "elapsed_seconds": 70.48009974998422
+}

@@ -45,11 +45,10 @@
       <packSentences>false</packSentences>
       <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
-      <conceptualContextLearningRate>0.01</conceptualContextLearningRate>
+      <conceptualContextLearningRate>0</conceptualContextLearningRate>
       <conceptualContextNegatives>4</conceptualContextNegatives>
       <reconstructionScale>0.5</reconstructionScale>
       <teacherReconstruction>true</teacherReconstruction>
-      <detachedReverse>false</detachedReverse>
       <leafDistillWeight>0.0</leafDistillWeight>
       <sentenceExpectation>true</sentenceExpectation>
       <armaScale>0.0</armaScale>

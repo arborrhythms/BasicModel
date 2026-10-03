@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once"
+  ],
+  "completed": [
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once"
+  ],
+  "slow_selected": [
+    "test/test_conceptual_recurrence.py::test_parallel_ps_called_once"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_conceptual_recurrence.py::test_parallel_ps_called_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.605607292003697,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

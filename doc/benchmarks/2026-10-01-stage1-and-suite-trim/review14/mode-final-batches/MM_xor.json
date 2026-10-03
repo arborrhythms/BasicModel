@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_xor.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.6556594580033561,
+  "batch": 64,
+  "scope": "perception: no grammar",
+  "reconstruct_in_loop": false,
+  "training_seconds": 0.3855188330053352,
+  "output_loss": 0.1749974936246872,
+  "reconstruction_loss": 9.242341911885887e-05,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": null,
+  "total_seconds": 2.0418534579948755
+}

@@ -1,0 +1,41 @@
+{
+  "selected": 5193,
+  "completed": 5193,
+  "case_outcomes": {
+    "passed": 4849,
+    "failed": 21,
+    "skipped": 322,
+    "xfailed": 1
+  },
+  "passed_subtests": 4,
+  "wall_seconds": 6810.240992917001,
+  "wall_minutes": 113.50401654861668,
+  "baseline_round5_cases": 5122,
+  "baseline_round5_minutes": 89.6,
+  "case_delta": 71,
+  "wall_delta_minutes": 23.90401654861668,
+  "peak_aggregate_gib": 17.835013069212437,
+  "compile_cache_retries": [],
+  "coverage": {
+    "reason": "test_failure",
+    "exit_code": 1,
+    "selected": 5193,
+    "completed": 5193,
+    "missing": [],
+    "duplicate_completed": {},
+    "resource_stops": []
+  },
+  "failure_families": {
+    "private_sentence_tuple_fixture": 16,
+    "output_policy_preview": 4,
+    "hard_inverse_assertion": 1
+  },
+  "accepted_repairs": {
+    "test/test_item7_unindexed_relations.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows": "passed",
+    "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products": "passed",
+    "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths": "passed",
+    "test/test_item7_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities": "passed",
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record": "passed",
+    "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths": "passed"
+  }
+}

@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_free_discarding_operator_still_searches_both_bank_operands ________
+
+    def test_free_discarding_operator_still_searches_both_bank_operands():
+        from Language import LanguageSpace
+        class Part:
+            rule_name='part'
+            def compose(self,left,right):return right
+        basis=torch.tensor([[[.2,.5],[.9,.3]]])
+        parent=torch.tensor([[.8,.4]])
+        a,b,ready=LanguageSpace._bounded_binary_reconstruction(Part(),parent,torch.zeros_like(parent),
+            torch.tensor([False]),torch.tensor([False]),basis,torch.ones(1,2,dtype=torch.bool),2)
+        assert ready.all()
+        for value in (a,b):
+>           assert any(torch.equal(value,basis[:,row]) for row in range(2))
+E           assert False
+E            +  where False = any(<generator object test_free_discarding_operator_still_searches_both_bank_operands.<locals>.<genexpr> at 0x128497840>)
+
+test/test_concept_binding_operators.py:78: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands
+1 failed in 2.59s

@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-003.recycle.json"
+}

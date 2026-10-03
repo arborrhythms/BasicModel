@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field"
+  ],
+  "completed": [
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field"
+  ],
+  "slow_selected": [
+    "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_decode_d3.py::test_grammar_decode_runs_from_the_completed_field",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010629199823597446,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_idea_decode_d3.py', 51, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

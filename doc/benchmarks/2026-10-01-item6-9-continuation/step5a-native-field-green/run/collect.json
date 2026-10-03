@@ -1,0 +1,16 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+    "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+    "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+    "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

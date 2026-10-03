@@ -1,0 +1,112 @@
+{
+  "configuration": "BasicModel_answers_tied_benchmark",
+  "contract": "\u00a715: one objective writer per parameter",
+  "terms": {
+    "output": {
+      "weight": 1.0,
+      "value": 0.2643643617630005,
+      "weighted": 0.2643643617630005,
+      "space": "OutputSpace",
+      "category": "prediction",
+      "count": 1,
+      "kind": "penalty",
+      "objective": "prediction",
+      "trained": false,
+      "context_weight": 1.0
+    },
+    "answer.what": {
+      "weight": 0.7,
+      "value": 6.042613983154297,
+      "weighted": 4.229829788208008,
+      "space": null,
+      "category": "prediction",
+      "count": 1,
+      "kind": "relative",
+      "objective": "output",
+      "trained": true,
+      "context_weight": 1.0,
+      "raw": 0.37766337394714355,
+      "baseline": 0.0625,
+      "active_entries": 256.0
+    },
+    "reconstruction": {
+      "weight": 1.0,
+      "value": 9.952057838439941,
+      "weighted": 9.952057838439941,
+      "space": "InputSpace",
+      "category": "reconstruction",
+      "count": 1,
+      "kind": "penalty",
+      "objective": "reconstruction",
+      "trained": false,
+      "context_weight": 1.0
+    },
+    "reconstruction.free_bytes": {
+      "weight": 0.5,
+      "value": 1.7947230339050293,
+      "weighted": 0.8973615169525146,
+      "space": null,
+      "category": "reconstruction",
+      "count": 1,
+      "kind": "relative",
+      "objective": "reconstruction",
+      "trained": true,
+      "context_weight": 1.0,
+      "raw": 9.952057838439941,
+      "baseline": 5.545177459716797,
+      "active_entries": 16.0
+    },
+    "reconstruction_unavailable_sentences": {
+      "weight": 1.0,
+      "value": 0.0,
+      "weighted": 0.0,
+      "space": null,
+      "category": "count",
+      "count": 1,
+      "kind": "penalty",
+      "objective": "count",
+      "trained": false,
+      "context_weight": 1.0
+    }
+  },
+  "trial_terms": {
+    "reconstruction.free_bytes": {
+      "weight": 0.5,
+      "value": 1.7947231531143188,
+      "weighted": 0.8973615765571594,
+      "space": null,
+      "category": "reconstruction",
+      "count": 1,
+      "kind": "relative",
+      "objective": "reconstruction",
+      "trained": true,
+      "context_weight": 1.0,
+      "row_values": [
+        1.1362533569335938,
+        2.2834837436676025,
+        2.076205015182495,
+        2.491446018218994,
+        2.491446018218994,
+        2.2834420204162598,
+        2.283341407775879,
+        1.1362533569335938,
+        1.1362533569335938,
+        2.2849912643432617,
+        1.4526286125183105,
+        1.9649534225463867,
+        1.1389228105545044,
+        1.1362533569335938,
+        1.1362533569335938,
+        2.2834420204162598
+      ],
+      "raw": 9.952057838439941,
+      "baseline": 5.545177459716797,
+      "active_entries": 16.0
+    }
+  },
+  "trial_selection": "explore R < greedy R; ties keep greedy; reader trains only kept rows",
+  "normalizers": "Error registry: squared error / detached target energy; CE / log K; penalties separate",
+  "regularizers": "Own strengths; concept_readout_l1 is a detached report of the proximal step",
+  "training_batches": 1,
+  "evaluation_batches": 1
+}

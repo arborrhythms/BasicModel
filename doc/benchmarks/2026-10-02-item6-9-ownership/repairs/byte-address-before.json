@@ -1,0 +1,13 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-02-item6-9-ownership/probe_address_capacity.py",
+    "MM_math"
+  ],
+  "pid": 17569,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 403588392,
+  "elapsed_seconds": 3.3453975839947816,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/byte-address-before.log"
+}

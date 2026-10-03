@@ -1,0 +1,702 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+    "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+    "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+    "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+    "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward3-recovered3-1.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward4-recovered4-0.5]",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+    "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_coordinate_registry.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+    "test/test_coordinate_registry.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+    "test/test_coordinate_registry.py::test_large_where_ranges_keep_symbol_row_addresses_exact",
+    "test/test_coordinate_registry.py::test_model_owns_one_ladder_across_all_spaces",
+    "test/test_coordinate_registry.py::test_large_registry_addresses_roundtrip_through_both_phases",
+    "test/test_coordinate_registry.py::test_copy_preserves_the_single_registry_ladder",
+    "test/test_coordinate_registry.py::test_content_only_encode_decode_preserves_all_coordinates"
+  ],
+  "completed": [
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+    "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+    "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+    "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+    "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+    "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+    "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward3-recovered3-1.0]",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward4-recovered4-0.5]",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+    "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+    "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+    "test/test_coordinate_registry.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+    "test/test_coordinate_registry.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+    "test/test_coordinate_registry.py::test_large_where_ranges_keep_symbol_row_addresses_exact",
+    "test/test_coordinate_registry.py::test_model_owns_one_ladder_across_all_spaces",
+    "test/test_coordinate_registry.py::test_large_registry_addresses_roundtrip_through_both_phases",
+    "test/test_coordinate_registry.py::test_copy_preserves_the_single_registry_ladder",
+    "test/test_coordinate_registry.py::test_content_only_encode_decode_preserves_all_coordinates",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-001.json"
+      ],
+      "pid": 62144,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 432162088,
+      "elapsed_seconds": 3.7524146659998223,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "completed": [
+        "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.02364662499167025,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-000.json"
+      ],
+      "pid": 62143,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 503825632,
+      "elapsed_seconds": 4.8561420000041835,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]"
+      ],
+      "completed": [
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.2005015419999836,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.16626537500997074,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.19083066600433085,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.17966112500289455,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00013166699500288814,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001294999965466559,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00013787500211037695,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-002.json"
+      ],
+      "pid": 62157,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 555025800,
+      "elapsed_seconds": 4.510319542008801,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+        "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+        "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+        "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+        "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+        "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial"
+      ],
+      "completed": [
+        "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+        "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+        "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+        "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+        "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+        "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.022545833999174647,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008798330090939999,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005611250089714304,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6237470839987509,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0012002910079900175,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00019537500338628888,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-004.json"
+      ],
+      "pid": 62197,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1002178744,
+      "elapsed_seconds": 63.55678483299562,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward3-recovered3-1.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward4-recovered4-0.5]",
+        "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+        "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable"
+      ],
+      "completed": [
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward3-recovered3-1.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward4-recovered4-0.5]",
+        "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+        "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00012933299876749516,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.454099927097559e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 8.887500734999776e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward3-recovered3-1.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000223166003706865,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward4-recovered4-0.5]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00011679199815262109,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 19.701696667005308,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 19.58200316700095,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 19.649982000002638,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-003.json"
+      ],
+      "pid": 62162,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1428687488,
+      "elapsed_seconds": 128.03207620799367,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+      ],
+      "completed": [
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6636856660043122,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 121.86779220799508,
+          "message": "",
+          "stdout": "batch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-005.json"
+      ],
+      "pid": 62272,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1142589768,
+      "elapsed_seconds": 83.63768099999288,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+        "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+      ],
+      "completed": [
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+        "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 19.656447916990146,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 19.37515487500059,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 19.94902000000002,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 19.672575333010172,
+          "message": "[XPASS(strict)] Historical .8 per-position top-k reconstruction criterion remains open; same bar on the retained inverse.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-007.json"
+      ],
+      "pid": 62434,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 530662768,
+      "elapsed_seconds": 4.319597541005351,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_coordinate_registry.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+        "test/test_coordinate_registry.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+        "test/test_coordinate_registry.py::test_large_where_ranges_keep_symbol_row_addresses_exact",
+        "test/test_coordinate_registry.py::test_model_owns_one_ladder_across_all_spaces",
+        "test/test_coordinate_registry.py::test_large_registry_addresses_roundtrip_through_both_phases",
+        "test/test_coordinate_registry.py::test_copy_preserves_the_single_registry_ladder",
+        "test/test_coordinate_registry.py::test_content_only_encode_decode_preserves_all_coordinates"
+      ],
+      "completed": [
+        "test/test_coordinate_registry.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+        "test/test_coordinate_registry.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+        "test/test_coordinate_registry.py::test_large_where_ranges_keep_symbol_row_addresses_exact",
+        "test/test_coordinate_registry.py::test_model_owns_one_ladder_across_all_spaces",
+        "test/test_coordinate_registry.py::test_large_registry_addresses_roundtrip_through_both_phases",
+        "test/test_coordinate_registry.py::test_copy_preserves_the_single_registry_ladder",
+        "test/test_coordinate_registry.py::test_content_only_encode_decode_preserves_all_coordinates"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_coordinate_registry.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06938508299936075,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_coordinate_registry.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0006678339996142313,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_coordinate_registry.py::test_large_where_ranges_keep_symbol_row_addresses_exact",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001505410036770627,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_coordinate_registry.py::test_model_owns_one_ladder_across_all_spaces",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.23218675001407973,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_coordinate_registry.py::test_large_registry_addresses_roundtrip_through_both_phases",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003851659857900813,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_coordinate_registry.py::test_copy_preserves_the_single_registry_ladder",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00018000000272877514,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_coordinate_registry.py::test_content_only_encode_decode_preserves_all_coordinates",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.23581170800025575,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-006.json"
+      ],
+      "pid": 62343,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5713419248,
+      "elapsed_seconds": 563.0788096249889,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+      ],
+      "completed": [
+        "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 541.2238903750113,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 17179869184,
+    "aggregate_memory_bytes": 17179869184,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after",
+  "elapsed_seconds": 700.2054041669908,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 5713419248,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/collect.json"
+    ],
+    "pid": 62101,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432161992,
+    "elapsed_seconds": 3.740043500001775,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+        "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[tokens]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[word_texts]",
+        "test/test_grammar_separator.py::test_whitespace_classification_keeps_unknown_words_and_punctuation[part_spans]",
+        "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+        "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+        "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+        "test/test_supplied_answer_training.py::test_sentence_without_answer_keeps_code_and_chooser_out_of_answer_gradient",
+        "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners",
+        "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+        "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward0-recovered0-0.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward1-recovered1-0.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward2-recovered2-0.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward3-recovered3-1.0]",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_overlap_requires_every_forward_position[forward4-recovered4-0.5]",
+        "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+        "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+        "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+        "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input",
+        "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+        "test/test_coordinate_registry.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+        "test/test_coordinate_registry.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
+        "test/test_coordinate_registry.py::test_large_where_ranges_keep_symbol_row_addresses_exact",
+        "test/test_coordinate_registry.py::test_model_owns_one_ladder_across_all_spaces",
+        "test/test_coordinate_registry.py::test_large_registry_addresses_roundtrip_through_both_phases",
+        "test/test_coordinate_registry.py::test_copy_preserves_the_single_registry_ladder",
+        "test/test_coordinate_registry.py::test_content_only_encode_decode_preserves_all_coordinates"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward"
+      ],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

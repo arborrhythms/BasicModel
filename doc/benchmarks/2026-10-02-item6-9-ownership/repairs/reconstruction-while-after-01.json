@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words"
+  ],
+  "pid": 19401,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2240122024,
+  "elapsed_seconds": 227.54004495899426,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/reconstruction-while-after-01.log"
+}

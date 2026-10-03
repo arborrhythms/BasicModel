@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_global_consume.py::test_answer_loss_trains_retrieval"
+  ],
+  "completed": [
+    "test/test_global_consume.py::test_answer_loss_trains_retrieval"
+  ],
+  "slow_selected": [
+    "test/test_global_consume.py::test_answer_loss_trains_retrieval"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_global_consume.py::test_answer_loss_trains_retrieval",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.28189083401230164,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

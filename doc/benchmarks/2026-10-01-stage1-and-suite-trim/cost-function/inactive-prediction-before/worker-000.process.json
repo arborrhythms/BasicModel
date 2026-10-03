@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-before/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-before/worker-000.json"
+  ],
+  "pid": 8763,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 437306640,
+  "elapsed_seconds": 3.8614051670010667,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/inactive-prediction-before/worker-000.log"
+}

@@ -1,0 +1,27 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__________ TestPsLocalOrthStorage.test_local_parameter_is_registered ___________
+test/test_tied_orth_storage.py:62: in test_local_parameter_is_registered
+    self.assertIsInstance(emb, Embedding)
+E   AssertionError: RadixLayer(
+E     (byte_fallback): BytesFallbackEncoder()
+E   ) is not an instance of <class 'Spaces.Embedding'>
+_____ TestPsLocalOrthStorage.test_ps_storage_is_separate_from_ws_codebook ______
+test/test_tied_orth_storage.py:78: in test_ps_storage_is_separate_from_ws_codebook
+    wv = model.perceptualSpace.vocabulary.wv
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'wv'
+_______ TestPsLocalOrthStorage.test_ws_write_does_not_leak_into_ps_rows ________
+test/test_tied_orth_storage.py:90: in test_ws_write_does_not_leak_into_ps_rows
+    wv = model.perceptualSpace.vocabulary.wv
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'wv'
+=========================== short test summary info ============================
+FAILED test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_local_parameter_is_registered
+FAILED test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ps_storage_is_separate_from_ws_codebook
+FAILED test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ws_write_does_not_leak_into_ps_rows
+3 failed in 2.21s

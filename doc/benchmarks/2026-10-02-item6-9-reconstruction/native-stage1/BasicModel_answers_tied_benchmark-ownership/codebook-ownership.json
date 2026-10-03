@@ -1,0 +1,126 @@
+[
+  {
+    "stage": 0,
+    "contextual_rotation_only": false,
+    "contextual_learning_rate": 0.0,
+    "parameters": [
+      {
+        "name": "W",
+        "shape": [
+          65536,
+          1032
+        ],
+        "requires_grad": true
+      }
+    ],
+    "buffers": [
+      {
+        "name": "vq._b_norms_sq",
+        "shape": [
+          65536
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.active_mask",
+        "shape": [
+          65536
+        ],
+        "requires_grad": false
+      }
+    ]
+  },
+  {
+    "stage": 1,
+    "contextual_rotation_only": false,
+    "contextual_learning_rate": 0.0,
+    "parameters": [
+      {
+        "name": "W",
+        "shape": [
+          65536,
+          1032
+        ],
+        "requires_grad": true
+      }
+    ],
+    "buffers": [
+      {
+        "name": "vq._b_norms_sq",
+        "shape": [
+          65536
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.active_mask",
+        "shape": [
+          65536
+        ],
+        "requires_grad": false
+      }
+    ]
+  },
+  {
+    "stage": 2,
+    "contextual_rotation_only": false,
+    "contextual_learning_rate": 0.0,
+    "parameters": [
+      {
+        "name": "W",
+        "shape": [
+          65536,
+          1032
+        ],
+        "requires_grad": true
+      }
+    ],
+    "buffers": [
+      {
+        "name": "vq._b_norms_sq",
+        "shape": [
+          65536
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.active_mask",
+        "shape": [
+          65536
+        ],
+        "requires_grad": false
+      }
+    ]
+  },
+  {
+    "stage": 3,
+    "contextual_rotation_only": false,
+    "contextual_learning_rate": 0.0,
+    "parameters": [
+      {
+        "name": "W",
+        "shape": [
+          65536,
+          1032
+        ],
+        "requires_grad": true
+      }
+    ],
+    "buffers": [
+      {
+        "name": "vq._b_norms_sq",
+        "shape": [
+          65536
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.active_mask",
+        "shape": [
+          65536
+        ],
+        "requires_grad": false
+      }
+    ]
+  }
+]

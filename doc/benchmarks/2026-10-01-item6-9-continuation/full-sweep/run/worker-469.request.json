@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_live_references.py::test_cold_reference_is_exact_and_pronoun_proposal_is_maskable"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-469.recycle.json"
+}

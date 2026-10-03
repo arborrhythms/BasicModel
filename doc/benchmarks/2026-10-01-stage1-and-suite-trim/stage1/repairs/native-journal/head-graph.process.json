@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/repairs/native-journal/diagnose_graph.py",
+    "--root",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/repairs/native-journal/head-snapshot",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/repairs/native-journal/head-graph"
+  ],
+  "pid": 75964,
+  "exit_code": 73,
+  "reason": "exit",
+  "peak_memory_bytes": 10732184720,
+  "elapsed_seconds": 67.88724658299907,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/repairs/native-journal/head-graph.log"
+}

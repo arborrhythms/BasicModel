@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_answer_projection_cost_does_not_include_a_generate_lesson ________
+test/test_supplied_answer_training.py:57: in test_answer_projection_cost_does_not_include_a_generate_lesson
+    torch.testing.assert_close(answer, torch.tensor([36., 100.]))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 2 (100.0%)
+E   Greatest absolute difference: 9.0 at index (1,) (up to 1e-05 allowed)
+E   Greatest relative difference: 0.1944444477558136 at index (0,) (up to 1.3e-06 allowed)
+=========================== short test summary info ============================
+FAILED test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson
+1 failed in 2.16s

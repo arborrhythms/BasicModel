@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/closing_campaign.py", line 159, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/closing_campaign.py", line 143, in main
+    raise RuntimeError('production native measurement failed; retain its probe and diagnose before starting gates')
+RuntimeError: production native measurement failed; retain its probe and diagnose before starting gates

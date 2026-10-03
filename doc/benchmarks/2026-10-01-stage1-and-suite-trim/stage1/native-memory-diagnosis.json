@@ -1,0 +1,664 @@
+{
+  "location": "Compiled stage_cs_lang forward, before first trial scoring or optimizer step",
+  "machine_gib": 36,
+  "attempted_native_worker_gib": [
+    12,
+    24
+  ],
+  "first_trial_cost_reached": false,
+  "training_updates": 0,
+  "graph_nodes": 35601,
+  "large_results": [
+    {
+      "node": "l_current_cs_lang_22_",
+      "op": "L_current_cs_lang_22_",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "l_current_cs_lang_24_",
+      "op": "L_current_cs_lang_24_",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_1",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_1",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_2",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_2",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_3",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_3",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_4",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_4",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_5",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_5",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_6",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_6",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_7",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_7",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_8",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_8",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_9",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_9",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_10",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_10",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_11",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_11",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_12",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_12",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_13",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_13",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_14",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_14",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_15",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_15",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_16",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_16",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_17",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_17",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    },
+    {
+      "node": "operation_values_18",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        3096
+      ],
+      "hints": [
+        28,
+        4864,
+        3096
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1686601728
+    },
+    {
+      "node": "reference_offsets_18",
+      "op": "scatter",
+      "shape": [
+        28,
+        4864,
+        2064
+      ],
+      "hints": [
+        28,
+        4864,
+        2064
+      ],
+      "dtype": "torch.float32",
+      "bytes": 1124401152
+    }
+  ],
+  "logical_result_bytes": 66044401488,
+  "caveat": "Logical tensor result bytes include views and different lifetimes; not a measured peak or a lower bound on peak.",
+  "outcome": "Native objective measurements blocked under 24 GiB; no production source/configuration repair authorized in stage 1.",
+  "probes": [
+    "sizing-12gib",
+    "BasicModel_answers_tied_benchmark-step5a",
+    "BasicModel_answers_tied_benchmark-cut",
+    "allocation-diagnostic",
+    "graph-diagnostic"
+  ],
+  "diagnostic_failure": "graph-diagnostic-format-failure retains the logging-only SymInt coercion failure and full old/new repair sources"
+}

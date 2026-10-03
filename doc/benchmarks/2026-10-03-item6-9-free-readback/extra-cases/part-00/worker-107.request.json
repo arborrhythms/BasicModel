@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-107.recycle.json"
+}

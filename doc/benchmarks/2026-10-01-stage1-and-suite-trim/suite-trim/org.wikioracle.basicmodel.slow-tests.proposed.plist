@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>Label</key>
+	<string>org.wikioracle.basicmodel.slow-tests</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/bin/make</string>
+		<string>-C</string>
+		<string>/Users/arogers/github/WikiOracle/basicmodel</string>
+		<string>test_slow_weekly</string>
+	</array>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardErrorPath</key>
+	<string>/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/launchd.err.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/arogers/github/WikiOracle/basicmodel/tmp/slow-tests/launchd.out.log</string>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Hour</key>
+		<integer>3</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+		<key>Weekday</key>
+		<integer>0</integer>
+	</dict>
+	<key>WorkingDirectory</key>
+	<string>/Users/arogers/github/WikiOracle/basicmodel</string>
+</dict>
+</plist>

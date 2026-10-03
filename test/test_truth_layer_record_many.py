@@ -27,17 +27,6 @@ import pytest
 from Layers import TruthLayer
 
 
-def test_should_store_function_deleted():
-    """``TruthLayer.should_store`` was removed by §6b.
-
-    Per-cell gating is no longer applied inside the brick; the codebook
-    nearest-neighbor lookup at compact time naturally dedupes near-zero
-    and near-duplicate vectors against the existing prototypes.
-    """
-    tl = TruthLayer(nDim=8, max_truths=16)
-    assert not hasattr(tl, 'should_store'), (
-        "should_store was deleted in §6b; the per-cell gate is gone "
-        "and only record_batch / record / compact remain.")
 
 
 def test_record_batch_matches_record_loop_high_trust():

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]"
+  ],
+  "completed": [
+    "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.19005729100172175,
+      "message": "test/test_grammar_separator.py:57: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert [gate.reshape(-1).tolist() for _, gate in pushes] == [[True]*4, [False]*4, [True]*4]\nE   assert [[True, True,..., True, True]] == [[True, True,..., True, True]]\nE     \nE     At index 1 diff: [True, True, True, True] != [False, False, False, False]\nE     Use -v to get more diff",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

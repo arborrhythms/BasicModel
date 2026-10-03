@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mereology.py::TestHyperrectangleVolume::test_two_axes_all_active"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-609.recycle.json"
+}

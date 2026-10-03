@@ -1,0 +1,61 @@
+--- before/test/objective_conflicts_probe.py
++++ after/test/objective_conflicts_probe.py
+@@ -519,9 +519,19 @@
+ try:
+     results=Models.ModelFactory._run_hydrated(str(config),arch,arch.get('data',{}),arch.get('training',{}))
+     model=results[0][2]
++    # Native runTrial deliberately omits test passes without BASIC_RUN_TEST.
++    # Observe one final pass after training, without changing any optimizer,
++    # batch, configuration or training initialization. XOR already evaluates.
++    endpoint_added = P.evaluation_batches == 0
++    if endpoint_added:
++        model.set_sigma(0)
++        with torch.no_grad():
++            model.runEpoch(batchSize=int(arch['training']['batchSize']), split='test')
++        model.set_sigma(0.5)
+     data=model.inputSpace.data
+     P.groups(model)
+     write('outcome.json',dict(training_batches=P.training_batches,evaluation_batches=P.evaluation_batches,
++        receipt_added_endpoint=endpoint_added,
+         last_training_trials=P.last_trial,last_batch=P.last_batch,grammar_reconstructions=P.eval_reconstructions,
+         predictions=[serial(x) for x in data.reconstructed_output],targets=[serial(x) for x in data.test_output],
+         inputs=[model._bytes_to_text(x).rstrip(chr(0)) for x in data.test_input],seconds=time.monotonic()-P.start))
+--- before/test/test_objective_conflicts_slow.py
++++ after/test/test_objective_conflicts_slow.py
+@@ -1,6 +1,6 @@
+ """Production-batch objective measurements; opt in with RUN_SLOW=1.
+ 
+-The bounded slow runner uses a 12 GiB worker ceiling for this workload.
++The bounded slow runner uses a 24 GiB worker ceiling for this workload.
+ The ordinary sweep retains its 8 GiB ceiling and skips these measurements.
+ """
+ import json
+@@ -14,7 +14,7 @@
+ import pytest
+ 
+ 
+-NATIVE_SLOW_MEMORY_GIB = 12
++NATIVE_SLOW_MEMORY_GIB = 24
+ ROOT = Path(__file__).resolve().parents[1]
+ 
+ 
+--- before/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/run.py
++++ after/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/run.py
+@@ -32,7 +32,7 @@
+     manifest = dict(source=source, supporting_inputs=inputs,
+         observer_sha256=hashlib.sha256(observer.read_bytes()).hexdigest(),
+         fixture_sha256=fixture_hash, seed=None, retries=0,
+-        native_batch=28, native_worker_gib=12, xor_worker_gib=8,
++        native_batch=28, native_worker_gib=24, xor_worker_gib=8,
+         aggregate_gib=24, worker_seconds=1800, mode=mode)
+     bounded.write_json(HERE / (mode + '-manifest.json'), manifest)
+ 
+@@ -51,7 +51,7 @@
+             result = bounded.run_suite(root=ROOT,
+                 selectors=['test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[' + arm + ']'],
+                 run_dir=run_dir, memory_bytes=24*bounded.GIB, workers=1,
+-                worker_memory_bytes=12*bounded.GIB, timeout=1800, suite_timeout=2100,
++                worker_memory_bytes=24*bounded.GIB, timeout=1800, suite_timeout=2100,
+                 batch_size=1, max_files=1)
+             if output.exists() and result['workers']:
+                 bounded.write_json(output/'process.json', result['workers'][-1])

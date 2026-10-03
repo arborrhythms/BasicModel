@@ -1,0 +1,15 @@
+{
+  "config": "data/BasicModel_answers_benchmark.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 2.354500707995612,
+  "batch": 28,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 3.5542591249977704,
+  "output_loss": 0.31846800446510315,
+  "reconstruction_loss": 1.0010701417922974,
+  "completed": true,
+  "total_seconds": 5.908764041996619
+}

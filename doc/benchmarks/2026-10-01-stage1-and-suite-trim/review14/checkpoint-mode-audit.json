@@ -1,0 +1,22 @@
+[
+  {
+    "path": "data/grammar_wording.ckpt",
+    "bpe_extras_present": false,
+    "bpe_extras_summary": "None"
+  },
+  {
+    "path": "data/BasicModel.ckpt",
+    "bpe_extras_present": false,
+    "bpe_extras_summary": "None"
+  },
+  {
+    "path": "test/fixtures/item7_legacy_definition.pt",
+    "bpe_extras_present": false,
+    "bpe_extras_summary": "None"
+  },
+  {
+    "path": "test/fixtures/item7_byte_columns.pt",
+    "bpe_extras_present": false,
+    "bpe_extras_summary": "None"
+  }
+]

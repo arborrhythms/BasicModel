@@ -1,0 +1,21 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_lexicon_ownership.py",
+    "test/test_tied_orth_storage.py",
+    "test/test_tying_storage_shared.py",
+    "test/test_unified_lexicon_codebook.py",
+    "test/test_within_whole_division.py",
+    "test/test_perceptual_loopback.py",
+    "test/test_retired_names.py"
+  ],
+  "pid": 20250,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 3508572528,
+  "elapsed_seconds": 63.01629487499304,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/native-storage-ports-01.log"
+}

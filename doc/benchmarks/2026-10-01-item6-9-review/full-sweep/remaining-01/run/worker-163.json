@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_discourse_space.py::TestBackCompatShims::test_snapshot_alias_calls_observe"
+  ],
+  "completed": [
+    "test/test_discourse_space.py::TestBackCompatShims::test_snapshot_alias_calls_observe"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_discourse_space.py::TestBackCompatShims::test_snapshot_alias_calls_observe",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08420820799801731,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

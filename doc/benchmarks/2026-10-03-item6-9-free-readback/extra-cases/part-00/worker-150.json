@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights"
+  ],
+  "completed": [
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights"
+  ],
+  "slow_selected": [
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06589437500224449,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

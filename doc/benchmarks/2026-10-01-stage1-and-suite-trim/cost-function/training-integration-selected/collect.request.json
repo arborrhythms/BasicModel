@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_relative_error.py",
+    "test/test_supplied_answer_training.py",
+    "test/test_reconstruction_precedence.py",
+    "test/test_compose_pair_driver.py",
+    "test/test_trial_policy_ownership.py",
+    "test/test_inter_sentence_prediction_shape.py",
+    "test/test_intra_sentence_layer.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

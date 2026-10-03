@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_qa.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 6.63612949999515,
+  "batch": 12,
+  "scope": "perception: no grammar",
+  "reconstruct_in_loop": false,
+  "completed": false,
+  "error": "ValueError('TruthSet input did not produce a selected grammatical closing')",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py\", line 36, in child\n    output_loss, recon_loss, _, _ = model.runEpoch(\n                                    ^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ModeSchedule.py\", line 14, in run\n    return method(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 16078, in runEpoch\n    self.provision_ltm()\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7400, in provision_ltm\n    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 7439, in _ltm_ingest_truth_texts\n    raise ValueError('TruthSet input did not produce a selected grammatical closing')\nValueError: TruthSet input did not produce a selected grammatical closing\n",
+  "total_seconds": 7.5012890419893665
+}

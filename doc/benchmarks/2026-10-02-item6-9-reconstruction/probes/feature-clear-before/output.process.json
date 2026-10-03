@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-02-item6-9-reconstruction/probe_feature_clear.py"
+  ],
+  "pid": 86687,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 562775408,
+  "elapsed_seconds": 5.345742500008782,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/feature-clear-before/output.log"
+}

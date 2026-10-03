@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_detached_reverse_objective.py::test_reverse_construction_loss_stops_at_sentence_idea"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-338.recycle.json"
+}

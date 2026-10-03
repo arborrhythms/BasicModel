@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-005.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-005.json"
+  ],
+  "pid": 62272,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1142589768,
+  "elapsed_seconds": 83.63768099999288,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/migration-contracts-after/worker-005.log"
+}

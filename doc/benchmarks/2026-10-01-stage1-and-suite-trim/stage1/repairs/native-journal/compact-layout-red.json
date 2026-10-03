@@ -1,0 +1,5 @@
+{
+  "passed": false,
+  "type": "AttributeError",
+  "message": "type object 'BasicModel' has no attribute '_sentence_journal_layout'"
+}

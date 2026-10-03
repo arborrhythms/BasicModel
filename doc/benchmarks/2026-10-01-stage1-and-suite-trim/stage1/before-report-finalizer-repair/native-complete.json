@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "arm": "step5a",
+      "reason": "test_failure",
+      "exit_code": 1
+    },
+    {
+      "arm": "cut",
+      "reason": "interrupted",
+      "exit_code": 130
+    }
+  ],
+  "source_matched": true
+}

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal_recompile_probe.py"
+  ],
+  "pid": 48374,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1213450016,
+  "elapsed_seconds": 63.710083708996535,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal-recompiles-after.log"
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_joint_objectives.py",
+    "test/test_priming_energy.py",
+    "test/test_activation_priming_multiply.py",
+    "test/test_intent_priming.py"
+  ],
+  "pid": 20105,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1227131448,
+  "elapsed_seconds": 57.61577225000656,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/remaining-owner-and-priming-before.log"
+}

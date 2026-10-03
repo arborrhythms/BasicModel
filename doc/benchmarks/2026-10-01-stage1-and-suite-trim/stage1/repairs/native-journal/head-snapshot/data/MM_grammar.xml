@@ -1,0 +1,74 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_grammar: MentalModel on XOR via non-default grammar-directed
+       composition (derived from the grammar block). Codebook training
+       is implicit when <codebook>quantize</codebook> is set
+       (the <useVQVAE> knob was retired 2026-05-29). -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <symbolicOrder>1</symbolicOrder>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nDim>14</nDim>
+    <nVectors>8</nVectors>
+    <nOutput>8</nOutput>
+  </InputSpace>
+
+  <PartSpace>
+    <nOutput>8</nOutput>
+    <nDim>14</nDim>
+    <nVectors>256</nVectors>
+    <invertible>true</invertible>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>14</nDim>
+    <nVectors>8</nVectors>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <nOutput>8</nOutput>
+    <nDim>14</nDim>
+    <!-- content width after the canonical where/when band (4+4): without
+         this the WS event is ALL BAND and unity evidence pools to zero
+         (dual-towers: the universe must have somewhere to land). -->
+    <nOutputDim>14</nOutputDim>
+    <!-- WholeSpace is the upstream eight-class property inventory. Word,
+         object, and META concepts are relation-only state owned downstream by
+         ConceptualSpace; this fixture must not consume WS rows while parsing. -->
+    <nVectors>8</nVectors>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <!-- Stage 3 cleanup: chartTau retired alongside the chart. The
+         signal router (LanguageLayer) is the canonical parser. -->
+    <language>
+      <grammar>default.grammar</grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

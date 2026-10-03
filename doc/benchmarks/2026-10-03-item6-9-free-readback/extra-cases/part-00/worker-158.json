@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key"
+  ],
+  "completed": [
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key"
+  ],
+  "slow_selected": [
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08310383299249224,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

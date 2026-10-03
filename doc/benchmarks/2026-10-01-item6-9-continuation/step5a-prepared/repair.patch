@@ -1,0 +1,141 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -10055,7 +10055,7 @@
+         return list({id(p): p for p in params}.values())
+ 
+     @_sentence_query_mask
+-    def reverseOutput(self, understanding, derivation):
++    def reverseOutput(self, understanding, derivation, *, detach_understanding=True):
+         """Realize a prepared AnswerDerivation without running resolution.
+ 
+         Condition its owned concepts once, then use the independent generate
+@@ -10079,7 +10079,7 @@
+         # contextual operands are given values; shared inverse/operator
+         # parameters below this boundary remain live and learn from output.
+         answer_event = (derivation.answer_symbol.detach()
+-                        if torch.is_tensor(derivation.answer_symbol)
++                        if detach_understanding and torch.is_tensor(derivation.answer_symbol)
+                         else derivation.answer_symbol)
+         conceptual_context = understanding.conceptual_state
+         if torch.is_tensor(conceptual_context):
+@@ -10097,7 +10097,7 @@
+             # compiled loop) and the words are realised through the
+             # reverse chain.  The symbol vector is never padded to fit.
+             idea, idea_resolved, idea_sources, _ = self._materialize_answer_idea(
+-                understanding, derivation, questions)
++                understanding, derivation, questions, detach_understanding=detach_understanding)
+             object.__setattr__(self, "_output_idea_sources", idea_sources)
+             object.__setattr__(self, "_output_idea_resolved", idea_resolved)
+             if getattr(self, "output_in_loop", False) and torch.is_tensor(idea):
+@@ -12922,7 +12922,7 @@
+             return n_what
+         return max(0, int(event_width) - 8)
+ 
+-    def _materialize_answer_idea(self, understanding, derivation, question):
++    def _materialize_answer_idea(self, understanding, derivation, question, *, detach_understanding=True):
+         """Condition a resolved end state once, then let the grammar generate."""
+         fields = derivation.sentence_states
+         idea = derivation.conceptual_answer
+@@ -12938,7 +12938,7 @@
+                           'cold-memory' if 'cold-memory' in source or source == 'recall' else 'unresolved')
+             sources.append('idea:' + source)
+         context = derivation.conditioning_context
+-        idea = self._condition_answer_on_question(idea.detach(),
++        idea = self._condition_answer_on_question(idea.detach() if detach_understanding else idea,
+             context.detach() if torch.is_tensor(context) else context)
+         return torch.where(resolved[:, None, None], idea, torch.zeros_like(idea)), resolved, tuple(sources), None
+ 
+@@ -14220,6 +14220,7 @@
+         # A reporting switch must not turn both compose objectives into zero.
+         self._sentence_training = bool(training)
+         self._sentence_supplied_answers = None
++        self._sentence_answer_questions = ()
+         self._sentence_answer_cost = None
+         self._sentence_run_active = True
+         self._open_sentence_slot = None
+@@ -14271,6 +14272,7 @@
+ 
+             self._sentence_training = False
+             self._sentence_supplied_answers = None
++            self._sentence_answer_questions = ()
+             self._sentence_answer_cost = None
+             self._sentence_run_active = False
+             self._open_sentence_slot = None
+@@ -14407,6 +14409,7 @@
+             questions=questions,
+             trial_mode=trial_mode,
+         )
++        self._sentence_answer_questions = what_questions
+ 
+         # Advance the serialized model clock once per PROCESSED batch (this
+         # point is past the no-batch early raise, so it ticks exactly once on
+@@ -20607,7 +20610,7 @@
+                 expectation_cost = (contrast_cost if expectation_cost is None else
+                                     expectation_cost + contrast_cost)
+                 cost = cost + contrast_cost
+-        answer_error = BasicModel._sentence_answer_error(self, state, sid, active)
++        answer_error = BasicModel._sentence_answer_error(self, state, sid, active, observation)
+         if answer_error is not None:
+             cost = cost + answer_error
+             output_cost = answer_error if output_cost is None else output_cost + answer_error
+@@ -20617,7 +20620,7 @@
+                 output=output_cost)
+         return cost, reconstruction, observation, pending
+ 
+-    def _sentence_answer_error(self, state, sid, active):
++    def _sentence_answer_error(self, state, sid, active, observation):
+         """A supplied answer trains this trial's readout, grammar and codes.
+ 
+         The target is loss-side metadata: it never enters composition. Both
+@@ -20634,9 +20637,48 @@
+         root = lang[9][:, sid]
+         slots = lang[13][:, sid].reshape(root.shape[0], 3, root.shape[-1])
+         depth = lang[14][:, sid]
+-        answer = self._forward_head(None, sentence_state=(root, slots, depth),
+-                                    detach_understanding=False)
+-        pred = self.normalizer.denormalize(answer.materialize(), which='output')
++        if getattr(self, 'answer_synthesis', False):
++            # Realize this trial's completed field without a query or a write.
++            # Generation is the reading map in these configurations. Its
++            # normal batch-end call still takes the default state cut.
++            meanings = observation['meanings']
++            fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
++            idea = torch.stack([root[b].new_zeros(3, root.shape[-1])
++                                if value is None else value.roles
++                                for b, value in enumerate(meanings)])
++            questions = self._sentence_answer_questions
++            context, _ = self._what_grammar_context(questions, device=root.device, dtype=root.dtype)
++            held = AnswerDerivation(answer_symbol=None, sentence_states=fields,
++                conceptual_answer=idea, questions=questions, conditioning_context=context,
++                answer_meanings=tuple(() if value is None else (value,) for value in meanings))
++            understanding = Understanding(conceptual_state=idea, sentence_states=fields)
++            construction = self.reverseOutput(understanding, held, detach_understanding=False)
++            pred = construction.actual
++            # Supplied answers retain Data.what's authority, including empty
++            # rows and text targets. Desired values only score the fixed output.
++            data = self.inputSpace.data
++            desired = tuple(data.what(question) for question in questions)
++            values = [answer.what if answer.available and question.relation is WhatRelation.SUPERVISED
++                      else None for question, answer in zip(questions, desired)]
++            if not any(value is not None for value in values):
++                return None
++            if any(isinstance(value, str) for value in values):
++                filler = next(value for value in values if isinstance(value, str))
++                mask = active & torch.tensor([isinstance(value, str) for value in values], device=root.device)
++                target_surface = self._embed_answer_texts(
++                    [value if isinstance(value, str) else filler for value in values]).detach()
++                surface = self._answer_surface_from_percepts(construction.percepts)
++                error = torch.stack([self._reverse_event_loss(surface[b:b+1], target_surface[b:b+1])
++                                     for b in range(root.shape[0])])
++                self._sentence_answer_cost = torch.where(mask, error, torch.zeros_like(error))
++                return self._sentence_answer_cost
++            template = next(value for value in values if value is not None)
++            target = self.outputSpace.prepOutput([template if value is None else value for value in values])
++            active = active & torch.tensor([value is not None for value in values], device=root.device)
++        else:
++            answer = self._forward_head(None, sentence_state=(root, slots, depth),
++                                        detach_understanding=False)
++            pred = self.normalizer.denormalize(answer.materialize(), which='output')
+         pred = self._align_output_pred(pred, target)
+         if pred is None:
+             raise RuntimeError('sentence answer and supplied target do not align')

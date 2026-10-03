@@ -1,0 +1,169 @@
+{
+  "scope": "Saved first XOR audit only; no model was constructed, trained, or called. Equal own-row priming is a common positive score multiplier, omitted here.",
+  "observations": [
+    {
+      "sentence": 0,
+      "own_rows": [
+        0,
+        1
+      ],
+      "negate_before": false,
+      "negate_after": false,
+      "root_vs_recorded_derivation_max_error": 0.0,
+      "best_raw_bank_pair": [
+        0,
+        1
+      ],
+      "best_raw_bank_parent_mse": 0.0,
+      "recovered_word_rows": [
+        0,
+        1
+      ],
+      "pair_residuals": [
+        [
+          0.06285955011844635,
+          0,
+          0
+        ],
+        [
+          0.0,
+          0,
+          1
+        ],
+        [
+          0.0,
+          1,
+          0
+        ],
+        [
+          0.33809563517570496,
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "sentence": 1,
+      "own_rows": [
+        0,
+        2
+      ],
+      "negate_before": false,
+      "negate_after": true,
+      "root_vs_recorded_derivation_max_error": 0.0,
+      "best_raw_bank_pair": [
+        0,
+        2
+      ],
+      "best_raw_bank_parent_mse": 0.0,
+      "recovered_word_rows": [
+        0,
+        2
+      ],
+      "pair_residuals": [
+        [
+          0.33314356207847595,
+          0,
+          0
+        ],
+        [
+          0.0,
+          0,
+          1
+        ],
+        [
+          0.0,
+          1,
+          0
+        ],
+        [
+          0.3233613967895508,
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "sentence": 2,
+      "own_rows": [
+        4,
+        1
+      ],
+      "negate_before": true,
+      "negate_after": false,
+      "root_vs_recorded_derivation_max_error": 2.9802322387695312e-08,
+      "best_raw_bank_pair": [
+        4,
+        4
+      ],
+      "best_raw_bank_parent_mse": 0.18781104683876038,
+      "recovered_word_rows": [
+        4,
+        4
+      ],
+      "pair_residuals": [
+        [
+          0.18781104683876038,
+          0,
+          0
+        ],
+        [
+          0.3999999761581421,
+          0,
+          1
+        ],
+        [
+          0.3999999761581421,
+          1,
+          0
+        ],
+        [
+          0.2338697910308838,
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "sentence": 3,
+      "own_rows": [
+        4,
+        2
+      ],
+      "negate_before": true,
+      "negate_after": true,
+      "root_vs_recorded_derivation_max_error": 2.9802322387695312e-08,
+      "best_raw_bank_pair": [
+        4,
+        4
+      ],
+      "best_raw_bank_parent_mse": 0.21782231330871582,
+      "recovered_word_rows": [
+        4,
+        4
+      ],
+      "pair_residuals": [
+        [
+          0.21782231330871582,
+          0,
+          0
+        ],
+        [
+          0.3999999165534973,
+          0,
+          1
+        ],
+        [
+          0.3999999165534973,
+          1,
+          0
+        ],
+        [
+          0.25938159227371216,
+          1,
+          1
+        ]
+      ]
+    }
+  ]
+}

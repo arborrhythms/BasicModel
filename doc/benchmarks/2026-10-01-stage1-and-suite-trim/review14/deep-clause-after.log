@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_clause_probe.py", line 38, in <module>
+    check('--unary' in sys.argv)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_clause_probe.py", line 35, in check
+    torch.testing.assert_close(end.grad,torch.tensor([[1.,1.],[0.,0.],[0.,0.]]))
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/testing/_comparison.py", line 1689, in assert_close
+    raise error_metas[0].to_error(msg)
+AssertionError: The values for attribute 'device' do not match: cpu != mps:0.

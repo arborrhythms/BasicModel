@@ -1,0 +1,100 @@
+..FFFF..                                                                 [100%]
+=================================== FAILURES ===================================
+______ test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0] ______
+test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight
+    got = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:14250: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14424: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15478: in _run_batch_once
+    self._backward_training_loss(
+E   TypeError: _policy_training_probe.<locals>.backward_probe() got an unexpected keyword argument 'optimizer'
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+______ test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0] ______
+test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight
+    got = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:14250: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14424: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15478: in _run_batch_once
+    self._backward_training_loss(
+E   TypeError: _policy_training_probe.<locals>.backward_probe() got an unexpected keyword argument 'optimizer'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+____ test_runbatch_does_not_train_generate_policy_without_supplied_answers _____
+test/test_output_walk.py:369: in test_runbatch_does_not_train_generate_policy_without_supplied_answers
+    learned = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:14250: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14424: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15478: in _run_batch_once
+    self._backward_training_loss(
+E   TypeError: _policy_training_probe.<locals>.backward_probe() got an unexpected keyword argument 'optimizer'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+______ test_runbatch_generate_policy_masks_rows_without_supplied_answers _______
+test/test_output_walk.py:407: in test_runbatch_generate_policy_masks_rows_without_supplied_answers
+    got = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:14250: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14424: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15478: in _run_batch_once
+    self._backward_training_loss(
+E   TypeError: _policy_training_probe.<locals>.backward_probe() got an unexpected keyword argument 'optimizer'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7523: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdt9sa3hd/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7523: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp75nozti2/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7523: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0am7h09j/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7523: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpiwhhi7fn/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioners_persist_per_answer_width
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]
+FAILED test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers
+FAILED test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers
+4 failed, 4 passed, 6 warnings in 114.25s (0:01:54)

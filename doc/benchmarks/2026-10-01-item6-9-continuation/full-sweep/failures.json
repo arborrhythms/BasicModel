@@ -1,0 +1,212 @@
+[
+  {
+    "nodeid": "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.012638832999073202,
+    "message": "test/test_compiled_expectation_boundary.py:79: in test_explicit_boundary_retains_factored_roles_and_skips_masked_rows\n    commit_reading(fixture.language, fixture.registry, entry, None,\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-012.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.006651124998825253,
+    "message": "test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-065.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.007754625001325621,
+    "message": "test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-065.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.014513000000079046,
+    "message": "test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-065.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.008124916999804555,
+    "message": "test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-065.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.012876250000772416,
+    "message": "test/test_expectation_defaults.py:257: in test_packed_ltm_ignores_masked_slots_even_with_retained_storage\n    commit_reading(f.language, f.registry, entry, store, discourse=discourse,\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-041.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_item7_end_state_storage.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.00032483399991178885,
+    "message": "test/test_item7_end_state_storage.py:122: in test_closing_discards_operations_without_changing_other_live_rows\n    _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-139.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.010627082998325932,
+    "message": "test/test_joint_objectives.py:66: in test_packed_prediction_teardown_records_each_observation_once\n    owner = present()\n            ^^^^^^^^^\ntest/test_joint_objectives.py:64: in present\n    return commit_reading(fixture.language, fixture.registry, fixture.program('cat'),\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-054.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 863.6092058329996,
+    "message": "test/test_output_walk.py:369: in test_runbatch_does_not_train_generate_policy_without_supplied_answers\n    learned = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14174: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14355: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14725: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9275: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10754: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8974: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8786: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24186: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17951: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22368: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21907: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21113: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21111: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20558: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:281: in backward_probe\n    assert m._output_policy_cost is None\nE   assert tensor([9.5293, 8.1379], grad_fn=<WhileLoopAutogradOpBackward>) is None\nE    +  where tensor([9.5293, 8.1379], grad_fn=<WhileLoopAutogradOpBackward>) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=136, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\\n)._output_policy_cost",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-005.log",
+    "family": "output_policy_preview"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 873.0615612090005,
+    "message": "test/test_output_walk.py:407: in test_runbatch_generate_policy_masks_rows_without_supplied_answers\n    got = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14174: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14355: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14725: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9275: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10754: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8974: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8786: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24186: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17951: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22368: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21907: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21113: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21111: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20558: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:281: in backward_probe\n    assert m._output_policy_cost is None\nE   assert tensor([9.5293, 8.1379], grad_fn=<WhileLoopAutogradOpBackward>) is None\nE    +  where tensor([9.5293, 8.1379], grad_fn=<WhileLoopAutogradOpBackward>) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=136, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\\n)._output_policy_cost",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-008.log",
+    "family": "output_policy_preview"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 903.3704219589999,
+    "message": "test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight\n    got = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14174: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14355: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14725: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9275: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10754: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8974: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8786: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24186: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17951: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22368: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21907: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21113: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21111: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20558: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:281: in backward_probe\n    assert m._output_policy_cost is None\nE   assert tensor([9.5293, 8.1379], grad_fn=<WhileLoopAutogradOpBackward>) is None\nE    +  where tensor([9.5293, 8.1379], grad_fn=<WhileLoopAutogradOpBackward>) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=136, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\\n)._output_policy_cost",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-007.log",
+    "family": "output_policy_preview"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 898.5122849999989,
+    "message": "test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight\n    got = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:14174: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14355: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14725: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:9275: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10754: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8974: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8786: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24186: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17951: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22368: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21907: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21113: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:21111: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:20558: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:281: in backward_probe\n    assert m._output_policy_cost is None\nE   assert tensor([9.5293, 8.1379], grad_fn=<WhileLoopAutogradOpBackward>) is None\nE    +  where tensor([9.5293, 8.1379], grad_fn=<WhileLoopAutogradOpBackward>) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=136, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\\n)._output_policy_cost",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-006.log",
+    "family": "output_policy_preview"
+  },
+  {
+    "nodeid": "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.008545250000679516,
+    "message": "test/test_selected_nested_meaning.py:65: in test_10_packed_pending_and_eager_ends_write_identical_rows\n    stores = [_write_selected_observation(language, registry, entry, path)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:122: in _write_selected_observation\n    commit_reading(language, registry, entry, store, owner=host)\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-140.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.008491500000673113,
+    "message": "test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them\n    store = _write_selected_observation(language, registry, entry, path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:122: in _write_selected_observation\n    commit_reading(language, registry, entry, store, owner=host)\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-140.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.008953459000622388,
+    "message": "test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them\n    store = _write_selected_observation(language, registry, entry, path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:122: in _write_selected_observation\n    commit_reading(language, registry, entry, store, owner=host)\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-140.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.008924750000005588,
+    "message": "test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them\n    store = _write_selected_observation(language, registry, entry, path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:122: in _write_selected_observation\n    commit_reading(language, registry, entry, store, owner=host)\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-140.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.009397416999490815,
+    "message": "test/test_selected_relation_meaning.py:423: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-086.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.008288291999633657,
+    "message": "test/test_selected_relation_meaning.py:423: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-086.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.033019374999639695,
+    "message": "test/test_sentence_expectation.py:120: in test_streaming_and_packed_boundary_use_same_full_roles\n    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-056.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01421279199894343,
+    "message": "test/test_sentence_expectation.py:120: in test_streaming_and_packed_boundary_use_same_full_roles\n    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,\ntest/reading_fixtures.py:214: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20936: in _commit_sentence\n    state = self._discard_sentence_record(state, active)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20823: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-056.log",
+    "family": "private_sentence_tuple_fixture"
+  },
+  {
+    "nodeid": "test/test_tied_operator_reconstruction.py::test_missing_absorbed_operand_uses_bounded_compose_candidates",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.26814420799928484,
+    "message": "test/test_tied_operator_reconstruction.py:277: in test_missing_absorbed_operand_uses_bounded_compose_candidates\n    torch.testing.assert_close(left, basis[:, :2].mean(1))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 2 / 2 (100.0%)\nE   Greatest absolute difference: 0.2500000298023224 at index (0, 0) (up to 1e-05 allowed)\nE   Greatest relative difference: 0.7142857313156128 at index (0, 0) (up to 1.3e-06 allowed)",
+    "stdout": "",
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-176.log",
+    "family": "hard_inverse_assertion"
+  }
+]

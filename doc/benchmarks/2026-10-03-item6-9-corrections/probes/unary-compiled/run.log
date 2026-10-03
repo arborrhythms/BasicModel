@@ -1,0 +1,313 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+________________ test_saved_roots_follow_operand_unaries[True] _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110433e90>
+compiled = True
+
+    @pytest.mark.parametrize('compiled', [False, True])
+    def test_saved_roots_follow_operand_unaries(monkeypatch, compiled):
+        import Models
+        from Language import LanguageSpace, ConjunctionLayer, NotLayer
+        folder = Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-03-item6-9-free-readback/xor-ownership'
+        saved = torch.load(folder/'geometry-start-stage-1.pt', weights_only=True)
+        codes = {int(row): code for row, code in zip(saved['rows'], saved['codes'])}
+        pairs = [(0, 1), (0, 2), (4, 1), (4, 2)]
+        basis = torch.stack([torch.stack([codes[a], codes[b]]) for a,b in pairs])
+        roots = torch.tensor(json.loads((folder/'geometry-start.json').read_text())['roots']['values'])
+        conjunction, negation = ConjunctionLayer(), NotLayer()
+        language = SimpleNamespace()
+        for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
+                     'reverse_unary_step'):
+            setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
+        language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
+        language.local_op_from_rule_ids = LanguageSpace.local_op_from_rule_ids
+        language._tree_layer = lambda arity: (SimpleNamespace(ops=[conjunction]) if arity == 2
+                                             else SimpleNamespace(unary_ops=[negation]))
+        B, W, D, cap = 4, 2, 10, 3
+        steps = W*3+(W+1)*2*cap
+        rule_ids = torch.zeros(B, steps, dtype=torch.long)
+        arities = torch.zeros_like(rule_ids)
+        arities[:, 3] = 2
+        arities[2:, 0] = 1
+        arities[[1,3], 4] = 1
+        rule_ids[arities == 1] = 1
+        trace = SimpleNamespace(choices=lambda: (rule_ids, arities, arities > 0),
+            _choice_positions=torch.zeros_like(rule_ids),
+            rule_map=lambda arity: torch.tensor([0 if arity == 2 else 1]))
+        owner = SimpleNamespace(inputSpace=SimpleNamespace(_word_active_mask=torch.ones(B,W,dtype=torch.bool)),
+            languageSpace=language, conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=cap)),
+            _reconstruction_stack=lambda: trace, reconstruction_basis_limit=2)
+        owner._byte_word_cost = MethodType(Models.BasicModel._byte_word_cost, owner)
+        owner._tensor_write_word_column = Models.BasicModel._tensor_write_word_column
+        def eager_loop(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        if not compiled:
+            monkeypatch.setattr(Models, '_reconstruction_while_loop', eager_loop)
+        def reconstruct(root, candidates):
+            return Models.BasicModel._reconstruct_sentences(
+                owner, root, candidates, root[:, None],
+                end_slots=torch.cat((root[:,None],root.new_zeros(B,2,D)),1),
+                end_depth=torch.ones(B,dtype=torch.long),
+                candidate_basis=(candidates,torch.ones(B,2,dtype=torch.bool)), keep_ideas=True)
+        inverse = torch.compile(reconstruct, backend='inductor', fullgraph=True) if compiled else reconstruct
+>       recovered, _, _, unavailable, _ = inverse(roots, basis)
+                                          ^^^^^^^^^^^^^^^^^^^^^
+
+test/test_readback_operand_unaries.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[-2.8348e-02, -3.2661e-01, -8.9495e-01, -8.2051e-03, -5.6628e-02,
+          2.1814e-03,  1.6047e-01,  2.3288e...015],
+         [ 0.2584, -0.0044, -0.0831,  0.6611,  0.0768,  0.3645, -0.4171,
+          -0.1755,  0.3816, -0.0033]]]))
+kwargs = {}
+
+    @functools.wraps(fn)
+    def compile_wrapper(*args: Any, **kwargs: Any) -> Any:
+        # NB: function calls here could change global state (e.g. random state)
+        # and that can result in different behavior between eager and compiled!
+        # In particular, we don't have control over internal functions like justknobs_check
+        # called in _maybe_set_eval_frame.
+        # Unlike in eval_frame_cpp.cpp/convert_frame.py, we don't attempt to restore global state
+        # due to additional overhead costs.
+        prior = set_eval_frame(None)
+        prior_error_on_nested_compile: bool | None = None
+        fullgraph_count_enabled = False
+        # Fake propagation and AOT metadata collection execute user
+        # subclass code under active fake/functional modes. Nested compile
+        # must run the original function in those regions.  Still honor
+        # explicit/internal requests to compile during FX tracing: HOP export
+        # depends on its internal compile to preserve HOPs, and some tests
+        # intentionally enable force_compile_during_fx_trace to get nested
+        # subgraphs.
+        if (
+            _is_eager_on_nested_compile()
+            and not config.force_compile_during_fx_trace
+        ):
+            from torch._higher_order_ops.utils import _in_hop_compile
+    
+            if not _in_hop_compile():
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    _maybe_set_eval_frame(prior)
+    
+        if self.fullgraph:
+            prior_error_on_nested_compile = set_fullgraph_error_on_nested_compile(
+                torch._dynamo.config.error_on_dynamo_callback_in_fullgraph_compiled_code
+            )
+            if not self.export:
+                fullgraph_count_enabled = set_fullgraph_compiled_frame_count(0) < 0
+                if fullgraph_count_enabled:
+                    reset_skip_reasons()
+        try:
+            # We shouldn't compile inside kernel invocation.
+            if tracing_context := torch._guards.TracingContext.try_get():
+                if (
+                    tracing_context.fake_mode is not None
+                    and tracing_context.fake_mode.in_kernel_invocation
+                ):
+                    return fn(*args, **kwargs)
+            # Skip nested compile during export (but not HOP internal compile)
+            # Only skip if there's an active TracingContext (nested), not for top-level export
+            if (
+                torch.compiler.is_exporting()
+                and not config.force_compile_during_fx_trace
+            ):
+                from torch._higher_order_ops.utils import _in_hop_compile
+    
+                if not _in_hop_compile():
+                    if torch._guards.TracingContext.try_get() is not None:
+                        return fn(*args, **kwargs)
+            # Skip nested compile - just inline the function
+            if (
+                is_fx_symbolic_tracing()
+                and not config.force_compile_during_fx_trace
+            ):
+                if config.error_on_nested_fx_trace:
+                    raise RuntimeError(
+                        "Detected that you are using FX to symbolically trace "
+                        "a dynamo-optimized function. This is not supported at the moment."
+                    )
+                else:
+                    return fn(*args, **kwargs)
+    
+            if is_jit_tracing():
+                raise RuntimeError(
+                    "Detected that you are using FX to torch.jit.trace "
+                    "a dynamo-optimized function. This is not supported at the moment."
+                )
+    
+            cleanups = [enter() for enter in self.enter_exit_hooks]
+            prior_skip_guard_eval_unsafe = set_skip_guard_eval_unsafe(
+                _is_skip_guard_eval_unsafe_stance()
+            )
+            prior_isolate_recompiles_id = set_eval_frame_isolate_recompiles_id(
+                self._isolate_recompiles_id
+            )
+            prior_error_on_graph_break = None
+            if not self.fullgraph and self.error_on_graph_break is not None:
+                current_error_on_graph_break = _get_error_on_graph_break()
+                if current_error_on_graph_break != self.error_on_graph_break:
+                    prior_error_on_graph_break = current_error_on_graph_break
+                    _set_error_on_graph_break(self.error_on_graph_break)
+    
+            # Ensure that if an assertion occurs after graph pushes
+            # something onto the DynamicLayerStack then we pop it off (the
+            # constructed graph code isn't guarded with try/finally).
+            #
+            # This used to be a context but putting a `with` here is a noticeable
+            # perf regression (#126293)
+            saved_dynamic_layer_stack_depth = (
+                torch._C._functorch.get_dynamic_layer_stack_depth()
+            )
+    
+            _maybe_set_eval_frame(_callback_from_stance(callback))
+    
+            # Snapshot the local dispatch key set onto a C++ thread-local
+            # stack so it can be restored after the compiled call, matching
+            # the old _ForceDispatchKeyGuard behavior. Keeping the snapshot
+            # in C++ avoids constructing pybind11 DispatchKeySet /
+            # context-manager instances on every compiled call. The restore
+            # runs in the outer finally below (after the inner finally, i.e.
+            # after pop_dynamic_layer_stack) so the save/restore stack stays
+            # balanced even if the inner finally itself raises (e.g. the
+            # fullgraph "found no compiled frames" error).
+            torch._C._dynamo_save_local_dispatch_key_set()
+            try:
+                call_succeeded = False
+                try:
+                    result = fn(*args, **kwargs)
+                    call_succeeded = True
+                except (Unsupported, UncapturedHigherOrderOpError, UserError) as e:
+                    if config.verbose:
+                        raise
+                    # strip internal tracebacks from causes
+                    cur_exn: BaseException = e
+                    while cur_exn.__cause__ is not None:
+                        cur_exn.__cause__.with_traceback(None)
+                        cur_exn = cur_exn.__cause__
+    
+>                   raise e.with_traceback(
+                        None
+                    ) from e.__cause__  # User compiler error
+E                   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E                   
+E                   Unsupported method call
+E                     Higher Order Operator: torch.while_loop
+E                     Explanation: Dynamo does not know how to trace method `__new__` of class `type`
+E                     Hint: Avoid calling `type.__new__` in your code.
+E                     Hint: Please report an issue to PyTorch.
+E                   
+E                     Developer debug context: call_method UserDefinedClassVariable(<class 'types.SimpleNamespace'>) __new__ [UserDefinedClassVariable(<class 'types.SimpleNamespace'>)] {'unary_ops': ListVariable(length=1)}
+E                   
+E                    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0156.html
+E                   
+E                   from user code:
+E                      File "/Users/arogers/github/WikiOracle/basicmodel/test/test_readback_operand_unaries.py", line 52, in reconstruct
+E                       return Models.BasicModel._reconstruct_sentences(
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12362, in _reconstruct_sentences
+E                       _s, pre_stack, pre_depth, pre_bad = _reconstruction_while_loop(
+E                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 379, in _reconstruction_while_loop
+E                       return torch.while_loop(condition, body, values)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E                       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+E                       return func(*args, **kwargs)
+E                              ^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E                       return body_fn(*carried, *additional)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12351, in body_a
+E                       stack, depth, unavailable = undo_operation(
+E                                                   ^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12315, in undo_operation
+E                       stack, depth, bad_binary = _undo_binary(stack, depth, slot, ready, sentence=sentence)
+E                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12295, in _undo_binary
+E                       left_basis=operand_basis(_col_rows(occurrence_left, slot_b), valid),
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12276, in operand_basis
+E                       _, transformed = _reconstruction_while_loop(apply_cond, apply_body,
+E                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 379, in _reconstruction_while_loop
+E                       return torch.while_loop(condition, body, values)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E                       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E                       return body_fn(*carried, *additional)
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12274, in apply_body
+E                       result = language.reverse_unary_step(values.reshape(B*L, D), local, local >= 0)
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13482, in reverse_unary_step
+E                       unary = self._tree_layer(1)
+E                               ^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/test/test_readback_operand_unaries.py", line 28, in <lambda>
+E                       else SimpleNamespace(unary_ops=[negation]))
+E                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/polyfills/__init__.py", line 370, in instantiate_user_defined_class_object
+E                       obj = cls.__new__(cls, *args, **kwargs)
+E                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: UncapturedHigherOrderOpError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=========================== short test summary info ============================
+FAILED test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[True]
+1 failed, 1 passed in 3.42s

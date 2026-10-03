@@ -1,0 +1,184 @@
+START head xor 0 pid=58552
+START head xor 1 pid=58553
+START head xor 2 pid=58556
+START head xor 3 pid=58558
+START head xor 4 pid=58561
+START head xor 5 pid=58564
+START head xor 6 pid=58566
+START head xor 7 pid=58568
+START head xor 8 pid=58570
+START head mm 0 pid=58572
+{"label": "head", "kind": "xor", "reserved_bytes": 6704127405.599999, "gate": 8, "trial": null, "exit_code": 0, "peak_memory_bytes": 4901688360, "reason": "exit", "elapsed_seconds": 14.848494624951854}
+START head xor 9 pid=58681
+{"label": "head", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 7, "trial": null, "exit_code": 0, "peak_memory_bytes": 459327408, "reason": "exit", "elapsed_seconds": 20.267673666821793}
+START head mm 1 pid=58703
+{"label": "head", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 2, "trial": null, "exit_code": 0, "peak_memory_bytes": 619513824, "reason": "exit", "elapsed_seconds": 24.914130833931267}
+START head mm 2 pid=58718
+{"label": "head", "kind": "xor", "reserved_bytes": 6714713076.8, "gate": 9, "trial": null, "exit_code": 0, "peak_memory_bytes": 4907422736, "reason": "exit", "elapsed_seconds": 15.065236957976595}
+START head xor 10 pid=58740
+{"label": "head", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 0, "trial": null, "exit_code": 0, "peak_memory_bytes": 484738992, "reason": "exit", "elapsed_seconds": 38.53937599994242}
+START head mm 3 pid=58766
+{"label": "head", "kind": "xor", "reserved_bytes": 6690517185.599999, "gate": 10, "trial": null, "exit_code": 0, "peak_memory_bytes": 4899230808, "reason": "exit", "elapsed_seconds": 15.150141208898276}
+START head xor 11 pid=58787
+{"label": "head", "kind": "xor", "reserved_bytes": 1906182669.6, "gate": 3, "trial": null, "exit_code": 0, "peak_memory_bytes": 1194561352, "reason": "exit", "elapsed_seconds": 47.69612391712144}
+{"label": "head", "kind": "xor", "reserved_bytes": 1905863306.4, "gate": 4, "trial": null, "exit_code": 0, "peak_memory_bytes": 1194364792, "reason": "exit", "elapsed_seconds": 47.69468016712926}
+START head xor 12 pid=58795
+{"label": "head", "kind": "xor", "reserved_bytes": 6274990843.2, "gate": 11, "trial": null, "exit_code": 0, "peak_memory_bytes": 4556116768, "reason": "exit", "elapsed_seconds": 14.152678915997967}
+START head xor 13 pid=58839
+{"label": "head", "kind": "xor", "reserved_bytes": 6665916547.2, "gate": 12, "trial": null, "exit_code": 0, "peak_memory_bytes": 4996224064, "reason": "exit", "elapsed_seconds": 15.667628624942154}
+START head xor 14 pid=58855
+{"label": "head", "kind": "xor", "reserved_bytes": 1868162006.4, "gate": 1, "trial": null, "exit_code": 0, "peak_memory_bytes": 1164937688, "reason": "exit", "elapsed_seconds": 71.3369634160772}
+START head mm 4 pid=58882
+{"label": "head", "kind": "xor", "reserved_bytes": 6671241378.4, "gate": 13, "trial": null, "exit_code": 0, "peak_memory_bytes": 5001434224, "reason": "exit", "elapsed_seconds": 16.09708004188724}
+START head xor 15 pid=58897
+{"label": "head", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 5, "trial": null, "exit_code": 1, "peak_memory_bytes": 679479312, "reason": "exit", "elapsed_seconds": 100.03202808299102}
+START head mm 5 pid=58994
+{"label": "head", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 6, "trial": null, "exit_code": 1, "peak_memory_bytes": 668321784, "reason": "exit", "elapsed_seconds": 117.84516891697422}
+START head mm 6 pid=59073
+{"label": "head", "kind": "xor", "reserved_bytes": 6769388248.0, "gate": 14, "trial": null, "exit_code": 0, "peak_memory_bytes": 5009822784, "reason": "exit", "elapsed_seconds": 118.84461354208179}
+START head xor 16 pid=59335
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 3, "exit_code": 0, "peak_memory_bytes": 569787808, "reason": "exit", "elapsed_seconds": 151.8504586671479}
+START head mm 7 pid=59363
+{"label": "head", "kind": "xor", "reserved_bytes": 6743296759.2, "gate": 15, "trial": null, "exit_code": 0, "peak_memory_bytes": 5009921136, "reason": "exit", "elapsed_seconds": 118.96493499982171}
+START head xor 17 pid=59378
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 0, "exit_code": 0, "peak_memory_bytes": 599262696, "reason": "exit", "elapsed_seconds": 195.86750133312307}
+START head mm 8 pid=59383
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 2, "exit_code": 0, "peak_memory_bytes": 621135408, "reason": "exit", "elapsed_seconds": 194.4766355000902}
+START head mm 9 pid=59453
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 1, "exit_code": 0, "peak_memory_bytes": 621905360, "reason": "exit", "elapsed_seconds": 199.29355966602452}
+START candidate xor 0 pid=59454
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 5, "exit_code": 0, "peak_memory_bytes": 580568528, "reason": "exit", "elapsed_seconds": 152.82368870894425}
+START candidate xor 1 pid=59592
+{"label": "candidate", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 0, "trial": null, "exit_code": 0, "peak_memory_bytes": 482346904, "reason": "exit", "elapsed_seconds": 41.29548420896754}
+START candidate xor 2 pid=59623
+{"label": "candidate", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 2, "trial": null, "exit_code": 0, "peak_memory_bytes": 604981288, "reason": "exit", "elapsed_seconds": 12.932024042122066}
+START candidate xor 3 pid=59702
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 4, "exit_code": 0, "peak_memory_bytes": 680085016, "reason": "exit", "elapsed_seconds": 216.34813445899636}
+START candidate xor 4 pid=59804
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 6, "exit_code": 0, "peak_memory_bytes": 676726296, "reason": "exit", "elapsed_seconds": 181.06150758313015}
+START candidate xor 5 pid=59845
+{"label": "head", "kind": "xor", "reserved_bytes": 6656843306.4, "gate": 16, "trial": null, "exit_code": 0, "peak_memory_bytes": 5015589976, "reason": "exit", "elapsed_seconds": 121.70935129188001}
+START head xor 26 pid=59916
+{"label": "head", "kind": "xor", "reserved_bytes": 6875586090.4, "gate": 17, "trial": null, "exit_code": 0, "peak_memory_bytes": 5015852120, "reason": "exit", "elapsed_seconds": 120.76919474988244}
+START head xor 18 pid=59956
+{"label": "candidate", "kind": "xor", "reserved_bytes": 1906182669.6, "gate": 3, "trial": null, "exit_code": 0, "peak_memory_bytes": 1194954544, "reason": "exit", "elapsed_seconds": 51.5757150829304}
+START candidate xor 6 pid=60050
+{"label": "candidate", "kind": "xor", "reserved_bytes": 1868162006.4, "gate": 1, "trial": null, "exit_code": 0, "peak_memory_bytes": 1300466112, "reason": "exit", "elapsed_seconds": 76.90763970790431}
+START candidate xor 7 pid=60064
+{"label": "candidate", "kind": "xor", "reserved_bytes": 1905863306.4, "gate": 4, "trial": null, "exit_code": 0, "peak_memory_bytes": 1195855640, "reason": "exit", "elapsed_seconds": 50.81676599988714}
+START candidate mm 0 pid=60094
+{"label": "candidate", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 7, "trial": null, "exit_code": 0, "peak_memory_bytes": 455739240, "reason": "exit", "elapsed_seconds": 21.66780550009571}
+START candidate mm 1 pid=60158
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 7, "exit_code": 0, "peak_memory_bytes": 628033024, "reason": "exit", "elapsed_seconds": 193.36375883384608}
+START candidate mm 2 pid=60304
+{"label": "candidate", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 5, "trial": null, "exit_code": 1, "peak_memory_bytes": 657115200, "reason": "exit", "elapsed_seconds": 92.2214755830355}
+START candidate mm 3 pid=60352
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 8, "exit_code": 0, "peak_memory_bytes": 685098544, "reason": "exit", "elapsed_seconds": 204.79049287480302}
+START candidate mm 4 pid=60384
+{"label": "candidate", "kind": "xor", "reserved_bytes": 1610612736.0, "gate": 6, "trial": null, "exit_code": 1, "peak_memory_bytes": 662996984, "reason": "exit", "elapsed_seconds": 94.11480058310553}
+START candidate mm 5 pid=60500
+{"label": "head", "kind": "xor", "reserved_bytes": 6722317047.2, "gate": 26, "trial": null, "exit_code": 0, "peak_memory_bytes": 5010379840, "reason": "exit", "elapsed_seconds": 120.45827045780607}
+START head xor 19 pid=60541
+{"label": "head", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 9, "exit_code": 0, "peak_memory_bytes": 696010264, "reason": "exit", "elapsed_seconds": 207.89445200003684}
+START candidate mm 6 pid=60549
+{"label": "head", "kind": "xor", "reserved_bytes": 6869153763.2, "gate": 18, "trial": null, "exit_code": 0, "peak_memory_bytes": 5009839192, "reason": "exit", "elapsed_seconds": 120.65024195914157}
+START head xor 20 pid=60586
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 1, "exit_code": 0, "peak_memory_bytes": 584009168, "reason": "exit", "elapsed_seconds": 154.54228737484664}
+START candidate mm 7 pid=61026
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 0, "exit_code": 0, "peak_memory_bytes": 627934648, "reason": "exit", "elapsed_seconds": 170.2556130408775}
+START candidate mm 8 pid=61035
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 2, "exit_code": 0, "peak_memory_bytes": 602146208, "reason": "exit", "elapsed_seconds": 156.06529483292252}
+START candidate mm 9 pid=61203
+{"label": "head", "kind": "xor", "reserved_bytes": 6869388023.2, "gate": 19, "trial": null, "exit_code": 0, "peak_memory_bytes": 5009691736, "reason": "exit", "elapsed_seconds": 123.65350891603157}
+START head xor 21 pid=61262
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 3, "exit_code": 0, "peak_memory_bytes": 596215224, "reason": "exit", "elapsed_seconds": 160.7471870840527}
+{"label": "head", "kind": "xor", "reserved_bytes": 6848706500.0, "gate": 20, "trial": null, "exit_code": 0, "peak_memory_bytes": 5011543128, "reason": "exit", "elapsed_seconds": 123.56604008306749}
+START head xor 22 pid=61331
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 4, "exit_code": 0, "peak_memory_bytes": 606242280, "reason": "exit", "elapsed_seconds": 161.13205933314748}
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 5, "exit_code": 0, "peak_memory_bytes": 599016912, "reason": "exit", "elapsed_seconds": 159.8462020419538}
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 6, "exit_code": 0, "peak_memory_bytes": 606586368, "reason": "exit", "elapsed_seconds": 178.87414420791902}
+START head xor 23 pid=61554
+{"label": "head", "kind": "xor", "reserved_bytes": 6870112196.0, "gate": 21, "trial": null, "exit_code": 0, "peak_memory_bytes": 5012706440, "reason": "exit", "elapsed_seconds": 118.1517422918696}
+START head xor 24 pid=61818
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 8, "exit_code": 0, "peak_memory_bytes": 608732576, "reason": "exit", "elapsed_seconds": 160.71906354115345}
+{"label": "head", "kind": "xor", "reserved_bytes": 6869430590.4, "gate": 22, "trial": null, "exit_code": 0, "peak_memory_bytes": 5012689960, "reason": "exit", "elapsed_seconds": 116.73677562503144}
+START head xor 25 pid=61877
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 7, "exit_code": 0, "peak_memory_bytes": 607749632, "reason": "exit", "elapsed_seconds": 172.79512845911086}
+{"label": "candidate", "kind": "mm", "reserved_bytes": 1610612736.0, "gate": null, "trial": 9, "exit_code": 0, "peak_memory_bytes": 659686912, "reason": "exit", "elapsed_seconds": 178.96859008306637}
+{"label": "head", "kind": "xor", "reserved_bytes": 6869281496.0, "gate": 23, "trial": null, "exit_code": 0, "peak_memory_bytes": 5010887744, "reason": "exit", "elapsed_seconds": 115.84127070801333}
+START head xor 27 pid=62063
+{"label": "head", "kind": "xor", "reserved_bytes": 6869281496.0, "gate": 24, "trial": null, "exit_code": 1, "peak_memory_bytes": 5011870784, "reason": "exit", "elapsed_seconds": 114.30492216697894}
+START head xor 28 pid=62370
+{"label": "head", "kind": "xor", "reserved_bytes": 6869409291.2, "gate": 25, "trial": null, "exit_code": 1, "peak_memory_bytes": 5008036904, "reason": "exit", "elapsed_seconds": 113.26918325014412}
+START candidate xor 8 pid=62402
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6704127405.599999, "gate": 8, "trial": null, "exit_code": 0, "peak_memory_bytes": 4893807608, "reason": "exit", "elapsed_seconds": 15.820168250007555}
+START candidate xor 9 pid=62458
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6714713076.8, "gate": 9, "trial": null, "exit_code": 0, "peak_memory_bytes": 4907455456, "reason": "exit", "elapsed_seconds": 16.121796832885593}
+START candidate xor 10 pid=62531
+{"label": "head", "kind": "xor", "reserved_bytes": 6869111133.599999, "gate": 27, "trial": null, "exit_code": 0, "peak_memory_bytes": 5011690560, "reason": "exit", "elapsed_seconds": 114.08569304202683}
+START candidate xor 11 pid=62634
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6690517185.599999, "gate": 10, "trial": null, "exit_code": 0, "peak_memory_bytes": 4880372776, "reason": "exit", "elapsed_seconds": 15.511342708021402}
+START candidate xor 12 pid=62642
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6274990843.2, "gate": 11, "trial": null, "exit_code": 0, "peak_memory_bytes": 4554642184, "reason": "exit", "elapsed_seconds": 13.907612958922982}
+START candidate xor 13 pid=62695
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6665916547.2, "gate": 12, "trial": null, "exit_code": 0, "peak_memory_bytes": 4930098192, "reason": "exit", "elapsed_seconds": 15.209980958141387}
+START candidate xor 14 pid=62739
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6671241378.4, "gate": 13, "trial": null, "exit_code": 0, "peak_memory_bytes": 4923118608, "reason": "exit", "elapsed_seconds": 15.99222774989903}
+START candidate xor 15 pid=62785
+{"label": "head", "kind": "xor", "reserved_bytes": 6869579653.599999, "gate": 28, "trial": null, "exit_code": 1, "peak_memory_bytes": 5009642560, "reason": "exit", "elapsed_seconds": 113.60453070793301}
+START candidate xor 16 pid=62944
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6769388248.0, "gate": 14, "trial": null, "exit_code": 1, "peak_memory_bytes": 5010641984, "reason": "exit", "elapsed_seconds": 117.21043983311392}
+START candidate xor 17 pid=63278
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6743296759.2, "gate": 15, "trial": null, "exit_code": 0, "peak_memory_bytes": 5010773080, "reason": "exit", "elapsed_seconds": 116.94290062505752}
+START candidate xor 18 pid=63341
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6656843306.4, "gate": 16, "trial": null, "exit_code": 0, "peak_memory_bytes": 5011330136, "reason": "exit", "elapsed_seconds": 118.44028804195113}
+START candidate xor 19 pid=63458
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6875586090.4, "gate": 17, "trial": null, "exit_code": 0, "peak_memory_bytes": 5011477616, "reason": "exit", "elapsed_seconds": 118.95552979200147}
+START candidate xor 20 pid=63731
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6869153763.2, "gate": 18, "trial": null, "exit_code": 0, "peak_memory_bytes": 5011018792, "reason": "exit", "elapsed_seconds": 117.46413379209116}
+START candidate xor 21 pid=63772
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6869388023.2, "gate": 19, "trial": null, "exit_code": 0, "peak_memory_bytes": 5011051584, "reason": "exit", "elapsed_seconds": 118.37127329199575}
+START candidate xor 22 pid=63880
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6848706500.0, "gate": 20, "trial": null, "exit_code": 0, "peak_memory_bytes": 5011035224, "reason": "exit", "elapsed_seconds": 118.60196937504224}
+START candidate xor 23 pid=64341
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6870112196.0, "gate": 21, "trial": null, "exit_code": 1, "peak_memory_bytes": 5011330136, "reason": "exit", "elapsed_seconds": 118.13892445806414}
+START candidate xor 24 pid=64390
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6869430590.4, "gate": 22, "trial": null, "exit_code": 0, "peak_memory_bytes": 5011248216, "reason": "exit", "elapsed_seconds": 118.34550908301026}
+START candidate xor 25 pid=64549
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6869281496.0, "gate": 23, "trial": null, "exit_code": 0, "peak_memory_bytes": 5012378664, "reason": "exit", "elapsed_seconds": 119.60939066694118}
+START candidate xor 26 pid=64981
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6869281496.0, "gate": 24, "trial": null, "exit_code": 1, "peak_memory_bytes": 5013296216, "reason": "exit", "elapsed_seconds": 117.86525791720487}
+START candidate xor 27 pid=65013
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6869409291.2, "gate": 25, "trial": null, "exit_code": 1, "peak_memory_bytes": 5009331288, "reason": "exit", "elapsed_seconds": 120.32924433308654}
+START candidate xor 28 pid=65191
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6722317047.2, "gate": 26, "trial": null, "exit_code": 0, "peak_memory_bytes": 5008364608, "reason": "exit", "elapsed_seconds": 118.203091125004}
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6869111133.599999, "gate": 27, "trial": null, "exit_code": 0, "peak_memory_bytes": 5012788312, "reason": "exit", "elapsed_seconds": 117.63760033296421}
+{"label": "candidate", "kind": "xor", "reserved_bytes": 6869579653.599999, "gate": 28, "trial": null, "exit_code": 0, "peak_memory_bytes": 5012378712, "reason": "exit", "elapsed_seconds": 114.48160799988545}
+{
+  "named_pytest_outcomes": {
+    "passed": 44,
+    "failed": 5
+  },
+  "guarded_group_outcomes": {
+    "passed": 24,
+    "test_failure": 5
+  },
+  "guarded_roundtrip_outcomes": {
+    "passed": 12,
+    "test_failure": 3
+  }
+}
+{
+  "named_pytest_outcomes": {
+    "passed": 43,
+    "failed": 6
+  },
+  "guarded_group_outcomes": {
+    "passed": 23,
+    "test_failure": 6
+  },
+  "guarded_roundtrip_outcomes": {
+    "test_failure": 4,
+    "passed": 11
+  }
+}

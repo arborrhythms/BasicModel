@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit"
+  ],
+  "completed": [
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025613207999413135,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

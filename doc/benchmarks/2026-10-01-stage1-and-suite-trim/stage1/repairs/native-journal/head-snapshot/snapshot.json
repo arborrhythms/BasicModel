@@ -1,0 +1,8 @@
+{
+  "commit": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "paths": [
+    "bin",
+    "data"
+  ],
+  "purpose": "Read-only HEAD graph diagnostic explicitly requested by Alec; no Git worktree."
+}

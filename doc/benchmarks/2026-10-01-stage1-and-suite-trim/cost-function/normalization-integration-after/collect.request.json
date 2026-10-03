@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_relative_error.py",
+    "test/test_sentence_journal.py",
+    "test/test_supplied_answer_training.py",
+    "test/test_sentence_comparison.py",
+    "test/test_sentence_prediction_trials.py",
+    "test/test_reconstruction_scope.py",
+    "test/test_reconstruction_bank_contract.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

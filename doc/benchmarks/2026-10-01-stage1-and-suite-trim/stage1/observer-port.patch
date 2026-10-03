@@ -1,0 +1,39 @@
+--- doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/observe.py
++++ test/objective_conflicts_probe.py
+@@ -1,4 +1,4 @@
+-"""Receipt-only, read-only instrumentation of the unchanged candidate.
++"""Read-only objective measurements, shared by the weekly slow test and receipts.
+ 
+ No RNG draws, optimizer edits, extra updates or configuration edits.
+ The step-5a arm observes the candidate; the cut arm omits only the trial answer
+@@ -20,10 +20,11 @@
+ from types import SimpleNamespace
+ 
+ HERE = Path(__file__).resolve().parent
+-ROOT = HERE.parents[3]
++ROOT = HERE.parent
+ sys.path[:0] = [str(ROOT/'bin'), str(ROOT/'test')]
+ parser = argparse.ArgumentParser()
+ parser.add_argument('--config', required=True)
++parser.add_argument('--config-xml', help='Receipt-local fixture; production XML is never edited')
+ parser.add_argument('--output', required=True)
+ parser.add_argument('--arm',choices=('step5a','cut'),default='step5a')
+ parser.add_argument('--validate-only',action='store_true')
+@@ -419,7 +420,7 @@
+                   row_reduction='Each trial is averaged over active sentence rows before its optimizer step.'),
+               batch_formulas=dict(primary='(1-reconstruction_scale)*lossOut + reconstruction_scale*lossIn + embedding_scale*sbow',
+                   answer_numeric='lossOut uses what_scale for the bandless numeric output',
+-                  reconstruction='Owned tied byte loss in the native benchmark; full-percept D3 event loss in XOR_grammar',
++                  reconstruction=('Owned tied byte loss from the understanding' if model.reconstruct_in_loop else 'Full-percept D3 event loss'),
+                   truth='Detached luminosity/universality multiplier on the assembled cost, plus independent truth/balance terms',
+                   regularizers='Gate L1 follows truth modulation; readout L1 is a detached report of optimizer-owned proximal regularization'),
+               configuration=args.config,training_batches=self.training_batches,evaluation_batches=self.evaluation_batches))
+@@ -506,7 +507,7 @@
+ if args.validate_only:
+     write('validated.json',dict(instrumentation_installed=True,model_constructed=False))
+     raise SystemExit(0)
+-config=ROOT/'data'/(args.config+'.xml')
++config=Path(args.config_xml).resolve() if args.config_xml else ROOT/'data'/(args.config+'.xml')
+ util.init_config(path=str(config),defaults_path=str(ROOT/'data/model.xml'))
+ cfg=util.TheXMLConfig.data
+ arch=cfg.get('architecture',{})

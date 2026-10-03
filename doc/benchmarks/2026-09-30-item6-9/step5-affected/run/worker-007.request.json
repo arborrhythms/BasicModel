@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-affected/run/worker-007.recycle.json"
+}

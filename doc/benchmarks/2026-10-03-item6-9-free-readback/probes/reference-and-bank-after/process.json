@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_concept_binding_operators.py",
+    "test/test_tied_operator_reconstruction.py",
+    "test/test_clause_scope.py",
+    "test/test_sentence_journal.py",
+    "test/test_reader_trial_ownership.py"
+  ],
+  "pid": 43408,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1506937208,
+  "elapsed_seconds": 22.25821158301551,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/reference-and-bank-after/run.log"
+}

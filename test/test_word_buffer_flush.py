@@ -60,15 +60,15 @@ def test_buffer_starts_empty():
 
 
 def test_scalar_and_vector_overloads_agree():
-    """Scalar add_word and vector add_word produce identical entries.
+    """The vector buffer reproduces the canonical WordEncoding tuples.
 
     Drive the same sequence of (batch, vector, rule, ...) tuples
-    through both APIs and compare the materialized ``self.word`` list
+    through WordEncoding and compare the materialized ``self.word`` list
     after flush; they must match entry-for-entry.
     """
     model = _model()
 
-    # Reference: scalar path.
+    # Reference: canonical tuple encoding.
     ref_sub = _fresh_subspace(model)
     seq = [
         (0, 1, 0, 0, -1, -1, -1),
@@ -76,9 +76,8 @@ def test_scalar_and_vector_overloads_agree():
         (1, 0, 0, 0, -1, -1, -1),
         (1, 3, 0, 2, 7, 8, -1),
     ]
-    for (b, v, r, o, l1, l2, l3) in seq:
-        ref_sub.add_word(b, v, r, order=o, leaf1=l1, leaf2=l2, leaf3=l3)
-    ref_words = list(ref_sub.word)
+    ref_words = [ref_sub.wordEncoding.encode(b, v, r, o, l1, l2, l3)
+                 for b, v, r, o, l1, l2, l3 in seq]
 
     # Candidate: vector path. Group by depth (each cell gets one
     # entry per depth d) so the scatter writes one entry per cell at
@@ -159,21 +158,3 @@ def test_buffer_lazy_resize():
     assert int(sub.word_count.shape[0]) >= 8
     sub.flush_word_buffer()
     assert len(sub.word) == 1
-
-
-def test_legacy_scalar_path_unaffected_by_buffer():
-    """Pure scalar callers don't interact with the tensor buffer.
-
-    The scalar overload still appends directly to ``self.word`` and
-    leaves ``word_count`` at zero, so a flush after legacy use is a
-    no-op (no double-counting).
-    """
-    model = _model()
-    sub = _fresh_subspace(model)
-    sub.add_word(0, 1, 0)
-    sub.add_word(1, 2, 0)
-    assert len(sub.word) == 2
-    assert int(sub.word_count.sum().item()) == 0
-    sub.flush_word_buffer()
-    # Length unchanged; flush had nothing to materialize.
-    assert len(sub.word) == 2

@@ -1,0 +1,23 @@
+Fs..ssss                                                                 [100%]
+=================================== FAILURES ===================================
+_______________________ test_silent_zero_sites_warn_once _______________________
+test/test_reconstruction_roundtrip.py:350: in test_silent_zero_sites_warn_once
+    assert len(recon_msgs) == 1, recon_msgs
+E   AssertionError: []
+E   assert 0 == 1
+E    +  where 0 = len([])
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.434s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.061s, 100.00%)
+Training throughput: 1 batches in 0.049s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7565: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once
+1 failed, 2 passed, 5 skipped, 1 warning in 2.68s

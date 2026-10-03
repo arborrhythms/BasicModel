@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_native_trial_reads_the_completed_point_with_live_credit _________
+test/test_supplied_answer_training.py:122: in test_native_trial_reads_the_completed_point_with_live_credit
+    error = BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
+bin/Models.py:20645: in _sentence_answer_error
+    fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20645: in <genexpr>
+    fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^
+<string>:12: in __init__
+    ???
+bin/Understanding.py:205: in __post_init__
+    raise ValueError('a sentence end state occupies one or three slots')
+E   ValueError: a sentence end state occupies one or three slots
+=========================== short test summary info ============================
+FAILED test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_with_live_credit
+1 failed in 2.83s

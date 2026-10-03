@@ -1,0 +1,39 @@
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -2433,18 +2433,23 @@
+ # =====================================================================
+ 
+ class NotLayer(GrammarLayer):
+-    """Self-inverse ``not(S)``: swap the leading ``[pos, neg]`` bivector."""
++    """Self-inverse negation of a concept code, or an explicit pole pair."""
+     rule_name  = "not"
+     arity      = 1
+     invertible = True
+     space_role       = 'CS'
+ 
+-    def __init__(self):
+-        """Initialize the parameter-free operator."""
++    def __init__(self, *, representation='code'):
++        """Concept slots carry full codes; evidence poles are explicit."""
+         super().__init__(0, 0)
++        if representation not in ('code', 'poles'):
++            raise ValueError('not requires code or poles representation')
++        self.representation = representation
+ 
+     def forward(self, x):
+-        """Swap the leading bivector channels."""
++        """Reflect the full code, or exchange the explicit evidence poles."""
++        if self.representation == 'code':
++            return -x
+         self._check_bivector_shape(x)
+         bivector = x[..., :2].flip(dims=(-1,))
+         rest     = x[..., 2:]
+@@ -2453,7 +2458,7 @@
+         return torch.cat([bivector, rest], dim=-1)
+ 
+     def reverse(self, y):
+-        """Apply the self-inverse swap."""
++        """Both representations are their own inverse."""
+         return self.forward(y)
+ 
+ class NonLayer(GrammarLayer):

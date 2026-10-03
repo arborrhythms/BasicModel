@@ -1,0 +1,25 @@
+{
+  "helper": "test/test_input_word_cursor.py: replace the retired helper module\u2019s repository-path constant with pathlib, including its subprocess bin path. The predicates and every assertion stay unchanged.",
+  "whitespace_only_ast_identical": [
+    "bin/Legacy.py",
+    "bin/Queries.py",
+    "bin/space_carrier.py",
+    "test/test_abstraction_order_canonical.py",
+    "test/test_aligned_fold_binding.py",
+    "test/test_compose_pair_driver.py",
+    "test/test_explicit_ordered_stm.py",
+    "test/test_mereology_raise.py",
+    "test/test_meronomy_laws.py",
+    "test/test_perceptual_chunking.py",
+    "test/test_property_tiling.py",
+    "test/test_relative_rule_detection_collapsed.py",
+    "test/test_relative_sentence_codebook_insertion.py",
+    "test/test_surface_schema.py",
+    "test/test_thought_checkpoint_credit.py",
+    "test/test_tied_vectors_compile.py",
+    "test/test_two_codebook_meta_taxonomy.py",
+    "test/test_two_truth_stores.py",
+    "test/test_unified_lexicon_codebook.py",
+    "test/test_word_buffer_flush.py"
+  ]
+}

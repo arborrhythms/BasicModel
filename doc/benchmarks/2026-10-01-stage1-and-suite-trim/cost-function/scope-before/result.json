@@ -1,0 +1,157 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[radix-meronomy-True-exempt: old reading mode]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-byte-True-exempt: old reading mode]",
+    "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+    "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient"
+  ],
+  "completed": [
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[radix-meronomy-True-exempt: old reading mode]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-byte-True-exempt: old reading mode]",
+    "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+    "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scope-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scope-before/worker-000.json"
+      ],
+      "pid": 6908,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 644892184,
+      "elapsed_seconds": 4.469193541997811,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scope-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[radix-meronomy-True-exempt: old reading mode]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-byte-True-exempt: old reading mode]",
+        "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+        "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient"
+      ],
+      "completed": [
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[radix-meronomy-True-exempt: old reading mode]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-byte-True-exempt: old reading mode]",
+        "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+        "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00011783299851231277,
+          "message": "test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar\n    assert BasicModel._understanding_reconstruction_scope(model) == expected\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'BasicModel' has no attribute '_understanding_reconstruction_scope'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00010066699906019494,
+          "message": "test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar\n    assert BasicModel._understanding_reconstruction_scope(model) == expected\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'BasicModel' has no attribute '_understanding_reconstruction_scope'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[radix-meronomy-True-exempt: old reading mode]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 9.025000326801091e-05,
+          "message": "test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar\n    assert BasicModel._understanding_reconstruction_scope(model) == expected\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'BasicModel' has no attribute '_understanding_reconstruction_scope'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-byte-True-exempt: old reading mode]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 8.662499749334529e-05,
+          "message": "test/test_reconstruction_scope.py:22: in test_reconstruction_scope_follows_live_reading_and_grammar\n    assert BasicModel._understanding_reconstruction_scope(model) == expected\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'BasicModel' has no attribute '_understanding_reconstruction_scope'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.018412709003314376,
+          "message": "test/test_reconstruction_scope.py:29: in test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones\n    validate()\ntest/test_reconstruction_bank_contract.py:25: in <lambda>\n    return lambda: BasicModel._validate_reconstruction_bank(model), isp\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:12257: in _validate_reconstruction_bank\n    torch._assert_async(\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: tied reconstruction has no surface candidates after concept admission; populate the concept inventory and stage its WORD surfaces before reconstruction",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.31079200000385754,
+          "message": "test/test_reconstruction_scope.py:45: in test_missing_candidate_cost_is_zero_with_zero_gradient\n    assert torch.equal(cost, torch.zeros_like(cost))\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10a3dd3a0>(tensor([5.5452, 5.5452], grad_fn=<DivBackward0>), tensor([0., 0.]))\nE    +    where <built-in method equal of type object at 0x10a3dd3a0> = torch.equal\nE    +    and   tensor([0., 0.]) = <built-in method zeros_like of type object at 0x10a3dd3a0>(tensor([5.5452, 5.5452], grad_fn=<DivBackward0>))\nE    +      where <built-in method zeros_like of type object at 0x10a3dd3a0> = torch.zeros_like",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scope-before",
+  "elapsed_seconds": 8.634776999999303,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 644892184,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scope-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scope-before/collect.json"
+    ],
+    "pid": 6892,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 434930888,
+    "elapsed_seconds": 3.7935212920056074,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scope-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[radix-meronomy-True-exempt: old reading mode]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-byte-True-exempt: old reading mode]",
+        "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+        "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

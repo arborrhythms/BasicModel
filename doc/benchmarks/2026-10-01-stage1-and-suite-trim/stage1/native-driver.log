@@ -1,0 +1,10 @@
+[collect] 1 selectors; limit 1800s, 24.0 GiB
+[collect] exit 0; 1.3s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 24.0 GiB
+[worker-000] exit 0; 1276.8s; peak 22.03 GiB
+{"arm": "step5a", "reason": "passed", "exit_code": 0}
+[collect] 1 selectors; limit 1800s, 24.0 GiB
+[collect] exit 0; 1.4s; peak 0.04 GiB
+[worker-000] 1 selectors; limit 1800s, 24.0 GiB
+[worker-000] exit 0; 1277.3s; peak 21.04 GiB
+{"arm": "cut", "reason": "passed", "exit_code": 0}

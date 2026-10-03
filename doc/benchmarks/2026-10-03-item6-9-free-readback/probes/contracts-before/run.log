@@ -1,0 +1,99 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_conjunction_carries_product_magnitude_and_identity ____________
+
+    def test_conjunction_carries_product_magnitude_and_identity():
+        from Language import ConjunctionLayer
+        left = torch.tensor([[.2, -.7, .4]])
+        right = torch.tensor([[.8, .3, -.5]])
+        expected = (left.norm(dim=-1, keepdim=True) * right.norm(dim=-1, keepdim=True)
+                    * torch.nn.functional.normalize(left * right, dim=-1))
+>       torch.testing.assert_close(ConjunctionLayer().compose(left, right), expected)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 3 / 3 (100.0%)
+E       Greatest absolute difference: 0.19724120199680328 at index (0, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 0.4965275526046753 at index (0, 0) (up to 1.3e-06 allowed)
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py:17: AssertionError
+_________________________ test_disjunction_is_the_mean _________________________
+
+    def test_disjunction_is_the_mean():
+        from Language import DisjunctionLayer
+        left = torch.tensor([[.2, -.7, .4]])
+        right = torch.tensor([[.8, .3, -.5]])
+>       torch.testing.assert_close(DisjunctionLayer().compose(left, right), (left+right)/2)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 3 / 3 (100.0%)
+E       Greatest absolute difference: 0.5 at index (0, 1) (up to 1e-05 allowed)
+E       Greatest relative difference: 9.0 at index (0, 2) (up to 1.3e-06 allowed)
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py:24: AssertionError
+______________ test_min_and_max_remain_named_catalogue_operators _______________
+
+    def test_min_and_max_remain_named_catalogue_operators():
+        import Language
+>       assert hasattr(Language, 'MinLayer') and hasattr(Language, 'MaxLayer')
+E       AssertionError: assert (False)
+E        +  where False = hasattr(<module 'Language' from '/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py'>, 'MinLayer')
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py:29: AssertionError
+______________ test_understanding_does_not_carry_witness_offsets _______________
+
+    def test_understanding_does_not_carry_witness_offsets():
+        from SentenceUnderstanding import SentenceUnderstanding
+>       assert 'witness_offsets' not in {f.name for f in fields(SentenceUnderstanding)}
+E       AssertionError: assert 'witness_offsets' not in {'arities', 'depths', 'end_depth', 'end_slots', 'journal_columns', 'journal_valid', ...}
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py:34: AssertionError
+_______ test_reconstruction_optimizer_is_gradient_descent_with_momentum ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x128296d50>
+
+    def test_reconstruction_optimizer_is_gradient_descent_with_momentum(monkeypatch):
+        import util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, _ = _fresh_model(str(ROOT/'data/XOR_grammar.xml'))
+        try:
+            optimizer = model.getOptimizer(lr=.01)
+            writers = model.objective_parameter_groups(optimizer)
+            children = getattr(optimizer, 'optimizers', [optimizer])
+            for owner in ('reconstruction', 'output'):
+                for parameter in writers[owner]:
+                    child = next(o for o in children if any(parameter is p
+                                 for g in o.param_groups for p in g['params']))
+                    inner = getattr(child, 'inner', child)
+                    if owner == 'reconstruction':
+>                       assert isinstance(inner, torch.optim.SGD) or type(inner).__name__ == '_RowLocalSGD'
+E                       AssertionError: assert (False or 'Adam' == '_RowLocalSGD'
+E                        +  where False = isinstance(Adam (\nParameter Group 0\n    amsgrad: False\n    betas: (0.9, 0.999)\n    capturable: False\n    decoupled_weight_decay: ...entiable: False\n    eps: 1e-08\n    foreach: None\n    fused: None\n    lr: 0.01\n    maximize: False\n    weight_decay: 0\n), <class 'torch.optim.sgd.SGD'>)
+E                        +    where <class 'torch.optim.sgd.SGD'> = <module 'torch.optim' from '/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/optim/__init__.py'>.SGD
+E                        +      where <module 'torch.optim' from '/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/optim/__init__.py'> = torch.optim
+E                         
+E                         - _RowLocalSGD
+E                         + Adam)
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py:52: AssertionError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_reconstruction_optimizer_is_gradient_descent_with_momentum
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_reconstruction_optimizer_is_gradient_descent_with_momentum
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_reconstruction_optimizer_is_gradient_descent_with_momentum
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_conjunction_carries_product_magnitude_and_identity
+FAILED doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_disjunction_is_the_mean
+FAILED doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_min_and_max_remain_named_catalogue_operators
+FAILED doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_understanding_does_not_carry_witness_offsets
+FAILED doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py::test_reconstruction_optimizer_is_gradient_descent_with_momentum
+5 failed, 3 warnings in 2.01s

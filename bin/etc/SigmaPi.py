@@ -2,8 +2,18 @@
 
 Builds a two-input truth table, trains a small Pi->Sigma network on it,
 and plots the loss curve and (for 2-D inputs) the decision boundary.
-Run directly to execute the experiment:  python SigmaPi.py
+Run ``python bin/etc/SigmaPi.py`` for inline tests; add ``--demo`` for the experiment.
 """
+
+import sys
+from pathlib import Path
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    if "--demo" not in sys.argv:
+        import os
+        os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+        os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+        os.environ.setdefault("MPLBACKEND", "Agg")
 
 import random
 
@@ -241,7 +251,7 @@ def logic(X_train, Y_train):
     TheReport.write_html()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__" and "--demo" in sys.argv:
     # Build the two-input truth table: (0,0), (0,1), (1,0), (1,1).
     if embeddingDim == 1:
         zero = torch.zeros(1, 1, embeddingDim)
@@ -283,3 +293,38 @@ if __name__ == '__main__':
 
     Y_train = Y_train.unsqueeze(2)
     logic(X_train, Y_train)
+
+
+if __name__ == "__main__" and "--demo" not in sys.argv:
+    import unittest
+    from util import TheDevice
+    util.init_device("cpu")
+
+    class TestSigmaPi(unittest.TestCase):
+        def test_logical_function_net_creation(self):
+            net = LogicalFunctionNet(nInput=2, nHidden=4, nOutput=1)
+            self.assertIsNotNone(net)
+            self.assertTrue(hasattr(net, 'hidden'))
+            self.assertTrue(hasattr(net, 'output'))
+
+
+    class TestLogicalFunctionNet(unittest.TestCase):
+        """The SigmaPi.py LogicalFunctionNet runs without error."""
+
+        def test_forward_shape(self):
+            model = LogicalFunctionNet(2, 3, 1)
+            x = torch.randn(4, 1, 2).to(TheDevice.get())
+            y = model(x)
+            self.assertEqual(y.shape, (4, 1, 1))
+
+        def test_backward_no_error(self):
+            model = LogicalFunctionNet(2, 3, 1)
+            x = torch.randn(4, 1, 2).to(TheDevice.get())
+            y = model(x)
+            loss = y.sum()
+            loss.backward()
+            # Verify at least some parameters got gradients
+            grads = [p.grad for p in model.parameters() if p.grad is not None]
+            self.assertGreater(len(grads), 0)
+
+    unittest.main()

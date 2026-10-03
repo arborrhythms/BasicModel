@@ -1,0 +1,6 @@
+{
+  "previously_present": false,
+  "target": "/Users/arogers/github/WikiOracle/basicmodel/.venv",
+  "source_matched": true,
+  "reason": "The frozen source uses the same unchanged environment; subprocess tests resolve .venv/bin/python."
+}

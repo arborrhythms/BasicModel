@@ -1,0 +1,3 @@
+        self._ar_valid_pos = None  # IR has no per-cursor axis.
+
+Only consumer was the retired test_loss_mask_matches_stem_valid_mask, removed in item 5. Full original Models.py is in pre-trim-source.zip.

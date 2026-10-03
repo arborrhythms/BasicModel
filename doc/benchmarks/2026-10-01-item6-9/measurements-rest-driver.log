@@ -1,0 +1,62 @@
+START a-02
+START b-02
+START c-02
+{"kind": "a", "trial": 2, "name": "a-02", "mse": 0.2373533554638616, "correct": 2, "settled_bar": false}
+{"kind": "c", "trial": 2, "name": "c-02", "mse": 0.012432509247149781, "correct": 4, "settled_bar": true}
+START a-03
+START b-03
+{"kind": "b", "trial": 2, "name": "b-02", "mse": 0.3954252060246066, "correct": 2, "settled_bar": false}
+START c-03
+{"kind": "a", "trial": 3, "name": "a-03", "mse": 0.23994111340372748, "correct": 3, "settled_bar": false}
+START a-04
+{"kind": "b", "trial": 3, "name": "b-03", "mse": 0.25690903912625274, "correct": 3, "settled_bar": false}
+{"kind": "c", "trial": 3, "name": "c-03", "mse": 0.0003542294258664924, "correct": 4, "settled_bar": true}
+START b-04
+START c-04
+{"kind": "a", "trial": 4, "name": "a-04", "mse": 0.25479197064922676, "correct": 2, "settled_bar": false}
+START a-05
+{"kind": "c", "trial": 4, "name": "c-04", "mse": 4.1824006878243836e-05, "correct": 4, "settled_bar": true}
+START b-05
+{"kind": "b", "trial": 4, "name": "b-04", "mse": 0.317306475356947, "correct": 2, "settled_bar": false}
+START c-05
+{"kind": "a", "trial": 5, "name": "a-05", "mse": 0.2091779086171175, "correct": 3, "settled_bar": false}
+START a-06
+{"kind": "b", "trial": 5, "name": "b-05", "mse": 0.33508497204056287, "correct": 3, "settled_bar": false}
+{"kind": "c", "trial": 5, "name": "c-05", "mse": 8.67334021714683e-05, "correct": 4, "settled_bar": true}
+{"kind": "a", "trial": 6, "name": "a-06", "mse": 0.23907530732513127, "correct": 3, "settled_bar": false}
+START b-06
+START c-06
+START a-07
+{"kind": "a", "trial": 7, "name": "a-07", "mse": 0.2200247833271407, "correct": 3, "settled_bar": false}
+START b-07
+{"kind": "c", "trial": 6, "name": "c-06", "mse": 0.014419552640765776, "correct": 4, "settled_bar": true}
+START c-07
+{"kind": "b", "trial": 6, "name": "b-06", "mse": 0.2520753576994661, "correct": 2, "settled_bar": false}
+START a-08
+{"kind": "c", "trial": 7, "name": "c-07", "mse": 0.00015757977350450147, "correct": 4, "settled_bar": true}
+START b-08
+{"kind": "a", "trial": 8, "name": "a-08", "mse": 0.21324485103572188, "correct": 4, "settled_bar": false}
+START c-08
+{"kind": "b", "trial": 7, "name": "b-07", "mse": 0.2976455297905334, "correct": 2, "settled_bar": false}
+START a-09
+{"kind": "c", "trial": 8, "name": "c-08", "mse": 0.0018442659552144747, "correct": 4, "settled_bar": true}
+START b-09
+{"kind": "a", "trial": 9, "name": "a-09", "mse": 0.2204997670480875, "correct": 3, "settled_bar": false}
+START c-09
+{"kind": "b", "trial": 8, "name": "b-08", "mse": 0.277422614875821, "correct": 2, "settled_bar": false}
+START a-10
+{"kind": "c", "trial": 9, "name": "c-09", "mse": 0.01427991927265393, "correct": 4, "settled_bar": true}
+START b-10
+{"kind": "a", "trial": 10, "name": "a-10", "mse": 0.37539441016584396, "correct": 2, "settled_bar": false}
+START c-10
+{"kind": "b", "trial": 9, "name": "b-09", "mse": 0.3950790200631351, "correct": 2, "settled_bar": false}
+START mm-01
+{"kind": "c", "trial": 10, "name": "c-10", "mse": 2.415813916911702e-06, "correct": 4, "settled_bar": true}
+START mm-02
+{"kind": "b", "trial": 10, "name": "b-10", "mse": 0.2564052471858258, "correct": 2, "settled_bar": false}
+START mm-03
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/run_measurements.py", line 84, in <module>
+    assert result['exit_code'] == 0, f"failed probe: {job['job']['name']}"
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: failed probe: mm-01

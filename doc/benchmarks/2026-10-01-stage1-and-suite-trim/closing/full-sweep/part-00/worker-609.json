@@ -1,0 +1,44 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
+    "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
+    "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false"
+  ],
+  "completed": [
+    "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
+    "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
+    "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.556719250002061,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 34.85%)\r\nbatch = 2 (\u0394=0.033s, 50.00%)\r\nbatch = 4 (\u0394=0.018s, 84.85%)\r\nbatch = 6 (\u0394=0.018s, 100.00%)\r\n"
+    },
+    {
+      "nodeid": "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10078900000371505,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 34.85%)\r\nbatch = 2 (\u0394=0.019s, 50.00%)\r\nbatch = 4 (\u0394=0.018s, 84.85%)\r\nbatch = 6 (\u0394=0.017s, 100.00%)\r\n"
+    },
+    {
+      "nodeid": "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10237291699741036,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 34.85%)\r\nbatch = 2 (\u0394=0.019s, 50.00%)\r\nbatch = 4 (\u0394=0.018s, 84.85%)\r\nbatch = 6 (\u0394=0.017s, 100.00%)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

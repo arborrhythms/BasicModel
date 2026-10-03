@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_global_attention.py::test_addressable_spaces_gathers_input_stm_codebook"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-046.recycle.json"
+}

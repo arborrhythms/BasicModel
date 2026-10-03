@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_train_compile_target.py::test_gpu_compile_target_sets_defaults_without_clobbering"
+  ],
+  "completed": [
+    "test/test_train_compile_target.py::test_gpu_compile_target_sets_defaults_without_clobbering"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_train_compile_target.py::test_gpu_compile_target_sets_defaults_without_clobbering",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016987486742436886,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

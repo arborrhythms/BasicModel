@@ -1,0 +1,52 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/result.json": "01d894812921ae59fd3e6fd9cc9596bee316a99331f13632c65b75edfcc37e97"
+  },
+  "aggregate_bytes": 25769803776,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 6,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers"
+      ],
+      "estimated_seconds": 999.3301856250037,
+      "reserved_bytes": 7215411252.8
+    },
+    {
+      "nodes": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]"
+      ],
+      "estimated_seconds": 836.8526707501151,
+      "reserved_bytes": 6305679011.2
+    },
+    {
+      "nodes": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]"
+      ],
+      "estimated_seconds": 835.7231986250263,
+      "reserved_bytes": 6276690737.6
+    },
+    {
+      "nodes": [
+        "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers"
+      ],
+      "estimated_seconds": 824.5792605411261,
+      "reserved_bytes": 5950131372.0
+    },
+    {
+      "nodes": [
+        "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[exploit]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_trial_policy_ownership.py::test_trial_generation_leaves_policy_credit_at_batch_end[explore]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    }
+  ]
+}

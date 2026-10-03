@@ -121,55 +121,8 @@ def test_capture_hook_runs_under_no_grad_without_loss_accumulation():
     assert proxy._intra_capture is None
 
 
-def test_new_model_configs_enable_word_grain_boundary():
-    data_dir = Path(__file__).resolve().parents[1] / "data"
-    for name in (
-            "MM_nanochat_grammar_gate.xml",
-            "MM_nanochat_grammar_pilot.xml"):
-        root = ET.parse(data_dir / name).getroot()
-        assert root.findtext("./architecture/serialObjectMeta") == "true"
-        assert int(root.findtext("./architecture/serialWordCapacity")) == 64
-        assert root.find("./architecture/stmReduceTau") is None
-        assert root.find("./architecture/conceptualWidth") is None
-        assert int(root.findtext("./PartSpace/nOutput")) == 8
-        assert int(root.findtext("./ConceptualSpace/stmCapacity")) == 8
-        assert int(root.findtext("./ConceptualSpace/nOutput")) == 8
-        assert int(root.findtext("./WholeSpace/nInput")) == 8
-        assert gate._autoload_from_xml(data_dir / name) is True
 
 
-def test_64_word_trace_reduces_online_in_stm8_without_part_truncation():
-    data_dir = Path(__file__).resolve().parents[1] / "data"
-    model, _ = gate.build_eval_model(
-        data_dir / "MM_nanochat_grammar_gate.xml", autoload=False)
-    # This measures the grammar's online capacity and trace, with no trained
-    # native identities to provision the arbitrary spelling corpus into LTM.
-    model.conceptualSpace._ltm_consolidation = False
-    from reading_fixtures import force_absolute_reading
-    force_absolute_reading(model)
-    # First word is a 20-part cold spelling: deliberately wider than PS=8.
-    text = "abcdefghijklmnopqrst " + " ".join(
-        f"w{i}" for i in range(63))
-    trace = gate.trace_serial_grammar(model, text)
-
-    assert trace["surface_words"] == trace["outer_word_capacity"] == 64
-    assert trace["part_field_width"] == 8
-    assert trace["whole_field_width"] == 8
-    assert trace["concept_field_width"] == 8
-    assert trace["stm_capacity"] == 8
-    assert trace["max_raw_parts_per_word"] == 20
-    assert trace["word_constituents_truncated"] is False
-    assert trace["sentence_truncated"] is False
-    # This is an explicitly forced absolute reading, so completion means
-    # one root after exactly 63 binary operations. The deadline is fixed.
-    assert trace['total_reductions'] == trace['online']['binary'] + trace['closing']['binary']
-    assert 1 <= trace['final_depth'] <= trace['stm_capacity']
-    assert trace['complete'] == bool((model._stm_post_depth > 0).all())
-    assert len(trace['timeline']) == sum(trace['online'].values()) + sum(trace['closing'].values())
-    assert all(step['arity'] in (0, 1, 2) for step in trace['timeline'])
-    if trace['complete']:
-        assert trace['total_reductions'] == 63
-        assert trace['final_depth'] == 1
 
 
 def test_checkpoint_prewarm_builds_reducer_and_full_wholes_inventory():

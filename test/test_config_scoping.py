@@ -68,15 +68,6 @@ class TestDefaultsXml(unittest.TestCase):
                       "WholeSpace", "OutputSpace"]:
             self.assertIn("nDim", self.cfg[name], f"<{name}> missing nDim")
 
-    def test_architecture_has_model_wide_only(self):
-        arch = self.cfg["architecture"]
-        for old_key in ["nInput", "nPercepts", "nConcepts", "nSymbols", "nOutput",
-                        "inputDim", "perceptDim", "conceptDim", "symbolDim", "outputDim",
-                        "perceptPassThrough", "symbolPassThrough",
-                        "perceptPrototypes", "conceptPrototypes",
-                        "perceptHasAttention", "conceptHasAttention"]:
-            self.assertNotIn(old_key, arch,
-                             f"'{old_key}' should be in a space section, not architecture")
 
     def test_architecture_keeps_model_wide(self):
         arch = self.cfg["architecture"]

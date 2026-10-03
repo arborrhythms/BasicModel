@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_conjunction_keeps_the_repeated_reference_for_the_next_operation _____
+
+    def test_conjunction_keeps_the_repeated_reference_for_the_next_operation():
+        from types import SimpleNamespace
+        from ClauseScope import ClauseScope
+        scope=ClauseScope([SimpleNamespace(method_name='conjunction')],[])
+        state=torch.tensor([[[0,7],[0,7],[0,7]]])
+        choice=SimpleNamespace(kind=torch.tensor([1]),local_op=torch.tensor([0]),position=torch.tensor([0]),applied=torch.tensor([True]))
+        once,closing=scope.apply(state,choice,torch.tensor(0))
+>       assert once[0,0,1] == 7 and closing.item() == 0
+E       assert (tensor(-1) == 7)
+
+test/test_concept_binding_operators.py:88: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation
+1 failed in 2.75s

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_echoic_decoder.py"
+  ],
+  "pid": 76401,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 428950824,
+  "elapsed_seconds": 3.854758583009243,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-closing/probes/before-decoder/run.log"
+}

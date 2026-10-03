@@ -1,0 +1,16 @@
+[
+  {
+    "file": "test/test_reverse_traversal.py",
+    "function": "test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+    "unchanged": true,
+    "old_sha256": "b20806afc6a1c2f647742a2ea140c9ff6716ff425979aad7ec673893e0d97bd6",
+    "new_sha256": "b20806afc6a1c2f647742a2ea140c9ff6716ff425979aad7ec673893e0d97bd6"
+  },
+  {
+    "file": "bin/Models.py",
+    "function": "_byte_word_cost",
+    "unchanged": false,
+    "old_sha256": "fa4f30f2edb339a51fa3ff7911cd7e25d30d05423ff50489b99ff915587415ee",
+    "new_sha256": "35025c8fbdbb98f657d511203fd34c8ef3af683438eb0a824c6acf965422e975"
+  }
+]

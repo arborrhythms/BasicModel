@@ -1,0 +1,26 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words"
+  ],
+  "completed": [
+    "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words"
+  ],
+  "slow_selected": [
+    "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 12.777164792001713,
+      "message": "test/test_reverse_traversal.py:533: in test_closing_chain_of_chunks_unwinds_to_the_words\n    assert torch.allclose(rec[:, w], want, atol=1e-4), (w, float((rec[:, w] - want).abs().max()))\nE   AssertionError: (0, 3.091318130493164)\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10c6953a0>(tensor([[ 1.5004e-02,  4.1727e-02,  1.1300e-01, -7.9466e-02,  1.0458e-01,\\n          9.2496e-02,  5.0956e-02,  7.6502e-...    -9.9166e-03, -1.4093e-02,  4.4341e-02, -8.9732e-02,  1.6500e-01,\\n          6.0469e-02]], grad_fn=<SelectBackward0>), tensor([[-0.0766,  0.3599, -0.7820,  0.0715,  0.6648, -0.2868,  1.6206, -1.5967,\\n         -0.0517, -0.3060,  0.2485, -... -0.4297, -0.0442, -0.4147,  1.7669,\\n          0.4896, -0.1952,  0.1624, -0.5749,  0.0158, -3.1811,  0.2042, -1.3905]]), atol=0.0001)\nE    +    where <built-in method allclose of type object at 0x10c6953a0> = torch.allclose",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

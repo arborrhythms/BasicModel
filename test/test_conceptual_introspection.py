@@ -14,13 +14,7 @@ import torch
 _project = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_project, "bin"))
 
-from Legacy import (
-    AreaLayer,
-    IsaPartLayer,
-    LuminosityLayer,
-)
 from Layers import (
-    GRAMMAR_LAYER_CLASSES,
     area_op,
     isa_part_op,
     luminosity_op,
@@ -114,36 +108,6 @@ class TestSTEWrapper(unittest.TestCase):
             q.grad, torch.ones_like(q), atol=1e-6))
 
 
-class TestIntrospectionLayers(unittest.TestCase):
-    """Layer-wrapper classes plug into the chart via GRAMMAR_LAYER_CLASSES."""
-
-    def test_layer_classes_parked_in_legacy(self):
-        # These ops were parked in bin/Legacy.py (2026-07-17): documented-
-        # dormant, dispatched by no live grammar. They must NOT be in the
-        # live registry; revival re-registers them in GRAMMAR_LAYER_CLASSES.
-        for name in ('area', 'luminosity', 'isaPart'):
-            self.assertNotIn(name, GRAMMAR_LAYER_CLASSES,
-                             f"{name!r} should be parked in Legacy, not live")
-
-    def test_arity_metadata(self):
-        self.assertEqual(AreaLayer.arity, 1)
-        self.assertEqual(LuminosityLayer.arity, 2)
-        self.assertEqual(IsaPartLayer.arity, 2)
-
-    def test_layers_lossy(self):
-        # Introspective ops produce scalars from vectors; reverse is
-        # by definition lossy.
-        for cls in (AreaLayer, LuminosityLayer, IsaPartLayer):
-            self.assertTrue(cls.lossy, f"{cls.__name__} should be lossy")
-            self.assertFalse(cls.invertible,
-                             f"{cls.__name__} should be non-invertible")
-
-    def test_forward_shapes(self):
-        x = torch.randn(2, 3, 4)
-        y = torch.randn(2, 3, 4)
-        self.assertEqual(AreaLayer().forward(x).dim(), 0)
-        self.assertEqual(LuminosityLayer().forward(x, y).dim(), 0)
-        self.assertEqual(IsaPartLayer().forward(x, y).dim(), 0)
 
 
 if __name__ == "__main__":

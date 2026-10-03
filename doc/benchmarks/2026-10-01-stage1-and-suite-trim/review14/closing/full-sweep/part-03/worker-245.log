@@ -1,0 +1,78 @@
+...FFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+_____________________ TestXORSpacesModel.test_output_shape _____________________
+test/test_xor_spaces.py:219: in test_output_shape
+    _, _, output, _ = self.model.forward(inp)
+                      ^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8707: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24085: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13825: in _lex_embed_stem
+    self.perceptualSpace.embed_stem(in_sub)
+bin/Spaces.py:12347: in embed_stem
+    return self._embed_ladder(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:11784: in _embed_ladder
+    return self._embed_radix(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:12228: in _embed_radix
+    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:27: in encode
+    intervals = self.intervals(name, indices)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:42: in intervals
+    torch._assert_async((~valid | (indices < end - start)).all(),
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: occurrence exceeds its configured where-space capacity
+_________________ TestXORSpacesModel.test_space_char_in_vocab __________________
+test/test_xor_spaces.py:174: in test_space_char_in_vocab
+    self.assertIsInstance(emb, Models.Embedding,
+E   AssertionError: RadixLayer(
+E     (byte_fallback): BytesFallbackEncoder()
+E   ) is not an instance of <class 'Spaces.Embedding'> : InputSpace should use Embedding for text model
+__________________ TestXORSpacesModel.test_xor_words_in_vocab __________________
+test/test_xor_spaces.py:188: in test_xor_words_in_vocab
+    self.assertIn(ch, emb.pretrain.key_to_index,
+                      ^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'pretrain'
+___________ TestSpacePrediction.test_consecutive_join_no_auto_spaces ___________
+test/test_xor_spaces.py:252: in test_consecutive_join_no_auto_spaces
+    self.assertIsInstance(emb, Models.Embedding)
+E   AssertionError: RadixLayer(
+E     (byte_fallback): BytesFallbackEncoder()
+E   ) is not an instance of <class 'Spaces.Embedding'>
+__________ TestSpacePrediction.test_space_token_predicted_by_reverse ___________
+test/test_xor_spaces.py:303: in test_space_token_predicted_by_reverse
+    self.assertIn(" ", emb.pretrain.key_to_index)
+                       ^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'pretrain'
+=============================== warnings summary ===============================
+test/test_xor_spaces.py::TestXORSpacesModel::test_forward_pass_runs
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7565: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_spaces.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_xor_spaces.py::TestXORSpacesModel::test_forward_pass_runs
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_xor_spaces.py::TestXORSpacesModel::test_output_shape - Runti...
+FAILED test/test_xor_spaces.py::TestXORSpacesModel::test_space_char_in_vocab
+FAILED test/test_xor_spaces.py::TestXORSpacesModel::test_xor_words_in_vocab
+FAILED test/test_xor_spaces.py::TestSpacePrediction::test_consecutive_join_no_auto_spaces
+FAILED test/test_xor_spaces.py::TestSpacePrediction::test_space_token_predicted_by_reverse
+5 failed, 3 passed, 2 warnings in 2.89s

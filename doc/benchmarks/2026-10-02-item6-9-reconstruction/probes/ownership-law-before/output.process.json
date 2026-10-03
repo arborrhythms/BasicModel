@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "test/test_training_diagnostic_contracts.py::test_canonical_dictionary_has_one_distributional_owner",
+    "test/test_objective_ownership.py::test_named_concept_evidence_has_the_answer_as_its_only_writer",
+    "-q"
+  ],
+  "pid": 84329,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 435062080,
+  "elapsed_seconds": 3.803784125018865,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/ownership-law-before/output.log"
+}

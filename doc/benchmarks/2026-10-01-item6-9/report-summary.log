@@ -1,0 +1,41 @@
+{
+  "variants": {
+    "a": {
+      "runs": 10,
+      "passes": 0,
+      "correct_four": 1,
+      "median_mse": 0.23821433139449644,
+      "minimum_mse": 0.2091779086171175,
+      "maximum_mse": 0.37539441016584396,
+      "final_readable_at_5": 1,
+      "median_best_first_weight": 4.498485531406473,
+      "median_best_last_weight": 9.626469509330281,
+      "median_seconds": 78.1454805835383
+    },
+    "b": {
+      "runs": 10,
+      "passes": 0,
+      "correct_four": 0,
+      "median_mse": 0.2939883537575083,
+      "minimum_mse": 0.2520753576994661,
+      "maximum_mse": 0.3954252060246066,
+      "final_readable_at_5": 1,
+      "median_best_first_weight": 4.563328733502036,
+      "median_best_last_weight": 4.791311389867199,
+      "median_seconds": 115.44553864595946
+    },
+    "c": {
+      "runs": 10,
+      "passes": 9,
+      "correct_four": 9,
+      "median_mse": 0.0010992476905404835,
+      "minimum_mse": 2.415813916911702e-06,
+      "maximum_mse": 0.28738049120739917,
+      "final_readable_at_5": 10,
+      "median_best_first_weight": 4.338377887037798,
+      "median_best_last_weight": 3.9000026135512926,
+      "median_seconds": 78.89193577039987
+    }
+  },
+  "mm_median": 6.575284761112243e-11
+}

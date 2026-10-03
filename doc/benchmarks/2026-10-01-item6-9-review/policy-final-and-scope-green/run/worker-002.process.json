@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-final-and-scope-green/run/worker-002.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-final-and-scope-green/run/worker-002.json"
+  ],
+  "pid": 58245,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 5269935408,
+  "elapsed_seconds": 897.5652052499972,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/policy-final-and-scope-green/run/worker-002.log"
+}

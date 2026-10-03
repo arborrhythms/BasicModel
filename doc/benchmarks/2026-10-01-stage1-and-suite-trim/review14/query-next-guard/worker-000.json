@@ -1,0 +1,24 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+  ],
+  "completed": [
+    "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 87.22099754100782,
+      "message": "test/test_query_phase_fullgraph.py:40: in test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths\n    assert int(torch._dynamo.utils.counters[\"stats\"][\"unique_graphs\"]) == 1\nE   assert 2 == 1\nE    +  where 2 = int(2)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

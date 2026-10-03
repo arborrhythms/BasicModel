@@ -1,0 +1,8 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+{"parameter": true, "ema_update": true, "code_shape": [6, 10], "code_drift": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "cluster_before": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "cluster_after": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probe_code_writers.py", line 23, in <module>
+    assert not result['ema_update'], 'concept codes have a hidden EMA writer'
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: concept codes have a hidden EMA writer

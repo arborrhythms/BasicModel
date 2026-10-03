@@ -1,0 +1,167 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- LM_5M: grammar-driven sibling of MM_20M.
+
+       Same data / dim budget as MM_20M, but:
+         * non-default grammar    (parser dispatch is derived from the
+                                   grammar block; per-space SyntacticLayers
+                                   dispatch on parser rule selections)
+         * subsymbolicOrder=1      (the per-stage Sigma-Pi cascade is
+                                   replaced by single-stage signal-router
+                                   composition)
+         * grammar block          (full English grammar instead of the
+                                   trivial S=intersection/union pair)
+         (Stage 3 cleanup: parserBackend, chartTau, chartTopK,
+          chartNoiseEps retired when the chart was retired
+          in favour of the signal router.)
+       Distinct ckpt/kv paths so LM_5M and MM_20M training can coexist.
+       Server port also distinct so both can serve in parallel.
+  -->
+  <architecture>
+    <!-- subsymbolicOrder=3: per-stage Sigma-Pi cascade depth.  At least 3
+         to give the chart a reasonable tree depth (each conceptual stage
+         is one level of the constituency hierarchy; 3 stages cover S ->
+         NP/VP -> N/V/AP -> word). -->
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <symbolicOrder>1</symbolicOrder>
+    <weightsPath>LM_5M.ckpt</weightsPath>
+    <amp>bf16</amp>
+
+    <!-- Retired compatibility knob. Accepted by the schema, ignored by
+         runtime: the codebook is the meronymic structure. -->
+    <mereologicalTreeSize>1024</mereologicalTreeSize>
+
+    <!-- Per-stage chart firing is now built into the per-word stem
+         + chart-at-C body (see Architecture.md): each subsymbolicOrder
+         stage fires the chart at C-tier over the STM buffer. The
+         legacy perStageChartReparse knob was retired 2026-05-12. -->
+
+    <!-- Sparse-MoE load-balance loss weight (Shazeer et al. 2017).
+         The chart's top-K gating retired in Stage 3 alongside the
+         chart; the knob remains for any future signal-router rule
+         load-balancing. -->
+    <loadBalanceWeight>0.01</loadBalanceWeight>
+
+    <data>
+      <dataType>embedding</dataType>
+      <shardDir>data/fineweb</shardDir>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <batchSize>128</batchSize>
+      <numWorkers>4</numWorkers>
+      <learningRate>0.0005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>BACKPROP</trainEmbedding>
+      <autosave>true</autosave>
+      <sentenceExpectation>true</sentenceExpectation>
+    </training>
+
+    <server>
+      <port>8005</port>
+    </server>
+
+  </architecture>
+
+  <InputSpace>
+    <nInput>1024</nInput>
+    <nDim>10</nDim>
+    <nVectors>1024</nVectors>
+    <nOutput>1024</nOutput>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>1024</nInput>
+    <nVectors>4096</nVectors>
+    <nDim>10</nDim>
+    <nOutput>1024</nOutput>
+    <synthesis>meronomy</synthesis>
+    <wordLearning>0</wordLearning>
+  </PartSpace>
+
+  <!-- ConceptualSpace: 3 stages (subsymbolicOrder=3 above). The chart's
+       chart-driven composition gives 3 stages enough tree depth for basic
+       constituency (S, NP/VP, word). -->
+  <ConceptualSpace>
+    <nOutput>1024</nOutput>
+    <nDim>10</nDim>
+    <nVectors>1024</nVectors>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <nInput>1024</nInput>
+    <nInputDim>10</nInputDim>
+    <nVectors>1024</nVectors>
+    <nDim>10</nDim>
+    <nOutput>1024</nOutput>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>4</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <!-- Stage 3 cleanup: parserBackend, chartTau, chartTopK,
+         chartNoiseEps retired alongside the chart. The signal router
+         (LanguageLayer) is the canonical parser. -->
+    <language>
+      <start>S</start>
+      <grammar>
+        <compose>
+          <symbols>
+            <!-- Sentence (root span only - sentence-level rules don't
+                 apply to sub-sentence chunks).  Rules without width=
+                 fire at any width. -->
+            <rule width="1..">S = NP</rule>
+            <rule width="3..">S = lift(NP, VP)</rule>
+            <rule width="3..">S = isEqual(NP, NP)</rule>
+            <rule width="3..">S = isEqual(NP, AP)</rule>
+            <rule width="3..">S = part(NP, NP)</rule>
+            <rule width="2..">S = not(S)</rule>
+            <rule width="3..">S = conjunction(S, S)</rule>
+            <rule width="3..">S = disjunction(S, S)</rule>
+
+            <!-- Noun Phrase -->
+            <rule width="1..1">NP = N</rule>
+            <rule width="2..">NP = AP</rule>
+            <rule width="3..">NP = conjunction(NP, NP)</rule>
+            <rule width="3..">NP = disjunction(NP, NP)</rule>
+
+            <!-- Verb Phrase -->
+            <rule width="1..1">VP = V</rule>
+            <rule width="2..">VP = intersection(V, O)</rule>
+            <rule width="2..">VP = lower(ADV, VP)</rule>
+            <rule width="2..">VP = lower(ADJ, VP)</rule>
+
+            <!-- Object -->
+            <rule width="1..">O = NP</rule>
+
+            <!-- Adjective Phrase -->
+            <rule width="2..">AP = lower(ADJ, NP)</rule>
+            <rule width="2..">AP = lower(ADJ, AP)</rule>
+            <rule width="2..">AP = lower(DET, NP)</rule>
+
+            <!-- Prepositional Phrase.
+                 PP = lift(P, NP): the preposition transforms its NP
+                 complement from a thing into a relation/location.
+                 Attachment is via lower onto NP / VP heads. -->
+            <rule width="2..">PP = lift(P, NP)</rule>
+            <rule width="3..">NP = lower(NP, PP)</rule>
+            <rule width="3..">VP = lower(VP, PP)</rule>
+          </symbols>
+        </compose>
+      </grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

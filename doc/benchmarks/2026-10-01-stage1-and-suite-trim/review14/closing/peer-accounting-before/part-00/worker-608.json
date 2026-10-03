@@ -1,0 +1,24 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_retired_names.py::test_retired_names_remain_absent"
+  ],
+  "completed": [
+    "test/test_retired_names.py::test_retired_names_remain_absent"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_retired_names.py::test_retired_names_remain_absent",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0807314999983646,
+      "message": "test/test_retired_names.py:121: in test_retired_names_remain_absent\n    source = inspect.getsource(_resolve(address))\n                               ^^^^^^^^^^^^^^^^^\ntest/test_retired_names.py:90: in _resolve\n    value = getattr(value, field)\n            ^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'PartSpace' has no attribute '_embed'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

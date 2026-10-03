@@ -1,0 +1,4 @@
+doc/benchmarks/2026-09-30-item6-9/probe_step5_prediction.py::test_sentence_prediction_trials_backpropagate_independently
+doc/benchmarks/2026-09-30-item6-9/probe_step5_shared.py::test_packed_trials_keep_shared_graph_until_both_backwards
+
+2 tests collected in 0.43s

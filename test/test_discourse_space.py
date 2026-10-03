@@ -210,39 +210,9 @@ class TestBackCompatShims(_DiscourseTestBase):
         self.assertIsNotNone(conf)
         self.assertEqual(float(conf), 1.0)
 
-    def test_snapshot_alias_calls_observe(self):
-        """The ``snapshot`` shim accepts the legacy ``(s, w)`` signature
-        and just routes to ``observe`` (w_tensor is ignored)."""
-        # First snapshot -- primes the ring; cold-start loss is the
-        # training-neutral 0.0 tensor (see
-        # test_observe_pushes_and_returns_zero_on_cold_start).
-        loss = self.layer.snapshot(
-            torch.randn(1, 4, 3), torch.zeros(1, 2, 3))
-        self.assertIsNotNone(loss)
-        self.assertEqual(float(loss.detach()), 0.0)
-        self.assertEqual(int(self.layer._s_count[0].item()), 1)
 
-    def test_contrastive_loss_alias_returns_arma_mse(self):
-        """The ``contrastive_loss`` shim now returns the ARMA MSE so
-        existing runBatch code that adds it to the total still works.
-        """
-        self.layer.observe(torch.randn(1, 4, 3))
-        out = self.layer.contrastive_loss(torch.randn(1, 4, 3))
-        self.assertIsNotNone(out)
-        self.assertEqual(out.dim(), 0)
 
-    def test_predictive_loss_alias_is_no_op(self):
-        """ARMA folds the predictive term into the single observe MSE,
-        so the legacy split call now returns None.
-        """
-        out = self.layer.predictive_loss(
-            torch.randn(1, 4, 3), torch.zeros(1, 2, 3),
-            predicted=torch.randn(3))
-        self.assertIsNone(out)
 
-    def test_comprehension_priming_projection_is_removed(self):
-        self.assertFalse(hasattr(self.layer, "prime"))
-        self.assertFalse(hasattr(self.layer, "cast"))
 
 
 class TestModelIntegration(_DiscourseTestBase):

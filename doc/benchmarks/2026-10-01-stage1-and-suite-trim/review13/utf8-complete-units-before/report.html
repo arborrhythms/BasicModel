@@ -1,0 +1,9 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.04144791699945927</pre></td><td><pre>test/test_mixing_reconstruction_bank.py:26: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+    assert candidates == [word.encode(&#x27;utf-8&#x27;) for word in surface.split()], candidates
+E   AssertionError: [b&#x27;caf\xc3\x83\xc2\xa9&#x27;]
+E   assert [b&#x27;caf\xc3\x83\xc2\xa9&#x27;] == [b&#x27;caf\xc3\xa9&#x27;, b&#x27;ab&#x27;]
+E     
+E     At index 0 diff: b&#x27;caf\xc3\x83\xc2\xa9&#x27; != b&#x27;caf\xc3\xa9&#x27;
+E     Right contains one more item: b&#x27;ab&#x27;
+E     Use -v to get more diff</pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+</pre></td></tr></table></body></html>

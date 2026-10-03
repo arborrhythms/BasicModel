@@ -1,0 +1,177 @@
+...Fs............ss.F...........................                         [100%]
+=================================== FAILURES ===================================
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1184/test_real_packed_ends_train_be0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123bf0b00>
+compiled = False
+
+    @pytest.mark.parametrize('compiled', [False, pytest.param(True, marks=pytest.mark.slow)])
+    def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, compiled):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from test_reverse_traversal import _select_completed_binary_path
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+            concept_rows=128, part_rows=64, input_width=16, training_overrides={'intraLossWeight': 0},
+            stm_capacity=3, chooser_depth=1,
+            architecture_overrides={'ltmConsolidation': True, 'symbolicOrder': 1})
+        # Completion is a fixture for this causal mechanism test. Both winners
+        # must leave a real predecessor, regardless of the untrained chooser.
+        _select_completed_binary_path(model)
+        optimizer = model.getOptimizer(lr=1e-4)
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model.reconstruction_placement = 'eager'
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        if compiled:
+            import SentenceCompose
+            monkeypatch.setattr(SentenceCompose, 'compile_word_brick',
+                lambda fn: torch.compile(fn, backend='eager', fullgraph=True))
+        # Sentence ends land at different word columns in the two rows; the
+        # first row's one-word sentence also exercises its dedicated closing trace.
+        raw = model.inputSpace.prepPackedInput([['a', 'c d'], ['e f', 'g']])
+        events = []
+        candidates, prior_context = {}, []
+        path_cost = model._sentence_path_cost
+        def controlled_cost(path, sid, active):
+            cost, recon, observation, pending = path_cost(path, sid, active)
+            alternative = model._sentence_trial == 'explore'
+            candidates[sid, alternative] = observation
+            if sid == 1:
+                # The second sentence sees exactly the chain committed by the
+                # first, including its occurrence identity, in both trials.
+                disc = model.symbolSpace.discourse
+                assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+            fixed = cost.new_tensor([1., 2.] if alternative else [2., 1.])
+            # This causal fixture fixes the comparison, not the numerical reading.
+            # Give the two trials equal reconstruction so the decided precedence
+            # rule permits the same controlled winners; keep its live derivative.
+            recon = (*recon[:2], recon[2] - recon[2].detach() + 1., *recon[3:])
+            # The comparison reads R from Error and the supplied-answer value;
+            # expectation and lessons no longer enter it. Inject the same fixed
+            # row ordering at that boundary, leaving every trained term intact.
+            reconstruction = model._sentence_cost_registry.total(objective='reconstruction')
+            model._sentence_answer_cost = fixed - reconstruction.detach()
+            return cost - cost.detach() + fixed, recon, observation, pending
+        monkeypatch.setattr(model, '_sentence_path_cost', controlled_cost)
+        perceived = []
+        # The perception owner must see the committed predecessor before it is
+        # called for the next sentence. The second compose must not call it again.
+        perceive = model.perceptualSpace.synthesize_word_parts
+        def perception(*args, **kwargs):
+            # Input staging also builds a detached reporting slab. Count the
+            # live word perception shared by the two compose/backward paths.
+            if torch.is_grad_enabled() and not torch.compiler.is_compiling():
+                perceived.append(len(model._sentence_fields))
+                if len(model._sentence_fields) == 1:
+                    disc = model.symbolSpace.discourse
+                    assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+            return perceive(*args, **kwargs)
+        if not compiled:
+            monkeypatch.setattr(model.perceptualSpace, 'synthesize_word_parts', perception)
+        original = model._sentence_train_step
+        def step(loss):
+            events.append(('step', float(loss.detach())))
+            return original(loss)
+        monkeypatch.setattr(model, '_sentence_train_step', step)
+        commit = model._commit_sentence
+        def observe(*args):
+            events.append(('commit', args[1]))
+            result = commit(*args)
+            disc = model.symbolSpace.discourse
+            context = tuple(tuple(row) for row in disc._inter_context_occurrences)
+            assert [len(row) for row in context] == [args[1] + 1] * 2
+            assert all(occurrence is not None for row in context for occurrence in row)
+            for b, alternative in enumerate((True, False)):
+                expected = candidates[args[1], alternative]
+                roles, occupied = disc._canonical_meaning(
+                    expected['observed'][b], expected['observed_depths'][b], expected['layout'],
+                    None if expected['roles'] is None else expected['roles'][b])
+                depth, payload, mask = disc._inter_context[b][-1]
+                assert depth == int(occupied.sum())
+                torch.testing.assert_close(payload, roles)
+                torch.testing.assert_close(mask, occupied)
+            if args[1] == 0:
+                prior_context.append(context)
+            return result
+        monkeypatch.setattr(model, '_commit_sentence', observe)
+        try:
+            model.runBatch(train=True, optimizer=optimizer, batchSize=2,
+                batch_override=(raw, torch.empty(2, 0)), split='runtime')
+            assert [e[0] for e in events] == ['step', 'step', 'commit'] * 2
+            assert len(model._sentence_winners) == 2
+            assert all(cost.shape == (2, 2) for cost in model._sentence_trial_costs)
+            assert set(model._last_understanding.sentence_fields) == {0, 1}
+            assert model._training_step_count == 1
+            for sid in range(2):
+>               assert model._sentence_winners[sid].tolist() == [True, False]
+E               assert [False, False] == [True, False]
+E                 
+E                 At index 0 diff: False != True
+E                 Use -v to get more diff
+
+test/test_sentence_compose.py:176: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+_______ test_student_checkpoint_migrates_shared_weights_and_adam_by_name _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1184/test_student_checkpoint_migrat0')
+
+    def test_student_checkpoint_migrates_shared_weights_and_adam_by_name(tmp_path):
+        from test_meronomy_ladder import _build_ladder_variant
+        legacy = _build_ladder_variant(tmp_path, "old_student", [
+            ("<training>", "<training><teacherReconstruction>true</teacherReconstruction>")])
+        # Serialized keys/shapes from the current data/BasicModel.ckpt. This
+        # fixture has no student forward: it exercises the one-way loader and
+        # optimizer migration after the runtime's retirement.
+        student = torch.nn.Module()
+        shapes = {
+            'idea_projection.weight': (256, 1032), 'idea_projection.bias': (256,),
+            'choice_slots.weight': (775, 256), 'kind_head.weight': (3, 256),
+            'kind_head.bias': (3,), 'rule_head.weight': (41, 256), 'rule_head.bias': (41,),
+            'leaf_decoder.slot_e': (256, 256), 'leaf_decoder.trunk.weight': (256, 1032),
+            'leaf_decoder.trunk.bias': (256,), 'leaf_decoder.out.weight': (512, 256),
+            'leaf_decoder.out.bias': (512,),
+        }
+        for key, shape in shapes.items():
+            names = key.split('.')
+            parent = student
+            for name in names[:-1]:
+                if not hasattr(parent, name):
+                    parent.add_module(name, torch.nn.Module())
+                parent = getattr(parent, name)
+            parent.register_parameter(names[-1], torch.nn.Parameter(torch.zeros(shape)))
+        legacy.symbolSpace.subspace.reverse_chooser = student
+        legacy.symbolSpace.params.extend(student.parameters())
+        fresh = None
+        try:
+            student = legacy.symbolSpace.reverse_chooser
+            assert student is not None
+            # Ordinary what()/training has materialized these answer modules
+            # before saving. Their lazy construction is unrelated to retiring
+            # the reconstruction student and would otherwise make strict load
+            # fail because the fixture had never run an answer path.
+            legacy._materialize_answer_path()
+            parameters = dict(legacy.named_parameters())
+            name = next(name for name in parameters if name.endswith("_sigma.layer.raw_L"))
+            shared = parameters[name]
+            optimizer = legacy.getOptimizer(lr=.001)
+            legacy._optimizer = optimizer
+            shared.grad = torch.full_like(shared, .125)
+            student_parameter = next(student.parameters())
+            student_parameter.grad = torch.full_like(student_parameter, .25)
+            optimizer.step()
+            expected_parameter = shared.detach().clone()
+>           expected_moment = optimizer.state[shared]["exp_avg"].clone()
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'exp_avg'
+
+test/test_tied_reconstruction_objective.py:112: KeyError
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+FAILED test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name
+2 failed, 43 passed, 3 skipped in 10.72s

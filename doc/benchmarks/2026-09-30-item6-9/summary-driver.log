@@ -1,0 +1,24 @@
+{
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "configurations_unchanged": true,
+  "grammar": {
+    "class_successes": 0,
+    "all_ten_class_runs_meet_bar": false,
+    "decision": "STOP implementation after step 5"
+  },
+  "full_sweep": {
+    "reason": "test_failure",
+    "outcomes": {
+      "passed": 4832,
+      "skipped": 322,
+      "failed": 6,
+      "xfailed": 1
+    },
+    "selected": 5161,
+    "completed": 5161,
+    "complete_unique_coverage": true,
+    "missing": [],
+    "unreported": [],
+    "resource_stops": []
+  }
+}

@@ -1,0 +1,15 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+________ TestSharedByteStore.test_store_codebook_is_permanent_parameter ________
+test/test_perceptualspace_bpe_forward.py:115: in test_store_codebook_is_permanent_parameter
+    self.assertIsInstance(
+E   AssertionError: tensor([[0.0000, 0.4363, 0.0000, 0.0000],
+E           [0.0000, 0.0000, 0.0000, 0.0000],
+E           [0.5273, 0.0000, 0.0000, 0.0000],
+E           ...,
+E           [0.0000, 0.0000, 0.0000, 0.0000],
+E           [0.0000, 0.0000, 0.0000, 0.0410],
+E           [0.0000, 0.8467, 0.0000, 0.8622]], grad_fn=<AddBackward0>) is not an instance of <class 'torch.nn.parameter.Parameter'> : the shared store's W must be a Parameter (permanent + persisted), mirroring the radix recipe
+=========================== short test summary info ============================
+FAILED test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter
+1 failed, 1 passed in 2.24s

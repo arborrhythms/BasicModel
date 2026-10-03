@@ -1,0 +1,37 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+    "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix"
+  ],
+  "completed": [
+    "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+    "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix"
+  ],
+  "slow_selected": [
+    "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+    "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 14.457885584008181,
+      "message": "test/test_per_word_ss_padding_noop.py:58: in test_stm_depth_tracks_valid_len_not_N\n    assert depth_after - depth_before == L, (\nE   AssertionError: STM mirror advanced by 1, expected 8 (real-positions count)\nE   assert (1 - 0) == 8",
+      "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+    },
+    {
+      "nodeid": "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7092411659978097,
+      "message": "",
+      "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

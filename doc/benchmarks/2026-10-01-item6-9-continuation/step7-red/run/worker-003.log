@@ -1,0 +1,9 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_serial_window_excludes_the_inverse_at_the_same_physical_slot _______
+test/test_inverse_unary_exclusion.py:52: in test_serial_window_excludes_the_inverse_at_the_same_physical_slot
+    choice = LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=2,
+E   TypeError: LanguageSpace.choose_operation() got an unexpected keyword argument 'previous_unary'
+=========================== short test summary info ============================
+FAILED test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot
+1 failed in 2.41s

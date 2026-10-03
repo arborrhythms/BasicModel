@@ -1,0 +1,28 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_clause_probe.py", line 38, in <module>
+    check('--unary' in sys.argv)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/deep_clause_probe.py", line 29, in check
+    result=finish_clause(language,program)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 355, in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 288, in recover
+    retain_completed(root)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 287, in retain_completed
+    retain_completed(child)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 287, in retain_completed
+    retain_completed(child)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 287, in retain_completed
+    retain_completed(child)
+  [Previous line repeated 990 more times]
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 280, in retain_completed
+    if selected is not node and is_clause(part):
+                                ^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 165, in is_clause
+    node = head(node)
+           ^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseJournal.py", line 134, in head
+    if not role and name(node) in ('lower', 'bind', 'surface', 'preposition'):
+                    ^^^^^^^^^^
+RecursionError: maximum recursion depth exceeded

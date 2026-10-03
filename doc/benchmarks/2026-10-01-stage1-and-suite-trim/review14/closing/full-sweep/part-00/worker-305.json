@@ -1,0 +1,94 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_interleave_lifecycle.py::test_interleave_cursor_preserves_document_boundaries",
+    "test/test_interleave_lifecycle.py::test_failed_context_restores_serial_mode_input_and_teacher",
+    "test/test_interleave_lifecycle.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+    "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[True-0]",
+    "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[True-2]",
+    "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[False-0]",
+    "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[False-2]",
+    "test/test_interleave_lifecycle.py::test_interleave_capacity_uses_the_input_encoders_bytes"
+  ],
+  "completed": [
+    "test/test_interleave_lifecycle.py::test_interleave_cursor_preserves_document_boundaries",
+    "test/test_interleave_lifecycle.py::test_failed_context_restores_serial_mode_input_and_teacher",
+    "test/test_interleave_lifecycle.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+    "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[True-0]",
+    "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[True-2]",
+    "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[False-0]",
+    "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[False-2]",
+    "test/test_interleave_lifecycle.py::test_interleave_capacity_uses_the_input_encoders_bytes"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_interleave_cursor_preserves_document_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002925000007962808,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_failed_context_restores_serial_mode_input_and_teacher",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2529194170056144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 225.60261487500975,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nTraining throughput: 1 batches in 225.366s; word units 100.0% of 6 words (letters-only 100.0% of 6).\r\n"
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[True-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002223330084234476,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[True-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014379200001712888,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[False-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013670799671672285,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[False-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014479199307970703,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_lifecycle.py::test_interleave_capacity_uses_the_input_encoders_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.28530795899860095,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

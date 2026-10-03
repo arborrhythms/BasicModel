@@ -1,0 +1,500 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 62/62 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_relevance_bases.py::test_surface_contract_cold_at_build</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0629309159994591</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_relevance_bases.py::test_seen_bump_and_decay</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00033445800363551825</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_relevance_bases.py::test_desire_signed_floor</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00020708399824798107</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_relevance_bases.py::test_unconditional_integration_end_to_end</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.5077006250066916</pre></td><td><pre>test/test_relevance_bases.py:90: in test_unconditional_integration_end_to_end
+    assert torch.is_tensor(b) and float(b.max()) &gt; 1.0, (
+E   AssertionError: admitted rows must prime the surface unconditionally
+E   assert (True and 1.0 &gt; 1.0)
+E    +  where True = &lt;function is_tensor at 0x107d2f6a0&gt;(tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]))
+E    +    where &lt;function is_tensor at 0x107d2f6a0&gt; = torch.is_tensor
+E    +  and   1.0 = float(tensor(1.))
+E    +    where tensor(1.) = &lt;built-in method max of Tensor object at 0x13e72b110&gt;()
+E    +      where &lt;built-in method max of Tensor object at 0x13e72b110&gt; = tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]).max</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.505s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_relevance_bases.py::test_primed_reading_scope</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.000320875013130717</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>6.170774333993904</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 1.029s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.870419667000533</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.641s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.774619666990475</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_registered_loss_backprops_to_producer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.781032208993565</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_producer_scope_clears_past_last_word</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.662654874991858</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reading_attention.py::test_producer_params_reach_the_optimizer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.151379707996966</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>12.545682041003602</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.5250948750035604</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.6668484580004588</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.7073799169884296</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.5266898749978282</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.3833088750106981</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.34636141700320877</pre></td><td><pre></pre></td><td><pre>Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -&gt; 363 sentences (363 train, 0 val, 0 test)
+</pre></td></tr><tr><td><pre>test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>72.42317162499239</pre></td><td><pre>test/test_sentence_compose.py:171: in test_real_packed_ends_train_before_the_next_sentence
+    assert model._sentence_winners[sid].tolist() == [True, False]
+E   assert [False, False] == [True, False]
+E     
+E     At index 0 diff: False != True
+E     Use -v to get more diff</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.5845277080079541</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.5522122090042103</pre></td><td><pre>test/test_serial_object_meta.py:145: in test_serial_radix_has_distinct_word_and_local_part_axes
+    assert ie._word_active_mask.sum(dim=1).tolist() == [2, 2, 2, 2]
+E   assert [3, 3, 3, 3] == [2, 2, 2, 2]
+E     
+E     At index 0 diff: 3 != 2
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.2809607910021441</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.5524747499875957</pre></td><td><pre>test/test_serial_object_meta.py:202: in test_partspace_runs_once_per_word_per_pass_not_per_constituent
+    assert local_calls == [
+E   assert [] == [(4, 1, 1024)...1, 1024), ...]
+E     
+E     Right contains 10 more items, first extra item: (4, 1, 1024)
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.27110020800319035</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.5437320000055479</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.5390866249945248</pre></td><td><pre>test/test_serial_object_meta.py:269: in test_word_prediction_and_physical_push_share_one_commit_boundary
+    assert pushed[0] == int(commits.sum().item())
+E   assert 0 == 12
+E    +  where 12 = int(12)
+E    +    where 12 = &lt;built-in method item of Tensor object at 0x1284a72a0&gt;()
+E    +      where &lt;built-in method item of Tensor object at 0x1284a72a0&gt; = tensor(12).item
+E    +        where tensor(12) = &lt;built-in method sum of Tensor object at 0x12839b890&gt;()
+E    +          where &lt;built-in method sum of Tensor object at 0x12839b890&gt; = tensor([3, 3, 3, 3]).sum</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.48376358300447464</pre></td><td><pre>test/test_serial_object_meta.py:289: in test_serial_object_meta_off_does_not_build_word_index
+    assert m.inputSpace._word_index_N is None
+E   assert tensor([[ 0,  1,  2, -1, -1, -1, -1, -1],\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\n        [ 0,  1,  2, -1, -1, -1, -1, -1]]) is None
+E    +  where tensor([[ 0,  1,  2, -1, -1, -1, -1, -1],\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\n        [ 0,  1,  2, -1, -1, -1, -1, -1]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._word_index_N
+E    +    where InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...ing): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n  (answer_record_reader): SentenceRecordReader()\n).inputSpace</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_serial_object_meta.py::test_ss_unity_validity_at_stem</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.8943251250020694</pre></td><td><pre>test/test_serial_object_meta.py:327: in test_ss_unity_validity_at_stem
+    assert real &gt; 0, &quot;a live unity must feed the universe branch&quot;
+E   AssertionError: a live unity must feed the universe branch
+E   assert 0 &gt; 0</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0660361250047572</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.15364275001047645</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.06294008399709128</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.21350212499964982</pre></td><td><pre>test/test_sparse_concept_e2e.py:251: in test_conceptual_sbow_situates_live_sparse_codes
+    assert got, &quot;SBOW gradient must reach the sparse family values&quot;
+E   AssertionError: SBOW gradient must reach the sparse family values
+E   assert False</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.1467992090038024</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.3789714579907013</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>6.151559499994619</pre></td><td><pre>test/test_where_attention_handoff.py:53: in test_mereology_raise_enables_conceptual_refinement
+    assert torch.equal(out1, out2), &quot;the dark pass-back must be deterministic&quot;
+E   AssertionError: the dark pass-back must be deterministic
+E   assert False
+E    +  where False = &lt;built-in method equal of type object at 0x10aa493a0&gt;(tensor([[[0.5000]],\n\n        [[0.5000]],\n\n        [[0.5000]],\n\n        [[0.5000]]]), tensor([[[0.5000]],\n\n        [[0.5000]],\n\n        [[0.5000]],\n\n        [[0.5000]]]))
+E    +    where &lt;built-in method equal of type object at 0x10aa493a0&gt; = torch.equal</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_reading_promotes_the_batch_words</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.027042125002481043</pre></td><td><pre>test/test_word_store.py:161: in test_reading_promotes_the_batch_words
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store0/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store0/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store0/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_one_to_one_recognition_registers_under_words</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.011754709004890174</pre></td><td><pre>test/test_word_store.py:198: in test_one_to_one_recognition_registers_under_words
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store1/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store1/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store1/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.012167915992904454</pre></td><td><pre>test/test_word_store.py:266: in test_percept_extras_ride_the_checkpoint_envelope
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store2/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store2/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store2/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_storeless_configs_emit_no_percept_key</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.011925541999517009</pre></td><td><pre>test/test_word_store.py:297: in test_storeless_configs_emit_no_percept_key
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store3/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store3/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store3/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_words_summary_row_running_mean</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.01193054199393373</pre></td><td><pre>test/test_word_store.py:322: in test_words_summary_row_running_mean
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store4/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store4/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store4/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.012445416999980807</pre></td><td><pre>test/test_word_store.py:369: in test_ws_word_whole_registry_resolves_to_rows
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store5/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store5/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store5/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_grammar_reverse_ops_from_generate_section</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.012033249993692152</pre></td><td><pre>test/test_word_store.py:580: in test_grammar_reverse_ops_from_generate_section
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store6/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store6/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store6/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.011809667004854418</pre></td><td><pre>test/test_word_store.py:599: in test_reverse_chooser_picks_fold_op_by_roundtrip
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store7/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store7/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store7/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>12.570447000005515</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_cleared_trace_reports_truncation</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>13.440968167007668</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.6001058330002706</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>15.966670082998462</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>45.252019332998316</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>34.461316041997634</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>25.216851999997743</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>13.300377750012558</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>89.88081950000196</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 12.50%)
+batch = 8 (Δ=2.775s, 15.62%)
+batch = 16 (Δ=2.536s, 18.75%)
+batch = 24 (Δ=2.550s, 21.88%)
+batch = 32 (Δ=2.596s, 25.00%)
+batch = 40 (Δ=2.532s, 28.12%)
+batch = 48 (Δ=2.648s, 31.25%)
+batch = 56 (Δ=2.636s, 34.38%)
+batch = 64 (Δ=2.541s, 37.50%)
+batch = 72 (Δ=2.520s, 40.62%)
+batch = 80 (Δ=2.657s, 43.75%)
+batch = 88 (Δ=2.564s, 46.88%)
+batch = 96 (Δ=2.585s, 50.00%)
+batch = 104 (Δ=2.609s, 53.12%)
+batch = 112 (Δ=2.597s, 56.25%)
+batch = 120 (Δ=2.628s, 59.38%)
+batch = 128 (Δ=2.754s, 62.50%)
+batch = 136 (Δ=2.646s, 65.62%)
+batch = 144 (Δ=2.625s, 68.75%)
+batch = 152 (Δ=2.696s, 71.88%)
+batch = 160 (Δ=2.584s, 75.00%)
+batch = 168 (Δ=2.628s, 78.12%)
+batch = 176 (Δ=2.723s, 81.25%)
+batch = 184 (Δ=2.601s, 84.38%)
+batch = 192 (Δ=2.702s, 87.50%)
+batch = 200 (Δ=2.605s, 90.62%)
+batch = 208 (Δ=2.607s, 93.75%)
+batch = 216 (Δ=2.696s, 96.88%)
+batch = 224 (Δ=2.608s, 100.00%)
+batch = 232 (Δ=2.634s, 100.00%)
+batch = 240 (Δ=2.747s, 100.00%)
+batch = 248 (Δ=2.612s, 100.00%)
+Training throughput: 32 batches in 84.484s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=4.974s, 100.00%)
+Training throughput: 1 batches in 5.119s; word units 86.5% of 192 words (letters-only 100.0% of 64).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>2.856547542003682</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 2.608s; word units 83.3% of 24 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>208.82220774999587</pre></td><td><pre>test/test_reconstruction_roundtrip.py:484: in test_mm20m_grammar_free_derivation_roundtrip
+    assert rec.exact_match_rate == 1.0
+E   AssertionError: assert 0.0 == 1.0
+E    +  where 0.0 = RunRecord(config=&#x27;data/MM_ladder.xml&#x27;, seed=1860931855, epochs=3, wall_s_per_epoch=65.99333074999595, output_loss=0.04...n ModelLoss and not exposed on the model&#x27;, &#x27;epoch_times_s&#x27;: [72.48562849999871, 66.71799199999077, 65.26866950000112]}).exact_match_rate</pre></td><td><pre>batch = 0 (warm-up, 12.50%)
+batch = 8 (Δ=2.666s, 15.62%)
+batch = 16 (Δ=2.474s, 18.75%)
+batch = 24 (Δ=2.502s, 21.88%)
+batch = 32 (Δ=2.360s, 25.00%)
+batch = 40 (Δ=2.396s, 28.12%)
+batch = 48 (Δ=2.410s, 31.25%)
+batch = 56 (Δ=2.509s, 34.38%)
+batch = 64 (Δ=2.174s, 37.50%)
+batch = 72 (Δ=2.142s, 40.62%)
+batch = 80 (Δ=2.159s, 43.75%)
+batch = 88 (Δ=2.145s, 46.88%)
+batch = 96 (Δ=2.147s, 50.00%)
+batch = 104 (Δ=2.337s, 53.12%)
+batch = 112 (Δ=2.241s, 56.25%)
+batch = 120 (Δ=2.259s, 59.38%)
+batch = 128 (Δ=2.187s, 62.50%)
+batch = 136 (Δ=2.098s, 65.62%)
+batch = 144 (Δ=2.139s, 68.75%)
+batch = 152 (Δ=2.206s, 71.88%)
+batch = 160 (Δ=2.165s, 75.00%)
+batch = 168 (Δ=2.206s, 78.12%)
+batch = 176 (Δ=2.199s, 81.25%)
+batch = 184 (Δ=2.300s, 84.38%)
+batch = 192 (Δ=2.253s, 87.50%)
+batch = 200 (Δ=2.121s, 90.62%)
+batch = 208 (Δ=2.029s, 93.75%)
+batch = 216 (Δ=2.046s, 96.88%)
+batch = 224 (Δ=2.074s, 100.00%)
+batch = 232 (Δ=2.096s, 100.00%)
+batch = 240 (Δ=2.272s, 100.00%)
+batch = 248 (Δ=2.345s, 100.00%)
+Training throughput: 32 batches in 72.485s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=2.189s, 12.50%)
+batch = 8 (Δ=2.048s, 15.62%)
+batch = 16 (Δ=2.043s, 18.75%)
+batch = 24 (Δ=2.046s, 21.88%)
+batch = 32 (Δ=2.248s, 25.00%)
+batch = 40 (Δ=2.098s, 28.12%)
+batch = 48 (Δ=2.240s, 31.25%)
+batch = 56 (Δ=2.212s, 34.38%)
+batch = 64 (Δ=2.070s, 37.50%)
+batch = 72 (Δ=2.141s, 40.62%)
+batch = 80 (Δ=2.083s, 43.75%)
+batch = 88 (Δ=2.020s, 46.88%)
+batch = 96 (Δ=2.047s, 50.00%)
+batch = 104 (Δ=2.071s, 53.12%)
+batch = 112 (Δ=2.089s, 56.25%)
+batch = 120 (Δ=2.090s, 59.38%)
+batch = 128 (Δ=2.153s, 62.50%)
+batch = 136 (Δ=2.032s, 65.62%)
+batch = 144 (Δ=2.068s, 68.75%)
+batch = 152 (Δ=2.025s, 71.88%)
+batch = 160 (Δ=2.124s, 75.00%)
+batch = 168 (Δ=2.071s, 78.12%)
+batch = 176 (Δ=2.063s, 81.25%)
+batch = 184 (Δ=2.189s, 84.38%)
+batch = 192 (Δ=2.049s, 87.50%)
+batch = 200 (Δ=2.023s, 90.62%)
+batch = 208 (Δ=2.026s, 93.75%)
+batch = 216 (Δ=2.021s, 96.88%)
+batch = 224 (Δ=2.011s, 100.00%)
+batch = 232 (Δ=1.987s, 100.00%)
+batch = 240 (Δ=2.105s, 100.00%)
+batch = 248 (Δ=2.037s, 100.00%)
+Training throughput: 32 batches in 66.717s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=2.079s, 12.50%)
+batch = 8 (Δ=2.018s, 15.62%)
+batch = 16 (Δ=1.998s, 18.75%)
+batch = 24 (Δ=2.009s, 21.88%)
+batch = 32 (Δ=2.070s, 25.00%)
+batch = 40 (Δ=2.137s, 28.12%)
+batch = 48 (Δ=2.023s, 31.25%)
+batch = 56 (Δ=2.033s, 34.38%)
+batch = 64 (Δ=2.008s, 37.50%)
+batch = 72 (Δ=2.005s, 40.62%)
+batch = 80 (Δ=2.040s, 43.75%)
+batch = 88 (Δ=2.036s, 46.88%)
+batch = 96 (Δ=2.184s, 50.00%)
+batch = 104 (Δ=2.021s, 53.12%)
+batch = 112 (Δ=2.002s, 56.25%)
+batch = 120 (Δ=2.010s, 59.38%)
+batch = 128 (Δ=2.032s, 62.50%)
+batch = 136 (Δ=2.027s, 65.62%)
+batch = 144 (Δ=2.061s, 68.75%)
+batch = 152 (Δ=2.113s, 71.88%)
+batch = 160 (Δ=2.019s, 75.00%)
+batch = 168 (Δ=2.044s, 78.12%)
+batch = 176 (Δ=2.056s, 81.25%)
+batch = 184 (Δ=2.018s, 84.38%)
+batch = 192 (Δ=1.990s, 87.50%)
+batch = 200 (Δ=2.002s, 90.62%)
+batch = 208 (Δ=2.135s, 93.75%)
+batch = 216 (Δ=2.033s, 96.88%)
+batch = 224 (Δ=2.044s, 100.00%)
+batch = 232 (Δ=2.015s, 100.00%)
+batch = 240 (Δ=2.005s, 100.00%)
+batch = 248 (Δ=2.002s, 100.00%)
+Training throughput: 32 batches in 65.268s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=3.962s, 100.00%)
+Training throughput: 1 batches in 4.097s; word units 86.5% of 192 words (letters-only 100.0% of 64).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>7.418898874995648</pre></td><td><pre></pre></td><td><pre>batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.645s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.627s, 100.00%)
+Training throughput: 1 batches in 0.576s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.579s, 100.00%)
+Training throughput: 1 batches in 0.575s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.584s, 100.00%)
+Training throughput: 1 batches in 0.499s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr><tr><td><pre>test/test_word_store.py::test_leaf_distill_default_off</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.03295849999994971</pre></td><td><pre>test/test_word_store.py:630: in test_leaf_distill_default_off
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store0/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store0/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store0/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.014049959005205892</pre></td><td><pre>test/test_word_store.py:661: in test_leaf_distill_trains_root_toward_leaves
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store1/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store1/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store1/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_percept_concept_reverse_index_and_row</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.012971832999028265</pre></td><td><pre>test/test_word_store.py:697: in test_percept_concept_reverse_index_and_row
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store2/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store2/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store2/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.01300062499649357</pre></td><td><pre>test/test_word_store.py:730: in test_concept_row_content_lights_up_the_resolved_row
+    m = _build(tmp_path_factory)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_word_store.py:135: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store3/MM_word_store_meronomy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store3/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element &#x27;chunkPromotionThreshold&#x27;: This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store3/MM_word_store_meronomy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.00014662501052953303</pre></td><td><pre>test/test_word_store.py:759: in test_concept_index_read_sizes_inventory_by_explicit_nvectors
+    with open(cfg) as f:
+         ^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: &#x27;/Users/arogers/github/WikiOracle/basicmodel/data/matrix/MM_20M_grammar_wordstore.xml&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>162.07880987499084</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 12.50%)
+batch = 8 (Δ=2.666s, 15.62%)
+batch = 16 (Δ=2.502s, 18.75%)
+batch = 24 (Δ=2.508s, 21.88%)
+batch = 32 (Δ=2.625s, 25.00%)
+batch = 40 (Δ=2.545s, 28.12%)
+batch = 48 (Δ=2.623s, 31.25%)
+batch = 56 (Δ=2.491s, 34.38%)
+batch = 64 (Δ=2.508s, 37.50%)
+batch = 72 (Δ=2.633s, 40.62%)
+batch = 80 (Δ=2.534s, 43.75%)
+batch = 88 (Δ=2.509s, 46.88%)
+batch = 96 (Δ=2.605s, 50.00%)
+batch = 104 (Δ=2.610s, 53.12%)
+batch = 112 (Δ=2.604s, 56.25%)
+batch = 120 (Δ=2.648s, 59.38%)
+batch = 128 (Δ=2.456s, 62.50%)
+batch = 136 (Δ=2.477s, 65.62%)
+batch = 144 (Δ=2.550s, 68.75%)
+batch = 152 (Δ=2.480s, 71.88%)
+batch = 160 (Δ=2.535s, 75.00%)
+batch = 168 (Δ=2.762s, 78.12%)
+batch = 176 (Δ=2.596s, 81.25%)
+batch = 184 (Δ=2.506s, 84.38%)
+batch = 192 (Δ=2.624s, 87.50%)
+batch = 200 (Δ=2.445s, 90.62%)
+batch = 208 (Δ=2.486s, 93.75%)
+batch = 216 (Δ=2.570s, 96.88%)
+batch = 224 (Δ=2.507s, 100.00%)
+batch = 232 (Δ=2.471s, 100.00%)
+batch = 240 (Δ=2.579s, 100.00%)
+batch = 248 (Δ=2.522s, 100.00%)
+Training throughput: 32 batches in 82.235s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+batch = 0 (Δ=2.444s, 12.50%)
+batch = 8 (Δ=2.534s, 15.62%)
+batch = 16 (Δ=2.522s, 18.75%)
+batch = 24 (Δ=2.439s, 21.88%)
+batch = 32 (Δ=2.529s, 25.00%)
+batch = 40 (Δ=2.439s, 28.12%)
+batch = 48 (Δ=2.460s, 31.25%)
+batch = 56 (Δ=2.558s, 34.38%)
+batch = 64 (Δ=2.443s, 37.50%)
+batch = 72 (Δ=2.473s, 40.62%)
+batch = 80 (Δ=2.546s, 43.75%)
+batch = 88 (Δ=2.449s, 46.88%)
+batch = 96 (Δ=2.469s, 50.00%)
+batch = 104 (Δ=2.553s, 53.12%)
+batch = 112 (Δ=2.516s, 56.25%)
+batch = 120 (Δ=2.536s, 59.38%)
+batch = 128 (Δ=2.451s, 62.50%)
+batch = 136 (Δ=2.460s, 65.62%)
+batch = 144 (Δ=2.583s, 68.75%)
+batch = 152 (Δ=2.435s, 71.88%)
+batch = 160 (Δ=2.462s, 75.00%)
+batch = 168 (Δ=2.620s, 78.12%)
+batch = 176 (Δ=2.487s, 81.25%)
+batch = 184 (Δ=2.443s, 84.38%)
+batch = 192 (Δ=2.526s, 87.50%)
+batch = 200 (Δ=2.438s, 90.62%)
+batch = 208 (Δ=2.431s, 93.75%)
+batch = 216 (Δ=2.501s, 96.88%)
+batch = 224 (Δ=2.421s, 100.00%)
+batch = 232 (Δ=2.581s, 100.00%)
+batch = 240 (Δ=2.340s, 100.00%)
+batch = 248 (Δ=2.483s, 100.00%)
+Training throughput: 32 batches in 79.569s; word units 87.5% of 768 words (letters-only 100.0% of 256).
+</pre></td></tr><tr><td><pre>test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>5.637710625000182</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

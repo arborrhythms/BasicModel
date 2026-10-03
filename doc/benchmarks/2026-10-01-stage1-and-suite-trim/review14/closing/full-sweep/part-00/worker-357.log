@@ -1,0 +1,51 @@
+...FFFF.                                                                 [100%]
+=================================== FAILURES ===================================
+________ TestLexiconOwnership.test_embedding_lives_on_perceptual_space _________
+test/test_lexicon_ownership.py:49: in test_embedding_lives_on_perceptual_space
+    self.assertIsInstance(m.perceptualSpace.vocabulary, Embedding)
+E   AssertionError: RadixLayer(
+E     (byte_fallback): BytesFallbackEncoder()
+E   ) is not an instance of <class 'Spaces.Embedding'>
+_________ TestLexiconOwnership.test_embedding_symbolic_back_ref_wired __________
+test/test_lexicon_ownership.py:64: in test_embedding_symbolic_back_ref_wired
+    self.assertIsInstance(emb, Embedding)
+E   AssertionError: RadixLayer(
+E     (byte_fallback): BytesFallbackEncoder()
+E   ) is not an instance of <class 'Spaces.Embedding'>
+_____________ TestLexiconOwnership.test_getW_wraps_into_unit_cell ______________
+test/test_lexicon_ownership.py:115: in test_getW_wraps_into_unit_cell
+    raw = torch.zeros_like(emb.wv._vectors[0])
+                           ^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'wv'
+__________ TestLexiconOwnership.test_get_embedding_returns_perceptual __________
+test/test_lexicon_ownership.py:74: in test_get_embedding_returns_perceptual
+    self.assertIs(emb, m.perceptualSpace.vocabulary)
+E   AssertionError: None is not RadixLayer(
+E     (byte_fallback): BytesFallbackEncoder()
+E   )
+=============================== warnings summary ===============================
+test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_lives_on_perceptual_space
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7565: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpyqvsp9du.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_symbolic_back_ref_wired
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7565: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_5eaec1h.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_lexicon_ownership.py::TestLexiconOwnership::test_getW_wraps_into_unit_cell
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7565: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpl7z3o7pm.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_lexicon_ownership.py::TestLexiconOwnership::test_get_embedding_returns_perceptual
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7565: RuntimeWarning: output_state_boundary [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmppaptjljd.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_lives_on_perceptual_space
+FAILED test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_symbolic_back_ref_wired
+FAILED test/test_lexicon_ownership.py::TestLexiconOwnership::test_getW_wraps_into_unit_cell
+FAILED test/test_lexicon_ownership.py::TestLexiconOwnership::test_get_embedding_returns_perceptual
+4 failed, 4 passed, 4 warnings in 2.23s

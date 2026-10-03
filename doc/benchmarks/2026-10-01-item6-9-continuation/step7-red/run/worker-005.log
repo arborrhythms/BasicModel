@@ -1,0 +1,25 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_single_legal_derivation_is_compared_without_inventing_an_alternative ___
+test/test_inverse_unary_exclusion.py:72: in test_single_legal_derivation_is_compared_without_inventing_an_alternative
+    exploit, explore = layer.derive_pair(value, rounds=6, slots=1, greedy=True)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7593: in derive_pair
+    explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+bin/Language.py:7575: in derive
+    _, x, route = self(
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7508: in forward
+    torch._assert_async((~active | has_choice).all(),
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: compose has no legal alternative at the selected exploration round
+=========================== short test summary info ============================
+FAILED test/test_inverse_unary_exclusion.py::test_single_legal_derivation_is_compared_without_inventing_an_alternative
+1 failed in 2.57s

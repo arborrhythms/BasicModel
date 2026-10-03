@@ -21,7 +21,7 @@ _DATA = os.path.join(os.path.dirname(_BIN), "data")
 _DEFAULTS = os.path.join(_DATA, "model.xml")
 
 
-def _build(name="MM_mereology_serial.xml"):
+def _build(name="MM_ladder.xml"):
     import Language
     import Models
     from util import init_config
@@ -56,7 +56,7 @@ def _concept_dim(model):
 
 @pytest.mark.slow
 def test_reconstruct_from_idea_defaults_off():
-    model = _build("MM_mereology.xml")
+    model = _build("MM_20M_xor.xml")
     assert getattr(model, "reconstruct_from_idea", None) is False
 
 

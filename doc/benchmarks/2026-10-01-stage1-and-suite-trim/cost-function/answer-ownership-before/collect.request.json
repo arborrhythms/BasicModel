@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -4,7 +4,7 @@ Surfaces what nInputDim/nOutputDim/nDim/nVectors the 0/-1 sentinels
 actually resolve to, so configs can be made fully explicit. Not a pytest
 test (underscore prefix); run directly:
 
-    python test/_introspect_dims.py data/MM_20M_grammar.xml
+    python test/_introspect_dims.py data/MM_ladder.xml
 """
 import os, sys
 from pathlib import Path
@@ -36,7 +36,7 @@ def dump(cfg_path):
 
 
 if __name__ == "__main__":
-    targets = sys.argv[1:] or ["data/MM_20M_grammar.xml"]
+    targets = sys.argv[1:] or ["data/MM_ladder.xml"]
     for t in targets:
         try:
             dump(t)

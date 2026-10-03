@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-03T09:59:21.710600+00:00",
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "no_commits": true,
+  "source_matched": true,
+  "source_files": 664,
+  "source_snapshot_sha256": "12e3ae40e5a65ab23142a9e429daaade4fea8b0fb11aee4ab23722fdd9ed2f7b",
+  "environment_unchanged": true,
+  "port_file_pairs": 46,
+  "old_test_bodies": 645,
+  "complete_port_bodies_match": true,
+  "git_diff_check": "passed",
+  "documentation_links": {
+    "passed": 263,
+    "process": "final-doc-links/process.json"
+  },
+  "campaign_completed": true,
+  "review_status": "stopped for review; gates and remaining ports are not accepted"
+}

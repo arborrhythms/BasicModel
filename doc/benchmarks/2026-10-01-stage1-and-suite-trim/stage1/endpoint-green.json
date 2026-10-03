@@ -1,0 +1,22 @@
+{
+  "outcome": {
+    "training_batches": 3,
+    "evaluation_batches": 1,
+    "receipt_added_endpoint": true,
+    "last_training_trials": {},
+    "last_batch": {
+      "train": false
+    },
+    "grammar_reconstructions": [],
+    "predictions": [],
+    "targets": [],
+    "inputs": [],
+    "seconds": 0.0001557079958729446
+  },
+  "evaluations": [
+    {
+      "batchSize": 28,
+      "split": "test"
+    }
+  ]
+}

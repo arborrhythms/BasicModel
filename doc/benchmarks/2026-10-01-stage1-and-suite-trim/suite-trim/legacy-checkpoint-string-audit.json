@@ -1,0 +1,102 @@
+{
+  "method": "pickletools string inspection only; no unpickling or tensor allocation",
+  "checkpoints": [
+    {
+      "path": "data/BasicModel.ckpt",
+      "matches": {
+        "question_conditioner.": [
+          "question_conditioner.weight",
+          "question_conditioner.weight"
+        ],
+        "category_assign": [
+          "category_assign"
+        ]
+      },
+      "error": null
+    },
+    {
+      "path": "data/grammar_wording.ckpt",
+      "matches": {
+        "question_conditioner.": [
+          "question_conditioner.weight"
+        ],
+        "question_conditioners.": [
+          "question_conditioners.64.weight",
+          "question_conditioners.64.weight"
+        ],
+        "operand_order": [
+          "symbolSpace.subspace.layers.0._binary_layers.CS.chooser._operand_order_version",
+          "symbolSpace.subspace.layers.0._binary_layers.CS.chooser.operand_order.weight",
+          "symbolSpace.subspace.languageLayer._binary_layers.CS.chooser._operand_order_version",
+          "symbolSpace.subspace.languageLayer._binary_layers.CS.chooser.operand_order.weight",
+          "symbolSpace.subspace.layers.0._binary_layers.CS.chooser.operand_order.weight"
+        ],
+        "copy_order": [
+          "symbolSpace.subspace.layers.0._binary_layers.CS.chooser._copy_order_version",
+          "symbolSpace.subspace.layers.0._binary_layers.CS.chooser.copy_order.weight",
+          "symbolSpace.subspace.languageLayer._binary_layers.CS.chooser._copy_order_version",
+          "symbolSpace.subspace.languageLayer._binary_layers.CS.chooser.copy_order.weight",
+          "symbolSpace.subspace.layers.0._binary_layers.CS.chooser.copy_order.weight"
+        ],
+        "_inter_predictor": [
+          "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+          "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+          "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+          "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+          "symbolSpace.subspace.discourse._inter_predictor.network.0.weight",
+          "symbolSpace.subspace.discourse._inter_predictor.network.0.bias",
+          "symbolSpace.subspace.discourse._inter_predictor.network.2.weight",
+          "symbolSpace.subspace.discourse._inter_predictor.network.2.bias",
+          "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+          "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+          "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+          "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias"
+        ],
+        "category_assign": [
+          "category_assign"
+        ]
+      },
+      "error": null
+    },
+    {
+      "path": "output/item9-packed-capture.pt",
+      "matches": {},
+      "error": null
+    },
+    {
+      "path": "output/item9-packed-capture2.pt",
+      "matches": {},
+      "error": null
+    },
+    {
+      "path": "output/item9-packed-recon.pt",
+      "matches": {},
+      "error": null
+    },
+    {
+      "path": "output/item9-single-capture.pt",
+      "matches": {},
+      "error": null
+    },
+    {
+      "path": "output/item9-single-capture2.pt",
+      "matches": {},
+      "error": null
+    },
+    {
+      "path": "output/item9-single-recon.pt",
+      "matches": {},
+      "error": null
+    },
+    {
+      "path": "test/fixtures/item7_byte_columns.pt",
+      "matches": {},
+      "error": null
+    },
+    {
+      "path": "test/fixtures/item7_legacy_definition.pt",
+      "matches": {},
+      "error": null
+    }
+  ]
+}

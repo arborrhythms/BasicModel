@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

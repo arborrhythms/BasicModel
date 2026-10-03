@@ -295,6 +295,7 @@ def test_capture_does_not_invent_anchoring_for_an_unresolved_word():
     assert BasicModel._word_lexical_forms(owner, 1, 2) == ((None, None),)
 
 
+@pytest.mark.usefixtures('eager_reading')
 @pytest.mark.parametrize("packed", [False, True])
 def test_forward_anchor_capture_survives_text_and_grammar_changes(
         tmp_path, monkeypatch, packed):

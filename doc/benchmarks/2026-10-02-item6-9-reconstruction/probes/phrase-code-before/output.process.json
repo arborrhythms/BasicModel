@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_concept_code_ownership.py::test_admitting_a_phrase_does_not_compose_or_normalize_its_code",
+    "--tb=short"
+  ],
+  "pid": 88404,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 430933264,
+  "elapsed_seconds": 3.8041216660058126,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/phrase-code-before/output.log"
+}

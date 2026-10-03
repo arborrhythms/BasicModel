@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_grammar_separator.py",
+    "test/test_generation_lesson.py",
+    "test/test_supplied_answer_training.py",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence",
+    "test/test_stm_recon_from_cleared_cache.py",
+    "test/test_aligned_fold_binding.py::test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward",
+    "test/test_coordinate_registry.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,41 @@
+........FF.......s...                                                    [100%]
+=================================== FAILURES ===================================
+________ test_streaming_and_packed_boundary_use_same_full_roles[False] _________
+test/test_sentence_expectation.py:120: in test_streaming_and_packed_boundary_use_same_full_roles
+    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20936: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20823: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+_________ test_streaming_and_packed_boundary_use_same_full_roles[True] _________
+test/test_sentence_expectation.py:120: in test_streaming_and_packed_boundary_use_same_full_roles
+    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
+test/reading_fixtures.py:214: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20936: in _commit_sentence
+    state = self._discard_sentence_record(state, active)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20823: in _discard_sentence_record
+    value = lang[index]
+            ^^^^^^^^^^^
+E   IndexError: list index out of range
+=============================== warnings summary ===============================
+test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13594: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]
+2 failed, 18 passed, 1 skipped, 3 warnings in 4.13s

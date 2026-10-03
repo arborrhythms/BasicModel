@@ -1,0 +1,110 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/result.json": "01d894812921ae59fd3e6fd9cc9596bee316a99331f13632c65b75edfcc37e97"
+  },
+  "aggregate_bytes": 25769803776,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 34,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+      ],
+      "estimated_seconds": 657.7607936249115,
+      "reserved_bytes": 4116630934.4
+    },
+    {
+      "nodes": [
+        "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective"
+      ],
+      "estimated_seconds": 294.1093201660551,
+      "reserved_bytes": 2661106131.2000003
+    },
+    {
+      "nodes": [
+        "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+        "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+        "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]"
+      ],
+      "estimated_seconds": 0.7539724570233375,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_sentence_compose.py::test_already_trained_observation_keeps_policy_and_skips_duplicate_loss",
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+        "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+        "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+        "test/test_compose_review.py::test_zero_temperature_is_valid_and_keeps_the_chooser_gradient",
+        "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+        "test/test_compose_review.py::test_zero_temperature_explore_is_identical_until_the_forced_round",
+        "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+        "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[-1.0]",
+        "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+        "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+        "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+        "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
+        "test/test_compose_review.py::test_zero_temperature_prefix_uses_execution_order_for_packed_ends",
+        "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-True]",
+        "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
+        "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[3.0-False]",
+        "test/test_closing_gradient_diagnostics.py::test_closing_gradients_are_summed_before_cosines_without_retaining_graphs",
+        "test/test_closing_gradient_diagnostics.py::test_sparse_closing_gradients_accumulate_without_dense_capacity_buffers",
+        "test/test_closing_gradient_diagnostics.py::test_read_only_perception_pullback_matches_both_real_updates"
+      ],
+      "estimated_seconds": 0.6538315387442708,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+        "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused"
+      ],
+      "estimated_seconds": 0.030851582996547222,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[1]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[3]"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    }
+  ]
+}

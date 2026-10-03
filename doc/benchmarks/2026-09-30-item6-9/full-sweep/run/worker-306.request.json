@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_math_thinking_training.py::test_primitives_knob_is_retired"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-306.recycle.json"
+}

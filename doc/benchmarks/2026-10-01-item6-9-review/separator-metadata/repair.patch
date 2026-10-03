@@ -1,0 +1,53 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -12580,7 +12580,7 @@
+             return w < bound
+ 
+         def metadata_body(w, stack, depth, lefts, rights, bad):
+-            wa = _col(active, w)
++            wa = _col(leaves, w)
+             slot = (3 * w).reshape(1).expand(B)
+             push = wa & (depth < cap)
+             bad = bad | (wa & ~push)
+@@ -12591,7 +12591,7 @@
+                 for arity in (2, 1):
+                     stack, depth, lefts, rights, bad = metadata_fold(
+                         stack, depth, lefts, rights, bad, slot + r, wa, arity)
+-            ending = _col(is_end, w) & wa
++            ending = _col(is_end, w) & _col(active, w)
+             final = w == last_index
+             base = torch.where(final, 3 * W, 3 * W + (w + 1) * closing_width)
+             for k in range(closing_width):
+--- a/test/test_grammar_separator.py
++++ b/test/test_grammar_separator.py
+@@ -7,7 +7,8 @@
+ 
+ 
+ @pytest.mark.parametrize('unadmitted', [False, True])
+-def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted):
++@pytest.mark.parametrize('trailing', [False, True])
++def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+     import Models
+     import util
+     from Layers import ShortTermMemory
+@@ -45,6 +46,8 @@
+     monkeypatch.setattr(model, '_reverse_event_loss', observed_loss)
+     try:
+         texts = ['hello world', 'hello there', 'loving world', 'loving there']
++        if trailing:
++            texts = [text + ' ' for text in texts]
+         with torch.no_grad():
+             model(model.inputSpace.prepInput(texts))
+             model._d3_reconstruction_loss()
+@@ -53,8 +56,9 @@
+         assert torch.equal(isp._ar_embedded[:, 1], isp._ar_embedded_N[:, 1])
+         assert bool(isp._ar_embedded[:, 1].abs().any())
+         assert targets and torch.equal(targets[-1], isp._ar_embedded)
+-        assert [p for p, _ in pushes] == [0, 1, 2]
+-        assert [gate.reshape(-1).tolist() for _, gate in pushes] == [[True]*4, [False]*4, [True]*4]
++        assert [p for p, _ in pushes] == list(range(4 if trailing else 3))
++        expected = [[True]*4, [False]*4, [True]*4] + ([[False]*4] if trailing else [])
++        assert [gate.reshape(-1).tolist() for _, gate in pushes] == expected
+         assert len(readings) == 1
+         decoded, unavailable = readings[0]
+         assert all(len(text.split()) == 2 for text in decoded), decoded

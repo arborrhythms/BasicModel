@@ -1,0 +1,30 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_____ TestXorGrammarReconstruction.test_piecewise_overall_at_least_50_pct ______
+
+self = <test_explicit_dimensions.TestXorGrammarReconstruction testMethod=test_piecewise_overall_at_least_50_pct>
+
+    @unittest.skipIf(not _RUN_SLOW, "slow (~65s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
+    def test_piecewise_overall_at_least_50_pct(self):
+        # Keep the historical selector; the decided contract is now all four.
+        from collections import Counter
+        model = self.trained_xor_grammar
+        recon_texts = model._grammar_gate_reconstructions
+        test_input, _ = model.inputSpace.getTestData()
+        self.assertEqual(len(test_input), 4)
+        self.assertEqual(len(recon_texts), 4)
+        self.assertFalse(any(model._grammar_gate_unavailable),
+                         'every sentence must have an available grammar inverse')
+        pairs = [(model._bytes_to_text(original).replace("\x00", " "), recovered)
+                 for original, recovered in zip(test_input, recon_texts)]
+        perfect = sum(recovered is not None and Counter(original.split()) ==
+                      Counter(recovered.replace("\x00", " ").split())
+                      for original, recovered in pairs)
+>       self.assertEqual(perfect, 4,
+            f"XOR_grammar reconstruction: {perfect}/4 word multisets recovered; {pairs}")
+E       AssertionError: 0 != 4 : XOR_grammar reconstruction: 0/4 word multisets recovered; [('hello world', 'hello'), ('hello there', 'hello'), ('loving world', 'hello'), ('loving there', 'hello')]
+
+test/test_explicit_dimensions.py:281: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+1 failed, 1 passed in 1.58s

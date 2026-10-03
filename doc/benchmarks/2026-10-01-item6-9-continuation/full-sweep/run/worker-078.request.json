@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_item9b_followup.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction",
+    "test/test_item9b_followup.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups",
+    "test/test_item9b_followup.py::test_interleave_cursor_preserves_document_boundaries",
+    "test/test_item9b_followup.py::test_failed_context_restores_serial_mode_input_and_teacher"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-078.recycle.json"
+}

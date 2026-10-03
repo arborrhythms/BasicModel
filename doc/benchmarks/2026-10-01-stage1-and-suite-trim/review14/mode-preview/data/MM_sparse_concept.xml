@@ -1,0 +1,100 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- Parallel conceptual smoke workload on the xor dataset.
+       One distributed code per concept names two symbols. Signed feature
+       weights read contained PartSpace parts over a subject's extent and
+       pervading WholeSpace properties at its positions; the readout unions
+       those positions. Raw regions stop at the last observed byte, with
+       padded regions empty. The pyramid computes a union over disjunctive
+       parts, with an optional preceding conjunction over W_pi. Exponents
+       are nonnegative; a negated part addresses the negative symbol.
+       The taper allocates 8 + 4 + 2 + 1 = 15 live concept rows here.
+       SymbolSpace reads two rows per concept from the paired field.
+       symbolicOrder=0 disables this cutover; serial grammar is independent.
+       This workload measures the live path, not learned tower-grounded XOR. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <!-- explicit override: parallel symbolic loop at symbolicOrder>=1. -->
+    <serial>false</serial>
+    <!-- Three conceptual composition rungs above eight order-0 concepts. -->
+    <symbolicOrder>3</symbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <!-- mint the word/object/meta symbols whose decomposition populates the
+         untyped edges on the shared square store (decoupled from the
+         transform; gated only on the symbolic order). -->
+    <mereologyRaise>true</mereologyRaise>
+    <!-- the 3-stream peer bind (PS/WS percepts + the SS symbol leg, now
+         forward-mediated via SymbolSpace.forward_concept_to_symbol). -->
+    <symbolTower>true</symbolTower>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <!-- the substitutability SITUATING signal on the grad-bearing concept
+           codes (the sparse encoder + dictionary decoder output). -->
+      <conceptualSimilarityScale>0.1</conceptualSimilarityScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <!-- Dictionary capacity is independent of the eight occurrence slots
+         and the fifteen rows allocated by the conceptual taper. -->
+    <nVectors>32</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <!-- WS matches PS [8,1024] for the corpus-callosum stack; the old
+         [1024,8] wide-symbol shape was a leftover from WS processing symbols. -->
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

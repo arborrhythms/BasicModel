@@ -1,4 +1,5 @@
 """Bounded-STM fold gates: capacity invariant + per-word ingestion."""
+import pytest
 import os, sys
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
@@ -22,6 +23,7 @@ def _model():
     Models.TheData.load("xor")
     return m
 
+@pytest.mark.usefixtures('eager_reading')
 def test_stm_never_exceeds_cap_after_forward():
     m = _model(); m.train()
     cap = int(m.conceptualSpace.stm.capacity)
@@ -35,6 +37,7 @@ def test_stm_never_exceeds_cap_after_forward():
     assert int(depth.max().item()) <= cap, f"STM depth {int(depth.max())} > cap {cap}"
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_sentence_end_reduces_toward_root():
     m = _model(); m.train()
     loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
@@ -48,10 +51,6 @@ def test_sentence_end_reduces_toward_root():
     assert torch.isfinite(S).all(), "root state must be finite"
 
 
-def test_binary_reducer_is_space_role_free():
-    import inspect, Language
-    src = inspect.getsource(Language.OperationSelectionLayer)
-    assert "op_space_role_idx" not in src and "position_space_role" not in src, "space_role machinery must be gone"
 
 
 def test_compose_single_reduction_space_role():

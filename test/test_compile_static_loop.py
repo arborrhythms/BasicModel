@@ -25,7 +25,7 @@ def _build_gate_model():
     from Models import BaseModel
     from util import init_config, init_device
     init_device("cpu")
-    cfg = str(_root / "data" / "MM_20M_grammar.xml")
+    cfg = str(_root / "data" / "MM_ladder.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -51,6 +51,11 @@ def test_per_word_body_callable_with_static_signature():
     assert isp._word_active_mask is not None
     N = int(isp.outputShape[0])
     m._per_word_prelude(in_sub)
+    # The eager reading boundary owns the operation journal. An isolated word
+    # call needs the same teacher and maps that a complete forward stages.
+    m._stage_reconstruction_teacher()
+    m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
+        isp._word_active_mask.shape[1], isp._word_active_mask.device)
     out_slot = m._per_word_contributions
     gate = isp._word_active_mask[:, 0:1]
     w = isp.word_at(0)
@@ -123,6 +128,7 @@ def _build_grammar_perword_model():
     return m
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_per_word_accumulator_is_fixed_length_not_word_count():
     """PIN: ``_per_word_contributions`` is a fixed-length ``N_words`` list
     (the static per-word slab width), not a list whose length tracks the

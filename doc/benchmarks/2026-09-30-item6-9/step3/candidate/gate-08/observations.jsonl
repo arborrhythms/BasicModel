@@ -1,0 +1,1 @@
+{"nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor]", "kind": "reconstruction", "config": "data/MM_20M_xor.xml", "epochs": 1, "seed": 0, "exact_match_rate": 1.0, "where_recovery": 1.0, "output_loss": 0.17499390244483948, "recon_loss": 0.00013660475087817758, "gate": 8}

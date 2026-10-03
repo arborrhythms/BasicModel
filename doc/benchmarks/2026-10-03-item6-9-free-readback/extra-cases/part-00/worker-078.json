@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]"
+  ],
+  "completed": [
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]"
+  ],
+  "slow_selected": [
+    "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-production]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.6072233750019222,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1224/test_native_checkpoint_restore0/native.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1224/test_native_checkpoint_restore0/native.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

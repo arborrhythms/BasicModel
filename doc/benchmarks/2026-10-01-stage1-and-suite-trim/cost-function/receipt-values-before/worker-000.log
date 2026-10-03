@@ -1,0 +1,28 @@
+..........FF......                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_row_receipt_reports_the_trained_mean_and_contextual_weight ________
+test/test_relative_error.py:85: in test_row_receipt_reports_the_trained_mean_and_contextual_weight
+    assert receipt['value'] == pytest.approx(65./101.)
+E   assert None == 0.6435643564356436 ± 6.4e-07
+E     
+E     comparison failed
+E     Obtained: None
+E     Expected: 0.6435643564356436 ± 6.4e-07
+__________ test_scalar_receipt_and_history_include_contextual_weight ___________
+test/test_relative_error.py:94: in test_scalar_receipt_and_history_include_contextual_weight
+    assert costs.breakdown()['fit']['weighted'] == 6.
+E   assert 2.0 == 6.0
+=============================== warnings summary ===============================
+test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7674: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_all_three_owners
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_relative_error.py::test_row_receipt_reports_the_trained_mean_and_contextual_weight
+FAILED test/test_relative_error.py::test_scalar_receipt_and_history_include_contextual_weight
+2 failed, 16 passed, 2 warnings in 2.82s

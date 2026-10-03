@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-141.recycle.json"
+}

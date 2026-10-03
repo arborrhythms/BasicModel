@@ -1,0 +1,4 @@
+test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused
+test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient
+
+2 tests collected in 0.57s

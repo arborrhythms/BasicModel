@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/probe_observer_contract.py", line 12, in <module>
+    observer.P.groups(model)
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/objective_conflicts_probe.py", line 133, in groups
+    shared = model._shared_operator_parameter_groups(SimpleNamespace(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1972, in __getattr__
+    raise AttributeError(
+AttributeError: 'BasicModel' object has no attribute '_shared_operator_parameter_groups'

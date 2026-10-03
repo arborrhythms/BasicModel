@@ -1,0 +1,26 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+  ],
+  "completed": [
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+  ],
+  "slow_selected": [
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.20086237500072457,
+      "message": "test/test_sparse_concept_e2e.py:302: in test_two_phase_forward_cutover_stamps_terminal_activations\n    assert acts[start0:end0].count_nonzero() == 0\nE   assert tensor(8) == 0\nE    +  where tensor(8) = <built-in method count_nonzero of Tensor object at 0x1231ec820>()\nE    +    where <built-in method count_nonzero of Tensor object at 0x1231ec820> = tensor([[[[0., 0.]],\\n\\n         [[1., 1.]],\\n\\n         [[1., 1.]],\\n\\n         [[1., 1.]]],\\n\\n\\n        [[[0., 0.]],\\n\\n      ...],\\n\\n\\n        [[[0., 0.]],\\n\\n         [[0., 0.]],\\n\\n         [[0., 0.]],\\n\\n         [[0., 0.]]]], grad_fn=<SliceBackward0>).count_nonzero",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

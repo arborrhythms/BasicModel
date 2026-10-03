@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_idea_subspace.py::test_overflow_raises"
+  ],
+  "completed": [
+    "test/test_idea_subspace.py::test_overflow_raises"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_idea_subspace.py::test_overflow_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042408399895066395,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

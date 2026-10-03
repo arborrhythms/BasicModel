@@ -1,0 +1,36 @@
+.F..FFF.                                                                 [100%]
+=================================== FAILURES ===================================
+___________ TestInputSpaceLexIntegration.test_token_stream_available ___________
+test/test_basicmodel.py:1326: in test_token_stream_available
+    tokens = emb._token_stream("hello world")
+             ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute '_token_stream'
+___ TestOutputSpaceTextReconstruction.test_reconstruct_consecutive_no_nwhere ___
+test/test_basicmodel.py:1486: in test_reconstruct_consecutive_no_nwhere
+    codebook = psp.vocabulary.getW().detach()
+               ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'getW'
+____ TestOutputSpaceTextReconstruction.test_reconstruct_from_known_vectors _____
+test/test_basicmodel.py:1450: in test_reconstruct_from_known_vectors
+    codebook = psp.vocabulary.getW().detach()
+               ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'getW'
+_________ TestOutputSpaceTextReconstruction.test_reconstruct_to_buffer _________
+test/test_basicmodel.py:1521: in test_reconstruct_to_buffer
+    codebook = psp.vocabulary.getW().detach()
+               ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'RadixLayer' object has no attribute 'getW'
+=========================== short test summary info ============================
+FAILED test/test_basicmodel.py::TestInputSpaceLexIntegration::test_token_stream_available
+FAILED test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_consecutive_no_nwhere
+FAILED test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_from_known_vectors
+FAILED test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_to_buffer
+4 failed, 4 passed in 2.34s

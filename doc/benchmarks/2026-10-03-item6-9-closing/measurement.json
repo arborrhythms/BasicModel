@@ -1,0 +1,72 @@
+{
+  "trainings": 1,
+  "epochs": 400,
+  "class_correct": 4,
+  "error": 0.11474819481372833,
+  "error_band": "between",
+  "class_bar": false,
+  "reconstruction_bar": false,
+  "joint_bar": false,
+  "exact_readbacks": 0,
+  "contrast": -0.65835040807724,
+  "answers": [
+    0.2751798629760742,
+    0.6365581750869751,
+    0.6935124397277832,
+    0.3965403437614441
+  ],
+  "targets": [
+    0.0,
+    1.0,
+    1.0,
+    0.0
+  ],
+  "inputs": [
+    "hello world",
+    "hello there",
+    "loving world",
+    "loving there"
+  ],
+  "readbacks": [
+    "world",
+    "there",
+    "loving",
+    "loving"
+  ],
+  "available": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "perceptual_reporting_view": [
+    "hello ",
+    "hello ",
+    "loving ",
+    "loving "
+  ],
+  "shared_model": true,
+  "decoder_calls": 800,
+  "decoder_row_visits": 3200,
+  "actions": {
+    "STOP": 3200
+  },
+  "emitted_counts": {
+    "1": 3200
+  },
+  "pairs": {
+    "world/there": {
+      "start": 0.15169955790042877,
+      "end": 0.6239191293716431,
+      "minimum": 0.15169955790042877,
+      "maximum": 0.6239191293716431
+    },
+    "hello/loving": {
+      "start": -0.04603281617164612,
+      "end": 0.5171303153038025,
+      "minimum": -0.12177911400794983,
+      "maximum": 0.7602545619010925
+    }
+  },
+  "dictionary_frobenius_displacement": 2.6872470378875732
+}

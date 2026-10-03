@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 1.3s; peak 0.05 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 8.7s; peak 3.15 GiB
+Result: passed, exit 0; 1/1 cases completed.
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/retired-guard-check/result.json

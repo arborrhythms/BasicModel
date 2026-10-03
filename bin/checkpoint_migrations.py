@@ -664,6 +664,62 @@ def remap_optimizer_state_by_name(
     if len(live_leaves) != len(live_mleaves):
         raise ValueError("live optimizer state/manifest leaf counts differ")
 
+    ownership_resets = []
+    if any('momentum' in group for leaf in live_leaves for group in leaf['param_groups']):
+        # The retained BasicModel/grammar_wording checkpoints predate the
+        # objective split. Repartition by physical parameter name. Adam's
+        # adaptive moments are not momentum-SGD state: reset only those
+        # parameters; readers and predictors keep their Adam moments.
+        saved_names = {}
+        for leaf, manifest in zip(saved_leaves, saved_mleaves):
+            if len(leaf['param_groups']) != len(manifest['param_groups']):
+                raise ValueError('optimizer parameter-group layout differs')
+            for group, entries in zip(leaf['param_groups'], manifest['param_groups']):
+                if len(group['params']) != len(entries):
+                    raise ValueError('optimizer manifest group length differs')
+                for pid, entry in zip(group['params'], entries):
+                    name = _entry_name(entry)
+                    if name in saved_names:
+                        raise ValueError(f'duplicate saved optimizer name {name!r}')
+                    saved_names[name] = (entry, leaf['state'].get(pid), group)
+        aligned, manifests, retained = [], [], set()
+        for leaf, manifest in zip(live_leaves, live_mleaves):
+            groups, mgroups, states = [], [], {}
+            for group, entries in zip(leaf['param_groups'], manifest['param_groups']):
+                new_group, old_entries = dict(group), []
+                compatible_groups = []
+                for pid, entry in zip(group['params'], entries):
+                    name = _entry_name(entry)
+                    retained.add(name)
+                    old = saved_names.get(name)
+                    old_entries.append(entry if old is None else old[0])
+                    if old is None:
+                        continue
+                    old_entry, state, old_group = old
+                    same_family = ('momentum' in group) == ('momentum' in old_group)
+                    if not same_family:
+                        if isinstance(state, Mapping):
+                            ownership_resets.append(name)
+                        continue
+                    compatible_groups.append(old_group)
+                    if isinstance(state, Mapping):
+                        states[pid] = state
+                if compatible_groups:
+                    # A live group cannot silently collapse different saved
+                    # learning rates or other optimizer hyperparameters.
+                    common = {k:v for k,v in compatible_groups[0].items() if k!='params'}
+                    if any({k:v for k,v in g.items() if k!='params'} != common for g in compatible_groups[1:]):
+                        raise ValueError('live optimizer group merges different saved hyperparameters')
+                    new_group.update(common)
+                    new_group['params'] = group['params']
+                groups.append(new_group)
+                mgroups.append(old_entries)
+            aligned.append({'state':states, 'param_groups':groups})
+            manifests.append({'param_groups':mgroups})
+        ownership_resets.extend(name for name, (_,state,_) in saved_names.items()
+                                if name not in retained and isinstance(state, Mapping))
+        saved_leaves, saved_mleaves = aligned, manifests
+
     # A storage owner can deliberately retire an entire optimizer family.
     # The contextual ConceptualSpace dictionary is one example: it used to be
     # the sole RowLocalAdam leaf, and is now a persistent, non-autograd buffer
@@ -672,7 +728,7 @@ def remap_optimizer_state_by_name(
     # manifest name in it is absent from the live optimizer.  In particular,
     # do not let a topology mismatch conceal a leaf that still owns a live
     # parameter.
-    dropped_from_retired_leaves: list[str] = []
+    dropped_from_retired_leaves: list[str] = ownership_resets
     if len(saved_leaves) != len(live_leaves):
         def _leaf_entries(state_leaf, manifest_leaf):
             groups = state_leaf.get("param_groups")

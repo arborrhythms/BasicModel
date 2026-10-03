@@ -1,0 +1,21 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_understanding_readout.py",
+    "test/test_supplied_answer_training.py",
+    "test/test_prepared_answer_boundary.py",
+    "test/test_trial_policy_ownership.py",
+    "test/test_reconstruction_precedence.py",
+    "test/test_training_diagnostic_contracts.py",
+    "--maxfail=25"
+  ],
+  "pid": 16605,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1301874704,
+  "elapsed_seconds": 13.443477915992844,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/ownership-contracts-before.log"
+}

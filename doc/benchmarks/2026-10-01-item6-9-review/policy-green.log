@@ -1,0 +1,15 @@
+[collect] 4 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.5s; peak 0.39 GiB
+[worker-000] 1 selectors; limit 1800s, 8.0 GiB
+[worker-001] 1 selectors; limit 1800s, 8.0 GiB
+[worker-002] 1 selectors; limit 1800s, 8.0 GiB
+[worker-003] 1 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 887.3s; peak 4.85 GiB
+[worker-001] exit 1; 892.4s; peak 4.87 GiB
+[worker-002] exit 1; 893.4s; peak 4.84 GiB
+[worker-003] exit 1; 894.3s; peak 4.86 GiB
+[worker-004] 1 selectors; limit 1800s, 8.0 GiB
+[worker-005] 1 selectors; limit 1800s, 8.0 GiB
+[worker-004] exit 0; 4.8s; peak 0.45 GiB
+[worker-005] exit 0; 5.7s; peak 0.45 GiB
+{"reason": "test_failure", "selected": 6, "completed": 6}

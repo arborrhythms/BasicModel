@@ -1,0 +1,727 @@
+{
+  "done": [
+    {
+      "arm": "R",
+      "run": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-03"
+        ],
+        "pid": 39443,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1035143328,
+        "elapsed_seconds": 181.37543833399832,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-03/run.log"
+      }
+    },
+    {
+      "arm": "R",
+      "run": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-02"
+        ],
+        "pid": 39442,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1079052520,
+        "elapsed_seconds": 182.9372991660057,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-02/run.log"
+      }
+    },
+    {
+      "arm": "R",
+      "run": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-01"
+        ],
+        "pid": 39441,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1033865400,
+        "elapsed_seconds": 184.488190959004,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-01/run.log"
+      }
+    },
+    {
+      "arm": "R",
+      "run": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-04"
+        ],
+        "pid": 40024,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1045547216,
+        "elapsed_seconds": 181.73119316600787,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-04/run.log"
+      }
+    },
+    {
+      "arm": "R",
+      "run": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-05"
+        ],
+        "pid": 40030,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1072875824,
+        "elapsed_seconds": 182.8083251670032,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-05/run.log"
+      }
+    },
+    {
+      "arm": "R",
+      "run": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-06"
+        ],
+        "pid": 40037,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1072744680,
+        "elapsed_seconds": 182.26983029099938,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-06/run.log"
+      }
+    },
+    {
+      "arm": "R",
+      "run": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-07"
+        ],
+        "pid": 40620,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1078855888,
+        "elapsed_seconds": 181.71889045900025,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-07/run.log"
+      }
+    },
+    {
+      "arm": "R",
+      "run": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-08"
+        ],
+        "pid": 40635,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1097206016,
+        "elapsed_seconds": 182.8855096250045,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-08/run.log"
+      }
+    },
+    {
+      "arm": "R",
+      "run": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-09"
+        ],
+        "pid": 40636,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1073727696,
+        "elapsed_seconds": 183.89425862500502,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-09/run.log"
+      }
+    },
+    {
+      "arm": "R",
+      "run": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "R",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-10"
+        ],
+        "pid": 41187,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1031784608,
+        "elapsed_seconds": 182.72891762499057,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/R-10/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-01"
+        ],
+        "pid": 41203,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1033586872,
+        "elapsed_seconds": 182.2469232079893,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-01/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-02"
+        ],
+        "pid": 41204,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1121372416,
+        "elapsed_seconds": 183.2560349580017,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-02/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-03"
+        ],
+        "pid": 41769,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1037617408,
+        "elapsed_seconds": 182.7328334590129,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-03/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-05"
+        ],
+        "pid": 41787,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1074170112,
+        "elapsed_seconds": 183.3517112499976,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-05/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-04"
+        ],
+        "pid": 41786,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1056753896,
+        "elapsed_seconds": 184.90906937500404,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-04/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-06"
+        ],
+        "pid": 42336,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1037125840,
+        "elapsed_seconds": 182.23158516699914,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-06/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-07"
+        ],
+        "pid": 42359,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1034717392,
+        "elapsed_seconds": 182.75763004100008,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-07/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-08"
+        ],
+        "pid": 42365,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1031342264,
+        "elapsed_seconds": 183.29744408400438,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-08/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-09"
+        ],
+        "pid": 42905,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1101760768,
+        "elapsed_seconds": 183.38977516599698,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-09/run.log"
+      }
+    },
+    {
+      "arm": "RE",
+      "run": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RE",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-10"
+        ],
+        "pid": 42951,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1036749008,
+        "elapsed_seconds": 183.94900133299234,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RE-10/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-01"
+        ],
+        "pid": 42960,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1074546896,
+        "elapsed_seconds": 184.4943402499921,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-01/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-02"
+        ],
+        "pid": 43722,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1079134416,
+        "elapsed_seconds": 183.9374918750109,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-02/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-03"
+        ],
+        "pid": 43771,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1079200024,
+        "elapsed_seconds": 183.39688870799728,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-03/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-04"
+        ],
+        "pid": 43782,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1118144792,
+        "elapsed_seconds": 183.39715216698823,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-04/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-05"
+        ],
+        "pid": 44327,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1035733200,
+        "elapsed_seconds": 184.90883745800238,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-05/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-06"
+        ],
+        "pid": 44349,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1072498944,
+        "elapsed_seconds": 182.73869345799903,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-06/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-07"
+        ],
+        "pid": 44360,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1039976704,
+        "elapsed_seconds": 184.3539903750061,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-07/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-08"
+        ],
+        "pid": 45135,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1036208336,
+        "elapsed_seconds": 183.83433245799097,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-08/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-09"
+        ],
+        "pid": 45196,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1087621352,
+        "elapsed_seconds": 183.82513858299353,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-09/run.log"
+      }
+    },
+    {
+      "arm": "RA",
+      "run": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "RA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-10"
+        ],
+        "pid": 45211,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1077430528,
+        "elapsed_seconds": 184.3813701659965,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/RA-10/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 1,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-01"
+        ],
+        "pid": 46131,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1086245120,
+        "elapsed_seconds": 183.9720137090044,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-01/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 2,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-02"
+        ],
+        "pid": 46147,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1034111184,
+        "elapsed_seconds": 183.4463999580039,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-02/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 3,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-03"
+        ],
+        "pid": 46165,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1084131608,
+        "elapsed_seconds": 184.53639233400463,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-03/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 4,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-04"
+        ],
+        "pid": 47037,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1084246296,
+        "elapsed_seconds": 184.4674918330129,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-04/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 5,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-05"
+        ],
+        "pid": 47053,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1079527680,
+        "elapsed_seconds": 184.47389220900368,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-05/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 6,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-06"
+        ],
+        "pid": 47072,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1034963128,
+        "elapsed_seconds": 184.99753608299943,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-06/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 7,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-07"
+        ],
+        "pid": 48009,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1035258088,
+        "elapsed_seconds": 184.9963912499952,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-07/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 8,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-08"
+        ],
+        "pid": 48048,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1032915176,
+        "elapsed_seconds": 183.90638691700588,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-08/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 9,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-09"
+        ],
+        "pid": 48068,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1045072104,
+        "elapsed_seconds": 184.43860483299068,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-09/run.log"
+      }
+    },
+    {
+      "arm": "REA",
+      "run": 10,
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution_probe.py",
+          "REA",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-10"
+        ],
+        "pid": 48887,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 1078216960,
+        "elapsed_seconds": 163.0419747499982,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/attribution/REA-10/run.log"
+      }
+    }
+  ],
+  "pending": 0,
+  "active": [],
+  "seconds": 2545.1138480829977
+}

@@ -1,0 +1,453 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+    "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+    "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+    "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+    "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-000.json"
+      ],
+      "pid": 84280,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 548554000,
+      "elapsed_seconds": 4.514760874997592,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks"
+      ],
+      "completed": [
+        "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.021646624998538755,
+          "message": "test/test_compiled_word_chunk.py:433: in test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks\n    legacy = _tiny_canonical_model(tmp_path, monkeypatch, input_width=16, word_buckets=\"8\",\ntest/test_compiled_word_chunk.py:396: in _tiny_canonical_model\n    model, _ = Models.BasicModel.from_config(\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7111: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1838: in create_from_config\n    ModelFactory.validate_config(cfg)\nbin/Models.py:25340: in validate_config\n    raise ValueError(\nE   ValueError: XML config inconsistencies:\nE     - serialObjectMeta field/workspace mismatch: PartSpace.nOutput=8 and ConceptualSpace.nOutput=8 must both equal stmCapacity=3. The independent outer sentence limit belongs in <serialWordCapacity>.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-001.json"
+      ],
+      "pid": 84281,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 532694360,
+      "elapsed_seconds": 5.647031166998204,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+      ],
+      "completed": [
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.5498594169985154,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-002.json"
+      ],
+      "pid": 84303,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 564348224,
+      "elapsed_seconds": 5.075993375001417,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+      ],
+      "completed": [
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.04343229199730558,
+          "message": "test/test_sentence_compose.py:79: in test_real_packed_ends_train_before_the_next_sentence\n    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',\ntest/test_compiled_word_chunk.py:396: in _tiny_canonical_model\n    model, _ = Models.BasicModel.from_config(\nbin/Models.py:1808: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:7111: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1838: in create_from_config\n    ModelFactory.validate_config(cfg)\nbin/Models.py:25340: in validate_config\n    raise ValueError(\nE   ValueError: XML config inconsistencies:\nE     - serialObjectMeta field/workspace mismatch: PartSpace.nOutput=8 and ConceptualSpace.nOutput=8 must both equal stmCapacity=3. The independent outer sentence limit belongs in <serialWordCapacity>.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-003.json"
+      ],
+      "pid": 84308,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 786400816,
+      "elapsed_seconds": 6.714037416000792,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+        "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction"
+      ],
+      "completed": [
+        "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+        "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.001194082993606571,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0009695419939816929,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-004.json"
+      ],
+      "pid": 84318,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 679921176,
+      "elapsed_seconds": 6.013118583003234,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles"
+      ],
+      "completed": [
+        "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.3212156660010805,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-005.json"
+      ],
+      "pid": 84342,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 671565240,
+      "elapsed_seconds": 5.200713790996815,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.3772151670054882,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-006.json"
+      ],
+      "pid": 84353,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 443614504,
+      "elapsed_seconds": 4.135631000004651,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics"
+      ],
+      "completed": [
+        "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.31873445800010813,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-007.json"
+      ],
+      "pid": 84371,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 887834256,
+      "elapsed_seconds": 5.567202999998699,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+      ],
+      "completed": [
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.7160231250018114,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\ngeneration-gradient-evidence {\"output_loop\": true, \"initialization\": \"ambient RNG\", \"output_loss\": 0.05638092756271362, \"stepped_shared_groups\": [], \"conclusion_gradient\": 0}\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-008.json"
+      ],
+      "pid": 84378,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 527140184,
+      "elapsed_seconds": 6.102667458006181,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "completed": [
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.2790259579996928,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-009.json"
+      ],
+      "pid": 84387,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 559187336,
+      "elapsed_seconds": 6.103139541999553,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective"
+      ],
+      "completed": [
+        "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.3447779589987476,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-010.json"
+      ],
+      "pid": 84395,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 718177672,
+      "elapsed_seconds": 5.929924249998294,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+      ],
+      "completed": [
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.478829208004754,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 17179869184,
+    "aggregate_memory_bytes": 17179869184,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1800,
+    "suite_seconds": 7200,
+    "batch_size": 2,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check",
+  "elapsed_seconds": 36.21703074999823,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1244285664,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/collect.json"
+    ],
+    "pid": 84243,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 436880656,
+    "elapsed_seconds": 3.8991010000027018,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-remaining-check/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+        "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+        "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+        "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+        "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+        "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

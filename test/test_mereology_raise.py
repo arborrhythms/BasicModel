@@ -51,7 +51,7 @@ def test_synthesize_over_set_shape_and_binary_equivalence():
 
 def _word_ws():
     ws = _whole_space()
-    ws.analysis_mode = "word"
+    ws.analysis_mode = "meronomy"
     return ws
 
 
@@ -94,8 +94,3 @@ def test_stage_analysis_spans_is_structural_only():
     concepts = torch.tensor([[97, 98, 32, 99, 100]], dtype=torch.long)
     spans = ws.stage_analysis_spans(concepts)
     assert spans is not None
-
-
-def test_retired_wholespace_taxonomy_writer_is_absent():
-    from Spaces import WholeSpace
-    assert not hasattr(WholeSpace, "insert_meta")

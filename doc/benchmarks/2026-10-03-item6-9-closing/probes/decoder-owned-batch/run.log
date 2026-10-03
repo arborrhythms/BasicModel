@@ -1,0 +1,59 @@
+..F...........                                                           [100%]
+=================================== FAILURES ===================================
+_____ test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x122efc7d0>
+
+    def test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term(monkeypatch):
+        from pathlib import Path
+        import Models, util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+        original = model._reconstruct_sentences
+        calls=[]
+        def observe(*args, **kw):
+            record = kw['understanding']
+            assert record.primed.codes.requires_grad
+            from dataclasses import replace, fields
+            assert 'witness_offsets' not in {f.name for f in fields(record)}
+            # The original leaves are targets, never inverse operands. Changing
+            # them cannot change the recovered leaves or the byte objective.
+            returned = original(*args, **kw)
+            result = returned[0] if kw.get('return_decoded') else returned
+            changed = replace(record, word_values=record.word_values + 19)
+            altered = original(args[0], changed.word_values, *args[2:],
+                               **(kw | {'understanding': changed}))
+            if kw.get('return_decoded'):
+                altered = altered[0]
+            torch.testing.assert_close(result[0], altered[0])
+            torch.testing.assert_close(result[2], altered[2])
+            calls.append('free')
+            return returned
+        monkeypatch.setattr(model, '_reconstruct_sentences', observe)
+        optimizer=model.getOptimizer(lr=.01)
+        try:
+            raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
+            model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
+                batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+            assert calls == ['free', 'free']
+            assert {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')} == {'reconstruction.free_bytes', 'reconstruction.antipode'}
+            audit = model.ownership_gradient_diagnostics(optimizer)
+            assert audit['conflicts'] == 0
+            decoder = [row for row in audit['parameters'] if 'generate_policy' in row['parameter']]
+>           assert decoder and all(row['owner'] == 'reconstruction' and row['writers'] == ['reconstruction'] for row in decoder)
+E           assert ([])
+
+test/test_free_reconstruction.py:65: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term
+1 failed, 13 passed, 1 warning in 4.55s

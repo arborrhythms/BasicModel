@@ -9,7 +9,7 @@ from test_output_walk import _capture_program_probe, _stop
 
 @pytest.mark.parametrize("output_loop", [False, True])
 def test_realization_uses_a_held_derivation_without_running_resolution(
-        tmp_path, monkeypatch, output_loop):
+        tmp_path, monkeypatch, output_loop, eager_reading):
     model = _native_answer_model(tmp_path, output_loop)
     model.eval()
     if output_loop:
@@ -38,7 +38,7 @@ def test_realization_uses_a_held_derivation_without_running_resolution(
         torch._dynamo.reset()
 
 
-def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path):
+def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path, eager_reading):
     """A fixed generate policy expands its answer; input actions supply no teacher.
 
     This verifies execution and independent termination, not learned language
@@ -87,7 +87,7 @@ def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path):
         torch._dynamo.reset()
 
 
-def test_public_boundary_prepares_target_free_metadata_before_realization(tmp_path):
+def test_public_boundary_prepares_target_free_metadata_before_realization(tmp_path, eager_reading):
     model = _native_answer_model(tmp_path, False)
     model.eval()
     questions = (What.supervised(0), What.supervised(1))
@@ -107,7 +107,8 @@ def test_public_boundary_prepares_target_free_metadata_before_realization(tmp_pa
 
 
 @pytest.mark.parametrize("output_loop", [False, True])
-def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypatch, output_loop):
+@pytest.mark.parametrize("supplied", [False, True])
+def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypatch, output_loop, supplied, eager_reading):
     from dataclasses import replace
     import Models
 
@@ -127,7 +128,7 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
         loss = construction.percepts.square().mean()
         gradient = torch.autograd.grad(loss, source, allow_unused=True, retain_graph=True)[0]
         assert gradient is None or not bool(gradient.abs().any()), (
-            "output matching must treat the concluded idea as given")
+            "every answer reader treats the concluded idea as given")
         parameters = tuple(p for p in model.parameters() if p.requires_grad)
         gradients = torch.autograd.grad(loss, parameters, allow_unused=True)
         assert any(g is not None and bool(g.abs().any()) for g in gradients), (
@@ -138,7 +139,8 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
         torch._dynamo.reset()
 
 
-def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_path, monkeypatch):
+@pytest.mark.parametrize("supplied", [False, True])
+def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_path, monkeypatch, supplied, eager_reading):
     from dataclasses import replace
 
     model = _native_answer_model(tmp_path, True)
@@ -174,11 +176,18 @@ def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_
         assert (construction.concepts.abs().amax(-1) > 0).sum(-1).tolist() == [2, 2]
         loss = construction.percepts.sum()
         parameters = tuple(operator.parameters())
-        owned = {id(p) for p in model._shared_representation_parameters(model.getOptimizer(lr=.001))}
+        optimizer = model.getOptimizer(lr=.001)
+        owners = model.objective_parameter_groups(optimizer)
+        owned = {id(p) for p in owners['reconstruction']}
         assert parameters and all(id(p) in owned for p in parameters)
-        gradients = torch.autograd.grad(loss, (state, *parameters), allow_unused=True)
+        gradients = torch.autograd.grad(loss, (state, *parameters), allow_unused=True, retain_graph=True)
         assert gradients[0] is None
         assert any(g is not None and bool(g.abs().any()) for g in gradients[1:])
+        # The numerical inverse is differentiable for its reader, but the
+        # answer update is restricted to the reader's weights.
+        from ObjectiveOwnership import backward_owned
+        backward_owned({'output': loss}, owners)
+        assert all(p.grad is None for p in parameters)
     finally:
         model.End()
         model.symbolSpace.soft_reset()
@@ -186,7 +195,7 @@ def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_
 
 
 @pytest.mark.slow
-def test_what_reconstructs_then_resolves_then_realizes(tmp_path, monkeypatch):
+def test_what_reconstructs_then_resolves_then_realizes(tmp_path, monkeypatch, eager_reading):
     from test_meronomy_ladder import _build_ladder_variant
     import util
 

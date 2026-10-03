@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial"
+  ],
+  "completed": [
+    "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01313370899970323,
+      "message": "test/test_supplied_answer_training.py:141: in test_automatic_answers_do_not_start_a_supplied_answer_trial\n    assert BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),\nbin/Models.py:20655: in _sentence_answer_error\n    construction = self.reverseOutput(understanding, held, detach_understanding=False)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_supplied_answer_training.py:138: in forbidden\n    raise AssertionError('an automatic answer must not start a supervised generation trial')\nE   AssertionError: an automatic answer must not start a supervised generation trial",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

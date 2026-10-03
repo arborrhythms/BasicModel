@@ -67,14 +67,14 @@ def measure_layout(model, rows, *, packed):
     reconstruct = model._reconstruct_sentences
     captured = {}
 
-    def capture(S, reference, roots, depths=None, end=None, end_depth=None, sentence_slot=None):
+    def capture(S, reference, roots, depths=None, end=None, end_depth=None, sentence_slot=None, **kwargs):
         # Reconstruction is scored once per sentence. A later sentence can
         # be absent from a shorter batch row, so it cannot overwrite that
         # row's last live sentence with its own empty end-state slot.
         captured[int(sentence_slot)] = dict(
             roots=roots.detach().clone(), end=end.detach().clone(),
             depth=depths.detach().clone(), end_depth=end_depth.detach().clone())
-        return reconstruct(S, reference, roots, depths, end, end_depth, sentence_slot)
+        return reconstruct(S, reference, roots, depths, end, end_depth, sentence_slot, **kwargs)
 
     model.__dict__.pop("_reconstruct_compiled", None)
     model._reconstruct_sentences = capture
@@ -140,7 +140,14 @@ def test_native_packing_preserves_each_sentence_and_owned_program(tmp_path, init
     try:
         model._install_unit_span_fn()
         warm_vocabulary(model, rows)
+        # Each layout starts with the same SEEN history. End/reset preserves
+        # priming by design; running the second arm on the first one's history
+        # changes the activated candidate bank even at unchanged parameters.
+        surfaces = [(space, getattr(space, '_priming_boosts', None)) for space in model.spaces]
+        snapshots = [(space, None if value is None else value.clone()) for space, value in surfaces]
         packed = measure_layout(model, rows, packed=True)
+        for space, value in snapshots:
+            object.__setattr__(space, '_priming_boosts', None if value is None else value.clone())
         single = measure_layout(model, rows, packed=False)
         for key, actual in packed.items():
             expected = single[key]

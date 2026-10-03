@@ -1,0 +1,35 @@
+--- a/test/test_grammar_binary_ops.py
++++ b/test/test_grammar_binary_ops.py
+@@ -36,11 +36,9 @@
+     """arity-1 grammar layers route compose -> forward, decompose -> reverse."""
+ 
+     def test_not_compose_decompose_roundtrip(self):
+-        layer = NotLayer()
+-        # NotLayer operates on the materialized muxed event tensor
+-        # [B, V, nWhat + nWhere + nWhen]; the .what bivector [pos, neg]
+-        # is at [..., :2] and nWhere / nWhen channels follow. Negation
+-        # swaps the bivector pair and passes through the rest.
++        layer = NotLayer(representation='poles')
++        # Explicit evidence has a leading [pos, neg] pair followed by
++        # occurrence channels. Its pole exchange preserves those channels.
+         x = torch.randn(4, 3, 6)
+         y = layer.compose(x)
+         self.assertEqual(y.shape, x.shape)
+--- a/test/test_subspace_what_stm_contract.py
++++ b/test/test_subspace_what_stm_contract.py
+@@ -295,13 +295,11 @@
+         assert rule0.method_name == 'not'
+ 
+         layer = _make_syntactic_layer_with({'not': NotLayer()})
+-        # NotLayer flips the leading 2 dims of the last axis (bivector).
++        # A grammar slot holds an opaque concept code.
+         x = torch.tensor([[[0.7, 0.2, 0.0, 0.0]]])  # [B=1, V=1, D=4]
+         y = layer.execute(rule_id=0, left=x)
+         assert y.shape == x.shape
+-        # bivector flipped: pos<->neg
+-        assert torch.allclose(y[..., 0], x[..., 1])
+-        assert torch.allclose(y[..., 1], x[..., 0])
++        assert torch.allclose(y, -x)
+     finally:
+         TheGrammar.rules = saved_rules
+         TheGrammar._configured = saved_configured

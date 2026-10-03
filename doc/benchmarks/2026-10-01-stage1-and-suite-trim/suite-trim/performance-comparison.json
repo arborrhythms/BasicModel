@@ -1,0 +1,277 @@
+[
+  {
+    "before_nodeid": "test/test_item9b_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+    "nodeid": "test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+    "before_seconds": 1801.0359274580005,
+    "before_outcome": "timeout",
+    "after": {
+      "call_seconds": 2.7270763749984326,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "before_seconds": 1628.005253667001,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.3056762499982142,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "before_seconds": 1390.340166957998,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1059.7412316249975,
+      "setup_seconds": 0,
+      "receipt": "compiled-small-field-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "before_seconds": 1150.5819157920014,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 2.786548000003677,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "before_seconds": 1030.0090400830013,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 6.060386290999304,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "before_seconds": 917.0329438749977,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.5498594169985154,
+      "setup_seconds": 0.0033605420030653477,
+      "receipt": "slowest-remaining-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+    "nodeid": "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+    "before_seconds": 902.6829497500003,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 2.3061880840032245,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+    "nodeid": "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+    "before_seconds": 902.1719227089998,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.700297249997675,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+    "nodeid": "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+    "before_seconds": 881.9056645830024,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 2.3013099589952617,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "before_seconds": 878.7320189999991,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 2.352718541995273,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+    "nodeid": "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+    "before_seconds": 878.1518878329989,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 2.014841541000351,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "before_seconds": 873.6120265420032,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 2.3563019579960383,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+    "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+    "before_seconds": 777.4345645419999,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.9273035839942168,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "nodeid": "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "before_seconds": 770.4108012079996,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.8135302090013283,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+    "nodeid": "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+    "before_seconds": 628.5434492910026,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 2.6948024169978453,
+      "setup_seconds": 0,
+      "receipt": "slowest-25-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "before_seconds": 595.9383857920002,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 599.0565495830015,
+      "setup_seconds": 0,
+      "receipt": "compiled-small-field-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "nodeid": "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "before_seconds": 556.2594828750007,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 0.001194082993606571,
+      "setup_seconds": 2.7356525830036844,
+      "receipt": "slowest-remaining-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "nodeid": "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "before_seconds": 550.4273653749988,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 0.0009695419939816929,
+      "setup_seconds": 0.0004052500007674098,
+      "receipt": "slowest-remaining-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+    "nodeid": "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+    "before_seconds": 464.306958125002,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.3212156660010805,
+      "setup_seconds": 2.2687080830000923,
+      "receipt": "slowest-remaining-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+    "nodeid": "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+    "before_seconds": 432.95385629200246,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.3772151670054882,
+      "setup_seconds": 0.005403083996498026,
+      "receipt": "slowest-remaining-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "nodeid": "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "before_seconds": 406.2605222909988,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 0.31873445800010813,
+      "setup_seconds": 0.0015221669964375906,
+      "receipt": "slowest-remaining-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "nodeid": "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "before_seconds": 375.243534833,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.7160231250018114,
+      "setup_seconds": 0.005396415996074211,
+      "receipt": "slowest-remaining-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "nodeid": "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "before_seconds": 328.77107758299826,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.2790259579996928,
+      "setup_seconds": 2.3075135000035516,
+      "receipt": "slowest-remaining-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+    "nodeid": "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+    "before_seconds": 314.126620250001,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.3447779589987476,
+      "setup_seconds": 2.2556125830014935,
+      "receipt": "slowest-remaining-check"
+    }
+  },
+  {
+    "before_nodeid": "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+    "nodeid": "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating",
+    "before_seconds": 307.79784391700014,
+    "before_outcome": "passed",
+    "after": {
+      "call_seconds": 1.478829208004754,
+      "setup_seconds": 1.698986875002447,
+      "receipt": "slowest-remaining-check"
+    }
+  }
+]

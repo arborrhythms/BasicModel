@@ -12,7 +12,9 @@ def test_unpacked_forward_observes_each_published_sentence_once(
     from Models import _ensure_grad_anchors
 
     _ensure_grad_anchors(torch.device("cpu"))
-    model = _tiny_canonical_model(tmp_path, monkeypatch)
+    model = _tiny_canonical_model(tmp_path, monkeypatch,
+        input_width=16, word_buckets='8', stm_capacity=3, chooser_depth=1,
+        architecture_overrides={'symbolicOrder': 1})
     model.set_sentence_expectation(True)
     model._prewarm_checkpoint_shapes()
     import util
@@ -25,7 +27,8 @@ def test_unpacked_forward_observes_each_published_sentence_once(
     def score(*args):
         result = original_score(*args)
         observed.append(result[2])
-        costs.append(result[0])
+        # Expectation trains its predictor but no longer selects a trial.
+        costs.append(model._sentence_cost_registry.total(objective='expectation'))
         return result
     monkeypatch.setattr(model, '_sentence_path_cost', score)
     discourse = model.symbolSpace.discourse
@@ -70,7 +73,7 @@ def test_unpacked_forward_observes_each_published_sentence_once(
 def test_explicit_boundary_retains_factored_roles_and_skips_masked_rows(monkeypatch):
     from Layers import InterSentenceLayer
     from reading_fixtures import commit_reading, finish_reading
-    from test_item7_acceptance import SentenceFixture
+    from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
     discourse = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
         concept_dim=8, expectation_scope='structured')

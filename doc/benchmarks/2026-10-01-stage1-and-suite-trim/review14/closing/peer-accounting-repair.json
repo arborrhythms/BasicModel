@@ -1,0 +1,37 @@
+{
+  "scope": "Receipt scripts only; no candidate production/test/configuration change.",
+  "saved_failing_probe": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/peer-accounting-before/probe.json",
+  "verification": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/peer-accounting-verification.json",
+  "full_sources": {
+    "full_sweep.py": {
+      "before": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/peer-accounting-before/full_sweep.py",
+      "before_sha256": "066e67ab9bf737a8f17a7c9ffba150c0a13fdce9e4c443975e30b81b67adf638",
+      "after": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/resume_sweep.py",
+      "after_sha256": "fd07242940b43ed37a4de6b46fcc464dcca0b54adddaaf465ce7e444291d0097"
+    },
+    "run_closing.py": {
+      "before": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/peer-accounting-before/run_closing.py",
+      "before_sha256": "e8b2ebb5974808b26eed24492f1dfd1b8887b92724c3e74b1b0f44ecae099e0c",
+      "after": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/resume_closing.py",
+      "after_sha256": "16da915219b411ebaf7994103c1ec84cd4b50601b0ec883c6bb8204296e190da"
+    },
+    "progress.py": {
+      "before": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/peer-accounting-before/progress.py",
+      "before_sha256": "f389fc153b6630edd50a63c573999a79e09af9cfcb140626c932db1198682550",
+      "after": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/progress.py",
+      "after_sha256": "4c9cae8303bea78a1c771356cb03e844b12fba91bccc5aca747480734bf8cf2a"
+    },
+    "summarize_sweep.py": {
+      "before": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/peer-accounting-before/summarize_sweep.py",
+      "before_sha256": "99b9a03c2e2704d62b3b3544c8e7874dfc559694e7f366e339a3ddd390a5d3a1",
+      "after": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/summarize_sweep.py",
+      "after_sha256": "d7478c8eb20165630a418c7e50ec24704375101f3e7afbc790b1ff394b026f33"
+    }
+  },
+  "first_attempt_policy": "Every first attempt is canonical, including interrupted cases. Duplicate outcomes never replace it.",
+  "dispatch_policy": "Pending selectors must be disjoint from all previously started cases.",
+  "process_metadata": "The durable worker progress and process sidecars restore peers omitted from the suite summary.",
+  "interruption_policy": "An interrupted segment stops the continuation loop.",
+  "guard_policy": "8 GiB per worker, two workers, 1800-second worker deadline retained.",
+  "historical_scripts": "The original full_sweep.py and run_closing.py are retained as executed evidence. resume_closing.py is the corrected continuation entry point."
+}

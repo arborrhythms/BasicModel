@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-132.recycle.json"
+}

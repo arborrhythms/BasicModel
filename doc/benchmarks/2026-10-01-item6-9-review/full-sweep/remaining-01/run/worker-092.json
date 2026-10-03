@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged"
+  ],
+  "completed": [
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3487827909993939,
+      "message": "",
+      "stdout": "Starting with dynamic 96-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

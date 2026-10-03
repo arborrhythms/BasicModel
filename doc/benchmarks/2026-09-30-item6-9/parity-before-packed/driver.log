@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native_parity.py", line 36, in <module>
+    native_probe.main()
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native_probe.py", line 42, in main
+    init_config(args.config, defaults_path="data/model.xml")
+  File "/Users/arogers/github/WikiOracle/basicmodel/output/item69-head/bin/util.py", line 2043, in init_config
+    TheXMLConfig.overlay(path)
+  File "/Users/arogers/github/WikiOracle/basicmodel/output/item69-head/bin/util.py", line 1475, in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/output/item69-head/bin/util.py", line 1889, in _parse_xml
+    raise ValueError('WholeSpace propertyBasis is retired: every WholeSpace is a property basis '
+ValueError: WholeSpace propertyBasis is retired: every WholeSpace is a property basis (two-truths spec §11.4, September 28). Remove the element.

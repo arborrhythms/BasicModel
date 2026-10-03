@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_readback_operand_unaries.py",
+    "test/test_reasoning.py::TestTruthLoss"
+  ],
+  "pid": 73388,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 546587992,
+  "elapsed_seconds": 4.61642470798688,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-corrections/probes/unary-and-truth-after/run.log"
+}

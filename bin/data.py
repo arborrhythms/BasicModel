@@ -177,7 +177,7 @@ class SentenceStreamDataset(IterableDataset):
       one batch of ``num_streams`` trials (one per row); the cursor's
       step counter advances by 1. ``hard_eos = [True] * B`` every tick
       because each trial completes immediately. Used for non-AR /
-      numeric / non-byte data (MNIST, XOR with labels, tomatoes), per
+      numeric / non-byte data (MNIST, XOR with labels), per
       the brick-vectorization handoff §8e ("data cursor aligns with
       the trial" for non-AR paths).
 
@@ -746,7 +746,7 @@ class Data():
              max_sentence_words=None):
         """Dispatch to the per-dataset loader, then compute ranges + move to device.
 
-        ``dataset`` selects ``mnist`` / ``xor`` / ``tomatoes`` / ``text``
+        ``dataset`` selects ``mnist`` / ``xor`` / ``text``
         (FineWeb-EDU shards) / ``inline`` (XML payload). Mutates the
         train / validation / test attributes and the min/max scaling
         values; finally moves tensors to ``TheDevice``.
@@ -774,8 +774,6 @@ class Data():
             self.loadQueries()
         if dataset == "sequences":
             self.loadSequences()
-        if dataset == "tomatoes":
-            self.loadTomatoes()
         if dataset == "text":
             self.loadShards(num_shards, max_docs, shard_dir,
                             random_shards=random_shards,
@@ -946,7 +944,8 @@ class Data():
     def what_extent(self, split):
         """Number of presentations in ``split``: the period of the absolute
         ``.where`` ladder the model uses to encode a question's position."""
-        return len(self._what_split_values(split, "input") or ())
+        values = self._what_split_values(split, "input")
+        return 0 if values is None else len(values)
 
     def _same_what_document(self, question, target_where):
         """Whether a relative lookup stays inside one addressed document."""
@@ -1164,6 +1163,13 @@ class Data():
         one-hot label tensors, and mirrors the test split into the
         validation slot. Sets ``inputLength = 28 * 28``.
         """
+        for name in ('mnist_train.csv', 'mnist_test.csv'):
+            path = os.path.join(ProjectPaths.DATA_DIR, name)
+            with open(path, 'rb') as source:
+                if source.readline().startswith(b'version https://git-lfs.github.com/spec/'):
+                    raise RuntimeError(
+                        f'Git LFS content for {name} is not checked out; '
+                        f'run git lfs pull --include=data/{name}.')
         df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_train.csv'))
         train = df.values
         df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_test.csv'))
@@ -1559,23 +1565,6 @@ class Data():
             texts.append(sentence)
             labels.append([float(i % 2)])
         return texts, labels
-    def loadTomatoes(self):
-        """Load the rotten_tomatoes HuggingFace dataset (cached on disk).
-
-        Downloads on first call, then caches as a single ``.data``
-        pickle for fast reload. Forwards the splits to ``processLM``.
-        """
-        cache_file = os.path.join(ProjectPaths.DATA_DIR, "rottenTomatoes.data")
-
-        # Load or cache the pre-trained Word2Vec model
-        if os.path.exists(cache_file):
-            print("Loading cached data...")
-            data = torch.load(cache_file, weights_only=False)
-        else:
-            print("Downloading data...")
-            data = load_dataset("rotten_tomatoes")
-            torch.save(data, cache_file)
-        self.processLM(data)
     def loadShards(self, num_shards, max_docs, shard_dir,
                    random_shards=False, max_tokens=None,
                    max_sentence_words=None):
@@ -1894,7 +1883,7 @@ class Data():
         Strings use the fixed ``self.inputLength`` byte buffer; tensor
         rows report their leading dim. Assumes the split is non-empty.
         """
-        if self.train_input and isinstance(self.train_input[0], str):
+        if len(self.train_input) and isinstance(self.train_input[0], str):
             return self.inputLength
         inputEmbeddingSize  = self.train_input[0].shape[0]
         return inputEmbeddingSize

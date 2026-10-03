@@ -1,0 +1,70 @@
+.FFF...                                                                  [100%]
+=================================== FAILURES ===================================
+________________________ test_cs_to_ps_projection_live _________________________
+test/test_priming_energy.py:131: in test_cs_to_ps_projection_live
+    assert bridge, "the mint must record the projection bridge"
+E   AssertionError: the mint must record the projection bridge
+E   assert None
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.558s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.105s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.091s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+________________________ test_cs_to_ws_projection_live _________________________
+test/test_priming_energy.py:147: in test_cs_to_ws_projection_live
+    bridge = cs0._priming_bridge
+             ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_priming_bridge'. Did you mean: '_priming_bridge_put'?
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.102s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.093s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+____________________ test_projection_bounded_across_epochs _____________________
+test/test_priming_energy.py:165: in test_projection_bounded_across_epochs
+    assert float(b6.max()) < 1000.0, "projection must not grow unbounded"
+                 ^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'max'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.101s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.091s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.091s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.092s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_priming_energy.py::test_cs_to_ps_projection_live
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_priming_energy.py::test_cs_to_ps_projection_live - Assertion...
+FAILED test/test_priming_energy.py::test_cs_to_ws_projection_live - Attribute...
+FAILED test/test_priming_energy.py::test_projection_bounded_across_epochs - A...
+3 failed, 4 passed, 1 warning in 4.86s

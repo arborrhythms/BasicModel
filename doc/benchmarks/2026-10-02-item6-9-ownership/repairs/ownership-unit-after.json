@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "test/test_objective_ownership.py",
+    "-q",
+    "--disable-warnings"
+  ],
+  "pid": 16031,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 491537800,
+  "elapsed_seconds": 3.851455249998253,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/ownership-unit-after.log"
+}

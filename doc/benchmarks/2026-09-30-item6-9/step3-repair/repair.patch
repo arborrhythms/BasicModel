@@ -1,0 +1,139 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -11504,7 +11504,7 @@
+         from Meronomy import word_spans
+         raw_rows = raw.detach().to('cpu').reshape(raw.shape[0], -1).long().tolist()
+         id_rows, span_rows = ids.detach().to('cpu').tolist(), spans.detach().to('cpu').tolist()
+-        extents = []
++        extents, grammar_words = [], []
+         for b, values in enumerate(raw_rows):
+             data = bytes(values).split(b'\0', 1)[0]
+             words = []
+@@ -11529,7 +11529,9 @@
+                 word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+                     ws.property_rows_for_bytes(form), form=form, word_reading=True)
+                 if word is not None:
+-                    owner.interpret.forward(word)
++                    object_id = owner.interpret.forward(word)
++                    if object_id is not None:
++                        grammar_words.append((b, lo, hi, form, selected[-1], word, object_id))
+                 words.append((lo, hi))
+             extents.append(words)
+         width = max(map(len, extents), default=0)
+@@ -11540,6 +11542,82 @@
+         self._reading_word_percepts = (ids, spans,
+             getattr(ws.subspace.what, 'primitive_properties', None), raw, positions)
+         self._reading_word_extents = brackets
++        self._stage_reading_grammar_references(grammar_words, fi)
++
++    def _stage_reading_grammar_references(self, words, percepts):
++        """Stage the admitted word's OBJECT reference for every serial binding.
++
++        Reading already admitted these identities. Resolve their physical
++        rows once, at the eager boundary; grammar receives full codes without
++        consulting the lexicon or allocating another concept in its loop.
++        """
++        isp = self.inputSpace
++        active = getattr(isp, '_word_active_mask', None)
++        if not getattr(self, 'serial', False) or not torch.is_tensor(active):
++            return
++        B, W = active.shape
++        owner = self._concept_owner()
++        rows = torch.full_like(active, -1, dtype=torch.long)
++        word_ids, object_ids = rows.clone(), rows.clone()
++        word_orders, object_orders = rows.clone(), rows.clone()
++        offsets = getattr(isp, '_ar_word_part_offsets', None)
++        texts = percepts.get('word_texts')
++        word_major = torch.is_tensor(offsets) and offsets.ndim == 3 and texts is not None
++        starts = offsets[:, :, 0].detach().cpu().tolist() if word_major else None
++        loop_spans = percepts.get('part_spans')
++        loop_spans = (loop_spans.detach().cpu().tolist()
++                      if torch.is_tensor(loop_spans) else None)
++        active_host = active.detach().cpu().tolist()
++        anchors = getattr(self.languageSpace, '_surface_anchors', {})
++        forms = isp._ar_word_lexical_forms
++        for b, lo, hi, form, native_last, word_id, object_id in words:
++            if word_major:
++                columns = [p for p in range(W) if active_host[b][p]
++                           and starts[b][p] == lo and p < len(texts[b])
++                           and texts[b][p] == form]
++            elif loop_spans is not None:
++                columns = [p for p, (a, z) in enumerate(loop_spans[b][:W])
++                           if active_host[b][p] and lo <= a < z == hi]
++            else:
++                columns = [native_last] if native_last < W else []
++            if len(columns) != 1:
++                continue  # an unresolved/clipped percept cannot claim a word
++            p = columns[0]
++            if not active_host[b][p]:
++                continue
++            row = owner._csw_row_of(object_id)
++            if row is None:
++                continue
++            rows[b, p] = int(row)
++            word_ids[b, p], object_ids[b, p] = int(word_id), int(object_id)
++            word_orders[b, p] = int(owner._concept_source_order(word_id))
++            object_orders[b, p] = int(owner._concept_source_order(object_id))
++            if int(row) not in forms:
++                anchor = anchors.get(form.casefold())
++                forms[int(row)] = anchor if isinstance(anchor, str) else None
++        isp._ar_word_concept_rows = rows
++        isp._ar_word_concept_ids = word_ids
++        isp._ar_word_concept_orders = word_orders
++        isp._ar_word_object_rows = rows.clone()
++        isp._ar_word_object_ids = object_ids
++        isp._ar_word_object_orders = object_orders
++        bank_width = max(W, int(getattr(self, 'serial_word_capacity', 0) or 0),
++            max(tuple(getattr(self, 'serial_word_buckets', ()) or (0,))))
++        bank_rows = rows.new_full((B, 2 * bank_width), -1)
++        bank_rows[:, :W] = rows
++        bank_rows[:, bank_width:bank_width + W] = rows
++        atoms = owner.similarity_codebook.lookup_rows(bank_rows.clamp_min(0))
++        atoms = atoms * bank_rows.ge(0)[..., None].to(atoms.dtype)
++        isp._ar_concept_lookup_rows = bank_rows
++        isp._ar_concept_lookup_atoms = atoms
++        isp._ar_word_concept_atoms = atoms[:, :W].clone()
++        isp._ar_word_object_atoms = atoms[:, bank_width:bank_width + W].clone()
++        isp._finalize_sentence_word_layout(active)
++        sentence_ids = torch.full_like(bank_rows, -1)
++        sentence_ids[:, :W] = isp._packed_sentence_ids
++        sentence_ids[:, bank_width:bank_width + W] = isp._packed_sentence_ids
++        isp._ar_concept_lookup_sentence_ids = torch.where(
++            bank_rows >= 0, sentence_ids, torch.full_like(sentence_ids, -1))
+ 
+     def _publish_reading_symbols(self, concept_sub):
+         """Publish the native word evidence through its concept identities."""
+@@ -21384,9 +21462,9 @@
+ 
+             # Treating the deposited word concept as a reference resolves its
+             # paired object concept before Language observes the stack.  The
+-            # reference keeps the word's signed evidence and positional band.
++            # reference keeps the word's signed activation; concepts are full codes.
+             object_idea = cs.interpret.forward(
+-                word_idea, object_atoms=object_atom[:, :int(cs.nWhat)],
++                word_idea, object_atoms=object_atom,
+                 activation=activation.reshape(B))
+             object_gate = torch.logical_and(
+                 commit.reshape(B), object_row >= 0)
+@@ -21616,12 +21694,18 @@
+                     row = torch.full((B,), -1, device=event.device, dtype=torch.long)
+                 if not torch.is_tensor(activation):
+                     activation = event.new_ones(B)
+-                obj = torch.full_like(row, -1)
++                staged_row = concept_rows[:, p]
++                row = torch.where(staged_row >= 0, staged_row, row)
++                orders = torch.where((staged_row >= 0)[:, None],
++                    concept_orders[:, p:p + 1].expand_as(orders), orders)
++                obj, obj_order = object_rows[:, p], object_orders[:, p]
++                atom = (object_atoms[:, p] if torch.is_tensor(object_atoms)
++                        else event.new_zeros(B, concept_dim))
+                 prior = self._per_word_contributions[p]
+                 prior = torch.zeros_like(event[:, 0]) if prior is None else prior
+                 self._per_word_contributions[p] = torch.where(gate, event[:, 0], prior)
+-                payload = (event, orders, row, activation, obj, obj.clone(),
+-                           event.new_zeros(B, concept_dim), gate, gate, *empty_feedback)
++                payload = (event, orders, row, activation, obj, obj_order,
++                           atom, gate, gate, *empty_feedback)
+                 percept = ps.subspace.materialize()[:, 0]
+                 slab = self._tensor_write_word_column(current_sub[1], index, percept)
+                 return payload, (event, slab, *current_sub[2:])

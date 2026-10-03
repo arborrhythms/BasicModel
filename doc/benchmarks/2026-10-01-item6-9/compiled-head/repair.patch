@@ -1,0 +1,38 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -17722,16 +17722,21 @@
+ 
+ 
+ 
+-    def _forward_head(self, sub):
++    def _forward_head(self, sub, *, sentence_state=None):
+         """Read a concluded serial understanding without training its producer."""
+         if self.outputSpace.concept_ids:
+             sub = self._combine_last_cs_sub
+         elif getattr(self, 'serial', False):
+-            root = getattr(self, '_stm_single_S', None)
++            # A fullgraph body returns these tensors explicitly. Its eager
++            # diagnostic attributes are published only after the head runs.
++            root = (sentence_state[0] if sentence_state is not None
++                    else getattr(self, '_stm_single_S', None))
+             if not torch.is_tensor(root):
+                 raise RuntimeError('a serial numeric answer requires a concluded understanding')
+-            slots = getattr(self, '_tensor_final_end_slots', None)
+-            depth = getattr(self, '_tensor_final_end_depth', None)
++            slots = (sentence_state[-2] if sentence_state is not None
++                     else getattr(self, '_tensor_final_end_slots', None))
++            depth = (sentence_state[-1] if sentence_state is not None
++                     else getattr(self, '_tensor_final_end_depth', None))
+             if not (torch.is_tensor(slots) and torch.is_tensor(depth)):
+                 slots, depth = self._final_end_state(
+                     root, getattr(self, '_stm_post_depth', None))
+@@ -24042,7 +24047,8 @@
+         # so the pre-consume carrier is ALWAYS put back for the reverse /
+         # reconstruction, even if the head raises.
+         try:
+-            head_sub = self._forward_head(body_sub)
++            head_sub = (self._forward_head(body_sub, sentence_state=sentence_state)
++                        if sentence_state is not None else self._forward_head(body_sub))
+         finally:
+             if _restore_ev is not None:
+                 body_sub.set_event(_restore_ev)

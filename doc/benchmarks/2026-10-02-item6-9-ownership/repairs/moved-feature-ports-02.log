@@ -1,0 +1,125 @@
+..F.F....F......F                                                        [100%]
+=================================== FAILURES ===================================
+_____________________ test_concept_attention_live_not_dark _____________________
+
+    @pytest.mark.slow
+    def test_concept_attention_live_not_dark():
+        """The FF pyramid populates per-rung stats; the category VQ allocates."""
+        m = _cached("base")["model"]
+        cs0 = m.conceptualSpaces[0]
+        lv = getattr(cs0, "_cs_level_acts", None)
+>       assert lv is not None and float(lv[0]) > 0.0, lv
+E       AssertionError: [0.0, 0.0, 0.0, 0.0]
+E       assert ([0.0, 0.0, 0.0, 0.0] is not None and 0.0 > 0.0)
+E        +  where 0.0 = float(0.0)
+
+test/test_masked_semantic.py:157: AssertionError
+__________________ test_reconstruction_uses_category_evidence __________________
+
+    @pytest.mark.slow
+    def test_reconstruction_uses_category_evidence():
+        """Disabling the word/object/META mint moves the reverse
+        reconstruction (the masked word's decode path)."""
+        base, mint = _cached("base"), _cached("mint")
+        assert _same_masks(base, mint), "mask draws diverged: RNG confound"
+>       assert _events_differ(base["rev"], mint["rev"])
+E       assert False
+E        +  where False = _events_differ(tensor([[[ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1...41, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291]]]), tensor([[[ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1...41, -0.1754,  ...,  0.1032,  0.0425,  0.0291],\n         [ 0.0338,  0.0141, -0.1754,  ...,  0.1032,  0.0425,  0.0291]]]))
+
+test/test_masked_semantic.py:179: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.063s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.057s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.056s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.055s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.054s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+__________________ test_unconditional_integration_end_to_end ___________________
+
+    @pytest.mark.slow
+    def test_unconditional_integration_end_to_end():
+        """No <relevance> needed: awareness primes (pyramid winners write the
+        CS surface) on every batch, and the pyramid consumes the surface as
+        its ranking score on the next one."""
+        m = _build("data/MM_20M_xor.xml")
+        opt = m.getOptimizer(lr=0.01)
+        cs0 = m.conceptualSpaces[0]
+        assert m.relevance_on is False
+        try:
+            m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
+            b = cs0.priming_weights()
+>           assert torch.is_tensor(b) and float(b.max()) > 1.0, (
+                "admitted rows must prime the surface unconditionally")
+E               AssertionError: admitted rows must prime the surface unconditionally
+E               assert (True and 1.0 > 1.0)
+E                +  where True = <function is_tensor at 0x109a4e340>(tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]))
+E                +    where <function is_tensor at 0x109a4e340> = torch.is_tensor
+E                +  and   1.0 = float(tensor(1.))
+E                +    where tensor(1.) = <built-in method max of Tensor object at 0x122263a20>()
+E                +      where <built-in method max of Tensor object at 0x122263a20> = tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]).max
+
+test/test_relevance_bases.py:90: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.064s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+_______________ test_conceptual_sbow_situates_live_sparse_codes ________________
+
+    @pytest.mark.slow
+    def test_conceptual_sbow_situates_live_sparse_codes():
+        """Phase-3 completion (plan C1): under a sparse-active config the parked
+        t=0 slab is GRAD-BEARING and conceptual_sbow_loss situates the composed
+        codes themselves -- the substitutability gradient reaches the sparse
+        family values (the legacy path parked a detached slab and could only
+        rotate the codebook rows)."""
+        import Models
+        from util import TheXMLConfig
+        m = _build("MM_20M_xor.xml")
+        # Stage 0: the CS whose settled slab is parked at the cutover (and where
+        # production's autobind populates -- _commit_autobind_from_stash is
+        # stage-0 only).
+        cs = [c for c in m.conceptualSpaces if c._sparse_active()][0]
+        # An order-0 field definition may include the constant whole. Its
+        # nonzero bias witnesses a value gradient independently of random codes.
+        from Layers import EVERYTHING
+        cid = cs.relate(1, 2)
+        cs.add_whole(cid, EVERYTHING)
+        cs._populate_concept_weights(cid)
+        Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
+        loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+        items, _ = next(iter(loader))
+        x = m.inputSpace.prepInput(items)
+        m.train()
+        m.forward(x)                                          # parks the slab
+        slab = getattr(m, "_cs_parallel_slab", None)
+        assert slab is not None
+        assert slab.requires_grad                             # LIVE, not detached
+        loss = m.conceptual_sbow_loss()
+        assert loss is not None and loss.requires_grad
+        loss.backward()
+        got = any(ly.values.grad is not None and ly.values.grad.abs().sum() > 0
+                  for fam in cs._sparse_fam.values() for ly in fam
+                  if ly is not None and ly.values is not None)
+>       assert got, "SBOW gradient must reach the sparse family values"
+E       AssertionError: SBOW gradient must reach the sparse family values
+E       assert False
+
+test/test_sparse_concept_e2e.py:251: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh
+=============================== warnings summary ===============================
+test/test_masked_semantic.py::test_config_is_masked_parallel_semantic
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_masked_semantic.py::test_concept_attention_live_not_dark - A...
+FAILED test/test_masked_semantic.py::test_reconstruction_uses_category_evidence
+FAILED test/test_relevance_bases.py::test_unconditional_integration_end_to_end
+FAILED test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes
+4 failed, 13 passed, 1 warning in 3.93s

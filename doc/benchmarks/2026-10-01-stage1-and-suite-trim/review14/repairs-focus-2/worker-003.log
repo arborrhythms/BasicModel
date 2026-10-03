@@ -1,0 +1,15 @@
+...F....                                                                 [100%]
+=================================== FAILURES ===================================
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+test/test_sentence_compose.py:167: in test_real_packed_ends_train_before_the_next_sentence
+    assert model._sentence_winners[sid].tolist() == [True, False]
+E   assert [False, False] == [True, False]
+E     
+E     At index 0 diff: False != True
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+1 failed, 7 passed in 140.31s (0:02:20)

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 import os
 import sys
 import unittest
@@ -27,14 +29,19 @@ _ON_CONFIG = os.path.join(_DATA_DIR, "MM_ltm_consolidation_fixture.xml")
 # BOTH <ltmConsolidation> AND <training><sentenceExpectation>.
 _SERIAL_CONFIG = os.path.join(
     _DATA_DIR, "MM_ltm_consolidation_serial_fixture.xml")
-# Consolidated but STATEFUL (<stateless>false</stateless>): a checkpoint's
-# ORIGIN_USER rows are durable and survive a state_dict reload.
-_STATEFUL_CONFIG = os.path.join(
-    _DATA_DIR, "MM_ltm_consolidation_stateful_fixture.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
-def _make_model(config):
+def _make_model(config, *, stateless=None):
+    if stateless is not None:
+        from pathlib import Path
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'ltm.xml'
+            text = Path(config).read_text().replace('<architecture>',
+                f'<architecture><stateless>{str(stateless).lower()}</stateless>', 1)
+            path.write_text(text)
+            return _make_model(str(path))
     import Models
     import Language
     from util import init_config
@@ -122,6 +129,7 @@ class TestProvisioning(unittest.TestCase):
         self.assertEqual(len(m.symbolSpace.ltm_store), 0)
         self.assertFalse(m._ltm_provisioned)
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_truthset_rows_land_via_real_forward(self):
         from Layers import TernaryTruthStore as T
         m = _make_model_provisioned(_SERIAL_CONFIG)
@@ -136,6 +144,7 @@ class TestProvisioning(unittest.TestCase):
         self.assertEqual(store.ideas().tolist(), asserted)
         self.assertEqual(store.relations().tolist(), definitions)
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_provisioned_trust_and_earliest_timestamps(self):
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
@@ -154,6 +163,7 @@ class TestProvisioning(unittest.TestCase):
         nxt = store.append_idea(torch.ones(store.nDim))
         self.assertEqual(store.row(nxt)["timestamp"], next_tick)
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_provisioned_rows_are_real_encodings(self):
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
@@ -162,6 +172,7 @@ class TestProvisioning(unittest.TestCase):
         for i in store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist():
             self.assertGreater(float(store.row(i)["np1"].norm()), 0.0)
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_provision_idempotent_count_via_runepoch_trigger(self):
         # The lazy trigger at first runEpoch provisions exactly once (the
         # _ltm_provisioned guard), then conversation appends continue past it.
@@ -492,6 +503,7 @@ class TestStoreBackedChain(unittest.TestCase):
 
 
 class TestObserveSkipsDequeWhenConsolidated(unittest.TestCase):
+    @pytest.mark.usefixtures('eager_reading')
     def test_observe_does_not_append_deque_but_runs_cycle(self):
         # FU3: when consolidated, observe_stm_end_state does NOT append to the
         # per-row deque (the store-append is the source), but STILL runs the
@@ -620,6 +632,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         m = _make_model(_SERIAL_CONFIG)
         return m, m.symbolSpace.ltm_store, m.symbolSpace.truth_layer
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_unary_preference_still_ends_and_records_user_truth(self):
         from Layers import TernaryTruthStore as T
         m, store, _ = self._fresh()
@@ -640,6 +653,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertEqual(len(store), before + 1)
         self.assertEqual(len(store.rows_of_origin(T.ORIGIN_USER)), 1)
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_user_rows_land_alongside_provisioned(self):
         from Layers import TernaryTruthStore as T
         m, store, tl = self._fresh()
@@ -664,6 +678,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertGreater(float(r0["np1"].norm()), 0.0,
                            "real parse, not a placeholder")
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_view_and_serve_surface_read_ltm_backed_data(self):
         m, store, tl = self._fresh()
         with warnings.catch_warnings():
@@ -690,6 +705,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         # The view is non-degenerate: luminosity reads the LTM-backed rows.
         self.assertNotEqual(tl.luminosity(), 0.0)
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_resubmit_replaces_user_rows_only(self):
         from Layers import TernaryTruthStore as T
         m, store, tl = self._fresh()
@@ -710,6 +726,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertIn("hello there", tl._sources)
         self.assertNotIn("hello world", tl._sources)
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_store_truths_after_load_does_not_reprovision(self):
         # A checkpoint provisioned before saving comes back with the
         # transient _ltm_provisioned flag reset while its provisioned rows
@@ -734,6 +751,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertEqual(len(store.rows_of_origin(T.ORIGIN_USER)), 1)
         self.assertTrue(m._ltm_provisioned)
 
+    @pytest.mark.usefixtures('eager_reading')
     def test_user_rows_coexist_with_conversation_rows(self):
         from Layers import TernaryTruthStore as T
         m, store, tl = self._fresh()
@@ -788,7 +806,7 @@ class TestStatelessRevive(unittest.TestCase):
 
     def test_stateful_fixture_reads_false(self):
         # Config read: <stateless>false</stateless> is honored end-to-end.
-        m = _make_model(_STATEFUL_CONFIG)
+        m = _make_model(_ON_CONFIG, stateless=False)
         self.assertFalse(m.stateless)
         self.assertFalse(m.symbolSpace._stateless)
 
@@ -820,10 +838,10 @@ class TestStatelessRevive(unittest.TestCase):
 
     def test_stateful_load_keeps_user_rows(self):
         from Layers import TernaryTruthStore as T
-        m = _make_model(_STATEFUL_CONFIG)
+        m = _make_model(_ON_CONFIG, stateless=False)
         self._seed(m)
         sd = m.state_dict()
-        m2 = _make_model(_STATEFUL_CONFIG)        # stateful
+        m2 = _make_model(_ON_CONFIG, stateless=False)        # stateful
         m2.load_state_dict(sd, strict=False)
         store = m2.symbolSpace.ltm_store
         # every row survives; the user row is durable state.
@@ -852,6 +870,7 @@ class TestStatelessRevive(unittest.TestCase):
 
 
 class TestSerialForwardAppendsStore(unittest.TestCase):
+    @pytest.mark.usefixtures('eager_reading')
     def test_forward_grows_store_not_deque(self):
         # Change 1 + FU3: a serial discourse+consolidation forward grows the
         # store and leaves the deque empty, running the predict->observe cycle

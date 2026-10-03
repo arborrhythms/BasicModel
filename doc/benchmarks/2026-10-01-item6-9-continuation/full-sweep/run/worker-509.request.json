@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Componentization.md]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-509.recycle.json"
+}

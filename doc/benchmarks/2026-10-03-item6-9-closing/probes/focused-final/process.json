@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_echoic_decoder.py",
+    "test/test_free_reconstruction.py",
+    "test/test_objective_ownership.py",
+    "test/test_understanding_readout.py",
+    "test/test_trial_policy_ownership.py",
+    "test/test_byte_reconstruction.py"
+  ],
+  "pid": 77451,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 852314248,
+  "elapsed_seconds": 15.507843165978556,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-closing/probes/focused-final/run.log"
+}

@@ -1,0 +1,44 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly"
+  ],
+  "completed": [
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.023253667008248158,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.05104616600146983,
+      "message": "test/test_analyse_chunking_forward.py:140: in test_meronomy_synthesis_owns_full_surface_lexing\n    self.assertEqual(lexicon, [\"hello\", \" \", \"world\", \" \", \"foo\"])\nE   AssertionError: Lists differ: ['hello world foo'] != ['hello', ' ', 'world', ' ', 'foo']\nE   \nE   First differing element 0:\nE   'hello world foo'\nE   'hello'\nE   \nE   Second list contains 4 additional elements.\nE   First extra element 1:\nE   ' '\nE   \nE   - ['hello world foo']\nE   + ['hello', ' ', 'world', ' ', 'foo']",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01055162500415463,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

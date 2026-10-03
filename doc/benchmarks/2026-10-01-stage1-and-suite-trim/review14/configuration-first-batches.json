@@ -1,0 +1,461 @@
+[
+  {
+    "config": "data/XOR_grammar.xml",
+    "batch": 64,
+    "scope": "understanding",
+    "seconds": 4.109060415998101,
+    "training_seconds": 0.6049962499964749,
+    "peak_gib": 0.5032361149787903,
+    "status": "completed"
+  },
+  {
+    "config": "data/HeadEmission.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 3.3537449590075994,
+    "training_seconds": null,
+    "peak_gib": 0.37802231311798096,
+    "status": "ValueError('unresolved generate rule: S -> C')"
+  },
+  {
+    "config": "data/LM_5M.xml",
+    "batch": 128,
+    "scope": "understanding",
+    "seconds": 435.96065683299094,
+    "training_seconds": null,
+    "peak_gib": 6.425634026527405,
+    "status": "RecursionError('maximum recursion depth exceeded')"
+  },
+  {
+    "config": "data/LM_5M_IR.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 3.333633208007086,
+    "training_seconds": null,
+    "peak_gib": 0.37535202503204346,
+    "status": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')"
+  },
+  {
+    "config": "data/MM_400M.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 60.59790266699565,
+    "training_seconds": 45.261391667008866,
+    "peak_gib": 7.247625820338726,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_5M_AR.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 3.5955638750019716,
+    "training_seconds": null,
+    "peak_gib": 0.37591662257909775,
+    "status": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')"
+  },
+  {
+    "config": "data/MM_5M_IR.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 3.609737791994121,
+    "training_seconds": null,
+    "peak_gib": 0.37574875354766846,
+    "status": "ValueError('XML config inconsistencies:\\n  - flat-slab invariant violated: PS.nOutput*content (1024*6=14336) must equal CS.nOutput*content (8*1030=8240), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 1024x14, WS 1024x1030, and CS input 1024x14 -> output 8x1030; IS may be larger (PS scopes the input down).')"
+  },
+  {
+    "config": "data/MM_add.xml",
+    "batch": 32,
+    "scope": "perception: no grammar",
+    "seconds": 4.111687124997843,
+    "training_seconds": null,
+    "peak_gib": 0.47842518985271454,
+    "status": "RuntimeError('occurrence exceeds its configured where-space capacity')"
+  },
+  {
+    "config": "data/MM_add_verb.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 14.979534709011205,
+    "training_seconds": null,
+    "peak_gib": 8.441062562167645,
+    "status": "memory"
+  },
+  {
+    "config": "data/MM_boolean.xml",
+    "batch": 16,
+    "scope": "understanding",
+    "seconds": 4.904682708001928,
+    "training_seconds": 1.2939977920032106,
+    "peak_gib": 0.7285017520189285,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_decode.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 11.630294125003275,
+    "training_seconds": 3.42272449999291,
+    "peak_gib": 4.807514734566212,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_global.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 10.350387207989115,
+    "training_seconds": 2.0875147089973325,
+    "peak_gib": 4.898213066160679,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_grammar.xml",
+    "batch": 64,
+    "scope": "understanding",
+    "seconds": 4.374712415999966,
+    "training_seconds": 0.8905851669987896,
+    "peak_gib": 0.5166180953383446,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_init_scale.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 3.860293999998248,
+    "training_seconds": 0.3670951249951031,
+    "peak_gib": 0.4954998642206192,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_ltm_consolidation_fixture.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 3.8581046250037616,
+    "training_seconds": null,
+    "peak_gib": 0.44378776103258133,
+    "status": "ValueError('TruthSet input did not produce a selected grammatical closing')"
+  },
+  {
+    "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+    "batch": 64,
+    "scope": "understanding",
+    "seconds": 4.657302584004356,
+    "training_seconds": 1.2105452090036124,
+    "peak_gib": 0.5312818139791489,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 3.8592725839989726,
+    "training_seconds": null,
+    "peak_gib": 0.44741935282945633,
+    "status": "ValueError('TruthSet input did not produce a selected grammatical closing')"
+  },
+  {
+    "config": "data/MM_masked_semantic.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 10.595237084009568,
+    "training_seconds": 2.294725041007041,
+    "peak_gib": 5.556035168468952,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_math.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 3.8601093330071308,
+    "training_seconds": null,
+    "peak_gib": 0.4831554591655731,
+    "status": "RuntimeError('occurrence exceeds its configured where-space capacity')"
+  },
+  {
+    "config": "data/MM_mereology.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 10.102974207999068,
+    "training_seconds": 1.7299265829933574,
+    "peak_gib": 4.820408433675766,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_mereology_serial.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 18.108847834009794,
+    "training_seconds": 9.509038790987688,
+    "peak_gib": 6.408849515020847,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_meronomy_smoke.xml",
+    "batch": 12,
+    "scope": "understanding",
+    "seconds": 15.477573666008539,
+    "training_seconds": 7.047481749992585,
+    "peak_gib": 7.698935583233833,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_overlap_tiling.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 10.107872207998298,
+    "training_seconds": 1.7529757079901174,
+    "peak_gib": 4.8185926377773285,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_phrase_decode.xml",
+    "batch": 12,
+    "scope": "understanding",
+    "seconds": 15.499825708000571,
+    "training_seconds": 7.0697029160073726,
+    "peak_gib": 7.772864505648613,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_qa.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 9.079298582990305,
+    "training_seconds": null,
+    "peak_gib": 3.129931628704071,
+    "status": "ValueError('TruthSet input did not produce a selected grammatical closing')"
+  },
+  {
+    "config": "data/MM_query_reasoning.xml",
+    "batch": 6,
+    "scope": "understanding",
+    "seconds": 11.345521833995008,
+    "training_seconds": 7.5007944160024635,
+    "peak_gib": 6.009496197104454,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_reading.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 10.090668499993626,
+    "training_seconds": 1.8434045419999165,
+    "peak_gib": 4.832584947347641,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_sequence_predict.xml",
+    "batch": 4,
+    "scope": "understanding",
+    "seconds": 4.11834658299631,
+    "training_seconds": null,
+    "peak_gib": 0.49887198954820633,
+    "status": "RuntimeError('occurrence exceeds its configured where-space capacity')"
+  },
+  {
+    "config": "data/MM_shamatha.xml",
+    "batch": 64,
+    "scope": "understanding",
+    "seconds": 4.648166750004748,
+    "training_seconds": 1.1455534999986412,
+    "peak_gib": 0.5337232202291489,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_sparse_concept.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 10.573002832999919,
+    "training_seconds": 2.315623834001599,
+    "peak_gib": 5.555730037391186,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_symbol_tower.xml",
+    "batch": 12,
+    "scope": "perception: no grammar",
+    "seconds": 9.28653258299164,
+    "training_seconds": 0.9355526250001276,
+    "peak_gib": 4.215580083429813,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_symbolic_iter.xml",
+    "batch": 4,
+    "scope": "perception: no grammar",
+    "seconds": 4.111740207998082,
+    "training_seconds": 0.41040975000942126,
+    "peak_gib": 0.5418256148695946,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_xor.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 3.8689484170026844,
+    "training_seconds": 0.3714729159983108,
+    "peak_gib": 0.5040295720100403,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_xor_fixture.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 3.8657633749971865,
+    "training_seconds": 0.37375433299166616,
+    "peak_gib": 0.5050824508070946,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_xor_loopback.xml",
+    "batch": 4,
+    "scope": "understanding",
+    "seconds": 4.390983290999429,
+    "training_seconds": 0.8302922919974662,
+    "peak_gib": 0.5113232955336571,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_xor_step3.xml",
+    "batch": 64,
+    "scope": "understanding",
+    "seconds": 4.395609999992303,
+    "training_seconds": 0.7505290830013109,
+    "peak_gib": 0.5102704167366028,
+    "status": "completed"
+  },
+  {
+    "config": "data/MM_xor_step4.xml",
+    "batch": 64,
+    "scope": "understanding",
+    "seconds": 4.906587542005582,
+    "training_seconds": 1.2096019580058055,
+    "peak_gib": 0.5467694848775864,
+    "status": "completed"
+  },
+  {
+    "config": "data/MentalModel.xml",
+    "batch": 64,
+    "scope": "understanding",
+    "seconds": 6.9960188749973895,
+    "training_seconds": null,
+    "peak_gib": 0.8945631757378578,
+    "status": "RuntimeError('compose has no legal alternative at the selected exploration round')"
+  },
+  {
+    "config": "data/POS_smoke.xml",
+    "batch": 16,
+    "scope": "understanding",
+    "seconds": 3.8705890830024146,
+    "training_seconds": null,
+    "peak_gib": 0.44688527286052704,
+    "status": "RuntimeError('occurrence exceeds its configured where-space capacity')"
+  },
+  {
+    "config": "data/RamsifiedModel.xml",
+    "batch": 64,
+    "scope": "understanding",
+    "seconds": 13.211097833001986,
+    "training_seconds": 9.525990124995587,
+    "peak_gib": 3.5516850501298904,
+    "status": "completed"
+  },
+  {
+    "config": "data/XOR_pos.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 3.8575866669998504,
+    "training_seconds": 0.3656082499946933,
+    "peak_gib": 0.496476449072361,
+    "status": "completed"
+  },
+  {
+    "config": "data/XOR_recon.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 3.616426958993543,
+    "training_seconds": null,
+    "peak_gib": 0.37548933178186417,
+    "status": "ValueError('Config requirement failed: WholeSpace requires WS event width == CS width (got CS width=8, WS event width=10). Fix: set <WholeSpace><nDim> to match <ConceptualSpace><nOutputDim> if present, else <ConceptualSpace><nDim>.')"
+  },
+  {
+    "config": "data/XOR_spaces.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 3.8567310830112547,
+    "training_seconds": null,
+    "peak_gib": 0.43126027286052704,
+    "status": "RuntimeError('occurrence exceeds its configured where-space capacity')"
+  },
+  {
+    "config": "data/ergodic-only.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 3.5985464170080377,
+    "training_seconds": null,
+    "peak_gib": 0.5668652877211571,
+    "status": "TypeError(\"can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\")"
+  },
+  {
+    "config": "data/ergodic.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 3.618100083011086,
+    "training_seconds": null,
+    "peak_gib": 0.5677045211195946,
+    "status": "TypeError(\"can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\")"
+  },
+  {
+    "config": "data/idempotent.xml",
+    "batch": 1,
+    "scope": "perception: no grammar",
+    "seconds": 3.857965500006685,
+    "training_seconds": 0.336971334007103,
+    "peak_gib": 0.4624951481819153,
+    "status": "completed"
+  },
+  {
+    "config": "data/mnist.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 3.6109763749991544,
+    "training_seconds": null,
+    "peak_gib": 0.5661175847053528,
+    "status": "TypeError(\"can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\")"
+  },
+  {
+    "config": "data/simple.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 3.612366874993313,
+    "training_seconds": null,
+    "peak_gib": 0.5653851181268692,
+    "status": "TypeError(\"can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.\")"
+  },
+  {
+    "config": "data/stream_smoke.xml",
+    "batch": 4,
+    "scope": "perception: no grammar",
+    "seconds": 4.114296833999106,
+    "training_seconds": null,
+    "peak_gib": 0.48335380107164383,
+    "status": "RuntimeError('occurrence exceeds its configured where-space capacity')"
+  },
+  {
+    "config": "data/tomatoes.xml",
+    "batch": null,
+    "scope": null,
+    "seconds": 4.647571708002943,
+    "training_seconds": null,
+    "peak_gib": 0.37436027079820633,
+    "status": "HfUriError(\"Invalid HF URI 'hf://datasets/rotten_tomatoes@aa13bc287fa6fcab6daf52f0dfb9994269ffea28/.huggingface.yaml'. Repository id must be 'namespace/name', got 'rotten_tomatoes'.\")"
+  },
+  {
+    "config": "data/xor.xml",
+    "batch": 64,
+    "scope": "perception: no grammar",
+    "seconds": 4.120678874998703,
+    "training_seconds": 0.37747429200680926,
+    "peak_gib": 0.4962322860956192,
+    "status": "completed"
+  }
+]

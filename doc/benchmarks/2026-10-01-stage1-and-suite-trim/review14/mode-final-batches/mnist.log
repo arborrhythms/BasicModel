@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py", line 99, in <module>
+    child(args.config, args.output)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py", line 30, in child
+    model, device, lr, batch = recon_bench._build_model(str(ROOT/config))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py", line 120, in _build_model
+    TheData.load(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/data.py", line 764, in load
+    self.loadMNist()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/data.py", line 1171, in loadMNist
+    self.train_input  = torch.tensor(train[:, 1:]/255.0, dtype=torch.float)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+TypeError: can't convert np.ndarray of type numpy.object_. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint64, uint32, uint16, uint8, and bool.

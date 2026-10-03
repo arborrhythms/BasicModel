@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-045.recycle.json"
+}

@@ -1,0 +1,24 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column"
+  ],
+  "completed": [
+    "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.06274708401178941,
+      "message": "test/test_eval_math_thinking.py:24: in test_eval_script_emits_every_report_column\n    rows = ev.main([\"--config\", str(_ROOT / \"data\" / \"MM_math.xml\"),\nbin/eval_math_thinking.py:205: in main\n    rows = evaluate(model, split=args.split, budget=budget, rows=args.rows,\nbin/eval_math_thinking.py:118: in evaluate\n    result = model.think(questions, x, max_iterations=int(budget))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10892: in think\n    first = self.what(question, input_data, executor=executor, record=True,\nbin/Models.py:10681: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8895: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:154: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8707: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:24085: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13825: in _lex_embed_stem\n    self.perceptualSpace.embed_stem(in_sub)\nbin/Spaces.py:12347: in embed_stem\n    return self._embed_ladder(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:11784: in _embed_ladder\n    return self._embed_radix(upstream_vspace)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:12228: in _embed_radix\n    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:27: in encode\n    intervals = self.intervals(name, indices)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WhereRegistry.py:42: in intervals\n    torch._assert_async((~valid | (indices < end - start)).all(),\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: occurrence exceeds its configured where-space capacity",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

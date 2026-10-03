@@ -1,0 +1,99 @@
+{
+  "historical_inputs": {
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/run/result.json": "01d894812921ae59fd3e6fd9cc9596bee316a99331f13632c65b75edfcc37e97"
+  },
+  "aggregate_bytes": 25769803776,
+  "rationale": "Dispatch unchanged bounded workers using measured time and memory.\n\nThis is a receipt-harness adapter, not a model/test change. It changes only\nbatch construction and admission order. The existing runner still collects,\nexecutes, enforces every hard limit, handles failures/recycling and verifies\nexact coverage. Estimates reserve headroom; they never replace memory guards.\n",
+  "expected_cases": 71,
+  "batches": [
+    {
+      "nodes": [
+        "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_compose_decompose_self_inverse",
+        "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+        "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+        "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+        "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+        "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+        "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+        "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves",
+        "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_compose_is_min_kernel",
+        "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_decompose_pseudo_inverse",
+        "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_layer_is_CS_space_role",
+        "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_compose_is_max_kernel",
+        "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_decompose_pseudo_inverse",
+        "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_layer_is_CS_space_role",
+        "test/test_grammar_binary_ops.py::TestComposeGradients::test_intersection_grad_flows_to_both_children",
+        "test/test_grammar_binary_ops.py::TestComposeGradients::test_union_grad_flows_to_both_children",
+        "test/test_grammar_binary_ops.py::TestArityContract::test_arity_two_default_raises",
+        "test/test_grammar_binary_ops.py::TestArityContract::test_unary_accepts_one_operand",
+        "test/test_subspace_what_stm_contract.py::test_subspace_has_no_parallel_stack_fields",
+        "test/test_subspace_what_stm_contract.py::test_subspace_exposes_required_stack_modalities",
+        "test/test_subspace_what_stm_contract.py::test_subspace_setters_exist",
+        "test/test_subspace_what_stm_contract.py::test_what_roundtrip_through_setter",
+        "test/test_subspace_what_stm_contract.py::test_where_roundtrip_through_setter",
+        "test/test_subspace_what_stm_contract.py::test_activation_roundtrip_through_setter",
+        "test/test_subspace_what_stm_contract.py::test_dead_stack_slots_zero_in_materialized_event",
+        "test/test_subspace_what_stm_contract.py::test_zero_activation_does_not_corrupt_raw_what",
+        "test/test_subspace_what_stm_contract.py::test_grammar_registry_surface_exists",
+        "test/test_subspace_what_stm_contract.py::test_grammar_registry_where_id_namespaces_do_not_collide",
+        "test/test_subspace_what_stm_contract.py::test_grammar_registry_accessors_on_configured_grammar",
+        "test/test_subspace_what_stm_contract.py::test_execute_arity1_dispatches_to_layer_forward",
+        "test/test_subspace_what_stm_contract.py::test_execute_arity2_requires_right",
+        "test/test_subspace_what_stm_contract.py::test_execute_superposed_independent_then_weighted_sum",
+        "test/test_subspace_what_stm_contract.py::test_rule_codebook_class_basics",
+        "test/test_subspace_what_stm_contract.py::test_rule_codebook_attached_grammar_routes_through_namespace",
+        "test/test_subspace_what_stm_contract.py::test_rule_codebook_with_embedding_initializes_xavier",
+        "test/test_subspace_what_stm_contract.py::test_shift_writes_into_first_empty_slot",
+        "test/test_subspace_what_stm_contract.py::test_shift_appends_after_existing_live_slots",
+        "test/test_subspace_what_stm_contract.py::test_shift_raises_on_full_stack",
+        "test/test_subspace_what_stm_contract.py::test_reduce_writes_parent_in_left_zeros_right",
+        "test/test_subspace_what_stm_contract.py::test_reduce_raises_on_stack_underflow",
+        "test/test_subspace_what_stm_contract.py::test_reduce_gradient_flows_to_child_payloads_and_op_params",
+        "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_roundtrips_through_namespace",
+        "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_tolerates_float_carrier",
+        "test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children",
+        "test/test_subspace_what_stm_contract.py::test_unreduce_is_noop_on_terminal_slot",
+        "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_empty_stack",
+        "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_full_stack",
+        "test/test_subspace_what_stm_contract.py::test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+        "test/test_subspace_what_stm_contract.py::test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+        "test/test_subspace_what_stm_contract.py::test_signal_router_is_a_layer_subclass",
+        "test/test_subspace_what_stm_contract.py::test_signal_router_init_sets_layer_attributes",
+        "test/test_subspace_what_stm_contract.py::test_forward_dispatches_to_forward_stack_with_actions",
+        "test/test_subspace_what_stm_contract.py::test_forward_without_actions_raises_with_pointer",
+        "test/test_subspace_what_stm_contract.py::test_reverse_dispatches_to_reverse_stack",
+        "test/test_subspace_what_stm_contract.py::test_forward_stack_orchestrates_shift_then_reduce",
+        "test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_catalog",
+        "test/test_subspace_what_stm_contract.py::test_word_admission_preserves_the_property_inventory",
+        "test/test_subspace_what_stm_contract.py::test_rule_codebook_does_not_determine_parent_vectors",
+        "test/test_subspace_what_stm_contract.py::test_symbolic_space_owns_signal_router",
+        "test/test_subspace_what_stm_contract.py::test_stack_router_gate_is_retired",
+        "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+        "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_word_space_current_rules",
+        "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_conceptual_stm",
+        "test/test_subspace_what_stm_contract.py::test_shared_compose_does_not_dispatch_a_cursor",
+        "test/test_subspace_what_stm_contract.py::test_property_forward_does_not_compose",
+        "test/test_subspace_what_stm_contract.py::test_symbolic_space_stack_route_uses_canonical_forward",
+        "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_declared_operator",
+        "test/test_subspace_what_stm_contract.py::test_property_reverse_does_not_call_grammar",
+        "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_does_not_touch_generate_rules"
+      ],
+      "estimated_seconds": 0.03319908888079226,
+      "reserved_bytes": 1610612736.0
+    },
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_reflects_a_full_concept_code"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    },
+    {
+      "nodes": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step4.py::test_not_keeps_the_explicit_pole_exchange"
+      ],
+      "estimated_seconds": 0.0,
+      "reserved_bytes": 8589934592
+    }
+  ]
+}

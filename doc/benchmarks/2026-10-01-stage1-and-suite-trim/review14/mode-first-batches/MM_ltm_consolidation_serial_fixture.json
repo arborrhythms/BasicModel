@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.60465729200223,
+  "batch": 64,
+  "scope": "understanding",
+  "reconstruct_in_loop": true,
+  "training_seconds": 1.2105452090036124,
+  "output_loss": 0.18398186564445496,
+  "reconstruction_loss": 0.0,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": 4,
+  "total_seconds": 2.8159237500076415
+}

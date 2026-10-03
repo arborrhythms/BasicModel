@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-item6-9-free-readback/contracts_probe.py",
+    "doc/benchmarks/2026-10-03-item6-9-free-readback/trial_probe.py"
+  ],
+  "pid": 41459,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 583255504,
+  "elapsed_seconds": 4.357217167009367,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/free-after/run.log"
+}

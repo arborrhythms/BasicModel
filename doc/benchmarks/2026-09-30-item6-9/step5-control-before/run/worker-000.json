@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5728252080734819,
+      "message": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py:23: in test_identical_second_trial_never_wins_and_both_use_original_parameters\n    assert observations == [2., 2.], observations\nE   AssertionError: [2.0, 1.600000023841858]\nE   assert [2.0, 1.600000023841858] == [2.0, 2.0]\nE     \nE     At index 1 diff: 1.600000023841858 != 2.0\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,9 @@
+test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs
+test/test_mm_xor.py::TestMMXorConvergence::test_convergence
+test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols
+test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces
+test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal
+test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal
+test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental
+
+7 tests collected in 2.50s

@@ -1,0 +1,6 @@
+{
+  "arm": "REA",
+  "seed": null,
+  "epochs": 400,
+  "change": "Filter objective-owned backwards. A-off also omits answer trial comparison. Same fixture, targets, bars and optimizer cadence."
+}

@@ -1,0 +1,588 @@
+{
+  "exit_code": 2,
+  "reason": "exit",
+  "selected": [
+    "test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+    "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+    "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+    "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+    "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+    "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+  ],
+  "completed": [
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+    "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+    "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-001.json"
+      ],
+      "pid": 82926,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 508003672,
+      "elapsed_seconds": 5.147706625000865,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser"
+      ],
+      "completed": [
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.3056762499982142,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=0.181s)\r\nbatch = 2 (\u0394=0.219s)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-000.json"
+      ],
+      "pid": 82925,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 552666576,
+      "elapsed_seconds": 6.581731457998103,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+      ],
+      "completed": [
+        "test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.7270763749984326,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=0.467s)\r\nbatch = 0 (\u0394=0.559s)\r\nbatch = 1 (\u0394=0.443s)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-003.json"
+      ],
+      "pid": 82948,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 930858664,
+      "elapsed_seconds": 6.696567249993677,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.786548000003677,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-004.json"
+      ],
+      "pid": 83001,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 923010728,
+      "elapsed_seconds": 9.948619166003482,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.060386290999304,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=1.225s)\r\nbatch = 0 (\u0394=1.295s)\r\nbatch = 0 (\u0394=1.239s)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-005.json"
+      ],
+      "pid": 83052,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 526959960,
+      "elapsed_seconds": 5.194497709002462,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+      ],
+      "completed": [
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 1.3472473329966306,
+          "message": "test/test_grammar_word_learning.py:196: in test_normal_text_reconstruction_updates_the_grammar_chooser\n    assert all(program.leaves.shape[0] >= 5 for program in readings[0])\nE   assert False\nE    +  where False = all(<generator object test_normal_text_reconstruction_updates_the_grammar_chooser.<locals>.<genexpr> at 0x12acaa4d0>)",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-006.json"
+      ],
+      "pid": 83065,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 923944592,
+      "elapsed_seconds": 6.156955874997948,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.3061880840032245,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-007.json"
+      ],
+      "pid": 83077,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 890209912,
+      "elapsed_seconds": 5.536283415996877,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes"
+      ],
+      "completed": [
+        "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.700297249997675,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-008.json"
+      ],
+      "pid": 83115,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 927073936,
+      "elapsed_seconds": 6.091017165999801,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.3013099589952617,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-009.json"
+      ],
+      "pid": 83129,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 925140624,
+      "elapsed_seconds": 6.160028042002523,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.352718541995273,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-010.json"
+      ],
+      "pid": 83141,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 880379488,
+      "elapsed_seconds": 5.80940499999997,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row"
+      ],
+      "completed": [
+        "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.014841541000351,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-011.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-011.json"
+      ],
+      "pid": 83152,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 926893736,
+      "elapsed_seconds": 6.214177624999138,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]"
+      ],
+      "completed": [
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.3563019579960383,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-012.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-012.json"
+      ],
+      "pid": 83189,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 557204848,
+      "elapsed_seconds": 5.755129166995175,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-012.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients"
+      ],
+      "completed": [
+        "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.9273035839942168,
+          "message": "",
+          "stdout": "MEASURED_OPERATOR_GRADIENTS {\"operator.CS.surface\": {\"expectation_negative_streak\": 0, \"expectation_norm\": 0.0, \"expectation_reconstruction_norm_ratio\": 0.0, \"output_negative_streak\": 1, \"output_norm\": 3.0755942464786887, \"output_reconstruction_norm_ratio\": 8.834326160355898e+23, \"persistent_opposition\": [], \"reconstruction_expectation_cosine\": null, \"reconstruction_norm\": 3.4814135120802304e-24, \"reconstruction_output_cosine\": -0.03521898586323879}}\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-013.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-013.json"
+      ],
+      "pid": 83198,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 553747824,
+      "elapsed_seconds": 5.62984245899861,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-013.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+      ],
+      "completed": [
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 1.8135302090013283,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-014.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-014.json"
+      ],
+      "pid": 83210,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 811091528,
+      "elapsed_seconds": 6.4839423339944915,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-014.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate"
+      ],
+      "completed": [
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.6948024169978453,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-002.json"
+      ],
+      "pid": 82943,
+      "exit_code": 2,
+      "reason": "exit",
+      "peak_memory_bytes": 4189787656,
+      "elapsed_seconds": 857.7854967080057,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks"
+      ],
+      "completed": [],
+      "reports": [],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 2,
+    "worker_seconds": 1800,
+    "suite_seconds": 7200,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check",
+  "elapsed_seconds": 868.2636836249949,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 6234267544,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/collect.json"
+    ],
+    "pid": 82898,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 439715136,
+    "elapsed_seconds": 3.8444874580018222,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]",
+        "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+        "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+        "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+        "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+        "test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths",
+        "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+        "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+        "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+        "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+        "test/test_gradient_factorization.py::test_normal_batch_logs_named_shared_operator_gradients",
+        "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+        "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+        "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+        "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+        "test/test_output_walk.py::test_packed_recall_observes_captured_sentence_programs",
+        "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+        "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]",
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+        "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+        "test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

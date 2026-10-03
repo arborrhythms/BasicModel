@@ -87,7 +87,7 @@ import torch.optim as _optim
 
 
 __all__ = [
-    "Optimizer", "Adam", "SparseAdam", "RowLocalAdam", "MultiOptimizer",
+    "Optimizer", "Adam", "SparseAdam", "RowLocalAdam", "SGD", "RowLocalSGD", "MultiOptimizer",
     "finite_gradient_guard_enabled", "preflight_finite_gradients",
     "configure_l1_proximal",
 ]
@@ -558,6 +558,99 @@ class _RowLocalAdam(_optim.Optimizer):
         return loss
 
 
+class _RowLocalSGD(_optim.Optimizer):
+    """Momentum descent on observed concept rows with compact prefix state.
+
+    Unobserved rows and all-zero placeholder gradients are absent updates,
+    as in the indexed concept readout. Only touched rows receive momentum;
+    no per-coordinate division by gradient magnitude occurs. A targetless
+    L1 penalty uses the ordinary Euclidean proximal threshold, lr * strength.
+    """
+    row_local_state = True
+
+    def __init__(self, params, lr, momentum=.9):
+        if lr < 0 or not 0 <= momentum < 1:
+            raise ValueError('invalid row-local SGD learning rate or momentum')
+        super().__init__(params, dict(lr=float(lr), momentum=float(momentum)))
+        self._l1_proximal = {}
+
+    def set_l1_proximal(self, param, rows, mask, strength):
+        if not any(param is p for g in self.param_groups for p in g['params']):
+            raise ValueError('proximal L1 parameter is not owned by this optimizer')
+        if not math.isfinite(float(strength)) or strength < 0:
+            raise ValueError('proximal L1 strength must be finite and nonnegative')
+        if (rows.dtype != torch.long or rows.ndim != 1 or rows.device != param.device
+                or mask.device != param.device or mask.dtype != torch.bool
+                or tuple(mask.shape) != (rows.numel(), *param.shape[1:])):
+            raise ValueError('proximal L1 requires long rows and a matching boolean coefficient mask')
+        if (bool(((rows < 0) | (rows >= param.shape[0])).any())
+                or bool((rows[1:] <= rows[:-1]).any())):
+            raise ValueError('proximal L1 rows must be sorted, unique, and in bounds')
+        if rows.numel() and strength:
+            self._l1_proximal[param] = rows.detach().clone(), mask.detach().clone(), float(strength)
+        else:
+            self._l1_proximal.pop(param, None)
+
+    def zero_grad(self, set_to_none=True):
+        self._l1_proximal.clear()
+        return super().zero_grad(set_to_none=set_to_none)
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+        proximal, self._l1_proximal = self._l1_proximal, {}
+        for group in self.param_groups:
+            for parameter in group['params']:
+                gradient = parameter.grad
+                if gradient is None:
+                    continue
+                if not gradient.is_sparse or gradient.sparse_dim() != 1:
+                    raise RuntimeError('RowLocalSGD requires sparse COO gradients on axis 0')
+                gradient = gradient.coalesce()
+                rows, values = gradient.indices()[0], gradient.values()
+                policy = proximal.get(parameter)
+                mask = None
+                if policy is not None:
+                    selected, penalized, strength = policy
+                    merged = torch.unique(torch.cat((rows, selected)), sorted=True)
+                    combined = values.new_zeros((merged.numel(), *parameter.shape[1:]))
+                    combined.index_add_(0, torch.searchsorted(merged, rows), values)
+                    mask = torch.zeros_like(combined, dtype=torch.bool)
+                    mask.index_copy_(0, torch.searchsorted(merged, selected), penalized)
+                    rows, values = merged, combined
+                if not rows.numel():
+                    continue
+                live = values.flatten(1).ne(0).any(1)
+                if mask is not None:
+                    live = live | mask.flatten(1).any(1)
+                    mask = mask[live]
+                rows, values = rows[live], values[live].float()
+                if not rows.numel():
+                    continue
+                state = self.state[parameter]
+                velocity = state.get('momentum_buffer')
+                required = int(rows.max()) + 1
+                if velocity is None or velocity.shape[0] < required:
+                    width = min(parameter.shape[0], 1 << (required - 1).bit_length())
+                    grown = torch.zeros((width, *parameter.shape[1:]),
+                                        device=parameter.device, dtype=torch.float32)
+                    if velocity is not None:
+                        grown[:velocity.shape[0]].copy_(velocity)
+                    velocity = state['momentum_buffer'] = grown
+                update = velocity.index_select(0, rows).mul(group['momentum']).add(values)
+                velocity.index_copy_(0, rows, update)
+                updated = parameter.index_select(0, rows).float() - group['lr'] * update
+                if mask is not None:
+                    shrunk = updated.sign() * (updated.abs() - group['lr'] * strength).clamp_min(0)
+                    updated = torch.where(mask, shrunk, updated)
+                parameter.index_copy_(0, rows, updated.to(parameter.dtype))
+                state['step'] = int(state.get('step', 0)) + 1
+        return loss
+
+
 def configure_l1_proximal(optimizer, param, rows, mask, strength):
     """Find the sole row-local owner through ordinary/MultiOptimizer wrappers."""
     leaves = getattr(optimizer, "optimizers", (optimizer,))
@@ -566,8 +659,8 @@ def configure_l1_proximal(optimizer, param, rows, mask, strength):
     if len(owners) != 1:
         raise ValueError("proximal L1 requires exactly one optimizer owner")
     inner = getattr(owners[0], "inner", owners[0])
-    if not isinstance(inner, _RowLocalAdam):
-        raise TypeError("concept readout L1 requires its RowLocalAdam optimizer")
+    if not isinstance(inner, (_RowLocalAdam, _RowLocalSGD)):
+        raise TypeError("concept readout L1 requires its RowLocalAdam or RowLocalSGD optimizer")
     inner.set_l1_proximal(param, rows, mask, strength)
 
 
@@ -695,6 +788,15 @@ def Adam(params, lr, **kwargs):
     return Optimizer(_optim.Adam(params, lr=lr, **kwargs))
 
 
+def SGD(params, lr, momentum=.9, **kwargs):
+    """Gradient descent with momentum, without adaptive gradient scaling."""
+    return Optimizer(_optim.SGD(params, lr=lr, momentum=momentum, **kwargs))
+
+
+def RowLocalSGD(params, lr, momentum=.9):
+    return Optimizer(_RowLocalSGD(params, lr=lr, momentum=momentum))
+
+
 def SparseAdam(params, lr, **kwargs):
     """Construct an ``Optimizer`` wrapping ``torch.optim.SparseAdam``.
 
@@ -721,8 +823,8 @@ class MultiOptimizer:
     """Run several ``Optimizer`` instances behind one interface.
 
     Concrete use: the basicmodel codebook split puts sparse-grad embedding
-    rows under ``SparseAdam``, the shared ConceptualSpace dictionary under
-    ``RowLocalAdam``, and everything else under ``Adam``. The wrapper exposes
+    readers under ``Adam`` and reconstruction under momentum ``SGD``; large
+    concept tables use compact row-local state. The wrapper exposes
     a flattened ``param_groups`` view so callers that read or set
     ``param_groups[i]['lr']`` (rebuild_optimizer, LR scheduling) keep
     working, a merged ``state`` view keyed by parameter (``optimizer.state[p]``
@@ -747,19 +849,29 @@ class MultiOptimizer:
         """Merged parameter -> state view over every child optimizer."""
         return _MergedOptimizerState(self.optimizers)
 
-    def _dense_child(self):
+    def _dense_child(self, owner=None):
         """The child that owns ordinary dense parameters (never the sparse
         or row-local family): the first child without those markers."""
         for o in self.optimizers:
+            if owner is not None and getattr(o, 'objective_owner', None) != owner:
+                continue
             if (getattr(o, "row_local_state", False)
                     or type(o).__name__ == "SparseAdam"):
                 continue
             return o
+        if owner is not None:
+            raise RuntimeError(f'no dense optimizer for objective owner {owner!r}')
         return self.optimizers[0]
 
     def add_param_group(self, param_group):
         """Hand a late-built head to the dense child (torch semantics)."""
-        self._dense_child().add_param_group(param_group)
+        route = getattr(self, 'route_parameters', None)
+        if route is None:
+            self._dense_child().add_param_group(param_group)
+        else:
+            for owner, parameters in route(param_group['params']).items():
+                if parameters:
+                    self._dense_child(owner).add_param_group(dict(param_group, params=list(parameters)))
         self._refresh_param_groups()
 
     def _step_without_finite_preflight(self):

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-item6-9-free-readback/trial_probe.py"
+  ],
+  "pid": 41164,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 562480616,
+  "elapsed_seconds": 4.380693917017197,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/trial-before/run.log"
+}

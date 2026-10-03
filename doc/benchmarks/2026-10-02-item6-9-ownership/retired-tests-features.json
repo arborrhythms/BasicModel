@@ -1,0 +1,32 @@
+[
+  {
+    "file": "test/test_word_store.py",
+    "test": "test_knob_default_off",
+    "reason": "\u00a715.6 retires the opt-in feature this case asserts."
+  },
+  {
+    "file": "test/test_word_store.py",
+    "test": "test_slot_kind_stacks_mirror_the_push_discipline",
+    "reason": "\u00a715.6 retires the opt-in feature this case asserts."
+  },
+  {
+    "file": "test/test_word_store.py",
+    "test": "test_forward_records_kind_tagged_trace",
+    "reason": "\u00a715.6 retires the opt-in feature this case asserts."
+  },
+  {
+    "file": "test/test_word_grain_attention.py",
+    "test": "test_word_rows_restrict_when_attention_off",
+    "reason": "\u00a715.6 retires the opt-in feature this case asserts."
+  },
+  {
+    "file": "test/test_word_grain_attention.py",
+    "test": "test_heat_rows_take_precedence_over_word_rows",
+    "reason": "\u00a715.6 retires the opt-in feature this case asserts."
+  },
+  {
+    "file": "test/test_word_grain_attention.py",
+    "test": "test_retrieval_failure_degrades_to_word_rows",
+    "reason": "\u00a715.6 retires the opt-in feature this case asserts."
+  }
+]

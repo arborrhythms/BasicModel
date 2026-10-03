@@ -109,13 +109,6 @@ def test_no_retired_relation_or_query_aliases():
     assert {"part", "whole", "equal"} <= methods
 
 
-def test_no_pos_or_category_state_names():
-    """No POS / category / transitional-role state names survive."""
-    g = _load()
-    for r in g.rules:
-        for tok in _rule_tokens(r):
-            assert tok not in _FORBIDDEN_STATE_TOKENS, (
-                f"forbidden state name {tok!r} in rule {r.canonical!r}")
 
 
 def test_no_category_rename_projection_rules():

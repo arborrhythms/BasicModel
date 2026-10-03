@@ -1,0 +1,58 @@
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -7581,7 +7581,7 @@
+         return hard, path, routing
+ 
+     def derive(self, x, *, slots=1, rounds, depth=None, exploit=None, greedy=False,
+-               cat_ctx=None, what_ctx=None, grammar_context=None):
++               cat_ctx=None, what_ctx=None, grammar_context=None, allow_identical=False):
+         B, N, _ = x.shape
+         depth = (torch.full((B,), N, dtype=torch.long, device=x.device)
+                  if depth is None else depth)
+@@ -7591,8 +7591,12 @@
+         history = torch.full((B, N), -1, device=x.device, dtype=torch.long)
+         if exploit is not None:
+             eligible = exploit['alternatives']
+-            ranks = torch.rand(*eligible.shape, device=x.device).masked_fill(~eligible, -1)
+-            forced = torch.where(eligible.any(-1), ranks.argmax(-1), -1)
++            if not allow_identical:
++                torch._assert_async(eligible.any(-1).all(),
++                    'compose has no legal alternative to this derivation')
++            rank = (torch.rand(B, device=x.device) * eligible.sum(-1)).long()
++            selected = eligible & (eligible.long().cumsum(-1) == rank[:, None] + 1)
++            forced = torch.where(eligible.any(-1), selected.long().argmax(-1), -1)
+         else:
+             forced = torch.full_like(depth, -1)
+         for i in range(int(rounds)):
+@@ -7622,7 +7626,7 @@
+         if not self.training:
+             return exploit, None
+         explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+-                              exploit=exploit, **kwargs)
++                              exploit=exploit, allow_identical=True, **kwargs)
+         explore['different'] = (explore['actions'] != exploit['actions']).any(-1)
+         return exploit, explore
+ 
+--- a/test/test_reverse_traversal.py
++++ b/test/test_reverse_traversal.py
+@@ -253,7 +253,8 @@
+                 candidate, torch.full_like(state[1], 2),
+                 torch.ones_like(state[1]), torch.zeros_like(state[1]),
+                 retain, candidate.new_ones(state[1].shape),
+-                torch.full_like(state[1], operation.r_reduce), retain)
++                torch.full_like(state[1], operation.r_reduce), retain,
++                torch.zeros_like(retain))
+             return LanguageOperationChoice(*(torch.where(
+                 retain[:, None] if a.ndim == 2 else retain, a, b)
+                 for a, b in zip(unary, choice)))
+--- a/test/test_inverse_unary_exclusion.py
++++ b/test/test_inverse_unary_exclusion.py
+@@ -68,7 +68,7 @@
+ def test_single_legal_derivation_is_compared_without_inventing_an_alternative():
+     from Language import OperationSelectionLayer, SumLayer
+     layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()], chooser='mlp')
+-    value = torch.tensor([[[.2, .4], [.7, .3], [.1, .8]]])
++    value = torch.tensor([[[.2, .4], [.7, .3]]])
+     exploit, explore = layer.derive_pair(value, rounds=6, slots=1, greedy=True)
+     assert exploit['complete'].all() and explore['complete'].all()
+     assert explore['forced_round'].tolist() == [-1]

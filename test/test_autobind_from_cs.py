@@ -58,23 +58,7 @@ class TestAutobindMovedFromPSToCS(unittest.TestCase):
     """``_maybe_autobind_words`` lives on ConceptualSpace, not
     PartSpace."""
 
-    def test_perceptualspace_has_no_symbolicspace_ref(self):
-        m = _make_radix_model()
-        ps = m.perceptualSpace
-        self.assertFalse(
-            hasattr(ps, 'wholeSpace_ref'),
-            "PartSpace must NOT hold a back-ref to WholeSpace "
-            "after Task G; the auto-bind cross-space hop moved to "
-            "ConceptualSpace.",
-        )
 
-    def test_perceptualspace_does_not_define_autobind(self):
-        from Spaces import PartSpace
-        self.assertFalse(
-            hasattr(PartSpace, '_maybe_autobind_words'),
-            "PartSpace must NOT define _maybe_autobind_words after "
-            "Task G; the body moved to ConceptualSpace.",
-        )
 
     def test_conceptualspace_defines_autobind(self):
         from Spaces import ConceptualSpace

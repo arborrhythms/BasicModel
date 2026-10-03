@@ -139,7 +139,7 @@
            cone: intersection = RadMin / lattice-min (ADJ mask / meet on NP,
            noun-noun intersection); union = RadMax / lattice-max (OR-region),
            its dual (renamed from "join" 2026-07-05). and/or = conjunction /
-           disjunction (the SS scalar-activation lattice). The reverse uses the
+           disjunction (product binding and mean bundling, §22). The reverse uses the
            codebook recommender (Ops._binary_op_recommend). -->
       <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
       <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>

@@ -1,0 +1,46 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_clears_registered_prediction_targets",
+    "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction",
+    "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature"
+  ],
+  "completed": [
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_clears_registered_prediction_targets",
+    "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction",
+    "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature"
+  ],
+  "slow_selected": [
+    "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_clears_registered_prediction_targets",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0011603750026552007,
+      "message": "test/test_intra_sentence_layer.py:245: in test_reset_clears_registered_prediction_targets\n    self.assertIsNone(cs._intra_errors.total())\nE   AssertionError: tensor(0.) is not None",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.8709073330028332,
+      "message": "test/test_reconstruction_scope.py:72: in test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction\n    torch.testing.assert_close(model._recon_cost, model._recon_sentence_costs[:, 0])\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 1 / 1 (100.0%)\nE   Greatest absolute difference: 0.0025285964366048574 at index (0,) (up to 1e-05 allowed)\nE   Greatest relative difference: 0.5 at index (0,) (up to 1.3e-06 allowed)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_compile_static_loop.py::test_per_word_body_callable_with_static_signature",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001560829987283796,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compile_static_loop.py', 37, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

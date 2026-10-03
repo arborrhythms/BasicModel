@@ -1,0 +1,312 @@
+[
+  {
+    "path": "data/BasicModel.ckpt",
+    "bytes": 4597846207,
+    "top_keys": [
+      "state_dict",
+      "vocab_extras",
+      "bpe_extras",
+      "structural_extras",
+      "optimizer_state",
+      "training_state",
+      "checkpoint_schema",
+      "optimizer_param_names"
+    ],
+    "relevant": [
+      {
+        "key": ".state_dict.perceptualSpace.synthesis_layer.raw_L",
+        "value": {
+          "shape": [
+            1032,
+            1032
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.perceptualSpace.synthesis_layer.d",
+        "value": {
+          "shape": [
+            1032
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.perceptualSpace.synthesis_layer.raw_U",
+        "value": {
+          "shape": [
+            1032,
+            1032
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.perceptualSpace.synthesis_layer.biasWeight",
+        "value": {
+          "shape": [
+            1,
+            1032
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.perceptualSpace.synthesis_layer.bias",
+        "value": {
+          "shape": [
+            1
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.perceptualSpace.synthesis_layer.var",
+        "value": {
+          "shape": [
+            1
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.perceptualSpace.synthesis_layer.sigma",
+        "value": {
+          "shape": [
+            1
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.perceptualSpace.synthesis_layer.sigma_mean",
+        "value": {
+          "shape": [
+            1
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.perceptualSpace.synthesis_layer.sigma_step",
+        "value": {
+          "shape": []
+        }
+      },
+      {
+        "key": ".state_dict.conceptualSpaces.3.synthesis_layer.raw_L",
+        "value": {
+          "shape": [
+            136,
+            136
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.conceptualSpaces.3.synthesis_layer.d",
+        "value": {
+          "shape": [
+            136
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.conceptualSpaces.3.synthesis_layer.raw_U",
+        "value": {
+          "shape": [
+            136,
+            136
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.conceptualSpaces.3.synthesis_layer.biasWeight",
+        "value": {
+          "shape": [
+            1,
+            136
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.conceptualSpaces.3.synthesis_layer.bias",
+        "value": {
+          "shape": [
+            1
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.conceptualSpaces.3.synthesis_layer.var",
+        "value": {
+          "shape": [
+            1
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.conceptualSpaces.3.synthesis_layer.sigma",
+        "value": {
+          "shape": [
+            1
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.conceptualSpaces.3.synthesis_layer.sigma_mean",
+        "value": {
+          "shape": [
+            1
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.conceptualSpaces.3.synthesis_layer.sigma_step",
+        "value": {
+          "shape": []
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.idea_projection.weight",
+        "value": {
+          "shape": [
+            256,
+            1032
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.idea_projection.bias",
+        "value": {
+          "shape": [
+            256
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.choice_slots.weight",
+        "value": {
+          "shape": [
+            775,
+            256
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.kind_head.weight",
+        "value": {
+          "shape": [
+            3,
+            256
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.kind_head.bias",
+        "value": {
+          "shape": [
+            3
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.rule_head.weight",
+        "value": {
+          "shape": [
+            41,
+            256
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.rule_head.bias",
+        "value": {
+          "shape": [
+            41
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.leaf_decoder.slot_e",
+        "value": {
+          "shape": [
+            256,
+            256
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.leaf_decoder.trunk.weight",
+        "value": {
+          "shape": [
+            256,
+            1032
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.leaf_decoder.trunk.bias",
+        "value": {
+          "shape": [
+            256
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.leaf_decoder.out.weight",
+        "value": {
+          "shape": [
+            512,
+            256
+          ]
+        }
+      },
+      {
+        "key": ".state_dict.symbolSpace.subspace.reverse_chooser.leaf_decoder.out.bias",
+        "value": {
+          "shape": [
+            512
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "path": "data/grammar_wording.ckpt",
+    "bytes": 8644970,
+    "top_keys": [
+      "state_dict",
+      "vocab_extras",
+      "bpe_extras",
+      "structural_extras",
+      "optimizer_state",
+      "training_state",
+      "checkpoint_schema",
+      "optimizer_param_names"
+    ],
+    "relevant": [
+      {
+        "key": ".vocab_extras.ps_percept_extras.hash_map.b'students'",
+        "value": "56"
+      },
+      {
+        "key": ".structural_extras.conceptual_spaces.0.allocator.word_obj_meta.students",
+        "value": "(374, 375, 376)"
+      }
+    ]
+  },
+  {
+    "path": "test/fixtures/item7_byte_columns.pt",
+    "bytes": 85141,
+    "top_keys": [
+      "packed",
+      "single"
+    ],
+    "relevant": []
+  },
+  {
+    "path": "test/fixtures/item7_legacy_definition.pt",
+    "bytes": 9480,
+    "top_keys": [
+      "source",
+      "word",
+      "obj",
+      "meta",
+      "structural"
+    ],
+    "relevant": []
+  }
+]

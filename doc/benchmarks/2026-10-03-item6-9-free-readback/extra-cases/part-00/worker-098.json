@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer"
+  ],
+  "completed": [
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer"
+  ],
+  "slow_selected": [
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07048512500477955,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -190,7 +190,7 @@ def test_aligned_provenance_preserves_prior_bearing_forward_event():
 
 @pytest.mark.slow
 def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
-        tmp_path, monkeypatch):
+        tmp_path, monkeypatch, eager_reading):
     """Exercise the real construction/stem with production boundary widths."""
     import Language
     import Models
@@ -277,7 +277,9 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     # the live graph and retain the gradient/optimizer checks below.
     ps = model.perceptualSpace
     ps._pre_reshape_input = (1, 136)
-    recon = model._reverse_from_S(model._stm_single_S)
+    carrier = model.conceptualSpace.subspace.carrier_like()
+    carrier.set_event(model._stm_single_S.unsqueeze(1))
+    recon = model._reverse_input_surface(carrier).materialize()
     assert recon.shape == (1, 8, 136)
     differentiable.append(recon)
 
@@ -333,8 +335,3 @@ def test_concept_fold_support_roundtrips_with_conceptual_extras():
     cs2 = model2.conceptualSpaces[0]
     cs2.load_vocab_extras(blob)
     assert cs2.concept_fold_support(17) == expected
-
-
-def test_retired_wholespace_taxonomy_writer_is_absent():
-    from Spaces import WholeSpace
-    assert not hasattr(WholeSpace, "insert_meta")

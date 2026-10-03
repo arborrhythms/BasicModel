@@ -50,7 +50,7 @@ from Language import (PrepositionLayer, ContextualBindLayer,
                       TenseLayer, AspectLayer)
 from bind_resolver import Participant
 from surface_tense import normalize_surface
-from Spaces import (WhenRangeEncoding, _WHEN_TENSE_DEFAULT, _WHEN_TENSE_STEP,
+from Spaces import (WhenRangeEncoding, _WHEN_TENSE_STEP,
                     _WHEN_PERIOD)
 
 # --- shared preamble -------------------------------------------------------

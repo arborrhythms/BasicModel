@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+  ],
+  "completed": [
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.3472473329966306,
+      "message": "test/test_grammar_word_learning.py:196: in test_normal_text_reconstruction_updates_the_grammar_chooser\n    assert all(program.leaves.shape[0] >= 5 for program in readings[0])\nE   assert False\nE    +  where False = all(<generator object test_normal_text_reconstruction_updates_the_grammar_chooser.<locals>.<genexpr> at 0x12acaa4d0>)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

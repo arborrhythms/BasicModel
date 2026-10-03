@@ -1,0 +1,20 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_masked_semantic.py",
+    "test/test_dual_towers.py",
+    "test/test_priming_energy.py",
+    "test/test_conceptualize.py",
+    "test/test_relevance_bases.py",
+    "--tb=short"
+  ],
+  "pid": 87199,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 3832598200,
+  "elapsed_seconds": 15.546592166996561,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/field-slow-after-1/output.log"
+}

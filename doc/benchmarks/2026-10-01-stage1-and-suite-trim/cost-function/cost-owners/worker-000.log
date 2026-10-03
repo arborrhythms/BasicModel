@@ -1,0 +1,54 @@
+................................ssssssss...............ss............... [ 44%]
+................ssssss.s..s..ssss.s.s................................F.. [ 88%]
+...............s...                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_kind_preview_and_committed_comparison_agree _______________
+test/test_expectation_kind.py:42: in test_kind_preview_and_committed_comparison_agree
+    cost, _, pending = model.sentence_prediction_cost([3], [source], [True],
+bin/Layers.py:11934: in sentence_prediction_cost
+    errors.squared('roles', pred, target, row=b, category='expectation')
+bin/Layers.py:18049: in squared
+    return self.error(name, (pred-target).square(), target.detach().square(), **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:18030: in error
+    selector = (torch.arange(self.row_mask.numel(), device=error.device) == row)
+                             ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'list' object has no attribute 'numel'
+=============================== warnings summary ===============================
+test/test_subspace_context.py::test_wordspace_last_svo_default_invalid
+test/test_subspace_context.py::test_wordspace_reset_clears_last_svo
+test/test_subspace_context.py::test_last_svo_lives_on_wordspace_not_conceptualspace
+test/test_subspace_context.py::test_codebook_reference_is_immutable
+test/test_subspace_context.py::test_input_space_has_symbolSpace_after_set
+test/test_subspace_context.py::test_output_space_carries_symbolSpace
+test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace
+test/test_output_synthesis.py::test_gate_off_keeps_the_projected_head_and_state_dict
+test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7674: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7674: RuntimeWarning: reconstruction_identity [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-387/cfg0/MM_xor_synth.xml]: input reconstruction is an exact unmasked identity: zero cost carries no learning signal (mask or degrade the input to create one)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7674: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: reconstruction loss zeroed: no D3 (per_word=False) and masked-LM inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_roundtrip.py::test_silent_zero_sites_warn_once
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7674: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13558: UserWarning: PartSpace._embed: input produced 11 tokens but nOutput=10; truncating 1 tokens.
+    return self._embed(upstream_vspace)
+
+test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:13558: UserWarning: PartSpace._embed: input produced 13 tokens but nOutput=8; truncating 5 tokens.
+    return self._embed(upstream_vspace)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_kind.py::test_kind_preview_and_committed_comparison_agree
+1 failed, 137 passed, 25 skipped, 15 warnings in 9.52s

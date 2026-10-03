@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words",
+    "--tb=short"
+  ],
+  "pid": 18238,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2740566608,
+  "elapsed_seconds": 234.8545616670017,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/reconstruction-while-parameterized-before.log"
+}

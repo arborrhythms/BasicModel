@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='utf-8'?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- XOR from located primitive memberships: order-0 field conjunctions,
+       then a learned order-1 sigma positive pole. The lesson file teaches
+       only primitive memberships and one name, never XOR. Reconstruction
+       is best effort from the forward evidence, with no stored input event
+       or stack. Parallel field operators run here; grammar lift/lower do not. -->
+  <architecture>
+    <serial>false</serial>
+    <subsymbolicOrder>2</subsymbolicOrder>
+    <symbolicOrder>1</symbolicOrder>
+    <conceptualPi>true</conceptualPi>
+    <attentionPromotion>true</attentionPromotion>
+    <conceptPoolSize>4</conceptPoolSize>
+    <symbolTower>true</symbolTower>
+    <conceptBinding>aligned</conceptBinding>
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>inline</dataset>
+      <conceptLessons>xor_concept_lessons.json</conceptLessons>
+      <input use="train">00|01|10|11</input>
+      <output use="train">0|1|1|0</output>
+      <input use="validation">00|01|10|11</input>
+      <output use="validation">0|1|1|0</output>
+      <input use="test">00|01|10|11</input>
+      <output use="test">0|1|1|0</output>
+    </data>
+    <training>
+      <autoload>false</autoload>
+      <numEpochs>64</numEpochs>
+      <learningRate>0.03</learningRate>
+      <maskRate>0</maskRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+    </training>
+  </architecture>
+  <InputSpace>
+    <nVectors>16</nVectors>
+    <nDim>16</nDim>
+    <nOutput>16</nOutput>
+  </InputSpace>
+  <PartSpace>
+    <nInput>16</nInput>
+    <nVectors>256</nVectors>
+    <nDim>16</nDim>
+    <nOutput>16</nOutput>
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+    <butterfly>false</butterfly>
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+  </PartSpace>
+  <ConceptualSpace>
+    <nInput>16</nInput>
+    <nVectors>32</nVectors>
+    <nDim>16</nDim>
+    <nOutput>16</nOutput>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+  <WholeSpace>
+    <lexer>word</lexer>
+    <nInput>16</nInput>
+    <nVectors>16</nVectors>
+    <nDim>16</nDim>
+    <nOutput>16</nOutput>
+    <analysis>meronomy</analysis>
+    <digitWholes>false</digitWholes>
+    <divideWithinWhole>false</divideWithinWhole>
+  </WholeSpace>
+  <OutputSpace>
+    <nInput>16</nInput>
+    <nVectors>1</nVectors>
+    <nOutput>1</nOutput>
+    <conceptIds>20001</conceptIds>
+  </OutputSpace>
+</model>

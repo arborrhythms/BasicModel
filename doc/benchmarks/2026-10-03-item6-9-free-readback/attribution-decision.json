@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "counts": {
+    "5": {
+      "passed": 9,
+      "observed": 10
+    },
+    "6": {
+      "passed": 5,
+      "observed": 10
+    }
+  }
+}

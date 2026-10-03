@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.919319166103378,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

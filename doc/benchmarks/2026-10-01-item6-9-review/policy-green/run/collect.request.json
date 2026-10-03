@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_trial_policy_ownership.py",
+    "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight",
+    "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

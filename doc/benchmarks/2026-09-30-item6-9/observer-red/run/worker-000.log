@@ -1,0 +1,10 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_baseline_report_cache_is_not_a_four_row_reconstruction __________
+doc/benchmarks/2026-09-30-item6-9/probe_observer.py:11: in test_baseline_report_cache_is_not_a_four_row_reconstruction
+    assert all(len(row['reconstructions']) == 4 for row in grammar)
+E   assert False
+E    +  where False = all(<generator object test_baseline_report_cache_is_not_a_four_row_reconstruction.<locals>.<genexpr> at 0x10baab140>)
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-09-30-item6-9/probe_observer.py::test_baseline_report_cache_is_not_a_four_row_reconstruction
+1 failed in 0.06s

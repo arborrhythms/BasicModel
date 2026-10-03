@@ -1,0 +1,26 @@
+{
+  "time": "2026-10-02T13:48:04.032145+00:00",
+  "actions": [
+    {
+      "kind": "owned test worker group",
+      "pid": 7657,
+      "pgid": 7657,
+      "signal": "SIGTERM",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-02/worker-000.request.json /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-02/worker-000.json"
+    },
+    {
+      "kind": "owned test worker group",
+      "pid": 7658,
+      "pgid": 7658,
+      "signal": "SIGTERM",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-02/worker-001.request.json /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-02/worker-001.json"
+    },
+    {
+      "kind": "receipt continuation",
+      "pid": 88596,
+      "signal": "SIGKILL",
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full_sweep.py"
+    }
+  ],
+  "reason": "SIGTERM is handled by the nested runner and the old outer continuation resumes; stop dispatch before repairing receipt accounting"
+}

@@ -79,17 +79,6 @@ def _random_bivec(shape, seed=0):
 class TestRawGateRetired(unittest.TestCase):
     """LiftLayer / LowerLayer no longer carry a ``raw_gate`` parameter."""
 
-    def test_lift_layer_no_raw_gate(self):
-        from Layers import LiftLayer
-        layer = LiftLayer(wholeSpace=None, perceptualSpace=None)
-        self.assertFalse(hasattr(layer, 'raw_gate')
-                         and getattr(layer, 'raw_gate') is not None,
-                         "LiftLayer.raw_gate must be retired after the "
-                         "VP-codebook-gate refactor.")
-        param_names = {n for n, _ in layer.named_parameters()}
-        self.assertNotIn('raw_gate', param_names,
-                         "LiftLayer must not register raw_gate as a "
-                         "Parameter.")
 
     def test_lower_layer_no_raw_gate(self):
         from Layers import LowerLayer

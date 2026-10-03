@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mereological.py::test_analyzer_is_the_complement_mirror"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/full-sweep/remaining-01/run/worker-283.recycle.json"
+}

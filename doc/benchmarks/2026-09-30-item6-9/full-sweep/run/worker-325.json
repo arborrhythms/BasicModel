@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_dataset.py::test_split_by_structure_is_disjoint_and_holds_out_deep_problems"
+  ],
+  "completed": [
+    "test/test_math_dataset.py::test_split_by_structure_is_disjoint_and_holds_out_deep_problems"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_math_dataset.py::test_split_by_structure_is_disjoint_and_holds_out_deep_problems",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0032527921721339226,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

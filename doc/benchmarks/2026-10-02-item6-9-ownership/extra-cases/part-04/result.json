@@ -1,0 +1,1300 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+    "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope",
+    "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+    "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+    "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+    "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+    "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+    "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+    "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+    "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+    "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+    "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+    "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+    "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+    "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_words_summary_row_running_mean",
+    "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "test/test_word_store.py::test_leaf_distill_default_off",
+    "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "completed": [
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+    "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+    "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+    "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+    "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+    "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+    "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+    "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+    "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+    "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+    "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+    "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+    "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_words_summary_row_running_mean",
+    "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+    "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+    "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_word_store.py::test_leaf_distill_default_off",
+    "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-002.json"
+      ],
+      "pid": 51224,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 586696072,
+      "elapsed_seconds": 4.733303250002791,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope"
+      ],
+      "completed": [
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0629309159994591,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_seen_bump_and_decay",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00033445800363551825,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_desire_signed_floor",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00020708399824798107,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.5077006250066916,
+          "message": "test/test_relevance_bases.py:90: in test_unconditional_integration_end_to_end\n    assert torch.is_tensor(b) and float(b.max()) > 1.0, (\nE   AssertionError: admitted rows must prime the surface unconditionally\nE   assert (True and 1.0 > 1.0)\nE    +  where True = <function is_tensor at 0x107d2f6a0>(tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]))\nE    +    where <function is_tensor at 0x107d2f6a0> = torch.is_tensor\nE    +  and   1.0 = float(tensor(1.))\nE    +    where tensor(1.) = <built-in method max of Tensor object at 0x13e72b110>()\nE    +      where <built-in method max of Tensor object at 0x13e72b110> = tensor([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\\n         1., 1., 1., 1., 1., 1., 1., ... 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,\\n         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]).max",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.505s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_relevance_bases.py::test_primed_reading_scope",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.000320875013130717,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-001.json"
+      ],
+      "pid": 51223,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 7271274592,
+      "elapsed_seconds": 15.799070916997152,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+      ],
+      "completed": [
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 6.170774333993904,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.029s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.870419667000533,
+          "message": "",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.641s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": true,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-000.json"
+      ],
+      "pid": 51222,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 7067932696,
+      "elapsed_seconds": 21.000844166992465,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+        "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+        "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+        "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+      ],
+      "completed": [
+        "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+        "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+        "test/test_reading_attention.py::test_producer_scope_clears_past_last_word"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.774619666990475,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.781032208993565,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.662654874991858,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": true,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-005.json"
+      ],
+      "pid": 51345,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 3061697728,
+      "elapsed_seconds": 9.428120249998756,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+      ],
+      "completed": [
+        "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.151379707996966,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-006.json"
+      ],
+      "pid": 51354,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1062258536,
+      "elapsed_seconds": 19.558221207989845,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+        "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+        "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+        "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+        "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick"
+      ],
+      "completed": [
+        "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+        "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+        "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+        "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+        "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 12.545682041003602,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5250948750035604,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6668484580004588,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.7073799169884296,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5266898749978282,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-007.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-007.json"
+      ],
+      "pid": 51413,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 640452000,
+      "elapsed_seconds": 4.985541542002466,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-007.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer"
+      ],
+      "completed": [
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.3833088750106981,
+          "message": "",
+          "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+        },
+        {
+          "nodeid": "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.34636141700320877,
+          "message": "",
+          "stdout": "Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-008.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-008.json"
+      ],
+      "pid": 51422,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1198361072,
+      "elapsed_seconds": 77.60296024999116,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-008.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+      ],
+      "completed": [
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 72.42317162499239,
+          "message": "test/test_sentence_compose.py:171: in test_real_packed_ends_train_before_the_next_sentence\n    assert model._sentence_winners[sid].tolist() == [True, False]\nE   assert [False, False] == [True, False]\nE     \nE     At index 0 diff: False != True\nE     Use -v to get more diff",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-009.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-009.json"
+      ],
+      "pid": 51613,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 1302988696,
+      "elapsed_seconds": 8.286582334010745,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-009.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+        "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+        "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+        "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+        "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+        "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+        "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+        "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index"
+      ],
+      "completed": [
+        "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+        "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+        "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+        "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+        "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+        "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+        "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+        "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5845277080079541,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.5522122090042103,
+          "message": "test/test_serial_object_meta.py:145: in test_serial_radix_has_distinct_word_and_local_part_axes\n    assert ie._word_active_mask.sum(dim=1).tolist() == [2, 2, 2, 2]\nE   assert [3, 3, 3, 3] == [2, 2, 2, 2]\nE     \nE     At index 0 diff: 3 != 2\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.2809607910021441,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.5524747499875957,
+          "message": "test/test_serial_object_meta.py:202: in test_partspace_runs_once_per_word_per_pass_not_per_constituent\n    assert local_calls == [\nE   assert [] == [(4, 1, 1024)...1, 1024), ...]\nE     \nE     Right contains 10 more items, first extra item: (4, 1, 1024)\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.27110020800319035,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5437320000055479,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.5390866249945248,
+          "message": "test/test_serial_object_meta.py:269: in test_word_prediction_and_physical_push_share_one_commit_boundary\n    assert pushed[0] == int(commits.sum().item())\nE   assert 0 == 12\nE    +  where 12 = int(12)\nE    +    where 12 = <built-in method item of Tensor object at 0x1284a72a0>()\nE    +      where <built-in method item of Tensor object at 0x1284a72a0> = tensor(12).item\nE    +        where tensor(12) = <built-in method sum of Tensor object at 0x12839b890>()\nE    +          where <built-in method sum of Tensor object at 0x12839b890> = tensor([3, 3, 3, 3]).sum",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.48376358300447464,
+          "message": "test/test_serial_object_meta.py:289: in test_serial_object_meta_off_does_not_build_word_index\n    assert m.inputSpace._word_index_N is None\nE   assert tensor([[ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1]]) is None\nE    +  where tensor([[ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1],\\n        [ 0,  1,  2, -1, -1, -1, -1, -1]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._word_index_N\nE    +    where InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...ing): WhereEncoding()\\n  (when_encoding): WhenStartDurationEncoding()\\n  (answer_record_reader): SentenceRecordReader()\\n).inputSpace",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-010.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-010.json"
+      ],
+      "pid": 51698,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 691553768,
+      "elapsed_seconds": 5.2272412500024075,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-010.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem"
+      ],
+      "completed": [
+        "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.8943251250020694,
+          "message": "test/test_serial_object_meta.py:327: in test_ss_unity_validity_at_stem\n    assert real > 0, \"a live unity must feed the universe branch\"\nE   AssertionError: a live unity must feed the universe branch\nE   assert 0 > 0",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-011.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-011.json"
+      ],
+      "pid": 51710,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 617432528,
+      "elapsed_seconds": 5.46950658300193,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-011.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+      ],
+      "completed": [
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0660361250047572,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.15364275001047645,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.06294008399709128,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.21350212499964982,
+          "message": "test/test_sparse_concept_e2e.py:251: in test_conceptual_sbow_situates_live_sparse_codes\n    assert got, \"SBOW gradient must reach the sparse family values\"\nE   AssertionError: SBOW gradient must reach the sparse family values\nE   assert False",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.1467992090038024,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.3789714579907013,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-012.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-012.json"
+      ],
+      "pid": 51750,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 3358018968,
+      "elapsed_seconds": 10.579395167005714,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-012.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement"
+      ],
+      "completed": [
+        "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 6.151559499994619,
+          "message": "test/test_where_attention_handoff.py:53: in test_mereology_raise_enables_conceptual_refinement\n    assert torch.equal(out1, out2), \"the dark pass-back must be deterministic\"\nE   AssertionError: the dark pass-back must be deterministic\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10aa493a0>(tensor([[[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]]]), tensor([[[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]]]))\nE    +    where <built-in method equal of type object at 0x10aa493a0> = torch.equal",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-013.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-013.json"
+      ],
+      "pid": 51768,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 436749608,
+      "elapsed_seconds": 4.732144624998909,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-013.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_word_store.py::test_reading_promotes_the_batch_words",
+        "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+        "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+        "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+        "test/test_word_store.py::test_words_summary_row_running_mean",
+        "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+        "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+        "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip"
+      ],
+      "completed": [
+        "test/test_word_store.py::test_reading_promotes_the_batch_words",
+        "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+        "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+        "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+        "test/test_word_store.py::test_words_summary_row_running_mean",
+        "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+        "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+        "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_word_store.py::test_reading_promotes_the_batch_words",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.027042125002481043,
+          "message": "test/test_word_store.py:161: in test_reading_promotes_the_batch_words\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store0/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store0/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store0/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.011754709004890174,
+          "message": "test/test_word_store.py:198: in test_one_to_one_recognition_registers_under_words\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store1/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store1/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store1/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.012167915992904454,
+          "message": "test/test_word_store.py:266: in test_percept_extras_ride_the_checkpoint_envelope\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store2/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store2/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store2/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.011925541999517009,
+          "message": "test/test_word_store.py:297: in test_storeless_configs_emit_no_percept_key\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store3/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store3/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store3/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_words_summary_row_running_mean",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.01193054199393373,
+          "message": "test/test_word_store.py:322: in test_words_summary_row_running_mean\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store4/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store4/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store4/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.012445416999980807,
+          "message": "test/test_word_store.py:369: in test_ws_word_whole_registry_resolves_to_rows\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store5/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store5/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store5/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.012033249993692152,
+          "message": "test/test_word_store.py:580: in test_grammar_reverse_ops_from_generate_section\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store6/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store6/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store6/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.011809667004854418,
+          "message": "test/test_word_store.py:599: in test_reverse_chooser_picks_fold_op_by_roundtrip\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store7/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store7/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-863/word_store7/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-003.json"
+      ],
+      "pid": 51284,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1760201104,
+      "elapsed_seconds": 167.1510895419924,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+        "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+        "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+        "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+        "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+        "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state"
+      ],
+      "completed": [
+        "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+        "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+        "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+        "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+        "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+        "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 12.570447000005515,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 13.440968167007668,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.6001058330002706,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 15.966670082998462,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 45.252019332998316,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 34.461316041997634,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 25.216851999997743,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 13.300377750012558,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-004.json"
+      ],
+      "pid": 51333,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 8127012784,
+      "elapsed_seconds": 312.8640858329891,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+      ],
+      "completed": [
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 89.88081950000196,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 12.50%)\r\nbatch = 8 (\u0394=2.775s, 15.62%)\r\nbatch = 16 (\u0394=2.536s, 18.75%)\r\nbatch = 24 (\u0394=2.550s, 21.88%)\r\nbatch = 32 (\u0394=2.596s, 25.00%)\r\nbatch = 40 (\u0394=2.532s, 28.12%)\r\nbatch = 48 (\u0394=2.648s, 31.25%)\r\nbatch = 56 (\u0394=2.636s, 34.38%)\r\nbatch = 64 (\u0394=2.541s, 37.50%)\r\nbatch = 72 (\u0394=2.520s, 40.62%)\r\nbatch = 80 (\u0394=2.657s, 43.75%)\r\nbatch = 88 (\u0394=2.564s, 46.88%)\r\nbatch = 96 (\u0394=2.585s, 50.00%)\r\nbatch = 104 (\u0394=2.609s, 53.12%)\r\nbatch = 112 (\u0394=2.597s, 56.25%)\r\nbatch = 120 (\u0394=2.628s, 59.38%)\r\nbatch = 128 (\u0394=2.754s, 62.50%)\r\nbatch = 136 (\u0394=2.646s, 65.62%)\r\nbatch = 144 (\u0394=2.625s, 68.75%)\r\nbatch = 152 (\u0394=2.696s, 71.88%)\r\nbatch = 160 (\u0394=2.584s, 75.00%)\r\nbatch = 168 (\u0394=2.628s, 78.12%)\r\nbatch = 176 (\u0394=2.723s, 81.25%)\r\nbatch = 184 (\u0394=2.601s, 84.38%)\r\nbatch = 192 (\u0394=2.702s, 87.50%)\r\nbatch = 200 (\u0394=2.605s, 90.62%)\r\nbatch = 208 (\u0394=2.607s, 93.75%)\r\nbatch = 216 (\u0394=2.696s, 96.88%)\r\nbatch = 224 (\u0394=2.608s, 100.00%)\r\nbatch = 232 (\u0394=2.634s, 100.00%)\r\nbatch = 240 (\u0394=2.747s, 100.00%)\r\nbatch = 248 (\u0394=2.612s, 100.00%)\r\nTraining throughput: 32 batches in 84.484s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=4.974s, 100.00%)\r\nTraining throughput: 1 batches in 5.119s; word units 86.5% of 192 words (letters-only 100.0% of 64).\r\n"
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.856547542003682,
+          "message": "",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 2.608s; word units 83.3% of 24 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 208.82220774999587,
+          "message": "test/test_reconstruction_roundtrip.py:484: in test_mm20m_grammar_free_derivation_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.0 == 1.0\nE    +  where 0.0 = RunRecord(config='data/MM_ladder.xml', seed=1860931855, epochs=3, wall_s_per_epoch=65.99333074999595, output_loss=0.04...n ModelLoss and not exposed on the model', 'epoch_times_s': [72.48562849999871, 66.71799199999077, 65.26866950000112]}).exact_match_rate",
+          "stdout": "batch = 0 (warm-up, 12.50%)\r\nbatch = 8 (\u0394=2.666s, 15.62%)\r\nbatch = 16 (\u0394=2.474s, 18.75%)\r\nbatch = 24 (\u0394=2.502s, 21.88%)\r\nbatch = 32 (\u0394=2.360s, 25.00%)\r\nbatch = 40 (\u0394=2.396s, 28.12%)\r\nbatch = 48 (\u0394=2.410s, 31.25%)\r\nbatch = 56 (\u0394=2.509s, 34.38%)\r\nbatch = 64 (\u0394=2.174s, 37.50%)\r\nbatch = 72 (\u0394=2.142s, 40.62%)\r\nbatch = 80 (\u0394=2.159s, 43.75%)\r\nbatch = 88 (\u0394=2.145s, 46.88%)\r\nbatch = 96 (\u0394=2.147s, 50.00%)\r\nbatch = 104 (\u0394=2.337s, 53.12%)\r\nbatch = 112 (\u0394=2.241s, 56.25%)\r\nbatch = 120 (\u0394=2.259s, 59.38%)\r\nbatch = 128 (\u0394=2.187s, 62.50%)\r\nbatch = 136 (\u0394=2.098s, 65.62%)\r\nbatch = 144 (\u0394=2.139s, 68.75%)\r\nbatch = 152 (\u0394=2.206s, 71.88%)\r\nbatch = 160 (\u0394=2.165s, 75.00%)\r\nbatch = 168 (\u0394=2.206s, 78.12%)\r\nbatch = 176 (\u0394=2.199s, 81.25%)\r\nbatch = 184 (\u0394=2.300s, 84.38%)\r\nbatch = 192 (\u0394=2.253s, 87.50%)\r\nbatch = 200 (\u0394=2.121s, 90.62%)\r\nbatch = 208 (\u0394=2.029s, 93.75%)\r\nbatch = 216 (\u0394=2.046s, 96.88%)\r\nbatch = 224 (\u0394=2.074s, 100.00%)\r\nbatch = 232 (\u0394=2.096s, 100.00%)\r\nbatch = 240 (\u0394=2.272s, 100.00%)\r\nbatch = 248 (\u0394=2.345s, 100.00%)\r\nTraining throughput: 32 batches in 72.485s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=2.189s, 12.50%)\r\nbatch = 8 (\u0394=2.048s, 15.62%)\r\nbatch = 16 (\u0394=2.043s, 18.75%)\r\nbatch = 24 (\u0394=2.046s, 21.88%)\r\nbatch = 32 (\u0394=2.248s, 25.00%)\r\nbatch = 40 (\u0394=2.098s, 28.12%)\r\nbatch = 48 (\u0394=2.240s, 31.25%)\r\nbatch = 56 (\u0394=2.212s, 34.38%)\r\nbatch = 64 (\u0394=2.070s, 37.50%)\r\nbatch = 72 (\u0394=2.141s, 40.62%)\r\nbatch = 80 (\u0394=2.083s, 43.75%)\r\nbatch = 88 (\u0394=2.020s, 46.88%)\r\nbatch = 96 (\u0394=2.047s, 50.00%)\r\nbatch = 104 (\u0394=2.071s, 53.12%)\r\nbatch = 112 (\u0394=2.089s, 56.25%)\r\nbatch = 120 (\u0394=2.090s, 59.38%)\r\nbatch = 128 (\u0394=2.153s, 62.50%)\r\nbatch = 136 (\u0394=2.032s, 65.62%)\r\nbatch = 144 (\u0394=2.068s, 68.75%)\r\nbatch = 152 (\u0394=2.025s, 71.88%)\r\nbatch = 160 (\u0394=2.124s, 75.00%)\r\nbatch = 168 (\u0394=2.071s, 78.12%)\r\nbatch = 176 (\u0394=2.063s, 81.25%)\r\nbatch = 184 (\u0394=2.189s, 84.38%)\r\nbatch = 192 (\u0394=2.049s, 87.50%)\r\nbatch = 200 (\u0394=2.023s, 90.62%)\r\nbatch = 208 (\u0394=2.026s, 93.75%)\r\nbatch = 216 (\u0394=2.021s, 96.88%)\r\nbatch = 224 (\u0394=2.011s, 100.00%)\r\nbatch = 232 (\u0394=1.987s, 100.00%)\r\nbatch = 240 (\u0394=2.105s, 100.00%)\r\nbatch = 248 (\u0394=2.037s, 100.00%)\r\nTraining throughput: 32 batches in 66.717s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=2.079s, 12.50%)\r\nbatch = 8 (\u0394=2.018s, 15.62%)\r\nbatch = 16 (\u0394=1.998s, 18.75%)\r\nbatch = 24 (\u0394=2.009s, 21.88%)\r\nbatch = 32 (\u0394=2.070s, 25.00%)\r\nbatch = 40 (\u0394=2.137s, 28.12%)\r\nbatch = 48 (\u0394=2.023s, 31.25%)\r\nbatch = 56 (\u0394=2.033s, 34.38%)\r\nbatch = 64 (\u0394=2.008s, 37.50%)\r\nbatch = 72 (\u0394=2.005s, 40.62%)\r\nbatch = 80 (\u0394=2.040s, 43.75%)\r\nbatch = 88 (\u0394=2.036s, 46.88%)\r\nbatch = 96 (\u0394=2.184s, 50.00%)\r\nbatch = 104 (\u0394=2.021s, 53.12%)\r\nbatch = 112 (\u0394=2.002s, 56.25%)\r\nbatch = 120 (\u0394=2.010s, 59.38%)\r\nbatch = 128 (\u0394=2.032s, 62.50%)\r\nbatch = 136 (\u0394=2.027s, 65.62%)\r\nbatch = 144 (\u0394=2.061s, 68.75%)\r\nbatch = 152 (\u0394=2.113s, 71.88%)\r\nbatch = 160 (\u0394=2.019s, 75.00%)\r\nbatch = 168 (\u0394=2.044s, 78.12%)\r\nbatch = 176 (\u0394=2.056s, 81.25%)\r\nbatch = 184 (\u0394=2.018s, 84.38%)\r\nbatch = 192 (\u0394=1.990s, 87.50%)\r\nbatch = 200 (\u0394=2.002s, 90.62%)\r\nbatch = 208 (\u0394=2.135s, 93.75%)\r\nbatch = 216 (\u0394=2.033s, 96.88%)\r\nbatch = 224 (\u0394=2.044s, 100.00%)\r\nbatch = 232 (\u0394=2.015s, 100.00%)\r\nbatch = 240 (\u0394=2.005s, 100.00%)\r\nbatch = 248 (\u0394=2.002s, 100.00%)\r\nTraining throughput: 32 batches in 65.268s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=3.962s, 100.00%)\r\nTraining throughput: 1 batches in 4.097s; word units 86.5% of 192 words (letters-only 100.0% of 64).\r\n"
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 7.418898874995648,
+          "message": "",
+          "stdout": "batch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.645s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.627s, 100.00%)\r\nTraining throughput: 1 batches in 0.576s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.579s, 100.00%)\r\nTraining throughput: 1 batches in 0.575s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.584s, 100.00%)\r\nTraining throughput: 1 batches in 0.499s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": true,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-014.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-014.json"
+      ],
+      "pid": 51833,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2135247608,
+      "elapsed_seconds": 166.64705379199586,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-014.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_word_store.py::test_leaf_distill_default_off",
+        "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+        "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+        "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+        "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+        "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+      ],
+      "completed": [
+        "test/test_word_store.py::test_leaf_distill_default_off",
+        "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+        "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+        "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+        "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+        "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_word_store.py::test_leaf_distill_default_off",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.03295849999994971,
+          "message": "test/test_word_store.py:630: in test_leaf_distill_default_off\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store0/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store0/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store0/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.014049959005205892,
+          "message": "test/test_word_store.py:661: in test_leaf_distill_trains_root_toward_leaves\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store1/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store1/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store1/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.012971832999028265,
+          "message": "test/test_word_store.py:697: in test_percept_concept_reverse_index_and_row\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store2/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store2/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store2/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.01300062499649357,
+          "message": "test/test_word_store.py:730: in test_concept_row_content_lights_up_the_resolved_row\n    m = _build(tmp_path_factory)\n        ^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_word_store.py:135: in _build\n    init_config(path=p, defaults_path=_DEFAULTS)\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store3/MM_word_store_meronomy.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store3/MM_word_store_meronomy.xml:193: element chunkPromotionThreshold: Schemas validity error : Element 'chunkPromotionThreshold': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-864/word_store3/MM_word_store_meronomy.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00014662501052953303,
+          "message": "test/test_word_store.py:759: in test_concept_index_read_sizes_inventory_by_explicit_nvectors\n    with open(cfg) as f:\n         ^^^^^^^^^\nE   FileNotFoundError: [Errno 2] No such file or directory: '/Users/arogers/github/WikiOracle/basicmodel/data/matrix/MM_20M_grammar_wordstore.xml'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 162.07880987499084,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 12.50%)\r\nbatch = 8 (\u0394=2.666s, 15.62%)\r\nbatch = 16 (\u0394=2.502s, 18.75%)\r\nbatch = 24 (\u0394=2.508s, 21.88%)\r\nbatch = 32 (\u0394=2.625s, 25.00%)\r\nbatch = 40 (\u0394=2.545s, 28.12%)\r\nbatch = 48 (\u0394=2.623s, 31.25%)\r\nbatch = 56 (\u0394=2.491s, 34.38%)\r\nbatch = 64 (\u0394=2.508s, 37.50%)\r\nbatch = 72 (\u0394=2.633s, 40.62%)\r\nbatch = 80 (\u0394=2.534s, 43.75%)\r\nbatch = 88 (\u0394=2.509s, 46.88%)\r\nbatch = 96 (\u0394=2.605s, 50.00%)\r\nbatch = 104 (\u0394=2.610s, 53.12%)\r\nbatch = 112 (\u0394=2.604s, 56.25%)\r\nbatch = 120 (\u0394=2.648s, 59.38%)\r\nbatch = 128 (\u0394=2.456s, 62.50%)\r\nbatch = 136 (\u0394=2.477s, 65.62%)\r\nbatch = 144 (\u0394=2.550s, 68.75%)\r\nbatch = 152 (\u0394=2.480s, 71.88%)\r\nbatch = 160 (\u0394=2.535s, 75.00%)\r\nbatch = 168 (\u0394=2.762s, 78.12%)\r\nbatch = 176 (\u0394=2.596s, 81.25%)\r\nbatch = 184 (\u0394=2.506s, 84.38%)\r\nbatch = 192 (\u0394=2.624s, 87.50%)\r\nbatch = 200 (\u0394=2.445s, 90.62%)\r\nbatch = 208 (\u0394=2.486s, 93.75%)\r\nbatch = 216 (\u0394=2.570s, 96.88%)\r\nbatch = 224 (\u0394=2.507s, 100.00%)\r\nbatch = 232 (\u0394=2.471s, 100.00%)\r\nbatch = 240 (\u0394=2.579s, 100.00%)\r\nbatch = 248 (\u0394=2.522s, 100.00%)\r\nTraining throughput: 32 batches in 82.235s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=2.444s, 12.50%)\r\nbatch = 8 (\u0394=2.534s, 15.62%)\r\nbatch = 16 (\u0394=2.522s, 18.75%)\r\nbatch = 24 (\u0394=2.439s, 21.88%)\r\nbatch = 32 (\u0394=2.529s, 25.00%)\r\nbatch = 40 (\u0394=2.439s, 28.12%)\r\nbatch = 48 (\u0394=2.460s, 31.25%)\r\nbatch = 56 (\u0394=2.558s, 34.38%)\r\nbatch = 64 (\u0394=2.443s, 37.50%)\r\nbatch = 72 (\u0394=2.473s, 40.62%)\r\nbatch = 80 (\u0394=2.546s, 43.75%)\r\nbatch = 88 (\u0394=2.449s, 46.88%)\r\nbatch = 96 (\u0394=2.469s, 50.00%)\r\nbatch = 104 (\u0394=2.553s, 53.12%)\r\nbatch = 112 (\u0394=2.516s, 56.25%)\r\nbatch = 120 (\u0394=2.536s, 59.38%)\r\nbatch = 128 (\u0394=2.451s, 62.50%)\r\nbatch = 136 (\u0394=2.460s, 65.62%)\r\nbatch = 144 (\u0394=2.583s, 68.75%)\r\nbatch = 152 (\u0394=2.435s, 71.88%)\r\nbatch = 160 (\u0394=2.462s, 75.00%)\r\nbatch = 168 (\u0394=2.620s, 78.12%)\r\nbatch = 176 (\u0394=2.487s, 81.25%)\r\nbatch = 184 (\u0394=2.443s, 84.38%)\r\nbatch = 192 (\u0394=2.526s, 87.50%)\r\nbatch = 200 (\u0394=2.438s, 90.62%)\r\nbatch = 208 (\u0394=2.431s, 93.75%)\r\nbatch = 216 (\u0394=2.501s, 96.88%)\r\nbatch = 224 (\u0394=2.421s, 100.00%)\r\nbatch = 232 (\u0394=2.581s, 100.00%)\r\nbatch = 240 (\u0394=2.340s, 100.00%)\r\nbatch = 248 (\u0394=2.483s, 100.00%)\r\nTraining throughput: 32 batches in 79.569s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-015.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-015.json"
+      ],
+      "pid": 52320,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 3471691256,
+      "elapsed_seconds": 10.286857292012428,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/worker-015.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+      ],
+      "completed": [
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.637710625000182,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 3,
+    "worker_seconds": 1800,
+    "suite_seconds": 21600,
+    "batch_size": 8,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04",
+  "elapsed_seconds": 343.2362068329967,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 13210972472,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/collect.json"
+    ],
+    "pid": 51191,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431129824,
+    "elapsed_seconds": 3.6662670410005376,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/extra-cases/part-04/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+        "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+        "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+        "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope",
+        "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+        "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+        "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+        "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+        "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+        "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+        "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+        "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+        "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+        "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+        "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+        "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+        "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+        "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+        "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+        "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+        "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+        "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+        "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+        "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+        "test/test_word_store.py::test_reading_promotes_the_batch_words",
+        "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+        "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+        "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+        "test/test_word_store.py::test_words_summary_row_running_mean",
+        "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+        "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+        "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+        "test/test_word_store.py::test_leaf_distill_default_off",
+        "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+        "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+        "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+        "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+        "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+        "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+        "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+        "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+        "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+        "test/test_relevance_bases.py::test_seen_bump_and_decay",
+        "test/test_relevance_bases.py::test_desire_signed_floor",
+        "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+        "test/test_relevance_bases.py::test_primed_reading_scope",
+        "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+        "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+        "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+        "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+        "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+        "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+        "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+        "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+        "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+        "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+        "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+        "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+        "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_contribution_is_zero",
+        "test/test_rule_gate_isolates_side_effects.py::test_false_gate_preserves_stm_buffer",
+        "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+        "test/test_serial_object_meta.py::test_serial_object_meta_stamps_and_word_index_device_tensors",
+        "test/test_serial_object_meta.py::test_serial_radix_has_distinct_word_and_local_part_axes",
+        "test/test_serial_object_meta.py::test_serial_ws_analysis_view_is_fixed_width_and_compact",
+        "test/test_serial_object_meta.py::test_partspace_runs_once_per_word_per_pass_not_per_constituent",
+        "test/test_serial_object_meta.py::test_outer_word_cap_rejects_instead_of_truncating",
+        "test/test_serial_object_meta.py::test_serial_commit_gate_fires_once_per_active_word",
+        "test/test_serial_object_meta.py::test_word_prediction_and_physical_push_share_one_commit_boundary",
+        "test/test_serial_object_meta.py::test_serial_object_meta_off_does_not_build_word_index",
+        "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+        "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+        "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+        "test/test_sparse_concept_e2e.py::test_conceptual_sbow_situates_live_sparse_codes",
+        "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+        "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+        "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+        "test/test_word_store.py::test_reading_promotes_the_batch_words",
+        "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+        "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+        "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+        "test/test_word_store.py::test_words_summary_row_running_mean",
+        "test/test_word_store.py::test_ws_word_whole_registry_resolves_to_rows",
+        "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+        "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+        "test/test_word_store.py::test_leaf_distill_default_off",
+        "test/test_word_store.py::test_leaf_distill_trains_root_toward_leaves",
+        "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+        "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+        "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+        "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+      ],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

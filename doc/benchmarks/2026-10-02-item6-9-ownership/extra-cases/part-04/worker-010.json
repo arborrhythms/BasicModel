@@ -1,0 +1,26 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem"
+  ],
+  "completed": [
+    "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem"
+  ],
+  "slow_selected": [
+    "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_serial_object_meta.py::test_ss_unity_validity_at_stem",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.8943251250020694,
+      "message": "test/test_serial_object_meta.py:327: in test_ss_unity_validity_at_stem\n    assert real > 0, \"a live unity must feed the universe branch\"\nE   AssertionError: a live unity must feed the universe branch\nE   assert 0 > 0",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

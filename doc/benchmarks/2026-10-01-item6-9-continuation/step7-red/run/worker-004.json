@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative"
+  ],
+  "completed": [
+    "test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.005486541998834582,
+      "message": "test/test_inverse_unary_exclusion.py:63: in test_exploration_forces_only_a_round_with_a_legal_alternative\n    assert exploit['used'].tolist() == [2]\nE   assert [6] == [2]\nE     \nE     At index 0 diff: 6 != 2\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,122 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -11482,6 +11482,8 @@
+         """
+         self._reading_word_percepts = None
+         self._reading_word_extents = None
++        for name in ('rows', 'orders', 'atoms'):
++            setattr(self.inputSpace, '_ar_grammar_object_' + name, None)
+         if self._aligned_serial_word_mode():
+             return  # the canonical word boundary already calls interpret
+         ps, ws, owner = self.perceptualSpace, self.wholeSpaces[0], self._concept_owner()
+@@ -11545,7 +11547,7 @@
+         self._stage_reading_grammar_references(grammar_words, fi)
+ 
+     def _stage_reading_grammar_references(self, words, percepts):
+-        """Stage the admitted word's OBJECT reference for every serial binding.
++        """Stage only the mixing grammar's admitted OBJECT leaves.
+ 
+         Reading already admitted these identities. Resolve their physical
+         rows once, at the eager boundary; grammar receives full codes without
+@@ -11558,8 +11560,7 @@
+         B, W = active.shape
+         owner = self._concept_owner()
+         rows = torch.full_like(active, -1, dtype=torch.long)
+-        word_ids, object_ids = rows.clone(), rows.clone()
+-        word_orders, object_orders = rows.clone(), rows.clone()
++        object_orders = rows.clone()
+         offsets = getattr(isp, '_ar_word_part_offsets', None)
+         texts = percepts.get('word_texts')
+         word_major = torch.is_tensor(offsets) and offsets.ndim == 3 and texts is not None
+@@ -11568,8 +11569,6 @@
+         loop_spans = (loop_spans.detach().cpu().tolist()
+                       if torch.is_tensor(loop_spans) else None)
+         active_host = active.detach().cpu().tolist()
+-        anchors = getattr(self.languageSpace, '_surface_anchors', {})
+-        forms = isp._ar_word_lexical_forms
+         for b, lo, hi, form, native_last, word_id, object_id in words:
+             if word_major:
+                 columns = [p for p in range(W) if active_host[b][p]
+@@ -11589,35 +11588,15 @@
+             if row is None:
+                 continue
+             rows[b, p] = int(row)
+-            word_ids[b, p], object_ids[b, p] = int(word_id), int(object_id)
+-            word_orders[b, p] = int(owner._concept_source_order(word_id))
+             object_orders[b, p] = int(owner._concept_source_order(object_id))
+-            if int(row) not in forms:
+-                anchor = anchors.get(form.casefold())
+-                forms[int(row)] = anchor if isinstance(anchor, str) else None
+-        isp._ar_word_concept_rows = rows
+-        isp._ar_word_concept_ids = word_ids
+-        isp._ar_word_concept_orders = word_orders
+-        isp._ar_word_object_rows = rows.clone()
+-        isp._ar_word_object_ids = object_ids
+-        isp._ar_word_object_orders = object_orders
+-        bank_width = max(W, int(getattr(self, 'serial_word_capacity', 0) or 0),
+-            max(tuple(getattr(self, 'serial_word_buckets', ()) or (0,))))
+-        bank_rows = rows.new_full((B, 2 * bank_width), -1)
+-        bank_rows[:, :W] = rows
+-        bank_rows[:, bank_width:bank_width + W] = rows
+-        atoms = owner.similarity_codebook.lookup_rows(bank_rows.clamp_min(0))
+-        atoms = atoms * bank_rows.ge(0)[..., None].to(atoms.dtype)
+-        isp._ar_concept_lookup_rows = bank_rows
+-        isp._ar_concept_lookup_atoms = atoms
+-        isp._ar_word_concept_atoms = atoms[:, :W].clone()
+-        isp._ar_word_object_atoms = atoms[:, bank_width:bank_width + W].clone()
+-        isp._finalize_sentence_word_layout(active)
+-        sentence_ids = torch.full_like(bank_rows, -1)
+-        sentence_ids[:, :W] = isp._packed_sentence_ids
+-        sentence_ids[:, bank_width:bank_width + W] = isp._packed_sentence_ids
+-        isp._ar_concept_lookup_sentence_ids = torch.where(
+-            bank_rows >= 0, sentence_ids, torch.full_like(sentence_ids, -1))
++        atoms = owner.similarity_codebook.lookup_rows(rows.clamp_min(0))
++        atoms = atoms * rows.ge(0)[..., None].to(atoms.dtype)
++        # These references select the grammar's numerical leaves. They do
++        # not publish native word identities, lexical roles or evidence in
++        # a binding whose symbolic reading has not supplied those products.
++        isp._ar_grammar_object_rows = rows
++        isp._ar_grammar_object_orders = object_orders
++        isp._ar_grammar_object_atoms = atoms
+ 
+     def _publish_reading_symbols(self, concept_sub):
+         """Publish the native word evidence through its concept identities."""
+@@ -12229,6 +12208,11 @@
+         object_atoms = getattr(isp, "_ar_word_object_atoms", None)
+         object_rows = getattr(isp, "_ar_word_object_rows", None)
+         rows = self._word_symbol_rows()
++        grammar_rows = getattr(isp, '_ar_grammar_object_rows', None)
++        grammar_atoms = getattr(isp, '_ar_grammar_object_atoms', None)
++        if torch.is_tensor(grammar_rows) and torch.is_tensor(grammar_atoms):
++            concept_atoms, rows = grammar_atoms, grammar_rows
++            object_atoms = object_rows = None
+         reference = like.new_zeros(B, W, D)
+         if not (torch.is_tensor(concept_atoms) and concept_atoms.dim() == 3
+                 and torch.is_tensor(rows)):
+@@ -21055,6 +21039,9 @@
+         object_rows = getattr(isp, '_ar_word_object_rows', None)
+         object_orders = getattr(isp, '_ar_word_object_orders', None)
+         object_atoms = getattr(isp, '_ar_word_object_atoms', None)
++        grammar_rows = getattr(isp, '_ar_grammar_object_rows', None)
++        grammar_orders = getattr(isp, '_ar_grammar_object_orders', None)
++        grammar_atoms = getattr(isp, '_ar_grammar_object_atoms', None)
+         lookup_rows = getattr(isp, '_ar_concept_lookup_rows', None)
+         lookup_atoms = getattr(isp, '_ar_concept_lookup_atoms', None)
+         word_property_weights = getattr(ws, '_staged_word_primitive_counts', None)
+@@ -21713,12 +21700,10 @@
+                     row = torch.full((B,), -1, device=event.device, dtype=torch.long)
+                 if not torch.is_tensor(activation):
+                     activation = event.new_ones(B)
+-                staged_row = concept_rows[:, p]
+-                row = torch.where(staged_row >= 0, staged_row, row)
+-                orders = torch.where((staged_row >= 0)[:, None],
+-                    concept_orders[:, p:p + 1].expand_as(orders), orders)
+-                obj, obj_order = object_rows[:, p], object_orders[:, p]
+-                atom = (object_atoms[:, p] if torch.is_tensor(object_atoms)
++                obj = (grammar_rows[:, p] if torch.is_tensor(grammar_rows) else object_rows[:, p])
++                obj_order = (grammar_orders[:, p] if torch.is_tensor(grammar_orders) else object_orders[:, p])
++                atoms = grammar_atoms if torch.is_tensor(grammar_atoms) else object_atoms
++                atom = (atoms[:, p] if torch.is_tensor(atoms)
+                         else event.new_zeros(B, concept_dim))
+                 prior = self._per_word_contributions[p]
+                 prior = torch.zeros_like(event[:, 0]) if prior is None else prior

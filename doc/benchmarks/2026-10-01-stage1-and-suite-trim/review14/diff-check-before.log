@@ -1,0 +1,21 @@
+bin/Legacy.py:1054: trailing whitespace.
++            # the wrapper layers are revivable from 
+bin/Queries.py:2231: new blank line at EOF.
+bin/space_carrier.py:120: new blank line at EOF.
+test/test_abstraction_order_canonical.py:314: new blank line at EOF.
+test/test_aligned_fold_binding.py:338: new blank line at EOF.
+test/test_compose_pair_driver.py:151: new blank line at EOF.
+test/test_explicit_ordered_stm.py:76: new blank line at EOF.
+test/test_mereology_raise.py:97: new blank line at EOF.
+test/test_meronomy_laws.py:157: new blank line at EOF.
+test/test_perceptual_chunking.py:20: new blank line at EOF.
+test/test_property_tiling.py:174: new blank line at EOF.
+test/test_relative_rule_detection_collapsed.py:95: new blank line at EOF.
+test/test_relative_sentence_codebook_insertion.py:17: new blank line at EOF.
+test/test_surface_schema.py:48: new blank line at EOF.
+test/test_thought_checkpoint_credit.py:31: new blank line at EOF.
+test/test_tied_vectors_compile.py:55: new blank line at EOF.
+test/test_two_codebook_meta_taxonomy.py:104: new blank line at EOF.
+test/test_two_truth_stores.py:195: new blank line at EOF.
+test/test_unified_lexicon_codebook.py:938: new blank line at EOF.
+test/test_word_buffer_flush.py:161: new blank line at EOF.

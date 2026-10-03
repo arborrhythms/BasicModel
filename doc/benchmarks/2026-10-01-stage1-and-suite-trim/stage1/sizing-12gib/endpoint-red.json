@@ -1,0 +1,16 @@
+{
+  "outcome": {
+    "training_batches": 3,
+    "evaluation_batches": 0,
+    "last_training_trials": {},
+    "last_batch": {
+      "train": true
+    },
+    "grammar_reconstructions": [],
+    "predictions": [],
+    "targets": [],
+    "inputs": [],
+    "seconds": 0.00011791699944296852
+  },
+  "evaluations": []
+}

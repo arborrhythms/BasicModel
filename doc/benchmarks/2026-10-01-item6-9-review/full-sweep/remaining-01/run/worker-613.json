@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax"
+  ],
+  "completed": [
+    "test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax"
+  ],
+  "slow_selected": [
+    "test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.60840009409003e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_thinking_training.py', 190, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

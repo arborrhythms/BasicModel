@@ -8,34 +8,44 @@ object concepts, their index and learned taxonomy.
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
-### Completed input reconstruction (September 16 migration)
+### Input reconstruction (October 3, item 6.9 §§21–22)
 
-The input's identified `<compose>` derivation owns its reverse choices.
-Reconstruction runs after ending and executes only operators selected by live
-rows. Sigma/Pi undo their learned affine map, including bias, and use an
-occurrence-specific operand in the corresponding chart when available. Their
-balanced split without a witness establishes recomposition, not original-child
-fidelity. Verb reversal uses the actual spectral transform; adverb reversal
-uses eight bounded corrections with its own shared edit weights
-([Language.py](../bin/Language.py)).
+The input's recorded rule sequence and operand positions determine the
+inverse traversal. Reconstruction is free read-back from the concluded root:
+no retained operand and no witness offsets. Both binary operands are found
+by bounded search over the sentence's primed concept bank, including when
+the operator has an analytic balanced split. Candidate word scoring is
+signed activation × cosine × priming, shared with the reconstruction gate.
+Hard retrieval addresses are detached; candidate codes and the soft search
+gradient remain live. `reconstructionBasisLimit` bounds candidates per side;
+no candidate contributes no reconstruction term and is counted.
 
-Lossy folds use the actual selected compose kernel over a masked, detached
-per-invocation snapshot. `reconstructionBasisLimit` bounds candidates per side
-(default 16; at most 256 pairs), independently of word and STM capacities.
-Insufficient candidates or an unsupported inverse report incompleteness.
-Inactive rows and candidates are masked before nonlinear work so their unused
-values cannot contaminate active gradients
-([Language.py](../bin/Language.py)).
+Input realization does not enter the answer's free generate chart.
+`Understanding` owns the result; the answer consumes its detached record.
+[GradientFlow](GradientFlow.md) lists its fields, ownership and trained cost.
 
-Input realization uses the recovered ideas and shared numerical inverse chain;
-it does not enter the free `<generate>` chart. `Understanding` owns the result,
-so later staging and scoring targets cannot change it
-([Models.py](../bin/Models.py),
-[Understanding.py](../bin/Understanding.py)). Output keeps its own
-generate choices, state and budget; it receives no reconstruction-only operand
-witnesses or basis. The further parameter-catalog and query-controller changes
-remain ordered separately in the
-[integrated specification](plans/2026-09-15-next-sentence-as-the-production-objective.md#10-consolidated-implementation-and-verification-order).
+### Product, mean and the operator catalogue
+
+All three faces use each operator's own numerical binding. Reverse and
+generate search a supplied concept basis through the compose kernel; absent
+a legal pair they fail loudly. Conjunction of the same native reference is
+that reference, whereas coincident codes at different addresses still bind.
+The code parameters have no norm constraint.
+
+| Name | Compose / forward | Generate | Reverse |
+|---|---|---|---|
+| `conjunction` | `norm(x) * norm(y) * unit(x*y)`; repeated reference → `x` | Search a pair through product binding | Same search |
+| `disjunction` | `(x+y)/2` | Search a pair through mean binding | Same search |
+| `not` | `-x` | `-x` | `-x` |
+| `min` | Coordinate minimum | Search a pair through minimum | Same search |
+| `max` | Coordinate maximum | Search a pair through maximum | Same search |
+
+`complete.grammar`, XOR_grammar and MM_grammar select product conjunction
+and mean disjunction. No current grammar file selects `min` or `max`; both
+are live catalogue entries with tests, available to later grammars. A mean-only
+or sum-only derivation remains additive and cannot supply an affine XOR
+feature. Reference identity, operator choice and inverse quality are separate
+from the unchanged class and reconstruction acceptance bars.
 
 ### Concept composition
 
@@ -57,21 +67,10 @@ no operator codebook, terminal emitter, word rows or META taxonomy.
 
 > **2026-05-29 deltas:**
 >
-> - `unreduce()` passes the space-role-local Basis (Codebook) to binary
->   GrammarLayer reverses as `basis=space_role_basis` (replacing the prior
->   raw-`W` form). `UnionLayer.reverse` / `IntersectionLayer.reverse`
->   **and now `ConjunctionLayer.reverse` / `DisjunctionLayer.reverse`**
->   extract `W = basis.getW()` internally and dispatch to
->   `Ops.disjunctionReverse` / `Ops.conjunctionReverse` — the codebook
->   recommender recovers the operand pair exactly on a discrete
->   vocabulary (the serial XOR reconstruction path); without a basis they
->   keep the lossy `(parent, parent)` fallback. The genuinely
->   non-invertible legacy predicate folds (`isEqual` / `isPart`) and
->   structural thought faces with no faithful inverse
->   declare `invertible = False` and are not invertible by design (a
->   truth/predicate value does not retain its operands). Layers that
->   don't accept the `basis` kwarg yet are handled by a `TypeError`
->   fallback. No back-ref is stored on the layer.
+> - `unreduce()` passes the space-role-local Basis to binary reverses.
+>   The lattice `UnionLayer` / `IntersectionLayer` use `Ops.unionReverse`
+>   and `Ops.intersectionReverse`. Product/mean and min/max use bounded
+>   search through their own kernels. No-basis lossy inverses fail loudly.
 > - `MetaLayer` was renamed to `SymbolizeLayer` (no semantic change).
 > - Word-mode parse appends a `\x00` null sentinel after the words
 >   slab for explicit end-of-sequence on the forward path.
@@ -264,8 +263,8 @@ declares any of them.
 The per-operator contracts, as implemented (2026-07-14; every op's
 `forward` is what `<compose>` fires and its `reverse` is what
 `<generate>` fires — see the section pairing above). "Recommender"
-means the basis-threaded codebook walk (`Ops.conjunctionReverse` /
-`Ops.disjunctionReverse` $\to$ `Ops._binary_op_recommend`); "snap"
+means the basis-threaded codebook walk (`Ops.intersectionReverse` /
+`Ops.unionReverse` $\to$ `Ops._binary_op_recommend`); "snap"
 means the op-respecting dot-metric word snap
 (`snap=True` $\to$ `Ops.word_pair_snap`). Ops with no
 faithful inverse raise (`raise_no_inverse`, the fail-loud contract) —
@@ -273,25 +272,25 @@ fabricating a split would corrupt the reconstruction.
 
 | op (`rule_name`) | arity | role | forward | reverse |
 |---|---|---|---|---|
-| `not` | 1 | CS | pole swap | self-inverse (`forward(y)`) |
+| `not` | 1 | CS | sign negation | self-inverse (`forward(y)`) |
 | `non` | 1 | CS | non-affirming complement | self-inverse |
 | `intersection` | 2 | CS | `Ops.intersection` (RadMin / lattice min; ADJ mask, meet) | recommender w/ basis; `snap=True` $\to$ MEET-aware snap (priming-led — the meet is lossy); no basis $\to$ raise |
 | `union` | 2 | CS | `Ops.union` (RadMax / lattice max, OR-region, join) | recommender w/ basis; `snap=True` $\to$ JOIN snap (fit-determined); no basis $\to$ raise |
 | `chunk` | 2 | CS | additive `left + right` (PS-style chunking); in `ladder.grammar` a reducer candidate licensed only on a pair the analysis tiling places in one coarser whole (doc/plans/2026-09-10-meronomy-fold-ladder.md, Phase 2b); an admitted chunk is a concept over its member concepts | PEEL w/ basis: best-cosine row `x1`, exact residual `(x1, parent − x1)`; empty-set decomposition `(parent, 0)` without |
 | `sum` | 2 | CS | element-wise `left + right` | empty-set decomposition `(parent, 0)` — recomposes exactly |
 | `product` | 2 | CS | element-wise `left * right` | **raise** (zeros annihilate; many-to-one) |
-| `lift` | 2 | CS | union fold within the current order (internal SigmaLayer; optional gate); order is raised by symbolization, not by this fold (11c) | `Ops.liftReverseAll` w/ basis ($\to$ disjunctionReverse); balanced `_sigma.generate` split without |
+| `lift` | 2 | CS | union fold within the current order (internal SigmaLayer; optional gate); order is raised by symbolization, not by this fold (11c) | `Ops.liftReverseAll` w/ basis ($\to$ unionReverse); balanced `_sigma.generate` split without |
 | `verb` | 2 | CS | sparse verb-conditioned spectral operator | requires `verb_what` (`reverse_required_kwargs`); returns `(unapply_verb(parent, verb_what), verb_what)` |
 | `adverb` | 2 | CS | VP eigenmodifier (`apply_adverb`) | **not dispatchable** (`reverse_dispatchable = False`; lossy) |
-| `lower` | 2 | CS | intersection fold within the current order (internal PiLayer; DET); selects a particular under 11c's reference orders | `Ops.lowerReverseAll` w/ basis ($\to$ conjunctionReverse); `_pi.generate` without |
+| `lower` | 2 | CS | intersection fold within the current order (internal PiLayer; DET); selects a particular under 11c's reference orders | `Ops.lowerReverseAll` w/ basis ($\to$ intersectionReverse); `_pi.generate` without |
 | `preposition` | 2 | CS | `.where`-relation refinement of NP/VP | `(x, x)` with the `.where` rotation undone (content-exact, marker-lossy) |
 | `bind` | 2 | CS | contextual missing/controlled-NP resolution | **raise** (context not preserved in the parent) |
 | `tense` | 1 | CS | phase rotation of the `.when` band (`shift_time(+delta)`) | exact inverse rotation (`shift_time(-delta)`) |
 | `aspect` | 1 | CS | identity (rewrite() planned; not a live rule) | identity |
 | `morphology` | 1 | CS | surface inflection $\to$ `.when` (tense/aspect feature ops) | analyzes features, undoes aspect ops in reverse order, then tense |
 | `symbolize` | 2 | CS | pure `(left + right) / 2` composition; no word/object admission | `(parent/2, parent/2)` numerical split; no store lookup |
-| `conjunction` | 2 | SS | `Ops.intersection` monotonic (scalar activation min; RadMin under `<radialStmReduce>`) | recommender (`monotonic=True`, radial-aware); `snap=True` $\to$ MEET-aware snap; no basis $\to$ raise |
-| `disjunction` | 2 | SS | `Ops.union` monotonic (scalar activation max; RadMax under `<radialStmReduce>`) | recommender; `snap=True` $\to$ JOIN snap; no basis $\to$ raise |
+| `conjunction` | 2 | SS | product binding; same reference is identity | reverse and generate: bounded pair search through compose; no basis → raise |
+| `disjunction` | 2 | SS | mean `(x+y)/2` | reverse and generate: bounded pair search through compose; no basis → raise |
 | `exist` | 1 | SS | identity (EXISTS roots the minimal event) | identity |
 | `isEqual` | 2 | SS | legacy identity-assertion truth bivector | **raise** (max-fold not bijective) |
 | `isPart` | 2 | SS | legacy parthood-assertion truth bivector | **raise** (A's identity not preserved) |
@@ -300,8 +299,7 @@ fabricating a split would corrupt the reconstruction.
 | `equal` | 2 | CS | geometric mutual-parthood on concept bivectors (Layers.EqualLayer) | lossy `(parent, parent)` pseudo-inverse |
 | `query` | 2 | CS | legacy geometric parthood predicate | **raise** (two operands collapse to a truth value) |
 
-Notes. (1) The binary lattice reverses (union/intersection,
-conjunction/disjunction) accept `left_rows` / `right_rows` (typed
+Notes. (1) The binary lattice reverses (union/intersection) accept `left_rows` / `right_rows` (typed
 candidate restriction), `left_priming` / `right_priming` (soft boosts),
 `radial` (signed-magnitude order), and `snap` — recovery is owned by the
 layer and DIFFERS by op: the join is fit-determined; the lossy meet leans
@@ -393,12 +391,22 @@ forms of the inventory above for a `torch.while_loop` body: every op's
 reverse is evaluated on the parent and the recorded op selects
 (`local_op_from_rule_ids` inverts the rule map). `reverse_inverses()`
 returns each lift/lower inner layer's `W^-1` once per traversal.
-`generate_policy` (created under `<outputInLoop>`, enabled in BasicModel) is
-a linear chooser over declared binary rules, unary rules and stop, read on
-the top slot's content. Training samples its own actions and receives credit
-only from separately supplied answer error. Evaluation uses its highest-scoring
-choice. Output-owned rule stamps can describe deterministic replay; input
-compose traces and teacher targets never select or supervise output actions.
+`generate_policy` is the conceptual decoder for both reconstruction and output,
+including numeric-answer configurations. It infers a binary undo, unary undo
+or STOP from the current root/top. Binary undo searches the primed echoic
+shortlist, including the sentence's own symbols and weighting candidates by
+activation × cosine × priming. Unary undo invokes the operator's **generate**
+face. The journal, stamps, rule sequence and operand positions never choose
+decoder actions. Compose-only declarations expose those same operators'
+generate faces implicitly; explicit generate declarations keep their catalogue.
+
+Reconstruction owns the generate chooser, parameterized faces and codes.
+Its hard stack choices have the straight-through numerical transition described
+in [GradientFlow](GradientFlow.md). Output owns the question conditioner and
+reads a detached conceptual state and shortlist. The byte loss, gate read-back
+and output spelling use this same walk and shortlist. Clause closing still
+reads its own journal to preserve the semantics of the operation that ran;
+that journal is not a decoding recipe.
 
 ## Knowledge Artifacts
 

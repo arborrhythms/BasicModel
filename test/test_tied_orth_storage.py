@@ -1,14 +1,14 @@
 """PS-LOCAL orth storage (Step 3, 2026-06-10 symbolic-iteration plan).
 
 This file used to pin the 2026-05-27 TIED-storage contract (orth rows
-living on the SS codebook; ``wv._vectors`` routed through ``cb.getW()``).
+living on the SS codebook; ``weight`` routed through ``cb.getW()``).
 That tie -- ``insert_paired_word`` / ``tie_to_codebook`` / the
 ``_tie_lexicon_to_codebook`` migration -- is RETIRED: the Step-1 symbol
 codebook on the CS leg captures the code-as-written vs
 code-for-the-concept correspondence in place, and the lexicon keeps
 PS-LOCAL storage permanently. The same file now pins the inverse:
 
-  * ``wv._vectors`` resolves to the locally-owned ``_local_vectors``
+  * ``weight`` resolves to the locally-owned ``_local_vectors``
     Parameter (registered on the WordVectors module).
   * PS lexicon storage and the SS codebook prototype are SEPARATE
     memory; in-place SS writes do not leak into PS rows.
@@ -55,61 +55,43 @@ def _make_plain_model():
 class TestPsLocalOrthStorage(unittest.TestCase):
     """The lexicon Parameter lives on PS permanently; no SS aliasing."""
 
-    def test_paired_row_api_is_retired(self):
-        model = _make_plain_model()
-        ws = model.wholeSpace
-        self.assertFalse(
-            hasattr(ws, "insert_paired_word"),
-            "WholeSpace.insert_paired_word was retired (Step 3 of the "
-            "2026-06-10 symbolic-iteration plan); the CS-leg symbol "
-            "codebook replaces the PS->SS reach-across.")
-        self.assertFalse(
-            hasattr(ws, "mark_word_atom"),
-            "WholeSpace.mark_word_atom (the autobind fallback) was "
-            "retired with the paired-row machinery.")
 
     def test_local_parameter_is_registered(self):
         model = _make_plain_model()
-        emb = model.perceptualSpace.vocabulary
-        self.assertIsInstance(emb, Embedding)
-        wv = emb.wv
-        self.assertIn(
-            "_local_vectors", wv._parameters,
-            "the PS-side lexicon Parameter (_local_vectors) must be "
-            "registered on WordVectors -- storage is PS-local permanently.")
-        self.assertIsNone(
-            wv._tied_param_getter,
-            "the tied-storage getter must stay permanently None.")
-        self.assertEqual(
-            wv._vectors.data_ptr(), wv._local_vectors.data_ptr(),
-            "wv._vectors must resolve to the local Parameter.")
+        store = model.perceptualSpace.vocabulary
+        basis = model.perceptualSpace.subspace.what
+        from Layers import RadixLayer
+        self.assertIsInstance(store, RadixLayer)
+        self.assertIn("W", basis._parameters)
+        self.assertIs(store._basis, basis)
+        self.assertIs(store._basis.W, basis.W)
 
     def test_ps_storage_is_separate_from_ws_codebook(self):
         model = _make_plain_model()
         ws = model.wholeSpace
-        wv = model.perceptualSpace.vocabulary.wv
+        weight = model.perceptualSpace.subspace.what.W
         W = ws.subspace.what.getW()
         if W is None:
             self.skipTest("SS codebook carries no prototype matrix")
         self.assertNotEqual(
-            wv._vectors.data_ptr(), W.data_ptr(),
+            weight.data_ptr(), W.data_ptr(),
             "PS lexicon storage and the SS codebook prototype must be "
             "SEPARATE memory (the tie is retired).")
 
     def test_ws_write_does_not_leak_into_ps_rows(self):
         model = _make_plain_model()
         ws = model.wholeSpace
-        wv = model.perceptualSpace.vocabulary.wv
+        weight = model.perceptualSpace.subspace.what.W
         W = ws.subspace.what.getW()
         if W is None:
             self.skipTest("SS codebook carries no prototype matrix")
-        n = min(int(wv._vectors.shape[0]), int(W.shape[0]))
+        n = min(int(weight.shape[0]), int(W.shape[0]))
         if n == 0:
             self.skipTest("no overlapping rows to compare")
-        before = wv._vectors[:n].detach().clone()
+        before = weight[:n].detach().clone()
         with torch.no_grad():
             W.data[:n, :] += 0.1
-        after = wv._vectors[:n].detach()
+        after = weight[:n].detach()
         self.assertTrue(
             torch.equal(before, after),
             "an in-place write to SS.codebook.W must NOT be visible "

@@ -2,16 +2,17 @@
 
 The current cross-architecture reference is
 [Gradient flow across the architecture](GradientFlow.md): what each objective
-trains, where gradients stop, and how shared operator gradients are measured.
+trains, where gradients stop, and how optimizer ownership is audited.
 
-**Concept dictionary ownership (September 21).** Codes are placed by word
-distribution; objectives train maps. The 11 canonical configs changed in
-`7c2fa5a` restore `conceptualContextLearningRate=0.01`: one detached
-sentence-local SBOW reducer rotates unit-sphere atoms after the optimizer
-step. The shared dictionary is a persistent non-grad buffer, absent from
-optimizer groups and operator-gradient diagnostics. Reconstruction, output
-and expectation train operators and code-to-operation projections, never
-these code positions. Situation context is deferred to two-truths §3.5.
+**Concept dictionary ownership (October 2, 6.9 §20).** Codes are parameters
+trained only by reconstruction, without a norm constraint. The canonical
+configurations set `conceptualContextLearningRate=0`; contextual rotation and
+the concept VQ EMA refresh no longer write the dictionary. Admission does
+not replace a reserved code with a normalized feature/part composition.
+Expectation and supplied answers train their own readers with detached
+sources. The leaf is still code times signed activation. The
+[§20.3 catalog](plans/2026-09-29-item-6-9-xor-grammar.md#203-catalog-set-aside-now-to-return-once-reconstruction-and-xor-hold)
+records the deferred distributional pressure and unit-sphere constraint.
 
 > For the current ownership of the training lifecycle and the proposed split
 > between launch resolution, corpus cursors, host orchestration, compiled tensor
@@ -225,11 +226,16 @@ embeddings.
 
 ### Within-sentence reconstruction objective
 
-BasicModel enables `teacherReconstruction` and `reconstructInLoop`, with
-`detachedReverse=false` and `leafDistillWeight=0`
-([BasicModel.xml:176](../data/BasicModel.xml#L176)). The completed input's ended
-state and recorded compose derivation drive the tied traversal. Its cross
-entropy scores each word's bytes through the first NUL terminator (`0`), then
+BasicModel enables `teacherReconstruction` and `reconstructInLoop`
+([BasicModel.xml](../data/BasicModel.xml)). Every retained meronomy reading
+with a grammar uses the tied reconstruction path. The completed input's ended
+state and recorded compose derivation drive one free read-back, with no
+retained operand or witness offsets.
+The free traversal searches both operands over the primed bank and scores
+candidates as signed activation times cosine times priming, identically to
+the gate's read-back. Activation is recovered as `dot(leaf,code)/dot(code,code)`;
+a zero code scores zero. Both true and competing codes remain differentiable.
+Its cross entropy scores each word's bytes through the first NUL terminator (`0`), then
 averages over active words, completed sentences and batch rows. It uses the
 existing 256-byte alphabet and [token-buffer contract](../bin/Spaces.py).
 Thus `a\0` differs from `ab\0`; padding or stale bytes after NUL are ignored.
@@ -237,8 +243,9 @@ At eager staging, each input percept ID expands to its complete stored byte
 spelling for the target. A promoted word or multi-byte prefix therefore keeps
 all its scoring bytes. These targets never supply candidate spellings or
 reconstructed ideas.
-With no known candidate spelling, the uniform fallback gives `log(256)` for a
-scoreable target. The dictionary snapshot retains one extra byte beyond the
+With no admitted candidate spelling in a sentence, that sentence contributes
+no reconstruction term and increments `reconstruction_unavailable_sentences`.
+The dictionary snapshot retains one extra byte beyond the
 input window, preventing a clipped longer spelling from acquiring a false word
 end ([Models.py](../bin/Models.py),
 [Models.py](../bin/Models.py)).
@@ -256,16 +263,19 @@ are fidelity diagnostics. The cosine-based byte objective does not enforce
 equality of continuous concept amplitudes.
 
 The byte loss can train the ended representation and selected shared compose
-transforms. Dictionary snapshots, observed targets and occurrence-specific
-operand witnesses are detached. Reverse trace indices are constants. The forward
+transforms and the candidate codes. Observed targets and priming weights are
+detached; dictionary values stay live. There are no operand witnesses.
+Reverse trace indices are constants. The forward
 chooser retains its existing straight-through soft approximation, which can
 receive reconstruction credit through the live completed representation; the
 separately weighted local chooser objective remains optional
 ([Language.py](../bin/Language.py),
 [Language.py](../bin/Language.py)). Following a recorded reverse
 index adds no selection gradient of its own. Reconstruction owns no decoder
-parameters. Shared operators receive the ordinary sum of objective gradients;
-the concluded-answer state cut is specified in [GradientFlow](GradientFlow.md).
+parameters. Only reconstruction updates shared operators; answer generation
+may read them without updating them. Compose lessons update only their chooser.
+The parameter ownership and concluded-answer cut are specified in
+[GradientFlow](GradientFlow.md).
 
 Separate reconstruction compilation caches its backward and disables donation
 of saved buffers. This permits repeated gradient reads for per-objective
@@ -273,9 +283,10 @@ diagnostics even when the first backward used the cache only once. The compiler
 normalizes this PyTorch build's disabled-donation metadata without permanently
 changing its global setting ([Models.py](../bin/Models.py)).
 
-Explicit `detachedReverse=true` configurations retain the idea-only student
-from $\operatorname{stopgrad}(S)$ and are mutually exclusive with tied mode.
-Legacy per-word configurations can use D3. Whole-slab/non-grammar configurations
+Every retained meronomy reading with a grammar, in either binding, uses tied
+reconstruction; `reconstructInLoop=false` cannot disable it. The old reading
+modes, detached student runtime and D3 path are retired. Whole-slab/non-grammar
+configurations
 retain masked-LM reconstruction: `create_ir_mask` replaces selected WHAT
 positions with `NULL_PERCEPT`, retains `_ir_pre_mask_input`, and scores those
 positions. Supplied-answer learning remains a separate objective; reconstruction
@@ -284,84 +295,39 @@ does not manufacture answer labels.
 | Knob | Effect |
 |------|--------|
 | `maskRate` | Bernoulli mask probability at the subsymbolic (PS) (BERT default 0.15) |
-| `reconstructionScale` | Blend weight between output and reconstruction loss; `total = (1 - r)*output + r*recon`.  Legacy `<reverseScale>` parsed with deprecation warning. |
-| `detachedReverse` | On the serial grammar training path, replace D3 trace replay with the static idea-only reverse chooser. Its input is `stopgrad(S)` and its targets live in `SymbolSubSpace.reconstruction_stack`. |
-| `reconstructInLoop` | Tied completed-input reconstruction, enabled by BasicModel. Training/evaluation use the owned byte objective once. Mutually exclusive with `detachedReverse`; suppresses the independent leaf-distillation head. |
-| `reconstructionBasisLimit` | Positive candidate count per side, default 16, for bounded approximate reconstruction using the selected compose kernel; at most its square in pairs. Independent of word, STM and field capacity. Missing candidates/inverses report incompleteness. |
-| `leafDistillWeight` | With `detachedReverse`, weight the chooser's bounded exact-leaf surface term. Explicit legacy D3 mode can retain the standalone root-to-leaf distillation head. Tied reconstruction suppresses that independent head regardless of this weight. |
-| `forwardGrammarWeight` | Weight the bounded, one-fold structural contrast recorded for committed unary/binary grammar choices. `0` disables this branch. |
+| `reconstructionScale` | Independent priority of each relative reconstruction term. It no longer subtracts from the answer's weight. |
+| `reconstructInLoop` | Historical fixture opt-in; retained meronomy grammar readings always reconstruct their understanding. Training/evaluation use the owned byte objective once. |
+| `reconstructionBasisLimit` | Positive count, default 16: the sentence bank adds up to this many most-primed other symbols to its own rows. It also bounds free-inverse candidates per side (at most its square in pairs). Independent of word, STM and field capacity. Missing candidates/inverses report incompleteness. |
+| `grammarLessonWeight` | Priority for explicit compose/generate lessons; each lesson updates only its own chooser. `forwardGrammarWeight` is retired and rejected. |
 | `<reconstruct>` | RETIRED (A1, 2026-06-09; `reconstructEnum` removed).  There is no longer a target space-role knob: reconstruction is unconditionally concepts-seeded from the terminal `ConceptualSpace` STM snapshot, weighted by `reconstructionScale`. |
 
 ### Construction trace and derivation pressure
 
-The forward construction teacher now has one owner:
-`SymbolSubSpace.reconstruction_stack`. Before a compiled sentence body runs,
-the eager boundary stores detached exact leaves, lossless radix word
-spellings, and any available durable word-concept IDs. The body then records
-committed unary/binary grammar choices in a fixed
-`[B, 3*W + W*(stmCapacity - 1)]` rule-ID/arity/mask slab. There is no model-owned
-parallel leaf or reduction cache, and no Python trace append in the captured
-loop.
+The serial reading records its concluded root and slots, rule choices,
+operand positions and per-word references. No witness offsets or operation
+frames enter the shared understanding. Sentence-local journals use the loop's static word-capacity bound,
+so changing the sentence length does not create a new capture shape. Each
+trial freezes these fields and the post-seen-write priming snapshot into one
+`SentenceUnderstanding`. The tied inverse and the detached answer consume the
+same object; the public inverse returns its completed reconstruction rather
+than trying to replay a discarded journal.
 
-In explicit detached-student configurations, that trace supervises the
-*reverse chooser*; it never becomes a chooser input.
-`ReverseConstructionChooser` is statically registered under `SymbolSubSpace`
-before optimizer creation and predicts the active arity, global rule ID, and
-exact percept leaf at every fixed slot. Its live gradient boundary is:
+The primed bank contains the sentence's own symbols plus the most activated
+other symbols, per batch row. Surface-bearing symbols are reconstruction
+candidates; all valid symbols supply detached answer context. Seen priming
+also diffuses in serial reading, using the concept store's device-side sparse
+edges without a host edge cap. The bank and all record fields are described
+in [GradientFlow](GradientFlow.md).
 
-$$
-\mathcal L_{\mathrm{reverse}}
-= \operatorname{CE}\!\left(
-q_\phi(\text{word parts},\text{rules}\mid
-\operatorname{stopgrad}(S)),\;T_{\mathrm{stack}}
-\right).
-$$
-
-The implementation detaches $S$ inside the chooser and detaches every teacher
-artifact when it enters `ReconstructionStack`. That student learns the
-observed construction from the completed idea without sending a derivative
-through any of the $W$ recurrent forward folds. Canonical BasicModel instead
-uses the tied traversal described above. Checkpoint migration drops student
-keys and their optimizer entries, preserving shared compose weights and Adam
-state by name; no replacement reconstruction decoder is initialized
-([Models.py](../bin/Models.py),
-[Models.py](../bin/Models.py)).
-
-The optional `forwardGrammarWeight` adds local pressure on the forward
-chooser, alongside the completed-sentence tied reconstruction objective.
-For every type-valid unary or binary rule, the layer re-scores detached
-children and detached candidate results through the same chooser parameters
-([Language.py](../bin/Language.py)). This local branch uses the
-bounded proxy
-
-$$
-E_r = 0.2\,d(c_r,\operatorname{clip}_{[-1,1]}(c_r))
-    + 0.8\,d(\tanh(c_r),\tanh(x),\tanh(y)),
-\qquad
-\mathcal L_{\mathrm{forward},t}
-= \tfrac12\left[\sum_r p_\theta(r\mid x,y)E_r
-+ \operatorname{rank}(r^*,r^- )\right].
-$$
-
-The first distance is an idempotent signed-carrier closure and the second is a
-child-incidence preservation proxy (one child for unary, both for binary).
-This is deliberately **not** claimed to be the data-derived FCA double-prime
-closure; the latter remains a stronger future replacement once a bounded
-codebook closure query is available. The expected energy plus pairwise rank
-term lies in $[0,1]$. It is copied into a fixed `ReconstructionStack` loss slab
-and averaged only over committed folds. Because the evidence tensors are
-detached, credit assignment ends at that chooser call and cannot reopen the
-sentence recurrence. The forward chooser is not trained by cross-entropy
-against its own argmax trace, which would be self-confirming evidence.
-
-`BasicModel.xml` currently leaves `forwardGrammarWeight=0`. A July 2026 MPS
-production probe showed that its extra candidate re-score is substantial when
-paid at every live fold. The objective and its compiler-safe fixed loss slab
-remain available and tested, but production activation waits for a dedicated
-quality/throughput measurement (or a compact-evidence re-score at the eager
-sentence boundary). This cost decision is independent of the reconstruction
-mode. BasicModel now uses tied reconstruction; explicit legacy configurations
-can still select the detached student.
+The compose chooser receives reconstruction credit through its
+straight-through surrogate. Explicit grammar lessons, where configured,
+train only the corresponding compose or generate chooser. The former
+`forwardGrammarWeight` structural proxy and detached reverse chooser are
+retired. A current checkpoint containing student keys is migrated by dropping
+those keys and their optimizer entries, preserving shared compose weights.
+Reader Adam state is preserved by name; reconstruction starts momentum SGD
+when loading an older Adam checkpoint. No replacement student is created. The historical
+student contract is retained in the migration section below.
 
 The following references describe composition and reconstruction objectives;
 they do not establish fidelity or stability of this implementation:
@@ -386,11 +352,8 @@ they do not establish fidelity or stability of this implementation:
   to complete residuated lattices
   ([Belohlavek, 1999](https://belohlavek.inf.upol.cz/publications/Bel_Fgc.pdf)).
 
-In explicit legacy mode, the bounded exact-leaf term in the detached reverse
-chooser is its degraded surface objective. It updates only that student; it neither
-updates $S$ nor unfolds a grammar recurrence. Its role is an anti-collapse
-check, while the local carrier/incidence contrast is the direct derivation
-signal.
+The former detached student's exact-leaf objective is retired. The retained
+reconstruction signal scores the tied inverse of the understanding.
 
 ### `<trainEmbedding>`: Embedding Update Mode
 
@@ -440,31 +403,35 @@ no main-optimizer step ever moves the rows:
 
 ### `JOINT`: Single Combined Loss
 
-Avoids EM alternation by computing one combined loss before one backward:
+At batch end, JOINT adds embedding error to the registered model objective
+in the same optimizer update:
 
 $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{SBOW}}$$
 
 where $\lambda$ is `<embeddingScale>` (default 0.1).
 
-Reconstruction, expectation and output differentiate separate computations.
-Output treats the concluded idea and its contextual operands as given;
-expectation may still train live preceding encodings, with its target detached.
-Shared operators receive the sum of their own uses' gradients. There is no
-global projection or norm allowance. `branchDiagnosticsEvery` logs agreement
-per shared operator before the ordinary backward and single optimizer step;
-persistent opposition is a diagnostic, not an automatic intervention. See
-[GradientFlow](GradientFlow.md).
+Reconstruction, expectation and output have separately named objectives in
+Error and disjoint parameter owners. Reconstruction owns perception, trainable
+codes, compose operators and their tied inverses, and the compose chooser.
+Expectation owns predictors; both their source and target are detached. The
+supplied answer owns its readers, and stops at the common understanding record.
+Compose and generate lessons update only their own choosers. Restricted
+backward enforces these boundaries even when a forward operator is shared.
+`branchDiagnosticsEvery` reports actual objective writers per optimizer parameter.
+See [GradientFlow](GradientFlow.md) for the complete term and record inventory.
 
-The detached reverse student still does not train
-its encoder through reconstruction.
-The loss partition and parameter selection are in
-[Models.py](../bin/Models.py); the optimizer takes one ordinary summed-gradient
-step. No projection, norm cap or reconstruction-tolerance rule remains.
+Meronomy is the only retained text mode. Every retained serial grammar reading
+reconstructs through its understanding. Grammar-free configurations retain
+perceptual reconstruction. A sentence with no admitted surface candidate has
+no reconstruction term and is counted. Gradient projection and its helpers
+are retired. Reconstruction precedence applies in trial selection: explore
+must have strictly lower reconstruction; ties keep greedy. Neither answer
+nor expectation is compared. The answer reader trains only on kept trial
+rows; a wholly discarded trial supplies no reader step.
 
 Inter-sentence MSE/contrastive losses are consumed independently of Teacher's
 legacy ARMA/intra gate. Prediction sees a bounded per-row view of external
-predecessors, with live encoder context inside the current training step and
-detached observed targets. Consumption and brick entry detach that context;
+predecessors, with detached preceding context and detached observed targets;
 compiled and eager packed boundaries score each observed pair once. Durable
 LTM remains detached. Expectation is now on by default and predicts local roles. Retained nested
 meaning and the reasoning migrations remain tracked in the
@@ -481,11 +448,9 @@ product:
 
 $$\mathcal{L}_{\text{SBOW}} = -\frac{1}{N} \sum_{i=1}^{N} \left[ \log \sigma\big(s(c_i, v_{w_i})\big) + \frac{1}{K}\sum_{k=1}^{K} \log \sigma\big(-s(c_i, v_{w_k^-})\big) \right]$$
 
-**Advantages.** One optimizer, one momentum buffer; gradient coherence; no
-post-batch step.
-
-**Trade-off.** Both objectives share LR and Adam state. If loss surfaces have
-very different curvature, $\lambda$ may need tuning.
+This SBOW formulation is historical. Item 6.9 §20 turns distributional code
+pressure off: reconstruction alone owns the codes. Under §§21–22 it uses
+momentum SGD; expectation predictors keep their separate Adam state.
 
 ### Why MSE over Embeddings (not Cross-Entropy)
 
@@ -503,7 +468,7 @@ with `ConceptualSpace/conceptReadoutL1=0.01` (absent/zero disables it). Each
 concept's weights/bias are gathered from `IndexedSigmaConceptsFromPercepts`
 at sentence staging, then consumed by
 the eager or compiled word loop. Sparse gradients use the compact row-local
-optimizer and participate in the shared-operator diagnostic set.
+optimizer and appear under reconstruction in the ownership audit.
 Within the single optimizer step, a diagonal-metric L1 prox soft-thresholds
 only admitted input connections. Its threshold is
 `lr * (lambda / distinct_observed_concepts) / (sqrt(v_hat) + eps)`;
@@ -514,9 +479,9 @@ tradeoff, not a promise of monotonic reconstruction improvement. Policies are
 batch-local, never applied in evaluation, and cleared at the next `zero_grad`
 after a skipped update.
 If the readout has no learning gradient (`grad=None`), it is left untouched:
-an explicitly selected legacy detached reverse boundary can disconnect it from accuracy
-feedback, and sparsity alone must not collapse the definition. Coupled
-reconstruction updates and detached no-update behavior are tested separately.
+sparsity alone must not collapse a definition without accuracy feedback.
+Coupled reconstruction updates and missing-gradient no-update behavior are
+tested separately.
 There is no second optimization step. Full processed native fold state remains
 separate from this scalar readout and is released at batch/sentence teardown.
 Checkpoint coefficient tensors and the conceptual vocabulary's reference
@@ -564,20 +529,20 @@ For each B-wide batch:
 4. `_forward_body` runs T stages on B rows.
 5. `_forward_head` produces `[B, N, predDim]` (a side channel --- IR
    loss is computed at the subsymbolic (PS), not at the head).
-6. `runBatch` computes loss via `TheError.add`:
+6. `runBatch` reads the trained sum from `Error.total()`. Raw fidelity metrics
+   remain available but do not duplicate the following registered objectives:
    - `output` (supervised head): MSE between the aligned head
      prediction and the labels, weight 1.0 when labels exist
      (zero-weighted otherwise).
    - `reconstruction`: tied mode scores the completed input's recovered
-     WORD spellings through the existing NUL terminator. Explicit legacy
-     paths retain masked perceptual MSE or the D3 reverse($S$) objective
+     WORD spellings through the existing NUL terminator. Configurations
+     without a grammar retain masked perceptual MSE
      ([Models.py](../bin/Models.py)).
    - `reconstruction_reverse` (concepts-seeded): the reverse pass
      seeded from the terminal `ConceptualSpace` STM snapshot (the
      `<reconstruct>` enum was retired), weighted by
      `reconstructionScale`. Tied mode skips this duplicate in training and
-     evaluation; the legacy paths also deduplicate their active reverse
-     objectives ([Models.py](../bin/Models.py)).
+     evaluation; grammar-free paths keep their perceptual inverse ([Models.py](../bin/Models.py)).
    - `embedding_sbow` (`JOINT` / byte-lexer perceptual SBOW), weighted
      by `<embeddingScale>`.
    - `arma` (sentence-level): `InterSentenceLayer.observe(s_t)` MSE
@@ -590,13 +555,80 @@ For each B-wide batch:
      `conceptual_sbow`, `definition_sparsity`, `answer`, `thinking`,
      `predict_next`, `leaf_distill`, `gate_l1` --- plus any auxiliary
      terms the pipeline Spaces wrote to their shared `Error` instance.
-7. One ordinary `backward()` and one `optimizer.step()` per DataLoader yield.
-   Optional operator diagnostics read retained gradients before that backward.
+7. Each sentence's two trials are costed under identical parameters and each
+   takes its own backward and optimizer step; the batch takes one final step.
+   Each backward is restricted to the objective's parameter owners. The
+   batch-end step runs only when a remaining registered term differentiates.
+   Diagnostics observe these updates without adding one.
 8. Embedding training (`CBOW`/`SBOW`/`BOTH`) runs once per batch.
 
 ---
 
 ## What questions and the two primary costs
+
+### Relative errors and their owners (item 6.9, October 2)
+
+`Layers.Error` stores every constituent's numerator, detached uninformed
+baseline, active count, configured priority and owner. Contributions with
+the same name combine before division. The trained objective is the ratio
+of their means, not a mean of independently normalized rows. Squared errors
+use the origin's mean squared target norm; categorical and binary errors
+use uniform predictions (`log K`, `log 2`, or `log 256` for a byte). Neither
+a batch-fitted mean/base rate, an epsilon floor nor a running loss scale is
+used. An exactly zero squared target makes an unnormalized penalty; an
+empty target mask contributes zero. A nearly solved error stays small.
+
+Every error defaults to weight 1. Existing explicit priorities in the merged
+configuration, including `model.xml`, remain in place. The old
+`(1-r)*answer+r*reconstruction` blend is retired: `r` weights reconstruction
+independently. The [complete term inventory](GradientFlow.md#trained-total-and-diagnostic-objectives)
+specifies each comparison, baseline, weight, placement and gradient reach.
+In registry names, the active terms are:
+
+| Family and terms | Targets and baseline | Weight and placement | Gradient |
+|---|---|---|---|
+| `answer.what/where/when` | Supplied numeric or generated surface band; origin per band | Event-band scales; trial and batch | Answer reading map only; understanding detached |
+| `reconstruction.free_bytes` | Free inverse spelling vs observed bytes including NUL; `log 256` | `reconstructionScale`; trial, detached chosen report at batch end | Understanding, chooser, true and competing codes, operators and tied inverse |
+| `reconstruction.*`, `reconstruction_reverse.*` event bands | Grammar-free masked or reverse perceptual targets; origin per band | Reconstruction × band scales; batch | Active input reconstruction path |
+| `leaf_distill` | Historical decoder vs exact retained leaves; origin | `leafDistillWeight`; batch | Decoder and live input root |
+| `expectation.roles/root/intra/arma` | Arriving detached role/root/code/representation; origin | `interLossWeight`, `intraLossWeight`, `armaScale`; trial or batch once | Corresponding predictor only; source and target detached |
+| `expectation.presence/kind` | Occupied roles and idea/relation bit; `log 2` | `interLossWeight`; trial or batch once | Meaning predictor |
+| `expectation.contrast` | Actual next idea among candidates; `log K` | `interContrastiveWeight`; trial or batch once | Next-idea predictor only |
+| `grammar.compose.choice` | Explicit annotated joint operator; `log K` | `grammarLessonWeight`; trial | Compose chooser |
+| `grammar.generate.choice/operands` | Annotated action/child codes; `log K`/origin | `grammarLessonWeight`; trial | Choice trains generate policy only; operand error is reporting-only |
+| `embedding.positive/negative` | Positive/negative lexical membership; `log 2` separately | `embeddingScale`; batch | Joint lexical embedding |
+| `conceptual_sbow.positive/negative` | Context/non-context membership; `log 2` separately | `conceptualSimilarityScale` × existing SBOW strength; batch | Parallel conceptual codes |
+| `reading_attention` | Next unconsumed span; `log(legal span count)` | 1; batch | Reading attention |
+
+`definition_sparsity` (soft-L0), `gate_l1` (operator gates), and
+`truth.falsity/balance` have no targets and retain their configured penalty
+strengths without normalization. `concept_readout_l1` records the distinct
+observed concepts' incoming L1 with `l1Lambda`; its sole training owner is
+the proximal operation at each applicable sentence or batch optimizer step.
+A batch without a batch-end backward stages no additional update. `output_policy`, `selected_thought_policy` and
+`expectation_policy` are targetless score-function objectives, with their
+configured policy weights and detached return baselines. They train their
+choosers at batch end; supplied trial generation does not record or train
+the walk policy. These terms, and zero-target squared penalties, are reported
+separately from relative errors. `Error.total()` sums trained terms;
+`total(kind='relative')`, `total(kind='penalty')` and `breakdown()` expose
+the distinction. Raw fidelity metrics and missing-candidate counts have
+`trained=False`.
+
+A trial is scored from one immutable understanding record, shared by
+reconstruction and the detached answer reader. Its primed symbols are the
+sentence's own rows plus the most activated others, with a separate priming
+surface for each batch row. Both trials use the same post-seen-write snapshot.
+Each objective's backward writes only its owners. Both trials are scored
+before either steps. Explore must improve reconstruction strictly; answer
+and expectation cannot select it. Reconstruction uses momentum SGD (0.9),
+and the readers and expectation predictors use Adam. The configured learning
+rate is unchanged; there is no adaptive normalization of reconstruction
+steps. The audit records code and chooser-anchor displacements against their
+gradients and each sentence’s modal derivation over training epochs. There are no
+additional gradient reads for a supplied-answer projection.
+[GradientFlow](GradientFlow.md#the-training-step-october-1) lists the record
+encoding and ownership audit, including inactive optimizer parameters.
 
 Since the What spec cutover (basicmodel 195b129 / 077c18d), every
 training batch is a batch of `WhatQuestion`s (`bin/What.py`), not a bare
@@ -609,25 +641,12 @@ independently normalized primary costs recorded before `backward()`:
 | Cost (`primary_costs()`) | Compares | Trains |
 |---|---|---|
 | `input_reconstruction` (+ `input_reconstruction_reverse`, `reverseReconstruct()`'s own cost) | the reconstructed input with the presented (or clean) input | the bottom-up understanding and its input-associated inverse |
-| `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only ([Models.py](../bin/Models.py)) | generate from a detached concluded idea, conceptual conditioner, synthesis layers, output adapter and the shared operators used there |
+| `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only ([Models.py](../bin/Models.py)) | generate chooser and conditioner, answer-owned synthesis layers and output adapter; shared operators transmit gradients but do not receive an answer update |
 
-The desired answer is resolved only after the model response is fixed and
-enters loss preparation only. Output state is cut at the concluded idea;
-shared weights receive ordinary summed gradients in one optimizer step. `what_report()` gives per-family means of both costs,
-thinking statistics (episodes, mean iterations, forced-closure rate), the
-hard-choice policy credit (`forwardGrammarWeight`) separately from the
-continuous answer credit, and sentences/s. Full contract: the
-[What spec, Section 9](specs/2026-07-27-teaching-modes-and-next-iteration.md#9-training-and-loss);
-Completed grammatical questions run through `BasicModel.run_selected_thought`
-before `reverseOutput`. `think()` presents the input once. The one
-`SelectedThoughtChooser` selects catalogue operations and `conclude`, including
-nested `what` requests on the same history owner and work meter.
-`runBatch` adds `selectedThoughtPolicyWeight` times the later row-local answer
-credit, takes one optimizer step, then detaches the episode. Old thinking-weight
-aliases migrate to that same objective; no parity chooser or bridge-policy
-loss remains. This is supplied-answer credit. Residual credit and learned
-utility are still open. [SelectedMeaning](SelectedMeaning.md) describes the
-complete bounded semantic/memory input and checkpoint migration.
+The desired answer enters loss preparation only after the model response is
+fixed. Both trial and batch answers cut the concluded understanding. Each
+optimizer parameter receives gradients from one objective; the former
+step-5a whole-path answer is retired by the October 2 ownership decision.
 
 ---
 
@@ -636,7 +655,9 @@ complete bounded semantic/memory input and checkpoint migration.
 
 This section records the September 12 implementation and measurements. Its
 student default, inverse fallbacks, output stamps and placement claims are
-historical. The current objective and gradient contract are described under
+historical. Plan §14 retired the student runtime, D3 path and old mode
+selectors. The one-way loader migration remains because `data/BasicModel.ckpt`
+contains twelve student parameter keys; no runtime recreates that student. The current objective and gradient contract are described under
 [Within-sentence reconstruction objective](#within-sentence-reconstruction-objective) above and in the integrated
 specification's [migration record](plans/2026-09-15-next-sentence-as-the-production-objective.md#13-tied-input-reconstruction-migration-verified).
 The tied migration's native measurements and full-suite verification are
@@ -708,9 +729,10 @@ preparatory input pass is required ([Models.py](../bin/Models.py)).
 
 A missing WORD surface removes that candidate. A missing snapshot never
 falls back to the presented words' bytes. A null candidate of similarity
-zero and uniform bytes remains available: with scoreable targets and no
-known candidates, the byte cost is `log(256)`, not a manufactured perfect
-reconstruction ([Models.py](../bin/Models.py)). Rows absent from the snapshot do
+zero and uniform bytes remains available alongside admitted candidates.
+A sentence with no admitted candidate contributes no term, is excluded from
+the reconstruction average and is counted as unavailable. Its zero cost is
+not a fidelity success ([Models.py](../bin/Models.py)). Rows absent from the snapshot do
 not enter the score. The
 score is taken at the pop step, inside the traversal, and the loop carries
 only the running sums (idea cost, byte cost, word count) besides the
@@ -985,8 +1007,8 @@ vectors toward its torus antipode.
 
 | Artifact | Example | Contents | Updated by |
 |----------|---------|----------|-----------|
-| XML config | `data/MM_20M_fineweb.xml` | Architecture, objectives, corpus and checkpoint path | Hand-edited |
-| Checkpoint | `output/MM_20M_fineweb.ckpt` | Model and embedding state, vocabulary/BPE extras, optimizer, counters, RNG and corpus manifest | Phase 2 |
+| XML config | `data/BasicModel.xml` | Architecture, objectives, corpus and checkpoint path | Hand-edited |
+| Checkpoint | `output/BasicModel.ckpt` | Model and embedding state, vocabulary/BPE extras, optimizer, counters, RNG and corpus manifest | Phase 2 |
 
 The integrated checkpoint is resumable. Mid-epoch resume requires the same
 corpus manifest and batch size; mismatches fail loudly instead of replaying a

@@ -192,11 +192,11 @@ def test_feature_growth_preserves_frozen_rows_and_optimizer_moments(tmp_path):
     optimizer.step()
     optimizer.zero_grad()
     old = matrix.values
-    moment = optimizer.state[old]['exp_avg'].clone()
+    moment = optimizer.state[old]['momentum_buffer'].clone()
     cs._prepare_part_learning()
     cs._maybe_rebuild_optimizer_for_csw()
     assert matrix.values is not old
-    torch.testing.assert_close(optimizer.state[matrix.values]['exp_avg'][:2], moment)
+    torch.testing.assert_close(optimizer.state[matrix.values]['momentum_buffer'][:2], moment)
     assert sum(p is matrix.values for group in optimizer.param_groups for p in group['params']) == 1
     assert not any(p is old for group in optimizer.param_groups for p in group['params'])
     matrix.values.sum().backward()
@@ -204,17 +204,14 @@ def test_feature_growth_preserves_frozen_rows_and_optimizer_moments(tmp_path):
     assert float(matrix.values.grad[1]) == 1
 
 
-def test_distributed_codes_follow_features_at_the_boundary_only(tmp_path):
+def test_definition_boundary_preserves_gradient_owned_codes(tmp_path):
     from test_grounded_xor import grounded_model
     model, x = grounded_model(tmp_path)
     cs = model.conceptualSpaces[0]
     cs.add_concept_feature(0, 'ws', 0, 1.)
-    ws = model.wholeSpaces[0]
-    source = ws.subspace.what.getW()[0].detach()
-    expected = torch.nn.functional.pad(source[:cs.nWhat], (0, max(0, cs.nWhat-len(source))))
-    expected = torch.nn.functional.normalize(expected, dim=0)
-    cs._refresh_feature_codes()
-    torch.testing.assert_close(cs.similarity_codebook.getW()[0], expected)
+    codes = cs.similarity_codebook.getW().detach().clone()
+    cs.Reset(hard=True)
+    torch.testing.assert_close(cs.similarity_codebook.getW(), codes, rtol=0, atol=0)
     model.forward(x)
     before = cs._cs_last_a0.clone()
     with torch.no_grad():

@@ -1,0 +1,19 @@
+{
+  "exit_code": 0,
+  "selected": 302,
+  "slow_tagged": 302,
+  "native": [
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]",
+    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[cut]"
+  ],
+  "mps": [
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]"
+  ],
+  "cuda": [
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_compiles_and_replays_under_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_actually_uses_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_emits_no_dtoh_under_profiler"
+  ]
+}

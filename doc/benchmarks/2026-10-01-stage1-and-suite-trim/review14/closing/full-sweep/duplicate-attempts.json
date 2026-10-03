@@ -1,0 +1,184 @@
+{
+  "test/test_selected_relation_meaning.py::test_capture_does_not_invent_anchoring_for_an_unresolved_word": [
+    {
+      "worker": "part-00/worker-623.json",
+      "completed": true,
+      "active": false,
+      "reason": "aborted"
+    },
+    {
+      "worker": "part-01/worker-001.json",
+      "completed": true,
+      "active": false,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-000.json",
+      "completed": true,
+      "active": false,
+      "reason": "receipt_repair_interrupt"
+    }
+  ],
+  "test/test_selected_relation_meaning.py::test_capture_reads_anchored_form_from_retained_word_rows": [
+    {
+      "worker": "part-00/worker-623.json",
+      "completed": true,
+      "active": false,
+      "reason": "aborted"
+    },
+    {
+      "worker": "part-01/worker-001.json",
+      "completed": true,
+      "active": false,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-000.json",
+      "completed": true,
+      "active": false,
+      "reason": "receipt_repair_interrupt"
+    }
+  ],
+  "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]": [
+    {
+      "worker": "part-00/worker-623.json",
+      "completed": false,
+      "active": true,
+      "reason": "aborted"
+    },
+    {
+      "worker": "part-01/worker-001.json",
+      "completed": false,
+      "active": true,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-000.json",
+      "completed": false,
+      "active": true,
+      "reason": "receipt_repair_interrupt"
+    }
+  ],
+  "test/test_selected_relation_meaning.py::test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode": [
+    {
+      "worker": "part-00/worker-623.json",
+      "completed": true,
+      "active": false,
+      "reason": "aborted"
+    },
+    {
+      "worker": "part-01/worker-001.json",
+      "completed": true,
+      "active": false,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-000.json",
+      "completed": true,
+      "active": false,
+      "reason": "receipt_repair_interrupt"
+    }
+  ],
+  "test/test_selected_relation_meaning.py::test_selected_unary_description_operation_does_not_invent_an_occurrence": [
+    {
+      "worker": "part-00/worker-623.json",
+      "completed": true,
+      "active": false,
+      "reason": "aborted"
+    },
+    {
+      "worker": "part-01/worker-001.json",
+      "completed": true,
+      "active": false,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-000.json",
+      "completed": true,
+      "active": false,
+      "reason": "receipt_repair_interrupt"
+    }
+  ],
+  "test/test_selected_relation_meaning.py::test_unreduced_lexical_converse_uses_its_anchored_grammar_form": [
+    {
+      "worker": "part-00/worker-623.json",
+      "completed": true,
+      "active": false,
+      "reason": "aborted"
+    },
+    {
+      "worker": "part-01/worker-001.json",
+      "completed": true,
+      "active": false,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-000.json",
+      "completed": true,
+      "active": false,
+      "reason": "receipt_repair_interrupt"
+    }
+  ],
+  "test/test_selected_relation_meaning.py::test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp[equal]": [
+    {
+      "worker": "part-00/worker-623.json",
+      "completed": true,
+      "active": false,
+      "reason": "aborted"
+    },
+    {
+      "worker": "part-01/worker-001.json",
+      "completed": true,
+      "active": false,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-000.json",
+      "completed": true,
+      "active": false,
+      "reason": "receipt_repair_interrupt"
+    }
+  ],
+  "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice": [
+    {
+      "worker": "part-01/worker-012.json",
+      "completed": true,
+      "active": false,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-001.json",
+      "completed": true,
+      "active": false,
+      "reason": "receipt_repair_interrupt"
+    }
+  ],
+  "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream": [
+    {
+      "worker": "part-01/worker-012.json",
+      "completed": false,
+      "active": true,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-001.json",
+      "completed": false,
+      "active": true,
+      "reason": "receipt_repair_interrupt"
+    }
+  ],
+  "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction": [
+    {
+      "worker": "part-01/worker-012.json",
+      "completed": true,
+      "active": false,
+      "reason": "interrupted"
+    },
+    {
+      "worker": "part-02/worker-001.json",
+      "completed": true,
+      "active": false,
+      "reason": "receipt_repair_interrupt"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_reconstruction_scope.py",
+    "test/test_analyse_chunking_forward.py",
+    "test/test_perceptual_chunking.py",
+    "test/test_perceptualspace_bpe_forward.py",
+    "test/test_meronomy_utf8.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

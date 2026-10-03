@@ -1,0 +1,348 @@
+[
+  {
+    "config": "data/LM_5M.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "byte",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "bpe",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/LM_5M_IR.xml",
+    "changed": {
+      "/PartSpace/synthesis": [
+        "lexicon",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_400M.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "raw",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "lexicon",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_add.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "byte",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_add_verb.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "word",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_decode.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "raw",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_global.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "word",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_init_scale.xml",
+    "changed": {
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_ltm_consolidation_fixture.xml",
+    "changed": {
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "changed": {
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_masked_semantic.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "raw",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_math.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "byte",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_mereology.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "raw",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_mereology_serial.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "raw",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_meronomy_smoke.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "word",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_overlap_tiling.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "raw",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_phrase_decode.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "word",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_qa.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "word",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_query_reasoning.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "word",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_reading.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "word",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_sequence_predict.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "byte",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "bpe",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_sparse_concept.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "raw",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_symbol_tower.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "raw",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_symbolic_iter.xml",
+    "changed": {
+      "/PartSpace/synthesis": [
+        "bpe",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_xor.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "byte",
+        "meronomy"
+      ],
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MM_xor_fixture.xml",
+    "changed": {
+      "/PartSpace/synthesis": [
+        "radix",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/MentalModel.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "sentence",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/RamsifiedModel.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "sentence",
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/model.xml",
+    "changed": {
+      "/PartSpace/synthesis": [
+        "lexicon",
+        "meronomy"
+      ],
+      "/WholeSpace/analysis": [
+        null,
+        "meronomy"
+      ]
+    }
+  },
+  {
+    "config": "data/stream_smoke.xml",
+    "changed": {
+      "/WholeSpace/analysis": [
+        "sentence",
+        "meronomy"
+      ]
+    }
+  }
+]

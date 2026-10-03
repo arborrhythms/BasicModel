@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________________ test_retired_names_remain_absent _______________________
+test/test_retired_names.py:121: in test_retired_names_remain_absent
+    source = inspect.getsource(_resolve(address))
+                               ^^^^^^^^^^^^^^^^^
+test/test_retired_names.py:90: in _resolve
+    value = getattr(value, field)
+            ^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'PartSpace' has no attribute '_embed'
+=========================== short test summary info ============================
+FAILED test/test_retired_names.py::test_retired_names_remain_absent - Attribu...
+1 failed in 2.22s

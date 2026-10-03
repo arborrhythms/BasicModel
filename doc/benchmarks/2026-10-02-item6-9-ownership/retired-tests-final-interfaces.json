@@ -1,0 +1,12 @@
+[
+  {
+    "file": "test/test_reconstruction_roundtrip.py",
+    "test": "test_silent_zero_sites_warn_once",
+    "reason": "Retire only the dead-reconstruction warning half: retained meronomy reconstructs through understanding; output shape gate assertions survive as test_output_shape_gate_warns_once."
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "test": "test_word_and_grammatical_cuts_equal_the_meronomy_cut",
+    "reason": "Retired word/grammatical analysis dispatch; retained meronomy boundaries have live word and punctuation tests in this file."
+  }
+]

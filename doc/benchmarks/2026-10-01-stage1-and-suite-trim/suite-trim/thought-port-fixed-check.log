@@ -1,0 +1,6 @@
+[collect] 2 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.6s; peak 0.40 GiB
+[worker-000] 2 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 4.4s; peak 0.48 GiB
+Result: passed, exit 0; 2/2 cases completed.
+doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/thought-port-fixed-check/result.json

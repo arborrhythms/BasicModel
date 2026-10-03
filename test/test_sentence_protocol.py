@@ -61,6 +61,7 @@ def _xor_input():
     ).float().unsqueeze(1)
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_protocol_on_by_default_in_serial():
     """DEFAULT CUTOVER (2026-06-18): the legacy serial fixture now has the
     protocol ON by default — pump zero runs and sets the gist WITHOUT any
@@ -72,6 +73,7 @@ def test_protocol_on_by_default_in_serial():
     assert getattr(m, '_last_gist', None) is not None
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_protocol_off_is_dark_when_disabled():
     """Forcing the protocol OFF restores the dark path: no prelude pumps,
     no intent, no per-pump stamp — the legacy serial path."""
@@ -99,6 +101,7 @@ def test_protocol_off_by_default_in_parallel():
     assert m.sentence_protocol is False               # parallel default = OFF
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_protocol_runs_pump_zero_and_sets_intent():
     """Protocol ON: pump zero runs once per sentence, the gist exists
     and feeds the §5 single intent, and the per-pump stamp is cleared
@@ -121,6 +124,7 @@ def test_protocol_runs_pump_zero_and_sets_intent():
         assert getattr(sp, 'serial_pump', 'missing') is None
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_no_mid_sentence_reground_even_under_conflict():
     """Mid-sentence reground REMOVED (Alec 2026-07-07): the intent is
     sentence-scoped -- pump zero fires ONCE at sentence start and a
@@ -146,6 +150,7 @@ def test_no_mid_sentence_reground_even_under_conflict():
     assert int(getattr(m, '_prelude_pumps', 0)) == 1
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_protocol_word_learning_pumps_parallel_partition():
     """Pump zero is a PARALLEL pump for the §6d law: during the
     prelude the spaces carry serial_pump=False; during the per-word

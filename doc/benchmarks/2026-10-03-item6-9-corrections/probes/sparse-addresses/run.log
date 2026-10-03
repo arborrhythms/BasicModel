@@ -1,0 +1,45 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_two_phase_forward_cutover_stamps_terminal_activations __________
+
+    @pytest.mark.slow
+    def test_two_phase_forward_cutover_stamps_terminal_activations():
+        """The post-pump membership field reaches the terminal CS and SS leg.
+    
+        Repeated forwards cannot invent a feature definition by moving codes.
+        Codes follow written definitions at the sentence boundary.
+        """
+        import Models
+        from util import TheXMLConfig
+        m = _build("MM_20M_xor.xml")
+        Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
+        loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+        items, _ = next(iter(loader))
+        x = m.inputSpace.prepInput(items)
+        cs0 = m._concept_owner()
+        assert cs0._sparse_active()
+        W = cs0.similarity_codebook.getW()
+        start0, end0 = cs0._field_order_slice(0)
+        before = W.detach().clone()
+        m.train()
+        m.forward(x)
+        last_cs = getattr(m, "_combine_last_cs_sub", None)
+        assert last_cs is not None
+        acts = getattr(last_cs, "_concept_activations", None)
+        assert acts is not None and int(acts.shape[0]) == sum(cs0._field_caps())
+        assert torch.equal(W.detach(), before)
+>       assert acts[start0:end0].count_nonzero() == 0
+E       assert tensor(8) == 0
+E        +  where tensor(8) = <built-in method count_nonzero of Tensor object at 0x122c8e030>()
+E        +    where <built-in method count_nonzero of Tensor object at 0x122c8e030> = tensor([[[[0., 0.]],\n\n         [[1., 1.]],\n\n         [[1., 1.]],\n\n         [[1., 1.]]],\n\n\n        [[[0., 0.]],\n\n      ...],\n\n\n        [[[0., 0.]],\n\n         [[0., 0.]],\n\n         [[0., 0.]],\n\n         [[0., 0.]]]], grad_fn=<SliceBackward0>).count_nonzero
+
+test/test_sparse_concept_e2e.py:302: AssertionError
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations
+1 failed, 1 warning in 2.19s

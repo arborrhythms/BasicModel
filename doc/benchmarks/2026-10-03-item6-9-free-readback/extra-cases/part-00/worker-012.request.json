@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_conceptual_recurrence.py::test_bind_contained_in_conceptual_space"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-012.recycle.json"
+}

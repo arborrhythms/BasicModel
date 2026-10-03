@@ -1,0 +1,27 @@
+{
+  "expected_backend": "eager",
+  "actual_backend": "none",
+  "basis": "../2026-09-30-item6-9/measure.py::environment",
+  "variant_results_complete": 30,
+  "candidate_changed": false,
+  "active_mm": [
+    {
+      "kind": "mm",
+      "trial": 1,
+      "name": "mm-01",
+      "pid": 85708
+    },
+    {
+      "kind": "mm",
+      "trial": 2,
+      "name": "mm-02",
+      "pid": 86018
+    },
+    {
+      "kind": "mm",
+      "trial": 3,
+      "name": "mm-03",
+      "pid": 86122
+    }
+  ]
+}

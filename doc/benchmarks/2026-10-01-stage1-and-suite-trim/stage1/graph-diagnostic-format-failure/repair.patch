@@ -1,0 +1,15 @@
+--- old
++++ new
+@@ -23,8 +23,10 @@
+         serial += 1
+         def tensors(value):
+             if isinstance(value, torch.Tensor):
+-                shape=[int(d) for d in value.shape]
+-                return [dict(shape=shape,dtype=str(value.dtype),bytes=math.prod(shape)*value.element_size())]
++                shape=[d if isinstance(d,int) else str(d) for d in value.shape]
++                hints=[d if isinstance(d,int) else d.node.hint for d in value.shape]
++                size=math.prod(hints)*value.element_size() if all(isinstance(d,int) for d in hints) else None
++                return [dict(shape=shape,hints=hints,dtype=str(value.dtype),bytes=size)]
+             if isinstance(value,(list,tuple)):
+                 return [a for x in value for a in tensors(x)]
+             return []

@@ -1,11 +1,8 @@
-"""The PS word store (type="words") for the reverse() recommenders.
+"""Promoted word vocabulary views and radial inverse recommenders.
 
-doc/plans/2026-07-12-word-store-typed-reverse.md (v2, Alec's review): the
-word store IS the PS RadixLayer's promoted collection — this pass LABELS it
-(``RadixLayer.word_ids`` / ``word_text``, no new state) and, gated
-``<PartSpace><wordStore>``, routes the Method-2 free-derivation un-fold's
-recommender candidates through it (basis = PS ``subspace.what``, restricted
-to the word rows via ``left_rows``/``right_rows``; percept id == row).
+The optional wordStore routing and slot-kind path were retired in item 6.9
+§15.6. These tests retain the native Radix vocabulary and the independently
+used radial recommendation behavior; radialStmReduce remains supported.
 """
 
 import pytest
@@ -13,6 +10,7 @@ import pytest
 import os
 import sys
 import warnings
+from pathlib import Path
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -27,7 +25,7 @@ if _BIN not in sys.path:
 import torch
 
 _DATA = os.path.join(_PROJECT, "data")
-_SMOKE = os.path.join(_DATA, "MM_meronomy_smoke.xml")
+_SMOKE = os.path.join(_DATA, "MM_ladder.xml")
 _DEFAULTS = os.path.join(_DATA, "model.xml")
 
 
@@ -113,25 +111,19 @@ def test_recommender_row_restriction_recovers_stored_pair():
 _CACHE = {}
 
 
-def _build(tmp_path_factory, word_store=True):
-    key = "on" if word_store else "off"
-    if key in _CACHE:
-        return _CACHE[key]
+def _build(tmp_path_factory):
+    key = "meronomy"
     import Models
     import Language
     from util import init_config, TheXMLConfig
-    with open(_SMOKE) as f:
-        xml = f.read()
-    if word_store:
-        # Anchor on the REAL element (line-start indent) — the header
-        # comment also mentions <synthesis>meronomy</synthesis>.
-        anchor = "\n    <synthesis>meronomy</synthesis>"
-        assert anchor in xml
-        xml = xml.replace(
-            anchor,
-            anchor + "\n    <chunkPromotionThreshold>2"
-                     "</chunkPromotionThreshold>\n"
-                     "    <wordStore>true</wordStore>", 1)
+    from configuration_fixtures import small_retained
+    with small_retained('MM_ladder.xml') as path:
+        xml = Path(path).read_text()
+    # Anchor on the REAL element (line-start indent) — the header
+    # comment also mentions <synthesis>meronomy</synthesis>.
+    anchor = "\n    <synthesis>meronomy</synthesis>"
+    assert anchor in xml
+    assert xml.count('<chunkPromotionThreshold>2</chunkPromotionThreshold>') == 1
     d = tmp_path_factory.mktemp("word_store")
     p = os.path.join(str(d), f"MM_word_store_{key}.xml")
     with open(p, "w") as f:
@@ -141,8 +133,7 @@ def _build(tmp_path_factory, word_store=True):
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         m, _ = Models.BasicModel.from_config(p)
-    Models.TheData.load(TheXMLConfig.get("data.dataset", default="phrases"))
-    _CACHE[key] = m
+    Models.TheData.load("xor")
     return m
 
 
@@ -158,16 +149,11 @@ def _train_forward(m):
 
 # -- gating + the live collection ---------------------------------------------
 
-@pytest.mark.slow
-def test_knob_default_off(tmp_path_factory):
-    m = _build(tmp_path_factory, word_store=False)
-    assert getattr(m.perceptualSpace, "word_store_reverse", None) is False
 
 
 @pytest.mark.slow
 def test_reading_promotes_the_batch_words(tmp_path_factory):
-    m = _build(tmp_path_factory, word_store=True)
-    assert m.perceptualSpace.word_store_reverse is True
+    m = _build(tmp_path_factory)
     items = _train_forward(m)
     items = _train_forward(m)                    # 2 sightings >= threshold
     store = m.perceptualSpace.percept_store
@@ -204,7 +190,7 @@ def test_one_to_one_recognition_registers_under_words(tmp_path_factory):
     trie's created word) must be EQUAL IN SPAN to the WS word-property
     span. Multi-part runs and span mismatches do not register; first
     sighting suffices."""
-    m = _build(tmp_path_factory, word_store=True)
+    m = _build(tmp_path_factory)
     cs = m.conceptualSpace
     store = m.perceptualSpace.percept_store
     # 'zebra' promoted -> ONE pid; 'yak' unpromoted -> byte run; 'quix'
@@ -272,7 +258,7 @@ def test_one_to_one_recognition_registers_under_words(tmp_path_factory):
 
 @pytest.mark.slow
 def test_percept_extras_ride_the_checkpoint_envelope(tmp_path_factory):
-    m = _build(tmp_path_factory, word_store=True)
+    m = _build(tmp_path_factory)
     _train_forward(m)
     _train_forward(m)
     ps = m.perceptualSpace
@@ -303,7 +289,7 @@ def test_percept_extras_ride_the_checkpoint_envelope(tmp_path_factory):
 
 @pytest.mark.slow
 def test_storeless_configs_emit_no_percept_key(tmp_path_factory):
-    m = _build(tmp_path_factory, word_store=False)
+    m = _build(tmp_path_factory)
     # The OFF smoke still has a radix/meronomy store; emptiness is what
     # gates the key. A fresh (unused) model's store is empty only before
     # any forward — emulate by swapping an empty store.
@@ -321,146 +307,14 @@ def test_storeless_configs_emit_no_percept_key(tmp_path_factory):
 
 # -- open-fronts Task B: word-bearing-fold filtering ---------------------------
 
-def test_slot_kind_stacks_mirror_the_push_discipline():
-    from Layers import ShortTermMemory
-    stm = ShortTermMemory(batch=2, capacity=4, concept_dim=3)
-    stm.ensure_batch(2)
-    assert getattr(stm, "_slot_kinds", None) is None    # recording off
-    stm.note_push_all("other")                          # no-op while off
-    stm.kinds_enable(2, depths=[1, 0], kind="other")
-    ks = stm._slot_kinds
-    assert ks == [["other"], []]                        # carried content tagged
-    stm.note_push_all("other")
-    stm.note_push_masked([True, False], "word")
-    assert ks[0] == ["word", "other", "other"]
-    assert ks[1] == ["other"]
-    stm.clear()
-    assert ks == [[], []]
 
 
-@pytest.mark.slow
-def test_words_summary_row_running_mean(tmp_path_factory):
-    """Alec's §3a call: the WORDS codebook face is the order-capped
-    SUMMARY ROW — the well-known 'words' atom (WS row 0) carries the
-    running mean of member word-whole rows, fold record stamped full."""
-    m = _build(tmp_path_factory, word_store=True)
-    _train_forward(m)
-    # The word auto-bind commits at the sentence boundary (hard Reset), not
-    # inside forward(); drive it here so this test is self-sufficient under
-    # xdist (the module's cached model may not have been primed by an
-    # earlier test on this worker).
-    m.dispatch_per_row_reset([True] * 4)
-    ws = m.wholeSpace
-    cs = m.conceptualSpace
-    ww = getattr(ws, "_word_whole_ss", {}) or {}
-    p2r = ws._ws_pos_to_row
-    keys = [k for k in ww if ww[k] in p2r][:2]
-    assert len(keys) == 2, "need two bound word-wholes on the smoke"
-    W = ws.subspace.what.getW()
-    row0 = ws.well_known_atoms["words"]
-    saved_reg = getattr(cs, "_recognized_words", None)
-    saved_wid = getattr(cs, "_words_concept_id", None)
-    saved_row0 = W[row0].detach().clone()
-    try:
-        object.__setattr__(cs, "_recognized_words", {})
-        object.__setattr__(cs, "_words_concept_id", None)
-        v1 = W[p2r[ww[keys[0]]]].detach().clone()
-        v2 = W[p2r[ww[keys[1]]]].detach().clone()
-        A1, A2 = cs.new_concept(), cs.new_concept()
-        cs._register_recognized_word(A1, "syn_w1", 1, ws=ws,
-                                     whole_pos=ww[keys[0]])
-        cs.apply_pending_words_summary(ws)   # the stem drain (deferred write)
-        assert torch.allclose(W[row0].detach(), v1, atol=1e-5)
-        cs._register_recognized_word(A2, "syn_w2", 2, ws=ws,
-                                     whole_pos=ww[keys[1]])
-        cs.apply_pending_words_summary(ws)
-        assert torch.allclose(W[row0].detach(), (v1 + v2) / 2, atol=1e-5)
-        cb = ws.subspace.what
-        rams = getattr(cb, "ramsification", None)
-        if rams is not None:
-            assert cb.abstraction_order(row0) == int(rams.shape[1])
-    finally:
-        with torch.no_grad():
-            W.data[row0] = saved_row0
-        object.__setattr__(cs, "_recognized_words", saved_reg)
-        object.__setattr__(cs, "_words_concept_id", saved_wid)
 
 
 # -- open-fronts Task C: the WS word-whole rows resolve for the SS driver ----
 
-@pytest.mark.slow
-def test_ws_word_whole_registry_resolves_to_rows(tmp_path_factory):
-    m = _build(tmp_path_factory, word_store=True)
-    # The word auto-bind is committed at the SENTENCE BOUNDARY
-    # (``ConceptualSpace.Reset(hard=True)`` -> ``_commit_autobind_from_stash``),
-    # not inside ``forward()``; drive the real path the way the outer
-    # doc-streaming loop does so this test does not depend on an earlier
-    # test in the module having bound word-wholes on the cached model.
-    _train_forward(m)
-    m.dispatch_per_row_reset([True] * 4)
-    ws = m.wholeSpace
-    reg = getattr(ws, "_word_whole_ss", None)
-    p2r = getattr(ws, "_ws_pos_to_row", None)
-    assert reg, "the autobind must have bound word-wholes on this config"
-    rows = sorted({int(p2r[p]) for p in reg.values() if p in p2r})
-    assert rows, "word-whole positions must resolve through _ws_pos_to_row"
-    W = ws.subspace.what.getW()
-    assert all(0 <= r < int(W.shape[0]) for r in rows)
 
 
-@pytest.mark.slow
-def test_forward_records_kind_tagged_trace(tmp_path_factory, monkeypatch):
-    m = _build(tmp_path_factory, word_store=True)
-    chooser = m._stm_reducer().chooser
-    def binary(x, candidates, *_args, **_kwargs):
-        scores = x.new_full(candidates.shape[:3], -torch.inf)
-        scores[..., 0] = 0.
-        return x.new_zeros(*x.shape[:2], 1), scores
-    def unary(x, candidates, *_args, **_kwargs):
-        return x.new_zeros(*x.shape[:2], 1), x.new_full(candidates.shape[:3], -torch.inf)
-    chooser.score_binary = binary
-    chooser.score_unary = unary
-    loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
-    items, _ = next(iter(loader))
-    x = m.inputSpace.prepInput(items)
-    m.eval()
-    with torch.no_grad():
-        m.forward(x)
-    stm = m.conceptualSpace.stm
-    ks = getattr(stm, "_slot_kinds", None)
-    assert ks is not None and len(ks) == len(items), \
-        "kind recording must be live on wordStore configs"
-    reconstruction = m.symbolSpace.reconstruction_stack
-    trace = reconstruction.reduction_trace()
-    assert trace, "the sweep must have traced folds"
-    assert all(len(step) == 4 for step in trace), \
-        "trace steps must carry operand kinds while recording"
-    word_ids, word_mask = reconstruction.words()
-    word_part_ids, word_part_mask = reconstruction.word_parts()
-    leaves = reconstruction.leaves()
-    # A durable CS identity is optional on the unaligned smoke config, but the
-    # exact open-vocabulary radix spelling is always the discrete word target.
-    if word_ids is not None or word_mask is not None:
-        assert torch.is_tensor(word_ids) and torch.is_tensor(word_mask)
-        assert tuple(word_ids.shape) == tuple(word_mask.shape)
-    assert torch.is_tensor(word_part_ids) and torch.is_tensor(word_part_mask)
-    assert tuple(word_part_ids.shape) == tuple(word_part_mask.shape)
-    assert int(word_part_ids.shape[0]) == len(items)
-    assert bool(word_part_mask.any())
-    assert torch.is_tensor(leaves) and int(leaves.shape[0]) == len(items)
-    assert leaves.grad_fn is None
-    choice_ids, choice_arities, choice_mask = reconstruction.choices()
-    assert torch.is_tensor(choice_ids)
-    assert torch.is_tensor(choice_arities)
-    assert torch.is_tensor(choice_mask)
-    assert bool(choice_mask.any()), "at least one committed fold must be traced"
-    for arity in (1, 2):
-        selected = choice_mask & (choice_arities == arity)
-        if bool(selected.any()):
-            allowed = set(reconstruction.rule_map(arity).tolist())
-            assert set(choice_ids[selected].tolist()).issubset(allowed)
-    assert not hasattr(m, "_stm_pre_reduce_slab")
-    assert not hasattr(m, "_stm_reduce_op_trace")
 
 
 # -- cross-batch graph severing (LAST in file: builds a DIFFERENT config) ----
@@ -654,7 +508,7 @@ def test_grammar_reverse_ops_from_generate_section(tmp_path_factory):
     determined from the grammar's <generate> section, symmetric to how the
     forward reducer is built from <compose>. Enumerates the arity-2
     snap-capable reverse ops (union / intersection at minimum)."""
-    m = _build(tmp_path_factory, word_store=True)
+    m = _build(tmp_path_factory)
     ops = m._grammar_reverse_ops()
     names = {n for n, _ in ops}
     # The SS lattice pair (radmax / radmin under radialStmReduce) is what the
@@ -669,11 +523,11 @@ def test_grammar_reverse_ops_from_generate_section(tmp_path_factory):
 def test_reverse_chooser_picks_fold_op_by_roundtrip(tmp_path_factory):
     """The reverse derivation finds its OWN op — no forward record: it scores
     each grammar reverse op by ROUND-TRIP fit (op.compose(op.reverse(parent))
-    vs parent) and picks the best. A radmax(w1, w2) root is explained by
-    union, not intersection, and recovers the exact word pair."""
+    vs parent) and picks the best. A mean(w1, w2) root is explained by
+    disjunction, and recovers the exact word pair."""
     from Layers import Ops
 
-    m = _build(tmp_path_factory, word_store=True)
+    m = _build(tmp_path_factory)
     _train_forward(m)
     _train_forward(m)
     cs_list = (list(getattr(m, "conceptualSpaces", []) or [])
@@ -686,11 +540,11 @@ def test_reverse_chooser_picks_fold_op_by_roundtrip(tmp_path_factory):
     W = m.perceptualSpace.subspace.what.getW().detach()
     r1, r2 = int(wid[0]), int(wid[1])
     basis = m.perceptualSpace.subspace.what
-    parent = Ops._radmax(W[r1], W[r2])
+    parent = Ops._disjunction_kernel(W[r1], W[r2])
     ops = m._grammar_reverse_ops()
     (name, _host), (x1, x2), _fit = m._reverse_choose_op(
         parent, ops, basis, wid.to(W.device))
-    assert name == "disjunction"          # radmax fold, discovered by fit
+    assert name == "disjunction"          # mean fold, discovered by fit
     got = {tuple(x1.reshape(-1)[:W.shape[1]].tolist()),
            tuple(x2.reshape(-1)[:W.shape[1]].tolist())}
     assert got == {tuple(W[r1].tolist()), tuple(W[r2].tolist())}
@@ -698,66 +552,8 @@ def test_reverse_chooser_picks_fold_op_by_roundtrip(tmp_path_factory):
 
 # -- step 3: Method-1 -> Method-2 distillation (root separability) -----------
 
-@pytest.mark.slow
-def test_leaf_distill_default_off(tmp_path_factory):
-    """<training><leafDistillWeight> defaults 0.0 -> no term, no head —
-    byte-identical (the house default-off contract)."""
-    from Layers import TheError
-
-    m = _build(tmp_path_factory, word_store=True)
-    assert float(getattr(m, "leaf_distill_weight", 0.0)) == 0.0
-    terms = []
-    orig_add = TheError.add
-
-    def spy(name, value, weight=1.0, **kw):
-        terms.append(name)
-        return orig_add(name, value, weight=weight, **kw)
-
-    TheError.add = spy
-    try:
-        opt = m.getOptimizer(lr=0.01)
-        m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
-    finally:
-        TheError.add = orig_add
-    assert "leaf_distill" not in terms
-    assert getattr(m, "_leaf_distill_head_module", None) is None
 
 
-@pytest.mark.slow
-def test_leaf_distill_trains_root_toward_leaves(tmp_path_factory):
-    """Step 3 (Alec: 'the training of method-1 will give information to
-    method-2'): with the knob on, a train batch adds the leaf_distill term —
-    the leaf-decoder head regenerates the Method-1 EXACT leaves
-    (SymbolSpace.reconstruction_stack.leaves()) from the collapsed root
-    (_stm_single_S), so the
-    root cannot satisfy it while collapsing distinct sentences to one
-    attractor. The head exists, carries gradients after the step, and is
-    handed to the optimizer."""
-    from Layers import TheError
-
-    m = _build(tmp_path_factory, word_store=True)
-    m.leaf_distill_weight = 0.1
-    terms = {}
-    orig_add = TheError.add
-
-    def spy(name, value, weight=1.0, **kw):
-        if name == "leaf_distill" and torch.is_tensor(value):
-            terms[name] = float(value.detach())
-        return orig_add(name, value, weight=weight, **kw)
-
-    TheError.add = spy
-    try:
-        opt = m.getOptimizer(lr=0.01)
-        m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
-    finally:
-        TheError.add = orig_add
-        m.leaf_distill_weight = 0.0
-    assert terms.get("leaf_distill", 0.0) > 0.0
-    head = getattr(m, "_leaf_distill_head_module", None)
-    assert head is not None
-    opt_params = {id(p) for g in opt.param_groups for p in g["params"]}
-    assert all(id(p) in opt_params for p in head.parameters()), \
-        "the lazily-built head must be handed to the live optimizer"
 
 
 @pytest.mark.slow
@@ -771,17 +567,18 @@ def test_percept_concept_reverse_index_and_row(tmp_path_factory):
     TRANSLATES them back to word concepts (the exact reverse). Pins:
     percept -> (A, B) reverse tie -> B's order-0 ``similarity_codebook``
     row, and the B -> A translation."""
-    m = _build(tmp_path_factory, word_store=True)
+    m = _build(tmp_path_factory)
     cs = m.conceptualSpace
-    A, B = cs.interpret_word([3, 5], word_whole=None, key="hello")
-    # Each word-part percept resolves to BOTH members of the pair ...
-    assert cs.concept_of_percept(3) == A
-    assert cs.concept_of_percept(5) == A
-    assert cs.object_concept_of_percept(3) == B
+    store = m.perceptualSpace.percept_store
+    pid = store.insert(b'hello')
+    A, B = cs.interpret_word([pid], word_whole=None, key='hello')
+    # The full native percept resolves to the unary word/object pair ...
+    assert cs.concept_of_percept(pid) == A
+    assert cs.object_concept_of_percept(pid) == B
     assert cs.concept_of_percept(99) is None          # untied percept
     assert cs.object_concept_of_percept(99) is None
     # ... the fold target is the OBJECT concept's order-0 row ...
-    row = cs.concept_codebook_row_of_percept(3)
+    row = cs.concept_codebook_row_of_percept(pid)
     assert row is not None and row == cs._csw_concept_row(0, B)
     W = cs.similarity_codebook.getW()
     assert 0 <= int(row) < int(W.shape[0])
@@ -792,28 +589,16 @@ def test_percept_concept_reverse_index_and_row(tmp_path_factory):
 
 @pytest.mark.slow
 def test_concept_row_content_lights_up_the_resolved_row(tmp_path_factory):
-    """The serial read's resolve+gather (step (b)): a percept tied to a
-    word/object pair lights up the OBJECT concept's ``similarity_codebook``
-    row (the forward folds object concepts) — unit-norm (the signed
-    hypersphere) and EXACTLY the resolved row; an untied percept gives
-    mask False and a zero row (the caller keeps the computed idea there).
-    Cross-word DISTINCTNESS is structural (distinct concepts -> distinct
-    rows) and capacity-gated: the smoke config's order-0 block holds ONE
-    row (caps0=1, nVectors=2), so only real configs (caps0 >= the
-    word/object inventory) can seat several — the re-ladder phase
-    exercises that."""
-    import torch.nn.functional as _F
-
-    m = _build(tmp_path_factory, word_store=True)
+    """Resolve the exact, unconstrained object code; untied percepts are zero."""
+    m = _build(tmp_path_factory)
     cs = m.conceptualSpace
     A1, _ = cs.interpret_word([3], word_whole=None, key="hello")
     content, mask = cs.concept_row_content(torch.tensor([3, 99]))
     assert mask.tolist() == [True, False]
-    assert torch.allclose(content[0].norm(), torch.tensor(1.0), atol=1e-5)
     assert not bool(content[1].detach().ne(0).any())       # untied -> zero row
     W = cs.similarity_codebook.getW()
     r1 = cs.concept_codebook_row_of_percept(3)
-    assert torch.allclose(content[0], _F.normalize(W[r1], dim=-1, eps=1e-8),
+    assert torch.allclose(content[0], W[r1],
                           atol=1e-6)
 
 
@@ -831,15 +616,15 @@ def test_concept_index_read_sizes_inventory_by_explicit_nvectors(
     import Language
     from util import init_config
 
-    cfg = os.path.join(_PROJECT, "data", "matrix",
-                       "MM_20M_grammar_wordstore.xml")
-    with open(cfg) as f:
-        xml = f.read()
-    assert "<radialStmReduce>" in xml and "<nVectors>8</nVectors>" in xml
-    xml = xml.replace("<radialStmReduce>",
-                      "<conceptIndexRead>true</conceptIndexRead>\n    "
-                      "<radialStmReduce>", 1)
-    xml = xml.replace("<nVectors>8</nVectors>", "<nVectors>16</nVectors>", 1)
+    from configuration_fixtures import small_retained
+    import xml.etree.ElementTree as ET
+    with small_retained('MM_ladder.xml') as cfg:
+        root = ET.parse(cfg).getroot()
+    arch = root.find('architecture')
+    ET.SubElement(arch, 'conceptIndexRead').text = 'true'
+    root.find('ConceptualSpace/nVectors').text = '16'
+    root.find('ConceptualSpace/activeVectors').text = '16'
+    xml = ET.tostring(root, encoding='unicode')
     d = tmp_path_factory.mktemp("cir_sizing")
     p = os.path.join(str(d), "wordstore_cir.xml")
     with open(p, "w") as f:
@@ -857,8 +642,7 @@ def test_concept_index_read_sizes_inventory_by_explicit_nvectors(
             caps = c._order_caps()
             assert caps and int(caps[0]) >= 8            # seats 4x(A+B)
     finally:
-        # The module _CACHE models were built under the smoke config;
-        # restore its XMLConfig so later cached-model tests stay valid.
+        # Restore the kept configuration for subsequent tests.
         init_config(path=_SMOKE, defaults_path=_DEFAULTS)
         Language.TheGrammar._configured = False
 
@@ -884,9 +668,12 @@ def test_two_epoch_training_severs_cross_batch_graph(monkeypatch):
     random.seed(0)
     torch.manual_seed(0)
     np.random.seed(0)
-    cfg = recon_bench._resolve_config(
-        "data/matrix/MM_20M_grammar_wordstore.xml")
-    m, dev, lr, batch_size = recon_bench._build_model(cfg)
+    from configuration_fixtures import small_retained
+    with small_retained('MM_ladder.xml') as cfg:
+        m, dev, lr, batch_size = recon_bench._build_model(cfg)
+    import Models
+    Models.TheData.load('xor')
+    batch_size = 4
     opt = m.getOptimizer(lr=lr)
     from types import SimpleNamespace
     observed = None
@@ -902,7 +689,7 @@ def test_two_epoch_training_severs_cross_batch_graph(monkeypatch):
         return result
     monkeypatch.setattr(m, '_sentence_observation', observe)
     for _ in range(2):                     # epoch 1 crashed pre-fix
-        m.runEpoch(optimizer=opt, batchSize=batch_size, split="train")
+        m.runEpoch(optimizer=opt, batchSize=batch_size, split="train", max_batches=1)
 
     def graph_free(t):
         return not (torch.is_tensor(t) and t.grad_fn is not None)
@@ -1074,11 +861,12 @@ def test_missing_surface_snapshot_is_a_staging_error_without_input_fallback():
         cost = m._byte_word_cost(reference[:, 0], torch.tensor(0),
                                  bank, values, valid,
                                  target_bytes, target_valid, ready)
-        # The scoring primitive has an uncertainty floor, but production
-        # reconstruction must reject a sentence with no usable candidates.
-        torch.testing.assert_close(cost, torch.full_like(cost, math.log(256)))
-        with pytest.raises(RuntimeError, match="reconstruction has no surface candidates"):
-            m._validate_reconstruction_bank()
+        # No admitted candidate is an absent reconstruction term, counted
+        # separately. A structurally absent bank remains a staging error.
+        torch.testing.assert_close(cost, torch.zeros_like(cost))
+        m._validate_reconstruction_bank()
+        assert int(isp._reconstruction_missing_sentence_count) == B
+        assert not bool(isp._reconstruction_sentence_available.any())
         isp._ar_bank_bytes = None
         isp._ar_bank_valid = None
         isp._ar_concept_lookup_atoms = None

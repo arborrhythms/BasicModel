@@ -38,23 +38,6 @@ def _model():
     return model
 
 
-def test_batch_advances_sentence_property_removed():
-    """The legacy stub property has been deleted.
-
-    The predecessor (per-row-AR-no-eos-sync) handoff introduced
-    ``batch_advances_sentence`` as a host-side gate replacing the
-    tensor-typed ``_end_of_stream.all().item()``. The rolling-cursor
-    handoff then moved Reset to the outer loop and stopped consulting
-    the property. With no remaining readers, the brick-vectorization
-    handoff deletes it outright. This test guards against accidental
-    resurrection.
-    """
-    model = _model()
-    assert not hasattr(model.inputSpace, 'batch_advances_sentence'), (
-        "batch_advances_sentence property should be deleted; the per-row "
-        "Reset cascade in the outer doc-streaming loop is the canonical "
-        "gate now (see plans/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md)"
-    )
 
 
 def test_runBatch_source_does_not_consume_eos_for_control_flow():

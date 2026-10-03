@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_observer_depth.py", line 26, in <module>
+    assert deviations == [0.], deviations
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: [3.0]

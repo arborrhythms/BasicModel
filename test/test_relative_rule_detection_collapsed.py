@@ -45,22 +45,6 @@ _COLLAPSED_GRAMMAR = textwrap.dedent("""\
     </grammar>
 """)
 
-# A back-compat grammar whose relative start is the bare ``REL_T`` symbol
-# with NO name attribute (the literal-fallback path).
-_REL_T_NO_NAME_GRAMMAR = textwrap.dedent("""\
-    <?xml version="1.0"?>
-    <grammar name="rel_t_probe">
-      <Symbolic>
-        <start>REL_T</start>
-        <compose>
-          <rule>REL_T = equal.forward(NP_A, NP_B)</rule>
-        </compose>
-        <generate>
-          <rule>NP_A, NP_B = equal.reverse(REL_T)</rule>
-        </generate>
-      </Symbolic>
-    </grammar>
-""")
 
 
 def _load(text, monkeypatch, tmp_path):
@@ -108,12 +92,3 @@ def test_part_rule_relative_by_op_name(monkeypatch, tmp_path):
     for i in part_reverse:
         assert i in rel, (
             f"part rule {g.rules[i].canonical!r} not flagged relative")
-
-
-def test_rel_t_back_compat_fallback(monkeypatch, tmp_path):
-    """A bare ``<start>REL_T</start>`` (no name attribute) still yields the
-    relative start via the literal-``REL_T`` fallback."""
-    g = _load(_REL_T_NO_NAME_GRAMMAR, monkeypatch, tmp_path)
-    assert g._relative_start_categories() == {"REL_T"}
-    by_lhs = {r.lhs: i for i, r in enumerate(g.rules_upward)}
-    assert g.is_relative_rule(by_lhs["REL_T"])

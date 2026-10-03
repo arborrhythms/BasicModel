@@ -1,0 +1,18 @@
+{"name": "xor-02", "exit_code": 0, "reason": "exit"}
+{"name": "xor-03", "exit_code": 1, "reason": "exit"}
+{"name": "xor-01", "exit_code": 1, "reason": "exit"}
+{"name": "xor-04", "exit_code": 1, "reason": "exit"}
+{"name": "xor-05", "exit_code": 1, "reason": "exit"}
+{"name": "xor-06", "exit_code": 0, "reason": "exit"}
+{"name": "xor-08", "exit_code": 1, "reason": "exit"}
+{"name": "xor-07", "exit_code": 1, "reason": "exit"}
+{"name": "xor-09", "exit_code": 1, "reason": "exit"}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/closing_campaign.py", line 149, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/closing_campaign.py", line 134, in main
+    measure.campaign()
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-shared-gates/measure.py", line 111, in campaign
+    time.sleep(.5)
+KeyboardInterrupt

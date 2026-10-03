@@ -1,0 +1,3 @@
+[collect] 2 selectors; limit 1800s, 8.0 GiB
+[collect] exit 4; 3.7s; peak 0.40 GiB
+{"reason": "collection_exit", "selected": 0, "completed": 0}

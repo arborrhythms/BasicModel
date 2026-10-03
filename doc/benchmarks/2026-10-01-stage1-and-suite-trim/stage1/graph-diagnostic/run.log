@@ -1,0 +1,18 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+Device: cpu
+Debug checks: OFF
+Model compiled (eager, mode=max-autotune, fullgraph=True)
+Debug checks: OFF
+Model compiled (eager, mode=max-autotune, fullgraph=True)
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/1]
+[AMP] off (fp32, MODEL_AMP unset or =off)
+W1001 12:47:15.064000 74121 .venv/lib/python3.12/site-packages/torch/_dynamo/backends/debugging.py:57] [0/0] eager backend ignoring extra kwargs {'mode': 'max-autotune'}
+Captured first language graph; intentionally stopping before execution.

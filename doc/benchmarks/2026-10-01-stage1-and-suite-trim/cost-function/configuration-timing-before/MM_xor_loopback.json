@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_xor_loopback.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 1.4699162079996313,
+  "batch": 4,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 0.4311281250047614,
+  "output_loss": 0.17559966444969177,
+  "reconstruction_loss": 0.24177001416683197,
+  "completed": true,
+  "total_seconds": 1.9010484160025953
+}

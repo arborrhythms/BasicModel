@@ -1,0 +1,31 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mixing_unit_extent_prototype.py", line 25, in <module>
+    model,_,_=_fresh_model(str(ROOT/'data/XOR_grammar.xml'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py", line 40, in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1824, in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7079, in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1924, in create_from_config
+    self.create(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7099, in create
+    return self._create_per_stage(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17634, in _create_per_stage
+    self.build_pipelines()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7124, in build_pipelines
+    return self._build_pipelines_per_stage()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17702, in _build_pipelines_per_stage
+    install_where_registry(self)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mixing_unit_extent_prototype.py", line 19, in input_byte_extent
+    model.inputSpace.outputShape = [previous[0] * model.serial_residual_part_capacity, *previous[1:]]
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1972, in __getattr__
+    raise AttributeError(
+AttributeError: 'BasicModel' object has no attribute 'serial_residual_part_capacity'. Did you mean: '_stage_fixed_residual_part_capacity'?

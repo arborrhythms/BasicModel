@@ -139,13 +139,16 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         return node
 
     def generic(node):
-        requests = dict(getattr(node['rule'], 'reference_kinds', ()))
-        if any(mode in ('generic', 'kind') for mode in requests.values()):
-            return True
-        if any(mode in ('particular', 'name', 'pronoun') for mode in requests.values()):
-            return False
-        selected = head(node)
-        return selected is not node and generic(selected)
+        while True:
+            requests = dict(getattr(node['rule'], 'reference_kinds', ()))
+            if any(mode in ('generic', 'kind') for mode in requests.values()):
+                return True
+            if any(mode in ('particular', 'name', 'pronoun') for mode in requests.values()):
+                return False
+            selected = head(node)
+            if selected is node:
+                return False
+            node = selected
 
     def concept(node):
         selected = head(node)
@@ -163,8 +166,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
 
     def is_clause(node):
         node = head(node)
-        if len(node['children']) == 1 and name(node) in ('not', 'non', 'what', 'true', 'tense', 'morphology'):
-            return is_clause(node['children'][0])
+        while len(node['children']) == 1 and name(node) in ('not', 'non', 'what', 'true', 'tense', 'morphology'):
+            node = head(node['children'][0])
         return (name(node) in relative or getattr(node['rule'], 'clause_form', None) in ('S', 'implies') or
                 getattr(node['rule'], 'lhs', None) in absolute_starts or
                 (len(node['children']) == 2 and not node['has_point']
@@ -272,19 +275,21 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                                 role_mask=described.role_mask[[2, 1, 0]])
 
         def retain_completed(part):
-            if id(part) in owned:
-                return
-            selected = head(part)
-            while len(selected['children']) == 1:
-                selected = head(selected['children'][0])
-            if selected is not node and is_clause(part):
-                # A projection changes the enclosing NP's head, not the
-                # ownership of S events already completed in its derivation.
-                children.append(recover(part))
-                owned.add(id(part))
-                return
-            for child in part['children']:
-                retain_completed(child)
+            pending = [part]
+            while pending:
+                part = pending.pop()
+                if id(part) in owned:
+                    continue
+                selected = head(part)
+                while len(selected['children']) == 1:
+                    selected = head(selected['children'][0])
+                if selected is not node and is_clause(part):
+                    # A projection changes the enclosing NP's head, not the
+                    # ownership of S events completed in its derivation.
+                    children.append(recover(part))
+                    owned.add(id(part))
+                    continue
+                pending.extend(reversed(part['children']))
         retain_completed(root)
         field = Clause(described, point=None if relation else (
             program.end_state[0] if top else value(root)), relation=relation,

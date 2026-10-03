@@ -1,0 +1,15 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -10116,7 +10116,11 @@
+                     output_truncated = torch.logical_or(output_truncated, n_emitted > kept)
+                     words = words[:, :kept]
+                 object.__setattr__(self, "_output_truncated", output_truncated)
+-                object.__setattr__(self, "_output_policy_cost", policy_cost)
++                # A trial's supplied answer trains its realization path.
++                # Policy credit has one owner: the batch-end answer call.
++                if not (getattr(self, "_sentence_training", False)
++                        and getattr(self, "_sentence_trial", None) in ("exploit", "explore")):
++                    object.__setattr__(self, "_output_policy_cost", policy_cost)
+                 walked = words
+                 if not self.training or not torch.is_grad_enabled():
+                     texts = self._generated_word_text(words, n_emitted)

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/compose_deadline_probe.py"
+  ],
+  "pid": 47611,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 411944040,
+  "elapsed_seconds": 3.8573208330053603,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/compose-deadline-trace-before.log"
+}

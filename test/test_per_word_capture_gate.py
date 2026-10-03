@@ -68,7 +68,7 @@ def _build_gate_model():
     from util import init_config, init_device
 
     init_device("cpu")
-    cfg = str(_root / "data" / "MM_20M_grammar.xml")
+    cfg = str(_root / "data" / "MM_ladder.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -89,8 +89,9 @@ def _stage_for_per_word(m):
     assert isp._per_word_enabled is True, (
         "gate target: MM_20M (grammar-enabled) must wire "
         "_per_word_enabled=True")
-    inp, _ = isp.getTrainData()
-    inp_items = list(inp[:2])
+    # The isolated two-word cell does not need an arbitrary corpus sentence
+    # that may exceed this fixture's fixed eight-word bucket.
+    inp_items = ['alpha beta', 'gamma delta']
     isp.Start()
     inputTensor = isp.prepInput(inp_items)
     in_sub = m._lex_embed_stem(inputTensor)
@@ -109,6 +110,10 @@ def _stage_for_per_word(m):
     # ``_per_word_body_step`` in isolation so the prelude is
     # replayed here verbatim.
     m._per_word_prelude(in_sub)
+    m._stage_reconstruction_teacher()
+    m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
+        isp._word_active_mask.shape[1], isp._word_active_mask.device)
+    m._per_word_contributions = [None] * isp._word_active_mask.shape[1]
     # Production's enable_compiled_step() constructs the grammar reducer
     # before tracing. Parameter construction inside a Dynamo trace is not
     # supported, so the isolated-step gate must mirror that boundary.

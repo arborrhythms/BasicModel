@@ -1,0 +1,7 @@
+expected: class 1/4
+actual: | test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy | failed; peak 0.59 GiB | class accuracy [0.0] |
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/xor-summary-failure/probe_summary.py", line 11, in <module>
+    assert probe['expected_summary'] in row
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

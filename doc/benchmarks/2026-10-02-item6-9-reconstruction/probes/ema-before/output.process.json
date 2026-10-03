@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-10-02-item6-9-reconstruction/probe_code_writers.py"
+  ],
+  "pid": 83985,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 476628168,
+  "elapsed_seconds": 3.7953784170094877,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/ema-before/output.log"
+}

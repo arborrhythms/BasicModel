@@ -1,0 +1,114 @@
+{
+  "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology": {
+    "classification": "Learning assertion reached after the fixture repair; unwaived failure",
+    "cause": "The best training-set classification accuracy observed at ten-epoch intervals through 40 epochs was 0.96875, below the unchanged 1.0 assertion at learning rate 0.001.",
+    "comparison": "The ownership receipt stopped this case at duplicate answerSynthesis XML validation. That setup defect is repaired; the earlier result does not establish whether the newly reached learning shortfall is a regression.",
+    "evidence": "extra-cases/part-00/worker-020.json",
+    "action": "Preserve the first outcome. No retry, seed, budget, threshold or assertion change after the source freeze."
+  },
+  "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately": {
+    "classification": "Remaining test port: one-term compiled helper versus two-term eager reconstruction",
+    "cause": "The helper _compiled_record_reconstruction calls _reconstruct_sentences with its default witnessed-only mode and returns that cost and its ideas. Models._reconstruct_trial now returns witnessed plus free cost and free ideas. The test therefore compares different contracts, before it reaches the ideas-equality assertion.",
+    "comparison": "These cases were not failures in the ownership receipt. This is a new fixture mismatch introduced by the two-term \u00a720 contract, not evidence that identical numerical inputs compile differently.",
+    "evidence": "extra-cases/part-01/worker-004.json",
+    "action": "Preserve the first outcome; no source, fixture or assertion change after freeze."
+  },
+  "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph": {
+    "classification": "Remaining test port: one-term compiled helper versus two-term eager reconstruction",
+    "cause": "The helper _compiled_record_reconstruction calls _reconstruct_sentences with its default witnessed-only mode and returns that cost and its ideas. Models._reconstruct_trial now returns witnessed plus free cost and free ideas. The test therefore compares different contracts, before it reaches the ideas-equality assertion.",
+    "comparison": "These cases were not failures in the ownership receipt. This is a new fixture mismatch introduced by the two-term \u00a720 contract, not evidence that identical numerical inputs compile differently.",
+    "evidence": "extra-cases/part-01/worker-004.json",
+    "action": "Preserve the first outcome; no source, fixture or assertion change after freeze."
+  },
+  "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations": {
+    "classification": "Remaining test port: first-stage field capacity versus terminal owner",
+    "cause": "The test compares terminal activations with sum(body_stages[0][cs]._field_caps()), which is 15. The repaired late cutover uses _concept_owner(); its own production shape assertion checks that owner and passes with 8 rows. The test still addresses the former first-stage owner.",
+    "comparison": "This case was not among the ownership receipt failures; it now exposes an unported observer of the owner repair.",
+    "evidence": "extra-cases/part-01/worker-009.json",
+    "action": "Preserve the first outcome; no source, fixture or assertion change after freeze."
+  },
+  "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip": {
+    "classification": "Persistent free-derivation reconstruction gap; unwaived failure",
+    "cause": "The three-epoch MM_ladder free-derivation run reports exact_match_rate 0.0 against the unchanged 1.0 bar. No deeper learning cause is established by this endpoint result.",
+    "comparison": "The ownership receipt also reached this same assertion with exact_match_rate 0.0. The current failure is not the serial answer fixture XML failure, and it was not converted to a passing assertion.",
+    "evidence": "extra-cases/part-00/worker-032.json",
+    "action": "Preserve the first outcome; no source, fixture or assertion change after freeze."
+  },
+  "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots": {
+    "classification": "8 GiB worker guard stop; padding behavior unverified",
+    "cause": "The worker peaked at 8651972648 bytes (8.06 GiB) while this case was active, following the free-derivation failure in the same worker. The monitor stopped it at the existing 8 GiB ceiling.",
+    "comparison": "This is a worker/process-tree peak, not an isolated model peak for the padding case; retained state from preceding cases has not been isolated. No assertion result is available.",
+    "evidence": "extra-cases/part-00/result.json",
+    "action": "Do not retry the active case or raise the guard. Continue only cases that had not started."
+  },
+  "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]": {
+    "classification": "Peer aborted by the padding worker memory stop; no assertion outcome",
+    "cause": "The bounded pool aborted this active worker when the padding worker crossed 8 GiB. This worker did not reach its own memory or 30-minute timeout ceiling. The saved one-second sample near minute 15 shows Dynamo compiler work.",
+    "comparison": "The ownership receipt also stopped this case as an aborted peer. Neither result establishes that the test passes or fails its assertion.",
+    "evidence": "extra-cases/part-00/result.json",
+    "action": "Preserve both aborted attempts in their respective receipts; do not retry this round."
+  },
+  "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks": {
+    "classification": "Peer aborted by the padding worker memory stop; no assertion outcome",
+    "cause": "The bounded pool aborted this active worker when the padding worker crossed 8 GiB. This worker did not reach its own memory or 30-minute timeout ceiling. The saved one-second sample near minute 15 shows Dynamo compiler work.",
+    "comparison": "The ownership receipt also stopped this case as an aborted peer. Neither result establishes that the test passes or fails its assertion.",
+    "evidence": "extra-cases/part-00/result.json",
+    "action": "Preserve both aborted attempts in their respective receipts; do not retry this round."
+  },
+  "test/test_definition_attribution.py::test_passback_scales_unknown_parts_without_erasing_location": {
+    "classification": "Remaining test port: passback model stub lacks the concept-owner accessor",
+    "cause": "The test calls BasicModel._passback_scope_ps with a SimpleNamespace that supplies conceptualSpaces and conceptualSpace but no _concept_owner. Passback now reads the actual terminal definition owner through that accessor, so the stub raises AttributeError before any scaling/location assertion.",
+    "comparison": "This case was not among the ownership receipt failures. Real BasicModel instances supply the accessor; the frozen fixture still expresses the old direct-first-stage contract.",
+    "evidence": "full-sweep/part-00/worker-157.json",
+    "action": "Preserve the first failure; no compatibility fallback or fixture change during this source-matched sweep."
+  },
+  "test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients": {
+    "classification": "Remaining test port: retired non-parameter dictionary assertion",
+    "cause": "The ownership diagnostic reaches its final dictionary check and still asserts that the canonical dictionary is not an nn.Parameter. \u00a720 explicitly requires an unconstrained reconstruction-owned Parameter.",
+    "comparison": "This assertion expressed the rotation-owned buffer law that passed in the ownership candidate. The current failure is the expected mismatch with the new law; the ownership and conflict checks preceding it passed.",
+    "evidence": "full-sweep/part-00/worker-255.json",
+    "action": "Preserve the first failure; no fixture, assertion or production change after freeze."
+  },
+  "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]": {
+    "classification": "Remaining test port: byte-cost observer lacks new scoring keywords",
+    "cause": "The test monkeypatches _byte_word_cost with observed_cost using the old signature. Reconstruction now passes the priming keyword for the two-term read-back contract, and the observer raises TypeError before the separator assertions.",
+    "comparison": "These cases passed with the former byte-cost signature. This result does not show that a separator entered the grammar; that behavior was not reached through the observer.",
+    "evidence": "full-sweep/part-00/worker-275.json",
+    "action": "Preserve the first failure; no fixture, assertion or production change after freeze."
+  },
+  "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]": {
+    "classification": "Remaining test port: byte-cost observer lacks new scoring keywords",
+    "cause": "The test monkeypatches _byte_word_cost with observed_cost using the old signature. Reconstruction now passes the priming keyword for the two-term read-back contract, and the observer raises TypeError before the separator assertions.",
+    "comparison": "These cases passed with the former byte-cost signature. This result does not show that a separator entered the grammar; that behavior was not reached through the observer.",
+    "evidence": "full-sweep/part-00/worker-275.json",
+    "action": "Preserve the first failure; no fixture, assertion or production change after freeze."
+  },
+  "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]": {
+    "classification": "Remaining test port: byte-cost observer lacks new scoring keywords",
+    "cause": "The test monkeypatches _byte_word_cost with observed_cost using the old signature. Reconstruction now passes the priming keyword for the two-term read-back contract, and the observer raises TypeError before the separator assertions.",
+    "comparison": "These cases passed with the former byte-cost signature. This result does not show that a separator entered the grammar; that behavior was not reached through the observer.",
+    "evidence": "full-sweep/part-00/worker-275.json",
+    "action": "Preserve the first failure; no fixture, assertion or production change after freeze."
+  },
+  "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]": {
+    "classification": "Remaining test port: byte-cost observer lacks new scoring keywords",
+    "cause": "The test monkeypatches _byte_word_cost with observed_cost using the old signature. Reconstruction now passes the priming keyword for the two-term read-back contract, and the observer raises TypeError before the separator assertions.",
+    "comparison": "These cases passed with the former byte-cost signature. This result does not show that a separator entered the grammar; that behavior was not reached through the observer.",
+    "evidence": "full-sweep/part-00/worker-275.json",
+    "action": "Preserve the first failure; no fixture, assertion or production change after freeze."
+  },
+  "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write": {
+    "classification": "Remaining test port: free ideas compared with exact witnessed leaves",
+    "cause": "The reference-capture and stored-clause assertions pass. The test then expects _recon_ideas to equal the recorded leaves at 1e-4 tolerance. _reconstruct_trial now returns free[0], and _run_sentence_word_bricks publishes that as _recon_ideas; the test still treats it as the witnessed inverse. The later query-gradient assertion is not reached.",
+    "comparison": "This case passed before \u00a720 changed the published reconstruction to the free read-back. The required exact witnessed-inverse assertion needs to address the witnessed result; the frozen test does not compare that result.",
+    "evidence": "full-sweep/part-00/worker-369.json",
+    "action": "Preserve the first failure and tolerance. No fixture or source change during the closing sweep."
+  },
+  "test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::testreverse_via_terminal_stm": {
+    "classification": "New compiled reconstruction cache failure; unwaived",
+    "cause": "The fifth fresh-model case in this worker reaches the unchanged Dynamo recompile limit of 8 in _reconstruct_sentences before the reverse assertion. The last recorded guard mismatch is free == True at the new witnessed/free branch; the preceding four forward cases passed. The saved log does not expose every earlier specialization reason, so it does not establish that this boolean alone caused all eight captures.",
+    "comparison": "This was not among the ownership sweep's 23 failed cases. The new two-term reconstruction introduces the free specialization, but the entire specialization history was not measured in this closing run.",
+    "action": "Keep this failure for review and repair the capture/fixture lifecycle after review; do not raise the compiler limit or select an isolated rerun here.",
+    "evidence": "full-sweep/part-00/worker-666.log"
+  }
+}

@@ -207,7 +207,6 @@ def _identity_surface_kernels(model, monkeypatch):
     monkeypatch.setattr(model, "_reverse_perceptual", lambda value: value)
     monkeypatch.setattr(model.inputSpace, "reverse", lambda value: value)
     model.reconstruct_from_idea = True
-    model.idea_decode = False
 
 
 @pytest.mark.slow

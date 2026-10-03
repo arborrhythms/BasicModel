@@ -1,0 +1,650 @@
+[
+  {
+    "name": "add-verb-first-batch",
+    "record": "repairs/add-verb-first-batch.json",
+    "exit_code": 0,
+    "seconds": 4.897279625001829,
+    "peak_bytes": 938329744,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "bounded-expectation-ports",
+    "record": "repairs/bounded-expectation-ports.json",
+    "exit_code": 1,
+    "seconds": 110.57970454099996,
+    "peak_bytes": 2276117600,
+    "reason": "exit",
+    "summary": "3 failed, 10 passed, 1 warning in 108.48s (0:01:48)"
+  },
+  {
+    "name": "byte-address-before",
+    "record": "repairs/byte-address-before.json",
+    "exit_code": 0,
+    "seconds": 3.3453975839947816,
+    "peak_bytes": 403588392,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "byte-address-promoted-before",
+    "record": "repairs/byte-address-promoted-before.json",
+    "exit_code": 1,
+    "seconds": 3.3385132499970496,
+    "peak_bytes": 403473680,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "category-attribution-before",
+    "record": "repairs/category-attribution-before.json",
+    "exit_code": 0,
+    "seconds": 16.812442792012007,
+    "peak_bytes": 1844512448,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "category-object-rows-after-01",
+    "record": "repairs/category-object-rows-after-01.json",
+    "exit_code": 0,
+    "seconds": 313.2291658339964,
+    "peak_bytes": 2636779024,
+    "reason": "exit",
+    "summary": "14 passed, 1 warning in 310.99s (0:05:10)"
+  },
+  {
+    "name": "commit-reading-owner-after",
+    "record": "repairs/commit-reading-owner-after.json",
+    "exit_code": 0,
+    "seconds": 3.596812209012569,
+    "peak_bytes": 432375128,
+    "reason": "exit",
+    "summary": "1 passed, 1 warning in 2.01s"
+  },
+  {
+    "name": "compiled-expectation-small-after",
+    "record": "repairs/compiled-expectation-small-after.json",
+    "exit_code": 1,
+    "seconds": 511.45371916699514,
+    "peak_bytes": 2806255312,
+    "reason": "exit",
+    "summary": "1 failed, 2 passed in 505.90s (0:08:25)"
+  },
+  {
+    "name": "configuration-ports-01",
+    "record": "repairs/configuration-ports-01.json",
+    "exit_code": 1,
+    "seconds": 6.205839917005505,
+    "peak_bytes": 712083112,
+    "reason": "exit",
+    "summary": "3 failed, 272 passed, 4 skipped, 2 warnings in 4.33s"
+  },
+  {
+    "name": "expectation-boundary-ports",
+    "record": "repairs/expectation-boundary-ports.json",
+    "exit_code": 143,
+    "seconds": 826.3178547499992,
+    "peak_bytes": 4044345976,
+    "reason": "signal",
+    "summary": null
+  },
+  {
+    "name": "expectation-owner-cause",
+    "record": "repairs/expectation-owner-cause.json",
+    "exit_code": 1,
+    "seconds": 10.860007500014035,
+    "peak_bytes": 2312767480,
+    "reason": "exit",
+    "summary": "1 failed, 2 warnings in 6.88s"
+  },
+  {
+    "name": "final-collection-after",
+    "record": "repairs/final-collection-after.json",
+    "exit_code": 0,
+    "seconds": 6.967196416997467,
+    "peak_bytes": 489194840,
+    "reason": "exit",
+    "summary": "4973 tests collected in 5.10s"
+  },
+  {
+    "name": "final-collection",
+    "record": "repairs/final-collection.json",
+    "exit_code": 2,
+    "seconds": 9.852627624990419,
+    "peak_bytes": 500696456,
+    "reason": "exit",
+    "summary": "4917 tests collected, 4 errors in 7.81s"
+  },
+  {
+    "name": "input-and-missing-leaf-after",
+    "record": "repairs/input-and-missing-leaf-after.json",
+    "exit_code": 0,
+    "seconds": 11.908078790991567,
+    "peak_bytes": 1211385656,
+    "reason": "exit",
+    "summary": "17 passed, 1 warning in 10.05s"
+  },
+  {
+    "name": "input-and-missing-leaf-before",
+    "record": "repairs/input-and-missing-leaf-before.json",
+    "exit_code": 1,
+    "seconds": 10.87510766700143,
+    "peak_bytes": 1165838256,
+    "reason": "exit",
+    "summary": "5 failed in 9.08s"
+  },
+  {
+    "name": "late-predictor-and-router-after",
+    "record": "repairs/late-predictor-and-router-after.json",
+    "exit_code": 0,
+    "seconds": 9.843890875010402,
+    "peak_bytes": 1124272120,
+    "reason": "exit",
+    "summary": "4 passed, 1 warning in 7.86s"
+  },
+  {
+    "name": "masked-word-cell-after",
+    "record": "repairs/masked-word-cell-after.json",
+    "exit_code": 0,
+    "seconds": 4.913178750008228,
+    "peak_bytes": 784533112,
+    "reason": "exit",
+    "summary": "5 passed, 1 warning in 3.14s"
+  },
+  {
+    "name": "mnist-after-01",
+    "record": "repairs/mnist-after-01.json",
+    "exit_code": 1,
+    "seconds": 4.905999291993794,
+    "peak_bytes": 564102560,
+    "reason": "exit",
+    "summary": "2 failed, 1 passed in 3.13s"
+  },
+  {
+    "name": "mnist-after-02",
+    "record": "repairs/mnist-after-02.json",
+    "exit_code": 1,
+    "seconds": 6.97785858399584,
+    "peak_bytes": 654362064,
+    "reason": "exit",
+    "summary": "2 failed, 1 passed in 5.16s"
+  },
+  {
+    "name": "mnist-after-03",
+    "record": "repairs/mnist-after-03.json",
+    "exit_code": 1,
+    "seconds": 4.374576874994091,
+    "peak_bytes": 528778728,
+    "reason": "exit",
+    "summary": "2 failed, 1 passed in 2.71s"
+  },
+  {
+    "name": "mnist-before",
+    "record": "repairs/mnist-before.json",
+    "exit_code": 1,
+    "seconds": 5.151975958011462,
+    "peak_bytes": 593429848,
+    "reason": "exit",
+    "summary": "3 failed in 3.36s"
+  },
+  {
+    "name": "mnist-kept-fixture",
+    "record": "repairs/mnist-kept-fixture.json",
+    "exit_code": 1,
+    "seconds": 6.470280957990326,
+    "peak_bytes": 725845480,
+    "reason": "exit",
+    "summary": "2 failed, 1 passed in 4.70s"
+  },
+  {
+    "name": "mnist-subset-geometry-after",
+    "record": "repairs/mnist-subset-geometry-after.json",
+    "exit_code": 0,
+    "seconds": 4.613749291005661,
+    "peak_bytes": 3073477896,
+    "reason": "exit",
+    "summary": "3 passed, 2 warnings in 2.88s"
+  },
+  {
+    "name": "moved-feature-flags-before",
+    "record": "repairs/moved-feature-flags-before.json",
+    "exit_code": 1,
+    "seconds": 13.215719750005519,
+    "peak_bytes": 5174203168,
+    "reason": "exit",
+    "summary": "2 failed, 1 warning in 11.51s"
+  },
+  {
+    "name": "moved-feature-ports-02",
+    "record": "repairs/moved-feature-ports-02.json",
+    "exit_code": 1,
+    "seconds": 5.670677166999667,
+    "peak_bytes": 706397768,
+    "reason": "exit",
+    "summary": "4 failed, 13 passed, 1 warning in 3.93s"
+  },
+  {
+    "name": "moved-feature-ports",
+    "record": "repairs/moved-feature-ports.json",
+    "exit_code": 1,
+    "seconds": 10.093618250000873,
+    "peak_bytes": 855836376,
+    "reason": "exit",
+    "summary": "16 failed, 32 passed, 3 warnings in 8.25s"
+  },
+  {
+    "name": "native-observer-before",
+    "record": "repairs/native-observer-before.json",
+    "exit_code": 0,
+    "seconds": 3.595999875004054,
+    "peak_bytes": 526763232,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "native-storage-ports-01",
+    "record": "repairs/native-storage-ports-01.json",
+    "exit_code": 1,
+    "seconds": 63.01629487499304,
+    "peak_bytes": 3508572528,
+    "reason": "exit",
+    "summary": "2 failed, 50 passed, 2 skipped, 6 warnings in 60.81s (0:01:00)"
+  },
+  {
+    "name": "observer-audit-ranking",
+    "record": "repairs/observer-audit-ranking.json",
+    "exit_code": 0,
+    "seconds": 4.644552958998247,
+    "peak_bytes": 653526528,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "observer-contract-before",
+    "record": "repairs/observer-contract-before.json",
+    "exit_code": 1,
+    "seconds": 3.8643329170008656,
+    "peak_bytes": 526681360,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "observer-one-batch-after-01",
+    "record": "repairs/observer-one-batch-after-01.json",
+    "exit_code": 0,
+    "seconds": 4.63724366700626,
+    "peak_bytes": 650839456,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "ownership-before-valid",
+    "record": "repairs/ownership-before-valid.json",
+    "exit_code": 1,
+    "seconds": 3.6067955830076244,
+    "peak_bytes": 429606256,
+    "reason": "exit",
+    "summary": "3 failed in 1.99s"
+  },
+  {
+    "name": "ownership-contracts-before",
+    "record": "repairs/ownership-contracts-before.json",
+    "exit_code": 1,
+    "seconds": 13.443477915992844,
+    "peak_bytes": 1301874704,
+    "reason": "exit",
+    "summary": "25 failed, 7 passed, 1 skipped, 4 warnings in 11.67s"
+  },
+  {
+    "name": "ownership-contracts-ported-01",
+    "record": "repairs/ownership-contracts-ported-01.json",
+    "exit_code": 1,
+    "seconds": 4.891150750001543,
+    "peak_bytes": 535872952,
+    "reason": "exit",
+    "summary": "8 failed, 3 passed in 3.21s"
+  },
+  {
+    "name": "ownership-contracts-ported-02",
+    "record": "repairs/ownership-contracts-ported-02.json",
+    "exit_code": 0,
+    "seconds": 15.289236875003553,
+    "peak_bytes": 1314507320,
+    "reason": "exit",
+    "summary": "55 passed, 1 skipped, 1 warning in 13.44s"
+  },
+  {
+    "name": "ownership-final-focused",
+    "record": "repairs/ownership-final-focused.json",
+    "exit_code": 0,
+    "seconds": 30.081679333001375,
+    "peak_bytes": 3476787472,
+    "reason": "exit",
+    "summary": "264 passed, 1 warning in 27.50s"
+  },
+  {
+    "name": "ownership-shared-record-01",
+    "record": "repairs/ownership-shared-record-01.json",
+    "exit_code": 0,
+    "seconds": 4.385062290995847,
+    "peak_bytes": 618956288,
+    "reason": "exit",
+    "summary": "4 passed, 2 warnings in 2.65s"
+  },
+  {
+    "name": "ownership-unit-after",
+    "record": "repairs/ownership-unit-after.json",
+    "exit_code": 0,
+    "seconds": 3.851455249998253,
+    "peak_bytes": 491537800,
+    "reason": "exit",
+    "summary": "3 passed in 2.12s"
+  },
+  {
+    "name": "priming-after",
+    "record": "repairs/priming-after.json",
+    "exit_code": 0,
+    "seconds": 3.8607130000018515,
+    "peak_bytes": 507413896,
+    "reason": "exit",
+    "summary": "3 passed, 1 warning in 2.26s"
+  },
+  {
+    "name": "priming-before",
+    "record": "repairs/priming-before.json",
+    "exit_code": 1,
+    "seconds": 3.8652347089955583,
+    "peak_bytes": 501744984,
+    "reason": "exit",
+    "summary": "3 failed, 2 warnings in 2.12s"
+  },
+  {
+    "name": "qa-consumer-after",
+    "record": "repairs/qa-consumer-after.json",
+    "exit_code": 0,
+    "seconds": 3.5986437919927994,
+    "peak_bytes": 509642144,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "qa-consumer-before-02",
+    "record": "repairs/qa-consumer-before-02.json",
+    "exit_code": 1,
+    "seconds": 3.6061843749921536,
+    "peak_bytes": 448546160,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "qa-consumer-before",
+    "record": "repairs/qa-consumer-before.json",
+    "exit_code": 1,
+    "seconds": 3.602571750001516,
+    "peak_bytes": 442729672,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "qa-first-batch-after-01",
+    "record": "repairs/qa-first-batch-after-01.json",
+    "exit_code": 1,
+    "seconds": 8.516897333000088,
+    "peak_bytes": 3371322728,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "qa-ingestion-after-03",
+    "record": "repairs/qa-ingestion-after-03.json",
+    "exit_code": 0,
+    "seconds": 9.542198459006613,
+    "peak_bytes": 3448049000,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "qa-ingestion-cause-02",
+    "record": "repairs/qa-ingestion-cause-02.json",
+    "exit_code": 1,
+    "seconds": 8.539869875006843,
+    "peak_bytes": 3367783760,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "qa-ingestion-cause",
+    "record": "repairs/qa-ingestion-cause.json",
+    "exit_code": 1,
+    "seconds": 7.502779957998428,
+    "peak_bytes": 3032403016,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "readback-order-ported-01",
+    "record": "repairs/readback-order-ported-01.json",
+    "exit_code": 0,
+    "seconds": 4.374468167006853,
+    "peak_bytes": 523814376,
+    "reason": "exit",
+    "summary": "4 passed, 1 warning in 2.54s"
+  },
+  {
+    "name": "recent-answer-probe-after",
+    "record": "repairs/recent-answer-probe-after.json",
+    "exit_code": 1,
+    "seconds": 12.929502833998413,
+    "peak_bytes": 1060013904,
+    "reason": "exit",
+    "summary": "1 failed, 2 passed, 5 warnings in 10.87s"
+  },
+  {
+    "name": "recent-answer-probe-before",
+    "record": "repairs/recent-answer-probe-before.json",
+    "exit_code": 1,
+    "seconds": 6.959995291006635,
+    "peak_bytes": 1191233408,
+    "reason": "exit",
+    "summary": "2 failed, 3 warnings in 5.05s"
+  },
+  {
+    "name": "recent-journal-contract-after",
+    "record": "repairs/recent-journal-contract-after.json",
+    "exit_code": 1,
+    "seconds": 41.74902120800107,
+    "peak_bytes": 1523616408,
+    "reason": "exit",
+    "summary": "2 failed in 39.52s"
+  },
+  {
+    "name": "recent-journal-contract-before",
+    "record": "repairs/recent-journal-contract-before.json",
+    "exit_code": 1,
+    "seconds": 40.70438008400379,
+    "peak_bytes": 1543129728,
+    "reason": "exit",
+    "summary": "2 failed in 38.31s"
+  },
+  {
+    "name": "recent-ports-after-02",
+    "record": "repairs/recent-ports-after-02.json",
+    "exit_code": 1,
+    "seconds": 48.50638791699021,
+    "peak_bytes": 1459178376,
+    "reason": "exit",
+    "summary": "1 failed, 3 passed, 3 warnings in 46.23s"
+  },
+  {
+    "name": "reconstruction-while-after-01",
+    "record": "repairs/reconstruction-while-after-01.json",
+    "exit_code": 0,
+    "seconds": 227.54004495899426,
+    "peak_bytes": 2240122024,
+    "reason": "exit",
+    "summary": "3 passed, 1 warning in 225.51s (0:03:45)"
+  },
+  {
+    "name": "reconstruction-while-before",
+    "record": "repairs/reconstruction-while-before.json",
+    "exit_code": 0,
+    "seconds": 58.34831024998857,
+    "peak_bytes": 1637971024,
+    "reason": "exit",
+    "summary": "1 passed, 1 warning in 56.33s"
+  },
+  {
+    "name": "reconstruction-while-parameterized-before",
+    "record": "repairs/reconstruction-while-parameterized-before.json",
+    "exit_code": 1,
+    "seconds": 234.8545616670017,
+    "peak_bytes": 2740566608,
+    "reason": "exit",
+    "summary": "1 failed, 2 passed, 1 warning in 231.04s (0:03:51)"
+  },
+  {
+    "name": "record-replay-assert-before",
+    "record": "repairs/record-replay-assert-before.json",
+    "exit_code": 1,
+    "seconds": 4.102251624994096,
+    "peak_bytes": 581584168,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "record-replay-before",
+    "record": "repairs/record-replay-before.json",
+    "exit_code": 0,
+    "seconds": 4.129897459002677,
+    "peak_bytes": 579044720,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "remaining-causes-01",
+    "record": "repairs/remaining-causes-01.json",
+    "exit_code": 1,
+    "seconds": 15.796971832998679,
+    "peak_bytes": 1837598328,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "remaining-causes-02",
+    "record": "repairs/remaining-causes-02.json",
+    "exit_code": 0,
+    "seconds": 7.254838124994421,
+    "peak_bytes": 747619768,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "remaining-owner-and-priming-before",
+    "record": "repairs/remaining-owner-and-priming-before.json",
+    "exit_code": 1,
+    "seconds": 57.61577225000656,
+    "peak_bytes": 1227131448,
+    "reason": "exit",
+    "summary": "8 failed, 33 passed, 9 skipped, 1 warning in 55.48s"
+  },
+  {
+    "name": "remaining-owner-and-priming-ports-01",
+    "record": "repairs/remaining-owner-and-priming-ports-01.json",
+    "exit_code": 0,
+    "seconds": 57.05088150000665,
+    "peak_bytes": 1215318536,
+    "reason": "exit",
+    "summary": "25 passed, 8 skipped, 1 warning in 54.77s"
+  },
+  {
+    "name": "remaining-priming-before",
+    "record": "repairs/remaining-priming-before.json",
+    "exit_code": 1,
+    "seconds": 5.920880332996603,
+    "peak_bytes": 453477792,
+    "reason": "exit",
+    "summary": "1 failed, 75 passed, 7 skipped, 2 warnings in 4.00s"
+  },
+  {
+    "name": "reverse-record-ports-after",
+    "record": "repairs/reverse-record-ports-after.json",
+    "exit_code": 1,
+    "seconds": 46.425358833002974,
+    "peak_bytes": 1445660976,
+    "reason": "exit",
+    "summary": "5 failed, 1 passed, 4 warnings in 44.64s"
+  },
+  {
+    "name": "runner-peer-after",
+    "record": "repairs/runner-peer-after.json",
+    "exit_code": 0,
+    "seconds": 14.986660666007083,
+    "peak_bytes": 622462776,
+    "reason": "exit",
+    "summary": "261 passed, 1 warning in 13.09s"
+  },
+  {
+    "name": "runner-peer-before",
+    "record": "repairs/runner-peer-before.json",
+    "exit_code": 1,
+    "seconds": 7.168716750005842,
+    "peak_bytes": 452806360,
+    "reason": "exit",
+    "summary": "1 failed in 5.59s"
+  },
+  {
+    "name": "scored-record-publish-after",
+    "record": "repairs/scored-record-publish-after.json",
+    "exit_code": 1,
+    "seconds": 87.6264275410067,
+    "peak_bytes": 1592757152,
+    "reason": "exit",
+    "summary": "1 failed, 6 passed, 4 warnings in 85.21s (0:01:25)"
+  },
+  {
+    "name": "sum-record-before",
+    "record": "repairs/sum-record-before.json",
+    "exit_code": 0,
+    "seconds": 3.6005839590070536,
+    "peak_bytes": 476202232,
+    "reason": "exit",
+    "summary": null
+  },
+  {
+    "name": "unresolved-behaviours-before",
+    "record": "repairs/unresolved-behaviours-before.json",
+    "exit_code": 1,
+    "seconds": 165.17533341699163,
+    "peak_bytes": 2775595024,
+    "reason": "exit",
+    "summary": "3 failed, 1 warning in 163.10s (0:02:43)"
+  },
+  {
+    "name": "vocabulary-alias-owner-before",
+    "record": "repairs/vocabulary-alias-owner-before.json",
+    "exit_code": 1,
+    "seconds": 3.8535507500055246,
+    "peak_bytes": 433276224,
+    "reason": "exit",
+    "summary": "1 failed in 2.12s"
+  },
+  {
+    "name": "weekly-interfaces-before",
+    "record": "repairs/weekly-interfaces-before.json",
+    "exit_code": 143,
+    "seconds": 569.7739918750012,
+    "peak_bytes": 3599176072,
+    "reason": "signal",
+    "summary": null
+  },
+  {
+    "name": "word-journal-ports",
+    "record": "repairs/word-journal-ports.json",
+    "exit_code": 1,
+    "seconds": 8.527051416996983,
+    "peak_bytes": 777569984,
+    "reason": "exit",
+    "summary": "2 failed, 3 passed, 1 skipped, 1 warning in 6.65s"
+  }
+]

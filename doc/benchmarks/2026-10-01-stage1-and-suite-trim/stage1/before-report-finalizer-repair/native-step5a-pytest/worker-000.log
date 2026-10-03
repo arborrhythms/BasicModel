@@ -1,0 +1,11 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_native_production_objective_measurements[step5a] _____________
+test/test_objective_conflicts_slow.py:38: in test_native_production_objective_measurements
+    assert result.returncode == 0, f"Objective measurement failed; see {output / 'run.log'}"
+E   AssertionError: Objective measurement failed; see /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/BasicModel_answers_tied_benchmark-step5a/run.log
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '/Users/arogers/github/WikiOrac...cmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/BasicModel_answers_tied_benchmark-step5a'], returncode=1).returncode
+=========================== short test summary info ============================
+FAILED test/test_objective_conflicts_slow.py::test_native_production_objective_measurements[step5a]
+1 failed in 1660.38s (0:27:40)

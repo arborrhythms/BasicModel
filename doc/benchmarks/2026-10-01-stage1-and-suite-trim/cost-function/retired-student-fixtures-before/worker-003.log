@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_legacy_event_reporting_does_not_zero_the_sentence_objective _______
+test/test_sentence_compose.py:234: in test_legacy_event_reporting_does_not_zero_the_sentence_objective
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+test/test_compiled_word_chunk.py:393: in _tiny_canonical_model
+    init_config(
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-353/test_legacy_event_reporting_do0/tiny_chunk_model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-353/test_legacy_event_reporting_do0/tiny_chunk_model.xml:71: element reconstructInLoop: Schemas validity error : Element 'reconstructInLoop': The actual value 'false' does not match the fixed value constraint 'true'.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-353/test_legacy_event_reporting_do0/tiny_chunk_model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective
+1 failed in 2.14s

@@ -91,6 +91,7 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
     assert reverse.support_true == 0
 
 
+@pytest.mark.usefixtures('eager_reading')
 @pytest.mark.parametrize('texts', [('1 plus 2', '3 plus 4'),
                                   ('cedar joins birch', 'maple joins oak')])
 def test_numeric_and_renamed_sentence_paths_keep_oracles_out(tmp_path, monkeypatch, texts):
@@ -114,7 +115,7 @@ def test_numeric_and_renamed_sentence_paths_keep_oracles_out(tmp_path, monkeypat
         torch._dynamo.reset()
 
 
-def test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes(tmp_path, monkeypatch):
+def test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes(tmp_path, monkeypatch, eager_reading):
     model = _native_answer_model(tmp_path, True)
     _poison_oracles(monkeypatch)
     optimizer = model.getOptimizer(lr=1e-3)

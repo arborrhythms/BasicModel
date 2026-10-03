@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 8/8 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.03802854199602734</pre></td><td><pre>test/test_meronomy_utf8.py:52: in test_byte_witness_round_trips_non_ascii
+    assert raw.decode(&quot;utf-8&quot;) == surface, surface
+E   AssertionError: café déjà
+E   assert &#x27;caf? d?j?&#x27; == &#x27;café déjà&#x27;
+E     
+E     - café déjà
+E     + caf? d?j?</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.03188729200337548</pre></td><td><pre>test/test_meronomy_utf8.py:60: in test_byte_witness_offsets_cover_the_surface_without_overlap
+    assert spans[-1][1] == len(surface.encode(&quot;utf-8&quot;))
+E   AssertionError: assert 9 == 12
+E    +  where 12 = len(b&#x27;caf\xc3\xa9 d\xc3\xa9j\xc3\xa0&#x27;)
+E    +    where b&#x27;caf\xc3\xa9 d\xc3\xa9j\xc3\xa0&#x27; = &lt;built-in method encode of str object at 0x109bcbb90&gt;(&#x27;utf-8&#x27;)
+E    +      where &lt;built-in method encode of str object at 0x109bcbb90&gt; = &#x27;café déjà&#x27;.encode</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02886854200187372</pre></td><td><pre>test/test_meronomy_utf8.py:69: in test_split_multibyte_witness_keeps_raw_bytes
+    assert raw == &quot;é&quot;.encode(&quot;utf-8&quot;)
+E   AssertionError: assert b&#x27;?&#x27; == b&#x27;\xc3\xa9&#x27;
+E     
+E     At index 0 diff: b&#x27;?&#x27; != b&#x27;\xc3&#x27;
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_utf8.py::test_admitted_word_and_utf8_bytes_replay_together</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.08962208300363272</pre></td><td><pre>test/test_meronomy_utf8.py:80: in test_admitted_word_and_utf8_bytes_replay_together
+    assert raw.decode(&quot;utf-8&quot;) == &quot;book café&quot;
+E   AssertionError: assert &#x27;book caf?&#x27; == &#x27;book café&#x27;
+E     
+E     - book café
+E     ?         ^
+E     + book caf?
+E     ?         ^</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.033387374998710584</pre></td><td><pre>test/test_meronomy_utf8.py:90: in test_surface_witness_replays_words_and_spaces
+    assert raw.decode(&quot;utf-8&quot;) == surface
+E   AssertionError: assert &#x27;the book has a &#x27; == &#x27;the book has a cover&#x27;
+E     
+E     - the book has a cover
+E     ?                -----
+E     + the book has a</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.029665124995517544</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.02961170899652643</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.02892962500482099</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

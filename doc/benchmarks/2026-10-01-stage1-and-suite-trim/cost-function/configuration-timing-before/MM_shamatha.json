@@ -1,0 +1,15 @@
+{
+  "config": "data/MM_shamatha.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 1.4702721249996102,
+  "batch": 64,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 0.43801479199464666,
+  "output_loss": 0.16700667142868042,
+  "reconstruction_loss": 0.37682926654815674,
+  "completed": true,
+  "total_seconds": 1.908291082996584
+}

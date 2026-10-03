@@ -8,7 +8,7 @@ import pytest
 import torch
 
 PROJECT = Path(__file__).resolve().parent.parent
-CONFIG = PROJECT / "data" / "MM_20M_fineweb.xml"
+CONFIG = PROJECT / "data" / "BasicModel.xml"
 
 
 def test_production_config_is_fineweb_and_recoverable():
@@ -17,8 +17,8 @@ def test_production_config_is_fineweb_and_recoverable():
     root = ET.parse(CONFIG).getroot()
     assert root.findtext("./architecture/data/dataset") == "text"
     assert root.findtext("./architecture/data/shardDir") == "data/fineweb"
-    assert root.findtext("./PartSpace/nOutput") == "64"
-    assert root.findtext("./ConceptualSpace/stmCapacity") == "64"
+    assert root.findtext("./PartSpace/nOutput") == "8"
+    assert root.findtext("./ConceptualSpace/stmCapacity") == "8"
     assert root.findtext("./architecture/training/autosave") == "true"
     assert int(root.findtext(
         "./architecture/training/checkpointEveryBatches")) > 0
@@ -28,13 +28,13 @@ def test_production_config_is_fineweb_and_recoverable():
 
 def test_make_train_defaults_to_production_config():
     makefile = (PROJECT / "Makefile").read_text()
-    assert "MODEL ?= data/MM_20M_fineweb.xml" in makefile
+    assert "MODEL ?= data/BasicModel.xml" in makefile
 
 
 def test_train_cli_defaults_to_production_config():
     import train
 
-    assert train.parse_args([]).model == "data/MM_20M_fineweb.xml"
+    assert train.parse_args([]).model == "data/BasicModel.xml"
 
 
 def test_local_cli_forwards_every_phase_two_bound(monkeypatch):
@@ -43,7 +43,7 @@ def test_local_cli_forwards_every_phase_two_bound(monkeypatch):
     calls = []
     monkeypatch.setattr(train, "run", lambda cmd, **kw: calls.append((cmd, kw)))
     args = train.parse_args([
-        "--model", "data/MM_20M_fineweb.xml",
+        "--model", "data/BasicModel.xml",
         "--data", "text", "--max-docs", "20", "--num-shards", "3",
         "--num-epochs", "2", "--batch-size", "1", "--max-tokens", "17",
         "--batches", "4", "--random-shards",
@@ -68,7 +68,7 @@ def test_remote_cli_preserves_safety_and_embedding_flags(monkeypatch):
     calls = []
     monkeypatch.setattr(train, "run", lambda cmd, **kw: calls.append(cmd))
     args = train.parse_args([
-        "--model", "data/MM_20M_fineweb.xml", "--host", "trainer",
+        "--model", "data/BasicModel.xml", "--host", "trainer",
         "--batch-size", "2", "--batches", "9", "--max-tokens", "31",
         "--force-embeddings", "--latent-vector-size", "96",
         "--embed-lr", "0.002", "--random-shards",
@@ -155,8 +155,7 @@ def test_checkpoint_restores_optimizer_counters_and_rng(tmp_path):
         restored.runEpoch(optimizer=opt, batchSize=1,
                           split="train", max_batches=1)
     cursor = Models.TheData.data_loader(
-        split="train", num_streams=2,
-        slab_bytes=int(restored.inputSpace.outputShape[0])).dataset
+        split="train", num_streams=2).dataset
     total_ticks = 0
     while not cursor.all_done():
         cursor.next_tick()

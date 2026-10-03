@@ -183,6 +183,7 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     owner.languageSpace, owner.grammatical_thoughts = language, registry
     owner.conceptualSpace = SimpleNamespace(_ltm_consolidation=store is not None,
         _incoming_trust_multiplier=lambda: trust)
+    owner._concept_owner = lambda: owner.conceptualSpace
     owner.symbolSpace = SimpleNamespace(ltm_store=store, discourse=discourse)
     readings = (entry if active else None,)
     owner._capture_reading_programs = lambda **kwargs: (readings, {sid: readings})
@@ -201,6 +202,8 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     lang[13] = entry.end_state.reshape(1, 1, 3 * width).expand(1, sid + 1, -1).clone()
     lang[14] = torch.ones(1, sid + 1, dtype=torch.long)
     lang[20] = torch.zeros(1, 3, 2, dtype=torch.long)
+    lang.append(torch.full((1, 3), -1, dtype=torch.long))
+    lang.append(torch.zeros_like(lang[4], dtype=torch.bool))
     state = stm, tuple(lang), None
     active = torch.tensor([active], dtype=torch.bool)
     view = owner._sentence_observation(state, sid, active)
@@ -214,3 +217,14 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
                                torch.zeros(1, dtype=torch.bool))
     return owner, view, cost
+
+
+def use_eager_reading(monkeypatch):
+    """Execute the same loop bodies without graph capture for behavior tests."""
+    import util
+    def eager_while(condition, body, values):
+        while bool(condition(*values)):
+            values = body(*values)
+        return values
+    monkeypatch.setattr(util, "TheCompileBackend", "none")
+    monkeypatch.setattr(torch, "while_loop", eager_while)

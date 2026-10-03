@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_detached_reverse_objective.py::test_packed_reverse_loss_matches_serial_sentence_layout"
+  ],
+  "completed": [
+    "test/test_detached_reverse_objective.py::test_packed_reverse_loss_matches_serial_sentence_layout"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_detached_reverse_objective.py::test_packed_reverse_loss_matches_serial_sentence_layout",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01721795900084544,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

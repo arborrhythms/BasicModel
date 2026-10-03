@@ -71,21 +71,6 @@ def _make_plain_model():
     return model
 
 
-class TestPSOwnsSingleLayers(unittest.TestCase):
-    """PartSpace owns ``self.pi`` directly, not a ``ModuleList``
-    container. Stage 10 retired ``self.sigma`` from PS."""
-
-
-    def test_ps_pi_attribute_retired(self):
-        """Pi/Sigma swap (rev. 2026-06-09): ``self.pi`` on
-        PartSpace moved to WholeSpace (Pi is the top-down
-        analysis operator)."""
-        model = _make_plain_model()
-        ps = model.perceptualSpace
-        self.assertFalse(
-            hasattr(ps, 'pi'),
-            "Pi/Sigma swap: PartSpace.pi must be gone (PS is "
-            "sigma-only -- synthesis). The pi lives on WholeSpace.")
 
 
 class TestPSForwardSingleArg(unittest.TestCase):
@@ -158,26 +143,6 @@ class TestPSFoldShapes(unittest.TestCase):
 
 
 
-class TestPSLegacyAttributesGone(unittest.TestCase):
-    """The legacy ``pi_input`` / ``pi_concept`` ``ModuleList`` slots
-    are no longer the PS-side interface; the single-layer ``pi`` /
-    ``sigma`` superseded them."""
-
-    def test_pi_input_module_list_gone(self):
-        model = _make_plain_model()
-        ps = model.perceptualSpace
-        self.assertFalse(
-            hasattr(ps, 'pi_input'),
-            "PartSpace.pi_input ModuleList must be retired by "
-            "the Stage 1.A single-layer refactor.")
-
-    def test_pi_concept_module_list_gone(self):
-        model = _make_plain_model()
-        ps = model.perceptualSpace
-        self.assertFalse(
-            hasattr(ps, 'pi_concept'),
-            "PartSpace.pi_concept ModuleList must be retired by "
-            "the Stage 1.A single-layer refactor.")
 
 
 if __name__ == "__main__":

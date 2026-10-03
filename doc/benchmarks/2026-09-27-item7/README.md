@@ -19,7 +19,7 @@ each of the twenty-one numbered requirements.
 Its [28 named mechanism cases](acceptance-outcomes.json) all pass in the full
 sweep; §7.15 and §7.21 also have the small measurements below. These targeted
 results do not close the integration failures or reconstruction requirements.
-The additional [`true` execution check](../../../test/test_item7_storage.py#L293)
+The additional [`true` execution check](../../../test/test_clause_storage.py#L301)
 loads the declared thought operator and executes it over a sealed clause,
 retaining both evidence poles.
 
@@ -70,14 +70,14 @@ See the [source manifest](source-manifest.json),
 
 | Spec §7 | Coverage |
 |---|---|
-| 1–9, 12 | [Selected clauses](../../../test/test_item7_acceptance.py), [row storage](../../../test/test_item7_storage.py), [owned derivations](../../../test/test_item7_clause_program.py) |
+| 1–9, 12 | [Selected clauses](../../../test/test_clause_acceptance.py), [row storage](../../../test/test_clause_storage.py), [owned derivations](../../../test/test_clause_closing.py) |
 | 10 | [Eager, pending and packed row parity](../../../test/test_selected_nested_meaning.py) |
-| 11 | [Provisioning and external assertion authority](../../../test/test_item7_provenance.py) |
-| 13 | [Compiled clause scope and committed STM slots](../../../test/test_item7_clause_state.py), [native two-path commits](../../../test/test_sentence_compose.py) |
-| 14 | [Native concept taxonomy and n-ary META](../../../test/test_item7_taxonomy.py), [direct references](../../../test/test_reference_table.py) |
-| 15 | [Kind supervision](../../../test/test_item7_expectation.py), [measurement driver](measure_identity.py) |
-| 16 | [Truth-row migration](../../../test/test_item7_storage.py), [native index rebuild](../../../test/test_item7_taxonomy.py) |
-| 17–20 | [Bounded identity mechanisms](../../../test/test_item7_references.py), [situation context](../../../test/test_item7_context.py) |
+| 11 | [Provisioning and external assertion authority](../../../test/test_assertion_provenance.py) |
+| 13 | [Compiled clause scope and committed STM slots](../../../test/test_clause_scope.py), [native two-path commits](../../../test/test_sentence_compose.py) |
+| 14 | [Native concept taxonomy and n-ary META](../../../test/test_definition_taxonomy.py), [direct references](../../../test/test_reference_table.py) |
+| 15 | [Kind supervision](../../../test/test_expectation_kind.py), [measurement driver](measure_identity.py) |
+| 16 | [Truth-row migration](../../../test/test_clause_storage.py), [native index rebuild](../../../test/test_definition_taxonomy.py) |
+| 17–20 | [Bounded identity mechanisms](../../../test/test_sentence_references.py), [situation context](../2026-10-02-item6-9-reconstruction/ports/test_context_rotation.py/old.py.txt) |
 | 21 | [Fixed small-corpus measurement](measure_identity.py) |
 
 The selected path carries a tensor-only clause journal inside the compiled

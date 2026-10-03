@@ -180,7 +180,6 @@
     <categoryCodebook>true</categoryCodebook>
     <!-- Experimental overlapping PS/WS .where lattice. Requires
          mereologyRaise=true; stays false until its corpus gates pass. -->
-    <overlapWhereTiling>false</overlapWhereTiling>
     <codebookRetire>false</codebookRetire>
 
     <!-- Model-level trust multiplier for incoming assertions/testimony.
@@ -231,8 +230,8 @@
       <!-- Supplied grammar annotations train the existing grammar MLPs.
            Unlabelled corpora have no grammar-lesson objective. -->
       <grammarLessonWeight>1.0</grammarLessonWeight>
-      <!-- Weight of reconstruction loss vs prediction loss in [0,1]:
-           total = (1-r)*output + r*recon. -->
+      <!-- Independent priority of each relative reconstruction term.
+           Answer terms retain their own event-band priorities. -->
       <reconstructionScale>0.5</reconstructionScale>
       <!-- Per-channel triple loss scales (what / where / when). -->
       <whatScale>0.7</whatScale>
@@ -254,8 +253,9 @@
       <trainEmbedding>NONE</trainEmbedding>
       <!-- Embedding co-occurrence loss weight λ in JOINT mode. -->
       <embeddingScale>0.25</embeddingScale>
-      <!-- Prior situation contributes bounded context to code rotation.
-           Expectation weight reserves that share for the pre-input estimate. -->
+      <!-- Inactive settings of the retired contextual rotation. The
+           reconstruction-only law uses neither situation nor expectation
+           to update dictionary rows outside its gradient. -->
       <conceptualContextSituationWeight>0</conceptualContextSituationWeight>
       <conceptualContextSituationAnchors>8</conceptualContextSituationAnchors>
       <conceptualContextExpectationWeight>0</conceptualContextExpectationWeight>
@@ -454,7 +454,7 @@
          codebook - the closest surviving mode to the retired PS analyse;
          the meronymic analyzer is ANALYSIS and lives on WholeSpace as
          <analysis>meronomy). -->
-    <synthesis>lexicon</synthesis>
+    <synthesis>meronomy</synthesis>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <wordLearning>2</wordLearning>
   </PartSpace>
@@ -495,6 +495,7 @@
   </ConceptualSpace>
 
   <WholeSpace>
+    <analysis>meronomy</analysis>
     <!-- The WholeSpace cut is <analysis> (the unified knob; raw is the
          resolve_lexer default when unset). <lexer>/<analyzer> are deprecated. -->
     <nInput>0</nInput>

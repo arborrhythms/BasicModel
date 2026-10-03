@@ -1,0 +1,14 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "doc/benchmarks/2026-09-30-item6-9/native_profile.py",
+    "--out",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native-before/measurement.json"
+  ],
+  "pid": 38912,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 6167353320,
+  "elapsed_seconds": 1224.1473441668786,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/native-before/driver.log"
+}

@@ -1,0 +1,246 @@
+"""The closing is the transaction boundary, including ragged packed rows."""
+import torch
+import pytest
+
+
+def test_cached_perception_keeps_original_values_across_parameter_updates():
+    from SentenceCompose import saved_sentence_values
+    parameter = torch.nn.Parameter(torch.tensor([2., 3.]))
+    x = torch.tensor([5., 7.], requires_grad=True)
+    with saved_sentence_values((parameter,)):
+        cache = x * parameter
+        first = cache.square().sum()
+        first.backward(retain_graph=True)
+        old_gradient = x.grad.clone()
+        with torch.no_grad():
+            parameter.add_(10)
+        x.grad = None
+        parameter.grad = None
+        cache.square().sum().backward()
+        torch.testing.assert_close(x.grad, old_gradient)
+        torch.testing.assert_close(parameter.grad, 2 * x.detach().square() * torch.tensor([2., 3.]))
+
+
+def test_sentence_winners_are_row_local_and_precede_the_next_perception():
+    from SentenceCompose import sentence_pair
+    parameter = torch.nn.Parameter(torch.tensor(0.))
+    optimizer = torch.optim.SGD([parameter], lr=.1)
+    context = torch.zeros(3)
+    perceptions, updates, observations = [], [], []
+    for sid in range(2):
+        # This is the input to perception, before either compose trial.
+        perceptions.append(context.clone())
+        cache = context.clone()
+        def compose(cached, prior):
+            updates.append(float(parameter.detach()))
+            assert cached is cache
+            return cached + (1 if prior is None else 10)
+        def score(path, alternative):
+            # Opposite winners in rows 0/1, exact tie in row 2.
+            base = torch.tensor([1., 3., 2.] if alternative else [3., 1., 2.])
+            return base - (parameter - parameter.detach()), path
+        def step(loss):
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        chosen, costs, wins = sentence_pair(cache, compose, score, step,
+                                            active=torch.ones(3, dtype=torch.bool))
+        context = chosen
+        observations.append(chosen.clone())
+        assert wins.tolist() == [True, False, False]
+        assert costs.shape == (3, 2)
+    assert perceptions[0].tolist() == [0, 0, 0]
+    assert perceptions[1].tolist() == [10, 1, 1]
+    assert observations[-1].tolist() == [20, 2, 2]
+    assert updates[1] == updates[0] and updates[3] == updates[2]
+    assert updates[2] > updates[1]
+
+
+def test_evaluation_has_one_trial_and_no_step():
+    from SentenceCompose import sentence_pair
+    calls = []
+    def compose(cache, prior):
+        calls.append(prior)
+        return cache
+    def forbidden(*args):
+        raise AssertionError('evaluation requested training')
+    chosen, costs, wins = sentence_pair(torch.tensor([2., 3.]), compose,
+        lambda path, _: (path, path), forbidden,
+        active=torch.tensor([True, False]), training=False)
+    assert calls == [None]
+    assert chosen.tolist() == [2., 3.]
+    assert not wins.any()
+
+
+@pytest.mark.parametrize('compiled', [False, True])
+def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, compiled):
+    from test_compiled_word_chunk import _tiny_canonical_model
+    from test_reverse_traversal import _select_completed_binary_path
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+        concept_rows=128, part_rows=64, input_width=16, training_overrides={'intraLossWeight': 0},
+        stm_capacity=3, chooser_depth=1,
+        architecture_overrides={'ltmConsolidation': True, 'symbolicOrder': 1})
+    # Completion is a fixture for this causal mechanism test. Both winners
+    # must leave a real predecessor, regardless of the untrained chooser.
+    _select_completed_binary_path(model)
+    optimizer = model.getOptimizer(lr=1e-4)
+    import util
+    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+    model.reconstruction_placement = 'eager'
+    def eager_while(condition, body, values):
+        while bool(condition(*values)):
+            values = body(*values)
+        return values
+    monkeypatch.setattr(torch, 'while_loop', eager_while)
+    if compiled:
+        import SentenceCompose
+        monkeypatch.setattr(SentenceCompose, 'compile_word_brick',
+            lambda fn: torch.compile(fn, backend='eager', fullgraph=True))
+    # Sentence ends land at different word columns in the two rows; the
+    # first row's one-word sentence also exercises its dedicated closing trace.
+    raw = model.inputSpace.prepPackedInput([['a', 'c d'], ['e f', 'g']])
+    events = []
+    candidates, prior_context = {}, []
+    path_cost = model._sentence_path_cost
+    def controlled_cost(path, sid, active):
+        cost, recon, observation, pending = path_cost(path, sid, active)
+        alternative = model._sentence_trial == 'explore'
+        candidates[sid, alternative] = observation
+        if sid == 1:
+            # The second sentence sees exactly the chain committed by the
+            # first, including its occurrence identity, in both trials.
+            disc = model.symbolSpace.discourse
+            assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+        fixed = cost.new_tensor([1., 2.] if alternative else [2., 1.])
+        return cost - cost.detach() + fixed, recon, observation, pending
+    monkeypatch.setattr(model, '_sentence_path_cost', controlled_cost)
+    perceived = []
+    # The perception owner must see the committed predecessor before it is
+    # called for the next sentence. The second compose must not call it again.
+    perceive = model.perceptualSpace.synthesize_word_parts
+    def perception(*args, **kwargs):
+        # Input staging also builds a detached reporting slab. Count the
+        # live word perception shared by the two compose/backward paths.
+        if torch.is_grad_enabled() and not torch.compiler.is_compiling():
+            perceived.append(len(model._sentence_fields))
+            if len(model._sentence_fields) == 1:
+                disc = model.symbolSpace.discourse
+                assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+        return perceive(*args, **kwargs)
+    if not compiled:
+        monkeypatch.setattr(model.perceptualSpace, 'synthesize_word_parts', perception)
+    original = model._sentence_train_step
+    def step(loss):
+        events.append(('step', float(loss.detach())))
+        return original(loss)
+    monkeypatch.setattr(model, '_sentence_train_step', step)
+    commit = model._commit_sentence
+    def observe(*args):
+        events.append(('commit', args[1]))
+        result = commit(*args)
+        disc = model.symbolSpace.discourse
+        context = tuple(tuple(row) for row in disc._inter_context_occurrences)
+        assert [len(row) for row in context] == [args[1] + 1] * 2
+        assert all(occurrence is not None for row in context for occurrence in row)
+        for b, alternative in enumerate((True, False)):
+            expected = candidates[args[1], alternative]
+            roles, occupied = disc._canonical_meaning(
+                expected['observed'][b], expected['observed_depths'][b], expected['layout'],
+                None if expected['roles'] is None else expected['roles'][b])
+            depth, payload, mask = disc._inter_context[b][-1]
+            assert depth == int(occupied.sum())
+            torch.testing.assert_close(payload, roles)
+            torch.testing.assert_close(mask, occupied)
+        if args[1] == 0:
+            prior_context.append(context)
+        return result
+    monkeypatch.setattr(model, '_commit_sentence', observe)
+    try:
+        model.runBatch(train=True, optimizer=optimizer, batchSize=2,
+            batch_override=(raw, torch.empty(2, 0)), split='runtime')
+        assert [e[0] for e in events] == ['step', 'step', 'commit'] * 2
+        assert len(model._sentence_winners) == 2
+        assert all(cost.shape == (2, 2) for cost in model._sentence_trial_costs)
+        assert set(model._last_understanding.sentence_fields) == {0, 1}
+        assert model._training_step_count == 1
+        for sid in range(2):
+            assert model._sentence_winners[sid].tolist() == [True, False]
+            for b, alternative in enumerate((True, False)):
+                expected = candidates[sid, alternative]['clauses'][b]
+                actual = model._last_understanding.sentence_fields[sid][b]
+                torch.testing.assert_close(actual.meaning.roles[actual.meaning.role_mask], expected.slots)
+                assert not hasattr(actual, 'actions')
+        if not compiled:
+            assert perceived == [0, 0, 1, 1]
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()
+
+
+def test_prediction_preview_is_per_row_and_does_not_append_an_observation():
+    from Layers import InterSentenceLayer
+    layer = InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=4,
+        concept_dim=4, batch=2, expectation_scope='structured')
+    layer.set_inter_loss_weight(1.)
+    # This test uses real prediction equations; opposed row targets must not
+    # disappear into a batch scalar before the winner comparison.
+    payloads = [torch.zeros(3, layer.concept_dim), torch.ones(3, layer.concept_dim)]
+    mask = torch.ones(2, dtype=torch.bool)
+    layer.predict_and_observe_stm_end_state([3, 3], payloads, mask=mask)
+    sizes = [len(row) for row in layer._inter_context]
+    cost, contrast, pending = layer.sentence_prediction_cost([3, 3], payloads, mask)
+    assert cost.shape == contrast.shape == (2,)
+    assert cost.requires_grad
+    assert [len(row) for row in layer._inter_context] == sizes
+    assert all(value is None for value in layer._inter_last_meaning)
+    assert all(value is not None for value in pending[0])
+    cost.sum().backward()
+    assert any(p.grad is not None for p in layer._inter_predictor.parameters())
+
+
+def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
+    from types import SimpleNamespace
+    from Models import BasicModel
+    predictor = torch.nn.Parameter(torch.tensor(2.))
+    root = torch.nn.Parameter(torch.ones(1, 2))
+    optimizer = torch.optim.Adam([predictor, root], lr=.1)
+    predictor.square().backward()
+    optimizer.step()
+    optimizer.zero_grad(set_to_none=True)
+    before = predictor.detach().clone()
+    disc = SimpleNamespace(sentence_prediction_cost=lambda *a, **k:
+        (predictor.square().reshape(1), predictor.square().reshape(1), None))
+    observation = dict(observed_depths=[1], observed=[root],
+        mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None])
+    model = SimpleNamespace(reconstruct_in_loop=False, inter_loss_weight=0.,
+        inter_contrastive_weight=0., symbolSpace=SimpleNamespace(discourse=disc),
+        _publish_sentence_scratch=lambda state: None,
+        _tensor_pushed_ideas=root[:, None],
+        _sentence_observation=lambda *a: observation,
+        _expectation_documents_for_slot=lambda *a: None)
+    lang = [None] * 15
+    lang[9], lang[13], lang[14] = root[:, None], root.repeat(1, 3)[:, None], torch.ones(1, 1)
+    cost, *_ = BasicModel._sentence_path_cost(
+        model, ((root[:, None],), lang, None), 0, torch.tensor([True]))
+    cost.sum().backward()
+    assert predictor.grad is None
+    optimizer.step()
+    torch.testing.assert_close(predictor, before, rtol=0, atol=0)
+
+
+
+
+def test_already_trained_observation_keeps_policy_and_skips_duplicate_loss():
+    from Layers import InterSentenceLayer
+    layer = InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=4,
+        concept_dim=4, batch=1, expectation_scope='structured')
+    layer.set_inter_loss_weight(1.)
+    payloads = [torch.ones(3, 4)]
+    layer.observe_stm_end_state([3], payloads)
+    layer.expect_next_meaning(0, refresh=True, policy=('prior-query',), policy_work=2)
+    layer.observe_stm_end_state([3], payloads, train_prediction=False)
+    assert layer.consume_inter_loss() is None
+    outcomes = layer.consume_expectation_policy_outcomes()
+    assert len(outcomes) == 1 and outcomes[0][0] == ('prior-query',)
+    assert outcomes[0][2] == 2
+    assert not layer._inter_context[0][-1][1].requires_grad

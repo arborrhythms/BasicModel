@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_dimensional_governance.py::test_mm_5m_builds_and_forwards"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/extra-cases/part-00/worker-025.recycle.json"
+}

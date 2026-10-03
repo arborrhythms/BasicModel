@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_inverse_unary_exclusion.py::test_closing_does_not_spend_rounds_repeating_not_at_one_slot"
+  ],
+  "completed": [
+    "test/test_inverse_unary_exclusion.py::test_closing_does_not_spend_rounds_repeating_not_at_one_slot"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_closing_does_not_spend_rounds_repeating_not_at_one_slot",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0036172079999232665,
+      "message": "test/test_inverse_unary_exclusion.py:26: in test_closing_does_not_spend_rounds_repeating_not_at_one_slot\n    assert result['used'].tolist() == [2]  # not, then STOP\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert [6] == [2]\nE     \nE     At index 0 diff: 6 != 2\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

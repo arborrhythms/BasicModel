@@ -1,0 +1,1 @@
+{"nodeid": "test/test_config_matrix.py::test_config_builds_runs_and_reconstructs[xor_noraise]", "kind": "reconstruction", "config": "data/matrix/MM_20M_xor_noraise.xml", "epochs": 1, "seed": 0, "exact_match_rate": 1.0, "where_recovery": 1.0, "output_loss": 0.17499567568302155, "recon_loss": 0.00013989095168653876, "gate": 9}

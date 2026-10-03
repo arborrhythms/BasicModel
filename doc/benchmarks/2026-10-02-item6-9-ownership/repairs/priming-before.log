@@ -1,0 +1,54 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_serial_reading_diffuses_over_existing_definitions ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x129989910>
+
+    def test_serial_reading_diffuses_over_existing_definitions(monkeypatch):
+        cs, first, _ = _chain_cs()
+        monkeypatch.setattr(cs, '_sparse_active', lambda: False)
+        cs.prime_seen(torch.tensor([[3]]))
+        surface = cs.prime_seen(torch.tensor([[3]]))
+>       assert surface.shape == (1, cs._priming_dim())
+E       assert torch.Size([16]) == (1, 16)
+E         
+E         At index 0 diff: 16 != 1
+E         Right contains one more item: 16
+E         Use -v to get more diff
+
+test/test_sentence_priming.py:11: AssertionError
+____________________ test_batch_rows_never_prime_each_other ____________________
+
+    def test_batch_rows_never_prime_each_other():
+        cs, first, _ = _chain_cs()
+        surface = cs.prime_seen(torch.tensor([[3], [6]]))
+>       assert surface.shape == (2, cs._priming_dim())
+E       assert torch.Size([16]) == (2, 16)
+E         
+E         At index 0 diff: 16 != 2
+E         Right contains one more item: 16
+E         Use -v to get more diff
+
+test/test_sentence_priming.py:18: AssertionError
+___________________ test_no_edge_cap_and_no_scalar_host_walk ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x129db5c40>
+
+    def test_no_edge_cap_and_no_scalar_host_walk(monkeypatch):
+        from types import SimpleNamespace
+        cs, _, _ = _chain_cs()
+        count = 4100
+        layer = SimpleNamespace(nnz=count, nOutput=8192, values=torch.ones(count),
+            _indices=lambda device: (torch.arange(count, device=device), torch.arange(count, device=device)+1))
+        store = SimpleNamespace(part_matrices=lambda: [layer])
+        monkeypatch.setattr(cs, '_concept_allocator', SimpleNamespace(_layers={0: store}))
+>       src, dst, weight = cs._priming_edges()
+        ^^^^^^^^^^^^^^^^
+E       TypeError: cannot unpack non-iterable NoneType object
+
+test/test_sentence_priming.py:33: TypeError
+=========================== short test summary info ============================
+FAILED test/test_sentence_priming.py::test_serial_reading_diffuses_over_existing_definitions
+FAILED test/test_sentence_priming.py::test_batch_rows_never_prime_each_other
+FAILED test/test_sentence_priming.py::test_no_edge_cap_and_no_scalar_host_walk
+3 failed, 2 warnings in 2.12s

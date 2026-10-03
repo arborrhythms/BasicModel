@@ -1,0 +1,925 @@
+{
+  "done": [
+    {
+      "config": "data/HeadEmission.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/HeadEmission.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/HeadEmission.json"
+      ],
+      "pid": 63035,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 403063936,
+      "elapsed_seconds": 3.707968542003073,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/HeadEmission.log"
+    },
+    {
+      "config": "data/XOR_grammar.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/XOR_grammar.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_grammar.json"
+      ],
+      "pid": 63034,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 533955856,
+      "elapsed_seconds": 5.266282541997498,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_grammar.log"
+    },
+    {
+      "config": "data/LM_5M_IR.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/LM_5M_IR.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/LM_5M_IR.json"
+      ],
+      "pid": 63064,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 401556608,
+      "elapsed_seconds": 3.723763208006858,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/LM_5M_IR.log"
+    },
+    {
+      "config": "data/LM_5M.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/LM_5M.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/LM_5M.json"
+      ],
+      "pid": 63059,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 2986986592,
+      "elapsed_seconds": 7.366284707997693,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/LM_5M.log"
+    },
+    {
+      "config": "data/MM_5M_AR.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_5M_AR.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_5M_AR.json"
+      ],
+      "pid": 63085,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 404554904,
+      "elapsed_seconds": 3.732966542011127,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_5M_AR.log"
+    },
+    {
+      "config": "data/MM_5M_IR.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_5M_IR.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_5M_IR.json"
+      ],
+      "pid": 63099,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 402474112,
+      "elapsed_seconds": 3.703944416003651,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_5M_IR.log"
+    },
+    {
+      "config": "data/MM_add.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_add.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_add.json"
+      ],
+      "pid": 63111,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 517375152,
+      "elapsed_seconds": 4.25931079100701,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_add.log"
+    },
+    {
+      "config": "data/MM_add_verb.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_add_verb.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_add_verb.json"
+      ],
+      "pid": 63125,
+      "exit_code": 137,
+      "reason": "memory",
+      "peak_memory_bytes": 9133940368,
+      "elapsed_seconds": 15.664988167001866,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_add_verb.log"
+    },
+    {
+      "config": "data/MM_boolean.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_boolean.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_boolean.json"
+      ],
+      "pid": 63171,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 764888576,
+      "elapsed_seconds": 5.349409499991452,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_boolean.log"
+    },
+    {
+      "config": "data/MM_decode.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_decode.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_decode.json"
+      ],
+      "pid": 63188,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5041361432,
+      "elapsed_seconds": 12.418155000006664,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_decode.log"
+    },
+    {
+      "config": "data/MM_400M.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_400M.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_400M.json"
+      ],
+      "pid": 63079,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 7810603440,
+      "elapsed_seconds": 56.37129945799825,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_400M.log"
+    },
+    {
+      "config": "data/MM_global.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_global.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_global.json"
+      ],
+      "pid": 63228,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5114745416,
+      "elapsed_seconds": 10.705322624999098,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_global.log"
+    },
+    {
+      "config": "data/MM_grammar.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_grammar.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_grammar.json"
+      ],
+      "pid": 63257,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 541017408,
+      "elapsed_seconds": 4.180957374992431,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_grammar.log"
+    },
+    {
+      "config": "data/MM_init_scale.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_init_scale.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_init_scale.json"
+      ],
+      "pid": 63266,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 437421328,
+      "elapsed_seconds": 4.183491916992352,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_init_scale.log"
+    },
+    {
+      "config": "data/MM_ltm_consolidation_fixture.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_ltm_consolidation_fixture.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_fixture.json"
+      ],
+      "pid": 63276,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 449234072,
+      "elapsed_seconds": 4.191301709011896,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_fixture.log"
+    },
+    {
+      "config": "data/MM_ltm_consolidation_serial_fixture.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_ltm_consolidation_serial_fixture.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_serial_fixture.json"
+      ],
+      "pid": 63281,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 556434776,
+      "elapsed_seconds": 4.191338250006083,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_serial_fixture.log"
+    },
+    {
+      "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_ltm_consolidation_stateful_fixture.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_stateful_fixture.json"
+      ],
+      "pid": 63293,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 444368048,
+      "elapsed_seconds": 4.19996766600525,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_ltm_consolidation_stateful_fixture.log"
+    },
+    {
+      "config": "data/MM_math.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_math.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_math.json"
+      ],
+      "pid": 63308,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 520750280,
+      "elapsed_seconds": 4.275001041998621,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_math.log"
+    },
+    {
+      "config": "data/MM_masked_semantic.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_masked_semantic.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_masked_semantic.json"
+      ],
+      "pid": 63298,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5833069584,
+      "elapsed_seconds": 10.647717332991306,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_masked_semantic.log"
+    },
+    {
+      "config": "data/MM_mereology.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_mereology.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_mereology.json"
+      ],
+      "pid": 63334,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5040165352,
+      "elapsed_seconds": 10.160713165998459,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_mereology.log"
+    },
+    {
+      "config": "data/MM_mereology_serial.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_mereology_serial.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_mereology_serial.json"
+      ],
+      "pid": 63346,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 6822483704,
+      "elapsed_seconds": 18.323161708991393,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_mereology_serial.log"
+    },
+    {
+      "config": "data/MM_meronomy_smoke.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_meronomy_smoke.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_meronomy_smoke.json"
+      ],
+      "pid": 63366,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 8352947304,
+      "elapsed_seconds": 16.160916249995353,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_meronomy_smoke.log"
+    },
+    {
+      "config": "data/MM_overlap_tiling.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_overlap_tiling.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_overlap_tiling.json"
+      ],
+      "pid": 63412,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4959523280,
+      "elapsed_seconds": 10.162474292010302,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_overlap_tiling.log"
+    },
+    {
+      "config": "data/MM_phrase_decode.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_phrase_decode.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_phrase_decode.json"
+      ],
+      "pid": 63426,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 8351226960,
+      "elapsed_seconds": 15.60802466700261,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_phrase_decode.log"
+    },
+    {
+      "config": "data/MM_qa.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_qa.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_qa.json"
+      ],
+      "pid": 63446,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 3360247000,
+      "elapsed_seconds": 10.723148124990985,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_qa.log"
+    },
+    {
+      "config": "data/MM_query_reasoning.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_query_reasoning.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_query_reasoning.json"
+      ],
+      "pid": 63477,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 894928312,
+      "elapsed_seconds": 4.8110760420095176,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_query_reasoning.log"
+    },
+    {
+      "config": "data/MM_reading.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_reading.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_reading.json"
+      ],
+      "pid": 63479,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5079913008,
+      "elapsed_seconds": 10.161926082990249,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_reading.log"
+    },
+    {
+      "config": "data/MM_shamatha.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_shamatha.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_shamatha.json"
+      ],
+      "pid": 63530,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 540116264,
+      "elapsed_seconds": 4.275188625004375,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_shamatha.log"
+    },
+    {
+      "config": "data/MM_sparse_concept.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_sparse_concept.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sparse_concept.json"
+      ],
+      "pid": 63544,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 5846979624,
+      "elapsed_seconds": 10.769761333998758,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sparse_concept.log"
+    },
+    {
+      "config": "data/MM_symbol_tower.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_symbol_tower.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_symbol_tower.json"
+      ],
+      "pid": 63588,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 4392521712,
+      "elapsed_seconds": 9.686656167003093,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_symbol_tower.log"
+    },
+    {
+      "config": "data/MM_symbolic_iter.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_symbolic_iter.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_symbolic_iter.json"
+      ],
+      "pid": 63617,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 582878552,
+      "elapsed_seconds": 4.262700958992355,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_symbolic_iter.log"
+    },
+    {
+      "config": "data/MM_xor.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_xor.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor.json"
+      ],
+      "pid": 63642,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 544277776,
+      "elapsed_seconds": 4.269931999995606,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor.log"
+    },
+    {
+      "config": "data/MM_xor_fixture.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_xor_fixture.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_fixture.json"
+      ],
+      "pid": 63659,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 544064832,
+      "elapsed_seconds": 4.272001334000379,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_fixture.log"
+    },
+    {
+      "config": "data/MM_xor_loopback.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_xor_loopback.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_loopback.json"
+      ],
+      "pid": 63673,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 534070592,
+      "elapsed_seconds": 4.264598707988625,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_loopback.log"
+    },
+    {
+      "config": "data/MM_xor_step3.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_xor_step3.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_step3.json"
+      ],
+      "pid": 63685,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 538281232,
+      "elapsed_seconds": 4.265237374987919,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_step3.log"
+    },
+    {
+      "config": "data/MM_xor_step4.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_xor_step4.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_step4.json"
+      ],
+      "pid": 63699,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 541017384,
+      "elapsed_seconds": 4.2657696249953005,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_xor_step4.log"
+    },
+    {
+      "config": "data/MentalModel.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MentalModel.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MentalModel.json"
+      ],
+      "pid": 63711,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 797066776,
+      "elapsed_seconds": 4.821764375010389,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MentalModel.log"
+    },
+    {
+      "config": "data/POS_smoke.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/POS_smoke.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/POS_smoke.json"
+      ],
+      "pid": 63728,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 781813248,
+      "elapsed_seconds": 4.803271666998626,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/POS_smoke.log"
+    },
+    {
+      "config": "data/RamsifiedModel.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/RamsifiedModel.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/RamsifiedModel.json"
+      ],
+      "pid": 63755,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 750274048,
+      "elapsed_seconds": 4.820273207995342,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/RamsifiedModel.log"
+    },
+    {
+      "config": "data/XOR_pos.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/XOR_pos.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_pos.json"
+      ],
+      "pid": 63772,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 531563840,
+      "elapsed_seconds": 4.254579582993756,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_pos.log"
+    },
+    {
+      "config": "data/XOR_recon.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/XOR_recon.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_recon.json"
+      ],
+      "pid": 63784,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 403834008,
+      "elapsed_seconds": 3.7239740420045564,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_recon.log"
+    },
+    {
+      "config": "data/XOR_spaces.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/XOR_spaces.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_spaces.json"
+      ],
+      "pid": 63798,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 464766128,
+      "elapsed_seconds": 4.27575462499226,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/XOR_spaces.log"
+    },
+    {
+      "config": "data/ergodic-only.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/ergodic-only.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/ergodic-only.json"
+      ],
+      "pid": 63810,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 443810968,
+      "elapsed_seconds": 3.7015783340029884,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/ergodic-only.log"
+    },
+    {
+      "config": "data/ergodic.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/ergodic.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/ergodic.json"
+      ],
+      "pid": 63825,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 456426696,
+      "elapsed_seconds": 3.7298523749923334,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/ergodic.log"
+    },
+    {
+      "config": "data/idempotent.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/idempotent.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/idempotent.json"
+      ],
+      "pid": 63837,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 491259152,
+      "elapsed_seconds": 4.268975459010107,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/idempotent.log"
+    },
+    {
+      "config": "data/mnist.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/mnist.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/mnist.json"
+      ],
+      "pid": 63851,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 456197320,
+      "elapsed_seconds": 3.719033000001218,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/mnist.log"
+    },
+    {
+      "config": "data/simple.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/simple.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/simple.json"
+      ],
+      "pid": 63867,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 451724512,
+      "elapsed_seconds": 3.7221642909862567,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/simple.log"
+    },
+    {
+      "config": "data/stream_smoke.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/stream_smoke.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/stream_smoke.json"
+      ],
+      "pid": 63879,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 522192072,
+      "elapsed_seconds": 4.2767117920011515,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/stream_smoke.log"
+    },
+    {
+      "config": "data/tomatoes.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/tomatoes.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/tomatoes.json"
+      ],
+      "pid": 63893,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 404489416,
+      "elapsed_seconds": 4.793453417005367,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/tomatoes.log"
+    },
+    {
+      "config": "data/xor.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/xor.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/xor.json"
+      ],
+      "pid": 63908,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 529352000,
+      "elapsed_seconds": 4.271217833011178,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/xor.log"
+    },
+    {
+      "config": "data/MM_sequence_predict.xml",
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode_first_batches.py",
+        "--child",
+        "--config",
+        "data/MM_sequence_predict.xml",
+        "--output",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sequence_predict.json"
+      ],
+      "pid": 63515,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 7198038304,
+      "elapsed_seconds": 398.1141453750024,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-final-batches/MM_sequence_predict.log"
+    }
+  ],
+  "pending": 0,
+  "elapsed_seconds": 528.1103706249996,
+  "active": []
+}

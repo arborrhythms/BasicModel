@@ -1,0 +1,5 @@
+{
+  "type": "ConstraintViolationError",
+  "message": "Constraints violated (L['part_ids'].size()[2], L['part_mask'].size()[2], L['part_offsets'].size()[2])! For more information, run with TORCH_LOGS=\"+dynamic\".\n  - You marked L['part_ids'].size()[2] as dynamic but your code specialized it to be a constant (4). If you're using mark_dynamic, either remove it or use maybe_mark_dynamic. If you're using Dim.DYNAMIC, replace it with either Dim.STATIC or Dim.AUTO.\n  - You marked L['part_mask'].size()[2] as dynamic but your code specialized it to be a constant (4). If you're using mark_dynamic, either remove it or use maybe_mark_dynamic. If you're using Dim.DYNAMIC, replace it with either Dim.STATIC or Dim.AUTO.\n  - You marked L['part_offsets'].size()[2] as dynamic but your code specialized it to be a constant (4). If you're using mark_dynamic, either remove it or use maybe_mark_dynamic. If you're using Dim.DYNAMIC, replace it with either Dim.STATIC or Dim.AUTO.\n",
+  "seconds": 3.0523636669968255
+}

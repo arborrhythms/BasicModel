@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_concept_code_ownership.py",
+    "--tb=short"
+  ],
+  "pid": 89064,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 435193128,
+  "elapsed_seconds": 3.7976051250007004,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/ema-regression-check/output.log"
+}

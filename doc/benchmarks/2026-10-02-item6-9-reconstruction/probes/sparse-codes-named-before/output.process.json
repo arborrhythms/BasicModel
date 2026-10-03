@@ -1,0 +1,18 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-p",
+    "doc.benchmarks.2026-10-02-item6-9-reconstruction.gradient_layout_probe",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "-q",
+    "-s"
+  ],
+  "pid": 86082,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 619840928,
+  "elapsed_seconds": 5.641204874991672,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/sparse-codes-named-before/output.log"
+}

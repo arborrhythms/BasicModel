@@ -1,0 +1,34 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+    "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul"
+  ],
+  "completed": [
+    "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+    "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025501875003101304,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.9907825420086738,
+      "message": "test/test_byte_reconstruction.py:53: in test_compiled_byte_reconstruction_handles_lookahead_and_nul\n    torch.testing.assert_close(actual, expected)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 1 / 2 (50.0%)\nE   Greatest absolute difference: 4.605203866958618e-05 at index (1,) (up to 1e-05 allowed)\nE   Greatest relative difference: 0.0006995004368945956 at index (1,) (up to 1.3e-06 allowed)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

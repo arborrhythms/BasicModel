@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_readback_operand_unaries.py",
+    "test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_only_free_term",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+  ],
+  "pid": 73446,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 600065560,
+  "elapsed_seconds": 5.396265458984999,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-corrections/probes/unary-complete/run.log"
+}

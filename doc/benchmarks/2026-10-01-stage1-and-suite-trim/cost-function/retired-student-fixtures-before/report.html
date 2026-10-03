@@ -1,0 +1,72 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 4/4 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.012263208998774644</pre></td><td><pre>test/test_compiled_word_chunk.py:939: in test_tiny_canonical_detached_reverse_stops_at_root
+    model = _tiny_canonical_model(
+test/test_compiled_word_chunk.py:393: in _tiny_canonical_model
+    init_config(
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-350/test_tiny_canonical_detached_r0/tiny_chunk_model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-350/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:70: element detachedReverse: Schemas validity error : Element &#x27;detachedReverse&#x27;: The actual value &#x27;true&#x27; does not match the fixed value constraint &#x27;false&#x27;.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-350/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:71: element reconstructInLoop: Schemas validity error : Element &#x27;reconstructInLoop&#x27;: The actual value &#x27;false&#x27; does not match the fixed value constraint &#x27;true&#x27;.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-350/test_tiny_canonical_detached_r0/tiny_chunk_model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.012204708000354003</pre></td><td><pre>test/test_compiled_word_chunk.py:966: in test_tiny_canonical_detached_reverse_train_step_is_finite
+    model = _tiny_canonical_model(tmp_path, monkeypatch, detached_reverse=True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_compiled_word_chunk.py:393: in _tiny_canonical_model
+    init_config(
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:70: element detachedReverse: Schemas validity error : Element &#x27;detachedReverse&#x27;: The actual value &#x27;true&#x27; does not match the fixed value constraint &#x27;false&#x27;.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:71: element reconstructInLoop: Schemas validity error : Element &#x27;reconstructInLoop&#x27;: The actual value &#x27;false&#x27; does not match the fixed value constraint &#x27;true&#x27;.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.023604290996445343</pre></td><td><pre>test/test_tied_reconstruction_objective.py:69: in test_student_checkpoint_migrates_shared_weights_and_adam_by_name
+    legacy = _build_ladder_variant(tmp_path, &quot;old_student&quot;, [
+test/test_meronomy_ladder.py:480: in _build_ladder_variant
+    init_config(path=str(config), defaults_path=str(_DATA / &quot;model.xml&quot;))
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml:111: element detachedReverse: Schemas validity error : Element &#x27;detachedReverse&#x27;: The actual value &#x27;true&#x27; does not match the fixed value constraint &#x27;false&#x27;.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.02275358300539665</pre></td><td><pre>test/test_sentence_compose.py:234: in test_legacy_event_reporting_does_not_zero_the_sentence_objective
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets=&#x27;8&#x27;,
+test/test_compiled_word_chunk.py:393: in _tiny_canonical_model
+    init_config(
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-353/test_legacy_event_reporting_do0/tiny_chunk_model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-353/test_legacy_event_reporting_do0/tiny_chunk_model.xml:71: element reconstructInLoop: Schemas validity error : Element &#x27;reconstructInLoop&#x27;: The actual value &#x27;false&#x27; does not match the fixed value constraint &#x27;true&#x27;.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-353/test_legacy_event_reporting_do0/tiny_chunk_model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.</pre></td><td><pre></pre></td></tr></table></body></html>

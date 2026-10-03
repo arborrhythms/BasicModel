@@ -1,0 +1,37 @@
+[
+  {
+    "file": "test/bounded_tests.py",
+    "reason": "Keep selected shared-training consumers together at case-count boundaries without changing memory/time guards or adding unselected cases.",
+    "changed": [],
+    "added": []
+  },
+  {
+    "file": "test/pytest_worker.py",
+    "reason": "Publish module-local shared-training groups and defer soft recycling until the last selected consumer.",
+    "changed": [],
+    "added": []
+  },
+  {
+    "file": "test/slow_tests.py",
+    "reason": "Register the shared-training marker; device and slow-selection policies are unchanged.",
+    "changed": [],
+    "added": []
+  },
+  {
+    "file": "test/test_bounded_test_runner.py",
+    "reason": "Add an integration proof of one fixture construction despite first-bar failure, batch size one and a requested recycling boundary. All existing cases and assertions remain.",
+    "changed": [],
+    "added": [
+      "test_shared_training_group_survives_batch_and_recycle_boundaries"
+    ]
+  },
+  {
+    "file": "test/test_explicit_dimensions.py",
+    "reason": "Both original gate bodies read one module-scoped model. Assertions are AST-identical after replacing only their model assignment; selectors and slow opt-ins remain.",
+    "changed": [
+      "TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+    ],
+    "added": []
+  }
+]

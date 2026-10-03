@@ -1,0 +1,24 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson"
+  ],
+  "completed": [
+    "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_answer_projection_cost_does_not_include_a_generate_lesson",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.012434333002602216,
+      "message": "test/test_supplied_answer_training.py:57: in test_answer_projection_cost_does_not_include_a_generate_lesson\n    torch.testing.assert_close(answer, torch.tensor([36., 100.]))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 2 / 2 (100.0%)\nE   Greatest absolute difference: 9.0 at index (1,) (up to 1e-05 allowed)\nE   Greatest relative difference: 0.1944444477558136 at index (0,) (up to 1.3e-06 allowed)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

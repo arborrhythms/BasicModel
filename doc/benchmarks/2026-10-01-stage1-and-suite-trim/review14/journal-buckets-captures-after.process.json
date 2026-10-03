@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal_recompile_probe.py"
+  ],
+  "pid": 49730,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1152059168,
+  "elapsed_seconds": 34.181127374991775,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/journal-buckets-captures-after.log"
+}

@@ -1,0 +1,17 @@
+{
+  "config": "data/idempotent.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 1.647655417007627,
+  "batch": 1,
+  "scope": "perception: no grammar",
+  "reconstruct_in_loop": false,
+  "training_seconds": 0.34887100000923965,
+  "output_loss": 0.1751161366701126,
+  "reconstruction_loss": 0.00013470686099026352,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": null,
+  "total_seconds": 1.9970186249993276
+}

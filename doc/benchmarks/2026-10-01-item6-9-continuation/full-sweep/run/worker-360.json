@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_definition_sparsity.py::test_penalty_exempts_top_free_and_sums_marginal"
+  ],
+  "completed": [
+    "test/test_definition_sparsity.py::test_penalty_exempts_top_free_and_sums_marginal"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_definition_sparsity.py::test_penalty_exempts_top_free_and_sums_marginal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012799579999409616,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_understanding_readout.py",
+    "test/test_concept_output.py",
+    "test/test_global_consume.py",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,75 @@
+--- BasicModel._sentence_path_cost.original
++++ BasicModel._sentence_path_cost.observed
+@@ -66,4 +66,5 @@
+         cost = root.sum(-1) * 0
+     elif cost.ndim == 0:
+         cost = cost.expand(B)
++    _objective_probe.trial(self, locals())
+     return cost, reconstruction, observation, pending
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -118,6 +118,7 @@
+         trial_mode=trial_mode,
+     )
+     self._sentence_answer_questions = what_questions
++    _objective_probe.opened(self, locals())
+ 
+     # Advance the serialized model clock once per PROCESSED batch (this
+     # point is past the no-batch early raise, so it ticks exactly once on
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -832,6 +832,7 @@
+         if hasattr(self, 'outputSpace'):
+             pipeline_errors = self.outputSpace.subspace.errors
+             self.errors.merge(pipeline_errors)
++            _objective_probe.auxiliary(self, locals())
+             pipeline_errors.clear()
+ 
+         if expectation_policy_loss is not None and self.expectation_policy_weight > 0:
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -947,6 +947,7 @@
+         gradient_objectives = {name: self.errors.total(objective=name)
+             for name in ('reconstruction', 'output', 'expectation')} if train else None
+ 
++        _objective_probe.batch(self, locals())
+         # Snapshot the breakdown before the backward pass so later
+         # calls to TheError.covariance() can see it in the history
+         # even if the step is aborted by a non-finite detector below.
+--- ModelLoss.compute.original
++++ ModelLoss.compute.observed
+@@ -22,4 +22,6 @@
+     if nWhen > 0:
+         loss = loss + self.when_scale * F.mse_loss(
+             pred[..., nWhat + nWhere:], target[..., nWhat + nWhere:])
++    if not torch.compiler.is_compiling():
++        _objective_probe.compute(self, locals())
+     return loss
+--- InterSentenceLayer.sentence_prediction_cost.original
++++ InterSentenceLayer.sentence_prediction_cost.observed
+@@ -49,6 +49,7 @@
+                             logits, occupied.to(logits))
+                         cost = cost + self._kind_loss(kind_logit,
+                             None if sentence_kinds is None else sentence_kinds[b], cost)
++                        _objective_probe.expectation_parts(self, locals())
+                         errors.squared('roles', pred, target, row=b, category='expectation')
+                         errors.binary('presence', logits, occupied.to(logits), row=b, category='expectation')
+                         kind = None if sentence_kinds is None else sentence_kinds[b]
+--- SymbolSubSpace.truth_modulated_loss.original
++++ SymbolSubSpace.truth_modulated_loss.observed
+@@ -46,6 +46,7 @@
+     penalties remain independent auxiliary objectives.
+     """
+     if self.truth_layer is None or self.truth_layer.is_empty():
++        _objective_probe.truth_return(locals())
+         return total_loss
+ 
+     # Luminosity is now a Mereology measure on the model itself.
+--- SymbolSubSpace.truth_modulated_loss.original
++++ SymbolSubSpace.truth_modulated_loss.observed
+@@ -114,4 +114,5 @@
+             registry.add('truth.balance', balance, weight=balance_weight,
+                          category='truth', kind='penalty')
+ 
++    _objective_probe.truth_return(locals())
+     return total_loss

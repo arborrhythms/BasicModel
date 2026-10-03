@@ -50,13 +50,15 @@ def _cs_active(nS=64, order=3):
 def _build(name):
     import Models
     from util import init_config
-    p = os.path.join(_DATA, name)
-    init_config(path=p, defaults_path=_DEFAULTS)
-    Language.TheGrammar._configured = False
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore")
-        m, _ = Models.BasicModel.from_config(p)
-    return m
+    from configuration_fixtures import parallel_concepts
+    assert name == 'MM_20M_xor.xml'
+    with parallel_concepts() as path:
+        init_config(path=path, defaults_path=_DEFAULTS)
+        Language.TheGrammar._configured = False
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            model, _ = Models.BasicModel.from_config(path)
+    return model
 
 
 # -- population at mint, keyed by ramsified order -----------------------------
@@ -139,7 +141,7 @@ def test_symbolic_phase_inactive_is_noop():
 
 @pytest.mark.slow
 def test_sparse_concept_config_builds_and_stamps():
-    m = _build("MM_sparse_concept.xml")
+    m = _build("MM_20M_xor.xml")
     # symbolicOrder=3: the wave iteration budget K (task 8.3, K=1 leaves deep links dark)
     assert m.serial is False and m.symbolicOrder == 3 and m.symbol_tower is True
     css = [cs for cs in m.conceptualSpaces if cs._sparse_active()]
@@ -156,7 +158,7 @@ def test_sparse_concept_config_builds_and_stamps():
 def test_sparse_concept_forward_smoke():
     import Models
     from util import TheXMLConfig
-    m = _build("MM_sparse_concept.xml")
+    m = _build("MM_20M_xor.xml")
     Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader))
@@ -194,7 +196,7 @@ def test_getparameters_byte_identical_when_inactive():
 
 @pytest.mark.slow
 def test_model_optimizer_picks_up_csw_weights():
-    m = _build("MM_sparse_concept.xml")
+    m = _build("MM_20M_xor.xml")
     cs = [c for c in m.conceptualSpaces if c._sparse_active()][-1]
     # Witness actual native parts, then check every definition matrix,
     # including the feature weights of the newly fused word parts.
@@ -212,41 +214,11 @@ def test_model_optimizer_picks_up_csw_weights():
 
 
 @pytest.mark.slow
-def test_conceptual_sbow_situates_live_sparse_codes():
-    """Phase-3 completion (plan C1): under a sparse-active config the parked
-    t=0 slab is GRAD-BEARING and conceptual_sbow_loss situates the composed
-    codes themselves -- the substitutability gradient reaches the sparse
-    family values (the legacy path parked a detached slab and could only
-    rotate the codebook rows)."""
-    import Models
-    from util import TheXMLConfig
-    m = _build("MM_sparse_concept.xml")
-    # Stage 0: the CS whose settled slab is parked at the cutover (and where
-    # production's autobind populates -- _commit_autobind_from_stash is
-    # stage-0 only).
-    cs = [c for c in m.conceptualSpaces if c._sparse_active()][0]
-    # An order-0 field definition may include the constant whole. Its
-    # nonzero bias witnesses a value gradient independently of random codes.
-    from Layers import EVERYTHING
-    cid = cs.relate(1, 2)
-    cs.add_whole(cid, EVERYTHING)
-    cs._populate_concept_weights(cid)
-    Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
-    loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
-    items, _ = next(iter(loader))
-    x = m.inputSpace.prepInput(items)
-    m.train()
-    m.forward(x)                                          # parks the slab
-    slab = getattr(m, "_cs_parallel_slab", None)
-    assert slab is not None
-    assert slab.requires_grad                             # LIVE, not detached
-    loss = m.conceptual_sbow_loss()
-    assert loss is not None and loss.requires_grad
-    loss.backward()
-    got = any(ly.values.grad is not None and ly.values.grad.abs().sum() > 0
-              for fam in cs._sparse_fam.values() for ly in fam
-              if ly is not None and ly.values is not None)
-    assert got, "SBOW gradient must reach the sparse family values"
+def test_distributional_code_cost_is_off_in_reconstruction_round():
+    """§20.3 sets aside SBOW; reconstruction is the only code objective."""
+    m = _build("MM_20M_xor.xml")
+    assert m.loss.conceptual_similarity_scale == 0
+    assert m.conceptual_sbow_loss() is None
 
 
 def test_csw_weights_update_under_optimizer_step():
@@ -277,7 +249,7 @@ def test_demux_feedback_is_views_of_the_mixed_carrier():
     (zero information transfer; the root-caused sO=1 frozen-loss defect)."""
     import Models
     from util import TheXMLConfig
-    m = _build("MM_sparse_concept.xml")
+    m = _build("MM_20M_xor.xml")
     Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader))
@@ -302,23 +274,32 @@ def test_demux_feedback_is_views_of_the_mixed_carrier():
 
 
 @pytest.mark.slow
-def test_two_phase_forward_cutover_stamps_terminal_activations():
+def test_two_phase_forward_cutover_stamps_terminal_activations(monkeypatch):
     """The post-pump membership field reaches the terminal CS and SS leg.
 
-    Repeated forwards cannot invent a feature definition by moving codes.
-    Codes follow written definitions at the sentence boundary.
+    Repeated forwards cannot invent feature evidence from zero memberships
+    or move the reconstruction-owned dictionary without an optimizer step.
     """
     import Models
     from util import TheXMLConfig
-    m = _build("MM_sparse_concept.xml")
+    m = _build("MM_20M_xor.xml")
     Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(items)
-    cs0 = m.body_stages[0]["cs"]
+    cs0 = m._concept_owner()
     assert cs0._sparse_active()
+    # Meronomy admission writes native feature memberships. Admit the input
+    # before making this fixture's no-evidence state, then freeze admission
+    # so these reads test the cutover rather than minting fresh definitions.
+    from configuration_fixtures import freeze_admission
+    freeze_admission(m, x, monkeypatch)
+    features = Spaces._concept_alloc_of(cs0).layer().features
+    assert features.nnz > 0
+    with torch.no_grad():
+        features.values.zero_()
     W = cs0.similarity_codebook.getW()
-    start0, end0 = cs0.order_slice(0)
+    start0, end0 = cs0._field_order_slice(0)
     before = W.detach().clone()
     m.train()
     m.forward(x)

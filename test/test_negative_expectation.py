@@ -217,11 +217,11 @@ def test_metadata_comes_from_the_preceding_occurrence_not_the_target():
     assert estimate.bindings == comparison.estimate.bindings
 
 
-def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch):
+def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, eager_reading):
     from test_compiled_word_chunk import _tiny_canonical_model
     from test_reverse_traversal import _select_completed_binary_path
     torch.manual_seed(946)
-    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1,
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1, input_width=16,
         training_overrides={"expectationPolicyWeight": .2, "expectationQueryBudget": 64,
                             "expectationGain": 0., "reconstructInLoop": True,
                             "reconstructionPlacement": "eager", "intraLossWeight": 0.},
@@ -235,7 +235,7 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch):
     # real runBatch optimizer; there is no desired answer in this presentation.
     monkeypatch.setattr(model.inputSpace.data, "has_supervised_outputs", False)
     optimizer = model.getOptimizer(lr=.001)
-    for step, text in enumerate(("a bicycle has a wheel", "a wheel is round", "a bicycle is large")):
+    for step, text in enumerate(("a b", "a c", "b c")):
         inputs = model.inputSpace.prepInput([text])
         result, _ = model.runBatch(train=True, batchNum=step, batchSize=1,
             split="train", optimizer=optimizer,

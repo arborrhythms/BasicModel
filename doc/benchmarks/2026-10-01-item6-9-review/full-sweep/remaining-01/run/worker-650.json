@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_mereology.py::TestCopyLayer::test_copy_layer_parked_in_legacy"
+  ],
+  "completed": [
+    "test/test_mereology.py::TestCopyLayer::test_copy_layer_parked_in_legacy"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_mereology.py::TestCopyLayer::test_copy_layer_parked_in_legacy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001004999976430554,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

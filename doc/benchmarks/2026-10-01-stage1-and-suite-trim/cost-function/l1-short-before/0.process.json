@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/l1_probe.py",
+    "0"
+  ],
+  "pid": 12972,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 408159480,
+  "elapsed_seconds": 3.6049293750038487,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/l1-short-before/0.log"
+}

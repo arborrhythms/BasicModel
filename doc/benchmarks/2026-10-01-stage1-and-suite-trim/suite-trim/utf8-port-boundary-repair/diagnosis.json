@@ -1,0 +1,5 @@
+{
+  "failing_probe": "../utf8-port-check/result.json",
+  "reason": "The prototype accepted surface bytes directly. The first port went through the math dataset ASCII stringTensor adapter (replaces UTF-8 with ? and clips at inputLength), and the unchanged ladder fixture had only eight unit slots for a nine-unit surface. Port the original byte-boundary contract to the live byte slab, with a receipt-local 16-slot test fixture. No production data adapter or configuration changes.",
+  "assertions": "All eight cases and all assertions preserved."
+}

@@ -1,0 +1,16 @@
+--- old/summarize_xor.py
++++ new/summarize_xor.py
+@@ -48,7 +48,12 @@
+             if o['kind']=='reconstruction':measures.append(f"exact {o['exact_match_rate']}; where {o['where_recovery']}; output {o['output_loss']}; reconstruction {o['recon_loss']}")
+             elif o['kind']=='mm':measures.append(f"ending {o.get('last')}, calls {o.get('calls')}, predictions {o.get('predictions')}")
+             elif o['kind']=='cli':measures.append(f"CLI exit {o['returncode']}; MSE {o['mse']}; reconstruction {o['reconstructed']}")
+-            elif o['kind']=='grammar':measures.append(f"class accuracy {o['accuracy']}")
++            elif o['kind']=='grammar':
++                answers,targets=o['predictions'],o['targets']
++                assert len(answers)==len(targets)==4
++                correct=sum((a>.5)==(b>.5) for a,b in zip(answers,targets))
++                mse=sum((a-b)**2 for a,b in zip(answers,targets))/4
++                measures.append(f"class {correct}/4; MSE {mse:.12g}; answers {answers}")
+         label=nodeid.removeprefix('test/')
+         if g in roundtrips:label+=f" — trial {roundtrips.index(g)+1}/1"
+         diagnostic=g['diagnostic_only']

@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer"
+  ],
+  "completed": [
+    "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer"
+  ],
+  "slow_selected": [
+    "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.43527904199436307,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

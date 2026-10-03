@@ -1,0 +1,173 @@
+{
+  "files": [
+    "bin/Legacy.py",
+    "bin/Spaces.py",
+    "data/LM_5M.xml",
+    "data/LM_5M_IR.xml",
+    "data/MM_400M.xml",
+    "data/MM_add.xml",
+    "data/MM_add_verb.xml",
+    "data/MM_decode.xml",
+    "data/MM_global.xml",
+    "data/MM_init_scale.xml",
+    "data/MM_ltm_consolidation_fixture.xml",
+    "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "data/MM_masked_semantic.xml",
+    "data/MM_math.xml",
+    "data/MM_mereology.xml",
+    "data/MM_mereology_serial.xml",
+    "data/MM_meronomy_smoke.xml",
+    "data/MM_overlap_tiling.xml",
+    "data/MM_phrase_decode.xml",
+    "data/MM_qa.xml",
+    "data/MM_query_reasoning.xml",
+    "data/MM_reading.xml",
+    "data/MM_sequence_predict.xml",
+    "data/MM_sparse_concept.xml",
+    "data/MM_symbol_tower.xml",
+    "data/MM_symbolic_iter.xml",
+    "data/MM_xor.xml",
+    "data/MM_xor_fixture.xml",
+    "data/MentalModel.xml",
+    "data/RamsifiedModel.xml",
+    "data/model.xml",
+    "data/stream_smoke.xml",
+    "data/model.xsd"
+  ],
+  "retired": [
+    "data/MM_20M_legacy.xml",
+    "data/MM_bpe.xml"
+  ],
+  "configurations": [
+    {
+      "config": "data/LM_5M.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/LM_5M_IR.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_20M_legacy.xml",
+      "disposition": "retired with old reading mode",
+      "archive": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/retired-configurations/MM_20M_legacy.xml"
+    },
+    {
+      "config": "data/MM_400M.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_add.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_add_verb.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_bpe.xml",
+      "disposition": "retired with old reading mode",
+      "archive": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/retired-configurations/MM_bpe.xml"
+    },
+    {
+      "config": "data/MM_decode.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_global.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_init_scale.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_ltm_consolidation_fixture.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_ltm_consolidation_stateful_fixture.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_masked_semantic.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_math.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_mereology.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_mereology_serial.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_meronomy_smoke.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_overlap_tiling.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_phrase_decode.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_qa.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_query_reasoning.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_reading.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_sequence_predict.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_sparse_concept.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_symbol_tower.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_symbolic_iter.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_xor.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MM_xor_fixture.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/MentalModel.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/RamsifiedModel.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/model.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    },
+    {
+      "config": "data/stream_smoke.xml",
+      "disposition": "migrated explicit/default reading selection; all other numerical configuration unchanged"
+    }
+  ]
+}

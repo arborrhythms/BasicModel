@@ -7,6 +7,7 @@ from test_output_path_supervised import _native_answer_model
 from test_output_walk import _capture_program_probe
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_real_sentence_capture_owns_native_object_ids_across_later_staging(tmp_path):
     model = _native_answer_model(tmp_path, False)
     model.eval()

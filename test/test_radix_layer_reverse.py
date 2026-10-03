@@ -108,7 +108,7 @@ class TestRadixLayerReverseStandalone(unittest.TestCase):
 
 def test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk():
     from Layers import RadixLayer
-    from test_item9b_interpret import _operator
+    from test_word_interpretation import _operator
     cs, interpret = _operator()
     word = interpret.lookup_word([1, 2], [], form='beta')
     obj = interpret.forward(word)

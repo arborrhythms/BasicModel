@@ -1,0 +1,84 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+    "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+    "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+    "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction",
+    "test/test_reconstruction_precedence.py::test_sparse_answer_projection_preserves_the_sparse_code_gradient",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[none]",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[eager]"
+  ],
+  "completed": [
+    "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+    "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+    "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+    "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction",
+    "test/test_reconstruction_precedence.py::test_sparse_answer_projection_preserves_the_sparse_code_gradient",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[none]",
+    "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[eager]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006393329967977479,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011348375002853572,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003827500040642917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019966700347140431,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_sparse_answer_projection_preserves_the_sparse_code_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000668874999973923,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[none]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6383811249979772,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_real_answer_and_reconstruction_trials_use_one_registry_and_shared_projection[eager]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 46.1284133750014,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

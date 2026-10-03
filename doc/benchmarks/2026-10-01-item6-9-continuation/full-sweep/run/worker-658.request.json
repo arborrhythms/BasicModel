@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_train_compile_target.py::test_venv_python_honors_basicmodel_python"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-658.recycle.json"
+}

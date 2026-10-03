@@ -262,6 +262,7 @@ class Understanding:
     # dense answer seed.
     answer_seed: Any = field(default=None, repr=False, compare=False)
     sentence_states: tuple = field(default_factory=tuple, repr=False, compare=False)
+    sentence_records: tuple = field(default_factory=tuple, repr=False, compare=False)
     sentence_fields: Mapping[int, tuple] = field(
         default_factory=lambda: MappingProxyType({}), repr=False, compare=False)
     input_reconstruction: InputReconstruction | None = field(
@@ -269,6 +270,7 @@ class Understanding:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "sentence_states", tuple(self.sentence_states))
+        object.__setattr__(self, "sentence_records", tuple(self.sentence_records))
         object.__setattr__(self, "sentence_fields", MappingProxyType({
             int(slot): tuple(rows) for slot, rows in self.sentence_fields.items()}))
         carriers = self.reconstruction_carriers

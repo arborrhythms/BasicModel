@@ -1,0 +1,7 @@
+test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]
+test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]
+test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing
+test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients
+test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words
+
+5 tests collected in 2.09s

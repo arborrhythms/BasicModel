@@ -1,0 +1,37 @@
+{
+  "expected": "One half with the additive-only grammar",
+  "observed": {
+    "answers": [
+      0.32371652126312256,
+      0.7858297824859619,
+      0.7872395515441895,
+      0.399192214012146
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "mse": 0.08882067509093616,
+    "correct": 4,
+    "class_bar": false,
+    "reconstructions": [
+      "there there there",
+      "there there there",
+      "there there there",
+      "there there there"
+    ],
+    "unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "rules": [
+      "sum"
+    ],
+    "unary_rules": []
+  },
+  "verdict": "FAIL: all four classifications are right; the sum-only control did not stay at one half. The unchanged MSE bar still failed. No extra training or threshold adjustment."
+}

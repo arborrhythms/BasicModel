@@ -1,0 +1,53 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_eval_script_emits_every_report_column __________________
+test/test_eval_math_thinking.py:24: in test_eval_script_emits_every_report_column
+    rows = ev.main(["--config", str(_ROOT / "data" / "MM_math.xml"),
+bin/eval_math_thinking.py:205: in main
+    rows = evaluate(model, split=args.split, budget=budget, rows=args.rows,
+bin/eval_math_thinking.py:118: in evaluate
+    result = model.think(questions, x, max_iterations=int(budget))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10892: in think
+    first = self.what(question, input_data, executor=executor, record=True,
+bin/Models.py:10681: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8895: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8707: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:24085: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13825: in _lex_embed_stem
+    self.perceptualSpace.embed_stem(in_sub)
+bin/Spaces.py:12347: in embed_stem
+    return self._embed_ladder(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:11784: in _embed_ladder
+    return self._embed_radix(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:12228: in _embed_radix
+    _stamp = (registry.encode('input', word_offset_grid) if registry is not None else
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:27: in encode
+    intervals = self.intervals(name, indices)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WhereRegistry.py:42: in intervals
+    torch._assert_async((~valid | (indices < end - start)).all(),
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: occurrence exceeds its configured where-space capacity
+=========================== short test summary info ============================
+FAILED test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column
+1 failed in 3.00s

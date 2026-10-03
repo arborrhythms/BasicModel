@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.356103917118162,
+      "message": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py:93: in test_replaying_real_greedy_derivation_ties_in_every_row\n    torch.testing.assert_close(costs[:, 0], costs[:, 1], rtol=0, atol=0)\nE   AssertionError: Tensor-likes are not equal!\nE   \nE   Mismatched elements: 4 / 4 (100.0%)\nE   Greatest absolute difference: 0.07769376039505005 at index (0,)\nE   Greatest relative difference: 0.23364409804344177 at index (0,)",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

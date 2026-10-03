@@ -115,11 +115,13 @@ code is re-read. Cite the line when you rely on one.
    cloned before the next loop; a host-int loop bound recompiles per
    distinct value (use tensor bounds); attribute-only escapes from a
    compiled graph are dropped (publish explicit outputs).
-10. **Losses.** `record_loss` writes the REPORT registry only
-    (`Models.record_loss` → `self.errors.add`); the trained total is
-    assembled explicitly in `runBatch` (`totalLoss = ...`, about
-    `Models.py:13315–13395`). A recorded loss that is not added there
-    trains nothing.
+10. **Losses, superseded October 1 by item 6.9 part 4.** `Layers.Error`
+    owns the named trial and batch objectives and their trained totals.
+    Targeted errors use detached uninformed baselines; penalties retain
+    their strengths. `record_loss` can now register a trained penalty or
+    an explicit `trained=False` metric. Raw gate/reporting losses remain
+    separate. The previous report-only registry and hand-assembled
+    `runBatch` sum are retired. See [GradientFlow](../GradientFlow.md#trained-total-and-diagnostic-objectives).
 11. **Optimizer.** `getOptimizer` walks `self.spaces` and takes each
     space's explicit `params` list (`Space.getParameters` returns
     `self.params`), plus a few model-level modules adopted through

@@ -1,0 +1,268 @@
+{
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "source_files": 717,
+  "source_matches_all_receipts": true,
+  "production_files_changed_in_followup": [
+    "bin/Models.py"
+  ],
+  "test_bodies_unchanged": true,
+  "configurations_unchanged": true,
+  "environment_unchanged": true,
+  "protected_historical_records": 4,
+  "nothing_staged": true,
+  "completed_variant_runs": 30,
+  "final_mm_runs": 10,
+  "variant_checks": [
+    {
+      "name": "a-01",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "a-02",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "a-03",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "a-04",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "a-05",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "a-06",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "a-07",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "a-08",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "a-09",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "a-10",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-01",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-02",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-03",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-04",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-05",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-06",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-07",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-08",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-09",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "b-10",
+      "gate": false,
+      "training_trials": 2000,
+      "code_answer_gradient_observed": false,
+      "chooser_answer_gradient_observed": false
+    },
+    {
+      "name": "c-01",
+      "gate": false,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    },
+    {
+      "name": "c-02",
+      "gate": true,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    },
+    {
+      "name": "c-03",
+      "gate": true,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    },
+    {
+      "name": "c-04",
+      "gate": true,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    },
+    {
+      "name": "c-05",
+      "gate": true,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    },
+    {
+      "name": "c-06",
+      "gate": true,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    },
+    {
+      "name": "c-07",
+      "gate": true,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    },
+    {
+      "name": "c-08",
+      "gate": true,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    },
+    {
+      "name": "c-09",
+      "gate": true,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    },
+    {
+      "name": "c-10",
+      "gate": true,
+      "training_trials": 800,
+      "code_answer_gradient_observed": true,
+      "chooser_answer_gradient_observed": true
+    }
+  ],
+  "completed_measurement_guard_stops": 0,
+  "peak_aggregate_gib": 1.8970228135585785,
+  "observer_attempts": {
+    "failed": 1,
+    "interrupted": 2,
+    "completed": 0
+  },
+  "mm_environment_attempts": {
+    "interrupted": 3,
+    "completed": 0,
+    "partial_epochs": [
+      800,
+      500,
+      300
+    ]
+  },
+  "mm_compile_backend": "eager",
+  "mm_helper_matches_accepted_item7": true,
+  "repair_body_ledgers": [
+    {
+      "repair": "compiled-head",
+      "complete_old_new_bodies": 3
+    },
+    {
+      "repair": "grammar-staging",
+      "complete_old_new_bodies": 5
+    }
+  ],
+  "affected_checks_passed": 12,
+  "named_xor_outcomes": {
+    "passed": 33,
+    "failed": 2
+  },
+  "exact_roundtrip_attempts": 1,
+  "reporting_correction": "XOR grammar diagnostics recomputed from stored answers; no training rerun.",
+  "documentation_checks": {
+    "passed": 6,
+    "elapsed_seconds": 14.460823667002842
+  },
+  "part4_started": false,
+  "decision": "Stop for review; nothing committed."
+}

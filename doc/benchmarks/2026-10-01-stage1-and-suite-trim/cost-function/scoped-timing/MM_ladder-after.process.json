@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped_timing.py",
+    "--child",
+    "--source",
+    "/Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price",
+    "--config",
+    "data/MM_ladder.xml",
+    "--arm",
+    "after",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped-timing/MM_ladder-after.json"
+  ],
+  "pid": 11836,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1531840624,
+  "elapsed_seconds": 9.29388041600032,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped-timing/MM_ladder-after.log"
+}

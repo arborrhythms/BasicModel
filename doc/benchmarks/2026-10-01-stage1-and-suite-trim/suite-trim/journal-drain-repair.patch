@@ -1,0 +1,16 @@
+--- old/bin/Models.py
++++ new/bin/Models.py
+@@ -505,8 +505,12 @@
+             if sentence_transactions:
+                 final = _gather_word(sentence_end_mask & ~intermediate_end_mask, index).reshape(B)
+                 group = torch.where(final, 0, group)
++            # Pipeline fill/drain ticks carry an out-of-range word index.
++            # They have no active grammar row, but gather/scatter addresses
++            # must still be legal before the row mask makes the write a no-op.
++            journal_word = index.clamp(0, width - 1)
+             journal_columns = torch.cat((
+-                (3 * index + torch.arange(3, device=words.device))[None].expand(B, -1),
++                (3 * journal_word + torch.arange(3, device=words.device))[None].expand(B, -1),
+                 3 * width + group[:, None] * closing_width
+                 + torch.arange(closing_budget, device=words.device)[None]), dim=1)
+             if record_columns is not None:

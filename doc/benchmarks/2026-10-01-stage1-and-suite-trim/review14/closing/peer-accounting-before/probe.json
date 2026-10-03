@@ -1,0 +1,111 @@
+{
+  "saved_at": "2026-10-02T13:46:46.429381+00:00",
+  "duplicate_attempts": {
+    "test/test_selected_relation_meaning.py::test_capture_does_not_invent_anchoring_for_an_unresolved_word": [
+      {
+        "part": "part-00",
+        "worker": "worker-623.json",
+        "completed": true,
+        "active": false
+      },
+      {
+        "part": "part-01",
+        "worker": "worker-001.json",
+        "completed": true,
+        "active": false
+      }
+    ],
+    "test/test_selected_relation_meaning.py::test_capture_reads_anchored_form_from_retained_word_rows": [
+      {
+        "part": "part-00",
+        "worker": "worker-623.json",
+        "completed": true,
+        "active": false
+      },
+      {
+        "part": "part-01",
+        "worker": "worker-001.json",
+        "completed": true,
+        "active": false
+      }
+    ],
+    "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[False]": [
+      {
+        "part": "part-00",
+        "worker": "worker-623.json",
+        "completed": false,
+        "active": true
+      },
+      {
+        "part": "part-01",
+        "worker": "worker-001.json",
+        "completed": false,
+        "active": true
+      }
+    ],
+    "test/test_selected_relation_meaning.py::test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp[equal]": [
+      {
+        "part": "part-00",
+        "worker": "worker-623.json",
+        "completed": true,
+        "active": false
+      },
+      {
+        "part": "part-01",
+        "worker": "worker-001.json",
+        "completed": true,
+        "active": false
+      }
+    ],
+    "test/test_selected_relation_meaning.py::test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode": [
+      {
+        "part": "part-00",
+        "worker": "worker-623.json",
+        "completed": true,
+        "active": false
+      },
+      {
+        "part": "part-01",
+        "worker": "worker-001.json",
+        "completed": true,
+        "active": false
+      }
+    ],
+    "test/test_selected_relation_meaning.py::test_unreduced_lexical_converse_uses_its_anchored_grammar_form": [
+      {
+        "part": "part-00",
+        "worker": "worker-623.json",
+        "completed": true,
+        "active": false
+      },
+      {
+        "part": "part-01",
+        "worker": "worker-001.json",
+        "completed": true,
+        "active": false
+      }
+    ],
+    "test/test_selected_relation_meaning.py::test_selected_unary_description_operation_does_not_invent_an_occurrence": [
+      {
+        "part": "part-00",
+        "worker": "worker-623.json",
+        "completed": true,
+        "active": false
+      },
+      {
+        "part": "part-01",
+        "worker": "worker-001.json",
+        "completed": true,
+        "active": false
+      }
+    ]
+  },
+  "sweep_processes": [
+    {
+      "pid": 88596,
+      "ppid": 65174,
+      "pgid": 65174,
+      "command": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full_sweep.py"
+    }
+  ]
+}

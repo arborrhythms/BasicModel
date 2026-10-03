@@ -1,13 +1,4 @@
-"""SurfaceSchema (T1-T5 universal templates) + absorb/emit marker
-codification on GrammarLayer.
-
-doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
-("Absorb / Emit / Swap codification"): the surface-realization behaviour
-of each operator is declared by one of five universal templates; surface
-markers are learned, owned by the operator, bound from co-occurrence on
-analysis (absorb) and replayed on synthesis (emit). Emit MUST use recorded
-route metadata, never the lossy generate()=(parent,parent) inverse.
-"""
+"""SurfaceSchema templates retained by the live grammar operators."""
 
 import os
 import sys
@@ -54,63 +45,3 @@ def test_unary_ops_use_unary_affix_template():
         sch = GRAMMAR_LAYER_CLASSES[name].surface_schema
         assert sch.template_id == "T1", (name, sch.template_id)
         assert sch.arity == 1
-
-
-def test_copy_swap_use_elision_template():
-    """copy / swap are the T5 BINARY_ELISION surface policies. They were
-    parked in bin/Legacy.py (2026-07-17) — retired from the live symbolic
-    grammar, kept as the absorb/emit elision primitives — so the schema is
-    now asserted on the Legacy classes, not the live registry."""
-    from Legacy import CopyLayer, SwapLayer
-    assert CopyLayer.surface_schema.template_id == "T5"
-    assert SwapLayer.surface_schema.template_id == "T5"
-
-
-# -- absorb / emit marker codification (Task #4) ----------------------
-
-def _conjunction_layer():
-    from Language import GRAMMAR_LAYER_CLASSES
-    return GRAMMAR_LAYER_CLASSES["conjunction"]()
-
-
-def test_marker_binds_from_cooccurrence():
-    """absorb binds a co-occurring surface marker to the operator. Binding
-    is many-to-one (several surface markers -> one operator); the most
-    co-occurring marker becomes the operator's canonical default."""
-    layer = _conjunction_layer()
-    # "and" co-occurs with conjunction often; "&" rarely. marker_id is the
-    # absorbed sub-span's PS codebook identity.
-    layer.absorb(left="X", right="and", marker_id=10, weight=3.0)
-    layer.absorb(left="X", right="&", marker_id=20, weight=1.0)
-    bound = layer.bound_markers()
-    assert set(bound) == {10, 20}, bound
-    # Many-to-one: both markers resolve to this operator; the heaviest is
-    # the canonical operator -> default-marker used by emit.
-    assert layer.canonical_marker() == 10
-
-
-def test_emit_replays_marker():
-    """emit (synthesis) replays the operator's bound marker at the schema
-    position; absorb (analysis) is its inverse."""
-    layer = _conjunction_layer()
-    content = layer.absorb(left="X", right="and", marker_id=10)
-    assert content == "X"           # content survives, marker consumed
-    assert layer.emit() == 10       # the bound marker is replayed
-
-
-def test_emit_uses_route_meta_not_lossy_generate():
-    """emit MUST realize the marker from recorded route metadata, never
-    from the lossy generate()=(parent, parent) inverse."""
-    layer = _conjunction_layer()
-    layer.absorb(left="X", right="and", marker_id=10)
-
-    # generate() is the lossy pseudo-inverse; if emit routed through it
-    # this would raise.
-    def _boom(*a, **k):
-        raise AssertionError("emit must not call the lossy generate()")
-    layer.generate = _boom
-
-    # Exact replay from route metadata (the route-recorded marker id).
-    assert layer.emit(marker_id=77) == 77
-    # Canonical default also comes from the learned binding, not generate.
-    assert layer.emit() == 10

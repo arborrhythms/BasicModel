@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology"
+  ],
+  "runs": 1,
+  "memory_bytes": 8589934592,
+  "timeout": 1800,
+  "seed": null,
+  "compile": "none",
+  "device": "cpu"
+}

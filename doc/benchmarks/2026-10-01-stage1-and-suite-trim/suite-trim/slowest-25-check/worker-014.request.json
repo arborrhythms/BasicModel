@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/slowest-25-check/worker-014.recycle.json"
+}

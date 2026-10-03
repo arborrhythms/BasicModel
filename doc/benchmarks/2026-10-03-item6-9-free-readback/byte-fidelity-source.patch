@@ -1,0 +1,27 @@
+--- before._byte_word_cost
++++ candidate._byte_word_cost
+@@ -28,7 +28,6 @@
+         W, P = int(target_bytes.shape[1]), int(target_bytes.shape[2])
+         if not ready or P == 0:
+             return idea.new_zeros(B)
+-        idea_n = torch.nn.functional.normalize(idea, dim=-1)
+         present = bank_valid.any(dim=-1)                                 # [B, L]
+         # Packing may place the same sentence's candidates in different
+         # columns. Compact them stably before the dot products and softmax,
+@@ -42,12 +41,10 @@
+         bank_n = torch.where(present[:, :, None], bank_n, torch.zeros_like(bank_n))
+         # a symbol's value is its signed activation and its identity its
+         # row: the snap reads the row regardless of the sign
+-        if priming is None:
+-            sim = torch.einsum("bd,bkd->bk", idea_n, bank_n).abs()
+-        else:
+-            from SentenceUnderstanding import readback_scores
+-            priming = priming.gather(1, compact)
+-            sim = readback_scores(idea, bank_n, priming)
++        from SentenceUnderstanding import readback_scores
++        priming = (torch.ones_like(present, dtype=idea.dtype) if priming is None
++                   else priming.gather(1, compact))
++        sim = readback_scores(idea, bank_n, priming)
+         sim = sim / self._BYTE_ASSIGNMENT_TAU
+         # Token buffers terminate at their first NUL, even if a caller's
+         # span includes padding or stale bytes after it.

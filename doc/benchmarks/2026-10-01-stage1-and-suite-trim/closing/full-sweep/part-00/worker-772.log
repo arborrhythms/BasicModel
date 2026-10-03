@@ -1,0 +1,28 @@
+...FF                                                                    [100%]
+=================================== FAILURES ===================================
+_____ test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet] ______
+test/test_tied_operator_reconstruction.py:447: in test_byte_targets_survive_whole_word_and_prefix_promotion
+    torch.testing.assert_close(cost, torch.tensor([256.]).log())
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 1 (100.0%)
+E   Greatest absolute difference: 5.545177459716797 at index (0,) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)
+_______ test_byte_targets_survive_whole_word_and_prefix_promotion[alph] ________
+test/test_tied_operator_reconstruction.py:447: in test_byte_targets_survive_whole_word_and_prefix_promotion
+    torch.testing.assert_close(cost, torch.tensor([256.]).log())
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 1 (100.0%)
+E   Greatest absolute difference: 5.545177459716797 at index (0,) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[exist]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet]
+FAILED test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alph]
+2 failed, 3 passed, 1 warning in 3.83s

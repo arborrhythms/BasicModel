@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 2/2 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.19005729100172175</pre></td><td><pre>test/test_grammar_separator.py:57: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert [gate.reshape(-1).tolist() for _, gate in pushes] == [[True]*4, [False]*4, [True]*4]
+E   assert [[True, True,..., True, True]] == [[True, True,..., True, True]]
+E     
+E     At index 1 diff: [True, True, True, True] != [False, False, False, False]
+E     Use -v to get more diff</pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+</pre></td></tr><tr><td><pre>test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.19005124999966938</pre></td><td><pre>test/test_grammar_separator.py:57: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert [gate.reshape(-1).tolist() for _, gate in pushes] == [[True]*4, [False]*4, [True]*4]
+E   assert [[True, True,..., True, True]] == [[True, True,..., True, True]]
+E     
+E     At index 1 diff: [True, True, True, True] != [False, False, False, False]
+E     Use -v to get more diff</pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+</pre></td></tr></table></body></html>

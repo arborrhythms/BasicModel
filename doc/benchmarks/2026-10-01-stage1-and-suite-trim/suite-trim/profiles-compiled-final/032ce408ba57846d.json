@@ -1,0 +1,908 @@
+{
+  "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+  "phase": "call",
+  "elapsed_seconds": 598.906550832995,
+  "profile_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/profiles-compiled-final/032ce408ba57846d.prof",
+  "functions": [
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py",
+      "line": 2731,
+      "function": "call_function",
+      "primitive_calls": 132784,
+      "calls": 132784,
+      "self_seconds": 0.337524133,
+      "cumulative_seconds": 417.85240727800004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builtin.py",
+      "line": 1611,
+      "function": "_handle_insert_op_in_graph",
+      "primitive_calls": 74616,
+      "calls": 74904,
+      "self_seconds": 0.24594732500000002,
+      "cumulative_seconds": 310.328836118
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py",
+      "line": 4153,
+      "function": "SET_ADD",
+      "primitive_calls": 4780224,
+      "calls": 4780224,
+      "self_seconds": 4.77851589,
+      "cumulative_seconds": 144.967899641
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/base.py",
+      "line": 2289,
+      "function": "call_method",
+      "primitive_calls": 4783254,
+      "calls": 4783326,
+      "self_seconds": 2.2888652890000003,
+      "cumulative_seconds": 136.89791981800002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/base.py",
+      "line": 384,
+      "function": "__call__",
+      "primitive_calls": 4783254,
+      "calls": 4783326,
+      "self_seconds": 2.96442832,
+      "cumulative_seconds": 131.49993275900002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/sets.py",
+      "line": 341,
+      "function": "add",
+      "primitive_calls": 4780368,
+      "calls": 4780368,
+      "self_seconds": 5.0491486420000005,
+      "cumulative_seconds": 94.309927195
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py",
+      "line": 2384,
+      "function": "LOAD_GLOBAL",
+      "primitive_calls": 5197428,
+      "calls": 5197428,
+      "self_seconds": 3.2720163600000003,
+      "cumulative_seconds": 76.91926887300001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py",
+      "line": 6438,
+      "function": "_load_global",
+      "primitive_calls": 5196834,
+      "calls": 5196834,
+      "self_seconds": 5.386199901,
+      "cumulative_seconds": 71.916641006
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/object_protocol.py",
+      "line": 2254,
+      "function": "generic_getattr",
+      "primitive_calls": 5621244,
+      "calls": 5625808,
+      "self_seconds": 9.134373663,
+      "cumulative_seconds": 58.59489923300001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_config_module.py",
+      "line": 443,
+      "function": "__getattr__",
+      "primitive_calls": 37265406,
+      "calls": 37265406,
+      "self_seconds": 33.944384987,
+      "cumulative_seconds": 53.24941467
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/side_effects.py",
+      "line": 1119,
+      "function": "mutation",
+      "primitive_calls": 5087016,
+      "calls": 5087016,
+      "self_seconds": 2.416509708,
+      "cumulative_seconds": 49.498323737
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py",
+      "line": 6406,
+      "function": "get_globals_source_and_value",
+      "primitive_calls": 4975538,
+      "calls": 4975538,
+      "self_seconds": 7.8911609920000005,
+      "cumulative_seconds": 48.419680301
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/torch.py",
+      "line": 4253,
+      "function": "call_tensor_method",
+      "primitive_calls": 104210,
+      "calls": 104210,
+      "self_seconds": 0.073016891,
+      "cumulative_seconds": 47.470231332000004
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/hashable.py",
+      "line": 104,
+      "function": "__init__",
+      "primitive_calls": 4984584,
+      "calls": 4984584,
+      "self_seconds": 4.938562357,
+      "cumulative_seconds": 40.955322072
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/base.py",
+      "line": 2570,
+      "function": "build",
+      "primitive_calls": 12392408,
+      "calls": 12392408,
+      "self_seconds": 4.546603486,
+      "cumulative_seconds": 40.398607497
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/base.py",
+      "line": 312,
+      "function": "_check_method_arity",
+      "primitive_calls": 4826060,
+      "calls": 4826060,
+      "self_seconds": 4.495503745000001,
+      "cumulative_seconds": 31.039087166
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.isinstance>",
+      "primitive_calls": 345067434,
+      "calls": 346512433,
+      "self_seconds": 21.071027824,
+      "cumulative_seconds": 29.015532739
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/side_effects.py",
+      "line": 362,
+      "function": "_capture_user_stack",
+      "primitive_calls": 5093540,
+      "calls": 5093540,
+      "self_seconds": 5.064660331000001,
+      "cumulative_seconds": 28.481235645
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/utils.py",
+      "line": 3010,
+      "function": "specialize_symnode",
+      "primitive_calls": 4986702,
+      "calls": 4986702,
+      "self_seconds": 10.187781601000001,
+      "cumulative_seconds": 27.374192217
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py",
+      "line": 1523,
+      "function": "_fn",
+      "primitive_calls": 314693,
+      "calls": 316345,
+      "self_seconds": 0.32518487700000004,
+      "cumulative_seconds": 21.803969791
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_compile.py",
+      "line": 42,
+      "function": "inner",
+      "primitive_calls": 314635,
+      "calls": 316275,
+      "self_seconds": 0.144310983,
+      "cumulative_seconds": 21.617304056000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_stats.py",
+      "line": 24,
+      "function": "wrapper",
+      "primitive_calls": 314864,
+      "calls": 315845,
+      "self_seconds": 0.150986858,
+      "cumulative_seconds": 20.984930170000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py",
+      "line": 1692,
+      "function": "__torch_dispatch__",
+      "primitive_calls": 314582,
+      "calls": 315128,
+      "self_seconds": 0.23679360300000002,
+      "cumulative_seconds": 20.812923024
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py",
+      "line": 3970,
+      "function": "create_proxy",
+      "primitive_calls": 135374,
+      "calls": 135960,
+      "self_seconds": 0.21252046000000002,
+      "cumulative_seconds": 20.760207702000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py",
+      "line": 1389,
+      "function": "create_proxy",
+      "primitive_calls": 134000,
+      "calls": 134000,
+      "self_seconds": 0.103108872,
+      "cumulative_seconds": 20.696590208
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py",
+      "line": 3990,
+      "function": "_create_proxy",
+      "primitive_calls": 135374,
+      "calls": 135960,
+      "self_seconds": 1.3900319220000001,
+      "cumulative_seconds": 20.521747332
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'get' of 'dict' objects>",
+      "primitive_calls": 55883723,
+      "calls": 55883723,
+      "self_seconds": 8.052212866,
+      "cumulative_seconds": 20.4692608
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py",
+      "line": 5089,
+      "function": "create",
+      "primitive_calls": 1966116,
+      "calls": 2542324,
+      "self_seconds": 2.20905698,
+      "cumulative_seconds": 20.407728281
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py",
+      "line": 2466,
+      "function": "dispatch",
+      "primitive_calls": 314582,
+      "calls": 315128,
+      "self_seconds": 0.736409135,
+      "cumulative_seconds": 20.252455106000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py",
+      "line": 1784,
+      "function": "_cached_dispatch_impl",
+      "primitive_calls": 142486,
+      "calls": 143022,
+      "self_seconds": 0.524029849,
+      "cumulative_seconds": 19.09727925
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py",
+      "line": 1769,
+      "function": "tp_getattro_impl",
+      "primitive_calls": 5214234,
+      "calls": 5214234,
+      "self_seconds": 3.6036467900000004,
+      "cumulative_seconds": 18.870012257000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/tensor.py",
+      "line": 1806,
+      "function": "method___getitem__",
+      "primitive_calls": 40436,
+      "calls": 40436,
+      "self_seconds": 0.09705899800000001,
+      "cumulative_seconds": 18.409761139
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/side_effects.py",
+      "line": 469,
+      "function": "check_allowed_side_effect",
+      "primitive_calls": 5093540,
+      "calls": 5093540,
+      "self_seconds": 4.748405729,
+      "cumulative_seconds": 18.311411529
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py",
+      "line": 134,
+      "function": "create",
+      "primitive_calls": 10571236,
+      "calls": 10571236,
+      "self_seconds": 2.528868643,
+      "cumulative_seconds": 18.284957668
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py",
+      "line": 6064,
+      "function": "build_inline_tracer",
+      "primitive_calls": 446414,
+      "calls": 446414,
+      "self_seconds": 2.329995239,
+      "cumulative_seconds": 17.81651107
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/enum.py",
+      "line": 1561,
+      "function": "__and__",
+      "primitive_calls": 14397248,
+      "calls": 14397248,
+      "self_seconds": 8.015743277,
+      "cumulative_seconds": 17.64137384
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_guards.py",
+      "line": 1188,
+      "function": "extract_stack",
+      "primitive_calls": 5187233,
+      "calls": 5187233,
+      "self_seconds": 3.347255526,
+      "cumulative_seconds": 16.824225608000003
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/base.py",
+      "line": 1609,
+      "function": "_lookup_tp_table",
+      "primitive_calls": 10415314,
+      "calls": 10415314,
+      "self_seconds": 12.032456186000001,
+      "cumulative_seconds": 15.254208247000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py",
+      "line": 1248,
+      "function": "call_method",
+      "primitive_calls": 290,
+      "calls": 290,
+      "self_seconds": 0.000568956,
+      "cumulative_seconds": 15.049927288000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py",
+      "line": 1081,
+      "function": "call_apply",
+      "primitive_calls": 290,
+      "calls": 290,
+      "self_seconds": 0.0027027,
+      "cumulative_seconds": 15.048537248
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py",
+      "line": 2233,
+      "function": "wrapped_call_function",
+      "primitive_calls": 290,
+      "calls": 290,
+      "self_seconds": 0.000690205,
+      "cumulative_seconds": 15.035130744000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py",
+      "line": 5133,
+      "function": "call_function",
+      "primitive_calls": 290,
+      "calls": 290,
+      "self_seconds": 0.007044439,
+      "cumulative_seconds": 15.027789414
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/base.py",
+      "line": 1626,
+      "function": "lookup_tp_getset_member",
+      "primitive_calls": 5621164,
+      "calls": 5621164,
+      "self_seconds": 1.4208740850000001,
+      "cumulative_seconds": 14.841961217000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builtin.py",
+      "line": 1314,
+      "function": "call_self_handler",
+      "primitive_calls": 475614,
+      "calls": 476228,
+      "self_seconds": 0.192888826,
+      "cumulative_seconds": 14.346083541
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builtin.py",
+      "line": 1455,
+      "function": "builtin_dispatch",
+      "primitive_calls": 503704,
+      "calls": 503704,
+      "self_seconds": 0.201871295,
+      "cumulative_seconds": 14.251037923
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py",
+      "line": 1639,
+      "function": "speculate_subgraph_with_auto_output_flattening",
+      "primitive_calls": 580,
+      "calls": 580,
+      "self_seconds": 0.006553136,
+      "cumulative_seconds": 14.214956379
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py",
+      "line": 1689,
+      "function": "starts_line",
+      "primitive_calls": 23573028,
+      "calls": 23573028,
+      "self_seconds": 4.707895983,
+      "cumulative_seconds": 14.182784458
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py",
+      "line": 1571,
+      "function": "trace_hop_function_with_auto_output_flattening",
+      "primitive_calls": 580,
+      "calls": 580,
+      "self_seconds": 0.001685976,
+      "cumulative_seconds": 13.824321775000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builtin.py",
+      "line": 2513,
+      "function": "call_getitem",
+      "primitive_calls": 423970,
+      "calls": 423970,
+      "self_seconds": 0.17293452,
+      "cumulative_seconds": 13.182383302000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/object_protocol.py",
+      "line": 487,
+      "function": "generic_getitem",
+      "primitive_calls": 423970,
+      "calls": 423970,
+      "self_seconds": 0.280852757,
+      "cumulative_seconds": 12.980659383
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/lists.py",
+      "line": 325,
+      "function": "mp_subscript_impl",
+      "primitive_calls": 414482,
+      "calls": 414482,
+      "self_seconds": 0.13360696700000002,
+      "cumulative_seconds": 11.980344151
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/lists.py",
+      "line": 182,
+      "function": "getitem_const",
+      "primitive_calls": 414482,
+      "calls": 414482,
+      "self_seconds": 0.566115859,
+      "cumulative_seconds": 11.846737184
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py",
+      "line": 2166,
+      "function": "push",
+      "primitive_calls": 16735754,
+      "calls": 16735754,
+      "self_seconds": 6.881568236000001,
+      "cumulative_seconds": 11.395770698000002
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_config_module.py",
+      "line": 503,
+      "function": "_get_alias_val",
+      "primitive_calls": 37265404,
+      "calls": 37265404,
+      "self_seconds": 8.955995817,
+      "cumulative_seconds": 11.212563453000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_guards.py",
+      "line": 1372,
+      "function": "__hash__",
+      "primitive_calls": 16151069,
+      "calls": 26745199,
+      "self_seconds": 6.083896920000001,
+      "cumulative_seconds": 10.952469791
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/fx/graph.py",
+      "line": 2460,
+      "function": "python_code",
+      "primitive_calls": 2356,
+      "calls": 2356,
+      "self_seconds": 0.004388516,
+      "cumulative_seconds": 10.740611002000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py",
+      "line": 1880,
+      "function": "_cache_key",
+      "primitive_calls": 143022,
+      "calls": 143022,
+      "self_seconds": 0.356664688,
+      "cumulative_seconds": 9.716454415000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/fx/graph.py",
+      "line": 2543,
+      "function": "_python_code",
+      "primitive_calls": 2356,
+      "calls": 2356,
+      "self_seconds": 0.024374437000000002,
+      "cumulative_seconds": 9.571335512000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py",
+      "line": 799,
+      "function": "__init__",
+      "primitive_calls": 4997452,
+      "calls": 4997452,
+      "self_seconds": 7.795278242,
+      "cumulative_seconds": 9.560537256
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/fx/graph.py",
+      "line": 500,
+      "function": "_gen_python_code",
+      "primitive_calls": 2356,
+      "calls": 2356,
+      "self_seconds": 0.5554343890000001,
+      "cumulative_seconds": 9.546275238
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py",
+      "line": 3159,
+      "function": "call_user_compiler",
+      "primitive_calls": 12,
+      "calls": 12,
+      "self_seconds": 0.0033617010000000004,
+      "cumulative_seconds": 9.534749833000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_guards.py",
+      "line": 1292,
+      "function": "set_current_loc",
+      "primitive_calls": 11358168,
+      "calls": 11358168,
+      "self_seconds": 4.678506307,
+      "cumulative_seconds": 9.474887017
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builtin.py",
+      "line": 3439,
+      "function": "call_function",
+      "primitive_calls": 291528,
+      "calls": 292968,
+      "self_seconds": 0.30214023900000003,
+      "cumulative_seconds": 9.250288261000001
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/traceback.py",
+      "line": 441,
+      "function": "from_list",
+      "primitive_calls": 5323121,
+      "calls": 5323121,
+      "self_seconds": 5.513636491000001,
+      "cumulative_seconds": 9.131180056
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_guards.py",
+      "line": 1096,
+      "function": "try_get",
+      "primitive_calls": 45801641,
+      "calls": 45801641,
+      "self_seconds": 5.030857795,
+      "cumulative_seconds": 8.804699731000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/side_effects.py",
+      "line": 706,
+      "function": "has_pending_mutation_of_attr",
+      "primitive_calls": 16415992,
+      "calls": 16415992,
+      "self_seconds": 4.625496330000001,
+      "cumulative_seconds": 8.762453022
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py",
+      "line": 2011,
+      "function": "_prep_args_for_hash",
+      "primitive_calls": 156283,
+      "calls": 602775,
+      "self_seconds": 1.919199365,
+      "cumulative_seconds": 8.747689062000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/fx/proxy.py",
+      "line": 339,
+      "function": "create_proxy",
+      "primitive_calls": 135960,
+      "calls": 135960,
+      "self_seconds": 0.217870954,
+      "cumulative_seconds": 8.741474871000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builtin.py",
+      "line": 3471,
+      "function": "_call_getattr",
+      "primitive_calls": 291528,
+      "calls": 292968,
+      "self_seconds": 0.262584812,
+      "cumulative_seconds": 8.385641017000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py",
+      "line": 5435,
+      "function": "trace_backward_graph",
+      "primitive_calls": 290,
+      "calls": 290,
+      "self_seconds": 0.001724515,
+      "cumulative_seconds": 8.378241872
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/enum.py",
+      "line": 1543,
+      "function": "_get_value",
+      "primitive_calls": 57670023,
+      "calls": 57670023,
+      "self_seconds": 5.858574320000001,
+      "cumulative_seconds": 7.939141618000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/fx/graph_module.py",
+      "line": 924,
+      "function": "recompile",
+      "primitive_calls": 604,
+      "calls": 1764,
+      "self_seconds": 0.011432505,
+      "cumulative_seconds": 7.804010903000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py",
+      "line": 2389,
+      "function": "_output_from_cache_entry",
+      "primitive_calls": 141691,
+      "calls": 141691,
+      "self_seconds": 0.146009156,
+      "cumulative_seconds": 7.653745228000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py",
+      "line": 2306,
+      "function": "_get_output_tensor_from_cache_entry",
+      "primitive_calls": 141691,
+      "calls": 141691,
+      "self_seconds": 1.02405421,
+      "cumulative_seconds": 7.507734028000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py",
+      "line": 3991,
+      "function": "handle_traced_output",
+      "primitive_calls": 132974,
+      "calls": 132974,
+      "self_seconds": 0.26306451000000003,
+      "cumulative_seconds": 7.294738634000001
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/enum.py",
+      "line": 1550,
+      "function": "__or__",
+      "primitive_calls": 4826093,
+      "calls": 4826093,
+      "self_seconds": 3.3232700900000003,
+      "cumulative_seconds": 7.285266522000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py",
+      "line": 6282,
+      "function": "__init__",
+      "primitive_calls": 446414,
+      "calls": 446414,
+      "self_seconds": 0.827429006,
+      "cumulative_seconds": 7.254297971000001
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method _operator.getitem>",
+      "primitive_calls": 40467,
+      "calls": 40467,
+      "self_seconds": 0.602918908,
+      "cumulative_seconds": 7.2290365990000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/base.py",
+      "line": 1575,
+      "function": "__instancecheck__",
+      "primitive_calls": 14727083,
+      "calls": 14728119,
+      "self_seconds": 4.030415115,
+      "cumulative_seconds": 7.112260168000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/torch_function.py",
+      "line": 531,
+      "function": "can_dispatch_torch_function",
+      "primitive_calls": 369598,
+      "calls": 369598,
+      "self_seconds": 0.25481164500000003,
+      "cumulative_seconds": 6.9789526550000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/fx/graph.py",
+      "line": 778,
+      "function": "emit_node",
+      "primitive_calls": 411710,
+      "calls": 411710,
+      "self_seconds": 0.8334235860000001,
+      "cumulative_seconds": 6.851612965
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.getattr>",
+      "primitive_calls": 74668431,
+      "calls": 74668909,
+      "self_seconds": 6.603822147000001,
+      "cumulative_seconds": 6.7111421700000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/torch_function.py",
+      "line": 519,
+      "function": "get_torch_function_fn",
+      "primitive_calls": 132784,
+      "calls": 132784,
+      "self_seconds": 0.122141068,
+      "cumulative_seconds": 6.68685683
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/user_defined.py",
+      "line": 3448,
+      "function": "tp_getattro_impl",
+      "primitive_calls": 207276,
+      "calls": 249318,
+      "self_seconds": 0.088699808,
+      "cumulative_seconds": 6.5568413340000005
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<built-in method builtins.next>",
+      "primitive_calls": 4228496,
+      "calls": 4258046,
+      "self_seconds": 0.9717836320000001,
+      "cumulative_seconds": 6.5344772550000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/user_defined.py",
+      "line": 3337,
+      "function": "generic_getattr",
+      "primitive_calls": 207276,
+      "calls": 249318,
+      "self_seconds": 0.533560573,
+      "cumulative_seconds": 6.481120311000001
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/traceback.py",
+      "line": 525,
+      "function": "format",
+      "primitive_calls": 135972,
+      "calls": 135972,
+      "self_seconds": 0.356502771,
+      "cumulative_seconds": 6.281142173
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py",
+      "line": 326,
+      "function": "is_hashable_lazy",
+      "primitive_calls": 4036748,
+      "calls": 4036748,
+      "self_seconds": 1.6712203650000002,
+      "cumulative_seconds": 6.277372805000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py",
+      "line": 4330,
+      "function": "construct_tensor_variable",
+      "primitive_calls": 133976,
+      "calls": 133976,
+      "self_seconds": 0.42193190100000005,
+      "cumulative_seconds": 6.184144027
+    },
+    {
+      "file": "<frozen importlib._bootstrap>",
+      "line": 645,
+      "function": "parent",
+      "primitive_calls": 22190711,
+      "calls": 22190711,
+      "self_seconds": 3.7477757630000004,
+      "cumulative_seconds": 6.047338521
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/object_protocol.py",
+      "line": 864,
+      "function": "pynumber_index",
+      "primitive_calls": 414600,
+      "calls": 414600,
+      "self_seconds": 0.41430094500000003,
+      "cumulative_seconds": 5.9563002130000005
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py",
+      "line": 5366,
+      "function": "trace_forward_graph",
+      "primitive_calls": 290,
+      "calls": 290,
+      "self_seconds": 0.00168216,
+      "cumulative_seconds": 5.920457962
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/traceback.py",
+      "line": 460,
+      "function": "format_frame_summary",
+      "primitive_calls": 685530,
+      "calls": 685530,
+      "self_seconds": 2.2995638780000003,
+      "cumulative_seconds": 5.881302831
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/torch_function.py",
+      "line": 411,
+      "function": "_get_all_args",
+      "primitive_calls": 502382,
+      "calls": 502382,
+      "self_seconds": 0.316065629,
+      "cumulative_seconds": 5.755555093000001
+    },
+    {
+      "file": "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/enum.py",
+      "line": 720,
+      "function": "__call__",
+      "primitive_calls": 19278204,
+      "calls": 19278204,
+      "self_seconds": 3.6335290990000004,
+      "cumulative_seconds": 5.66930565
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/base.py",
+      "line": 3249,
+      "function": "guarded_method",
+      "primitive_calls": 2989310,
+      "calls": 3056102,
+      "self_seconds": 2.60494582,
+      "cumulative_seconds": 5.434504801
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "function": "<method 'append' of 'list' objects>",
+      "primitive_calls": 77720667,
+      "calls": 77720667,
+      "self_seconds": 5.352423858000001,
+      "cumulative_seconds": 5.352423858000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py",
+      "line": 730,
+      "function": "bind_args",
+      "primitive_calls": 437804,
+      "calls": 437804,
+      "self_seconds": 1.15431024,
+      "cumulative_seconds": 5.332149794
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py",
+      "line": 4141,
+      "function": "lookup_inner",
+      "primitive_calls": 248778,
+      "calls": 248778,
+      "self_seconds": 0.256262082,
+      "cumulative_seconds": 5.291307150000001
+    },
+    {
+      "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py",
+      "line": 4136,
+      "function": "lookup",
+      "primitive_calls": 247353,
+      "calls": 247353,
+      "self_seconds": 0.07458007800000001,
+      "cumulative_seconds": 5.281172641
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "selectors": [
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-0]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[True-2]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-0]",
+    "test/test_item9b_followup.py::test_epoch_queue_lifetime_on_success_and_error[False-2]",
+    "test/test_item9b_followup.py::test_interleave_capacity_uses_the_input_encoders_bytes",
+    "test/test_item9b_interpret.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_item9b_interpret.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_item9b_interpret.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_item9b_interpret.py::test_interpret_replaces_the_host_triple_creation_api",
+    "test/test_item9b_interpret.py::test_ordered_word_lookup_keeps_anagrams_distinct"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-077.recycle.json"
+}

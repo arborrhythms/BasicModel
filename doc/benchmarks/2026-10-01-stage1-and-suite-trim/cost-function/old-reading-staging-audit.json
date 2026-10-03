@@ -1,0 +1,225 @@
+[
+  {
+    "config": "LM_5M",
+    "serial": true,
+    "operation_layer": "OperationSelectionLayer",
+    "concept_binding": "mixing",
+    "serial_object_meta": false,
+    "protocol": true,
+    "synthesis": "bpe",
+    "analysis": "byte",
+    "_word_active_mask": {
+      "shape": [
+        4,
+        1024
+      ],
+      "nonnegative": 4096
+    },
+    "_packed_sentence_ids": "None",
+    "_ar_grammar_object_rows": "None",
+    "_ar_concept_lookup_rows": "None",
+    "percept_keys": []
+  },
+  {
+    "config": "MM_decode",
+    "serial": true,
+    "operation_layer": "NoneType",
+    "concept_binding": "mixing",
+    "serial_object_meta": true,
+    "protocol": true,
+    "synthesis": "radix",
+    "analysis": "raw",
+    "_word_active_mask": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 32
+    },
+    "_packed_sentence_ids": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 8
+    },
+    "_ar_grammar_object_rows": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 8
+    },
+    "_ar_concept_lookup_rows": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 8
+    },
+    "percept_keys": [
+      "tokens",
+      "indices",
+      "seed_event",
+      "percept_store",
+      "word_groups",
+      "word_texts",
+      "tile_spans",
+      "part_spans",
+      "percept_where",
+      "word_part_indices",
+      "word_part_mask",
+      "word_part_capacity",
+      "word_active_mask",
+      "word_truncated_mask",
+      "sentence_word_truncated_mask"
+    ]
+  },
+  {
+    "config": "MM_bpe",
+    "serial": true,
+    "operation_layer": "OperationSelectionLayer",
+    "concept_binding": "mixing",
+    "serial_object_meta": false,
+    "protocol": true,
+    "synthesis": "bpe",
+    "analysis": "byte",
+    "_word_active_mask": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 32
+    },
+    "_packed_sentence_ids": "None",
+    "_ar_grammar_object_rows": "None",
+    "_ar_concept_lookup_rows": "None",
+    "percept_keys": []
+  },
+  {
+    "config": "MM_grammar",
+    "serial": true,
+    "operation_layer": "OperationSelectionLayer",
+    "concept_binding": "mixing",
+    "serial_object_meta": false,
+    "protocol": true,
+    "synthesis": "lexicon",
+    "analysis": "byte",
+    "_word_active_mask": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 32
+    },
+    "_packed_sentence_ids": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 12
+    },
+    "_ar_grammar_object_rows": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 8
+    },
+    "_ar_concept_lookup_rows": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 8
+    },
+    "percept_keys": [
+      "tokens",
+      "indices"
+    ]
+  },
+  {
+    "config": "XOR_grammar",
+    "serial": true,
+    "operation_layer": "OperationSelectionLayer",
+    "concept_binding": "mixing",
+    "serial_object_meta": false,
+    "protocol": true,
+    "synthesis": "lexicon",
+    "analysis": "byte",
+    "_word_active_mask": {
+      "shape": [
+        4,
+        6
+      ],
+      "nonnegative": 24
+    },
+    "_packed_sentence_ids": {
+      "shape": [
+        4,
+        6
+      ],
+      "nonnegative": 12
+    },
+    "_ar_grammar_object_rows": {
+      "shape": [
+        4,
+        6
+      ],
+      "nonnegative": 8
+    },
+    "_ar_concept_lookup_rows": {
+      "shape": [
+        4,
+        6
+      ],
+      "nonnegative": 8
+    },
+    "percept_keys": [
+      "tokens",
+      "indices"
+    ]
+  },
+  {
+    "config": "POS_smoke",
+    "serial": true,
+    "operation_layer": "OperationSelectionLayer",
+    "concept_binding": "mixing",
+    "serial_object_meta": false,
+    "protocol": true,
+    "synthesis": "lexicon",
+    "analysis": "byte",
+    "_word_active_mask": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 32
+    },
+    "_packed_sentence_ids": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 12
+    },
+    "_ar_grammar_object_rows": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 8
+    },
+    "_ar_concept_lookup_rows": {
+      "shape": [
+        4,
+        8
+      ],
+      "nonnegative": 8
+    },
+    "percept_keys": [
+      "tokens",
+      "indices"
+    ]
+  }
+]

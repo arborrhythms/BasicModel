@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_sentence_journal.py",
+    "test/test_query_phase_fullgraph.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

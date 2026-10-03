@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_doc_links.py"
+  ],
+  "pid": 75016,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 431965504,
+  "elapsed_seconds": 4.897568374988623,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-corrections/probes/documentation-links/run.log"
+}

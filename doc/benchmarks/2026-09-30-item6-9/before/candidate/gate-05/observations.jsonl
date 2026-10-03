@@ -1,0 +1,1 @@
+{"nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy", "kind": "grammar", "accuracy": [0.0], "predictions": [0.5221913456916809, 0.522948145866394, 0.5339598655700684, 0.5266606211662292], "targets": [0.0, 1.0, 1.0, 0.0], "inputs": ["hello world", "hello there", "loving world", "loving there"], "reconstructions": ["4 4"], "gate": 5}

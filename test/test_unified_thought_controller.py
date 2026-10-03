@@ -141,7 +141,7 @@ def test_policy_charges_shared_episode_work_not_the_number_of_choices():
     memory.end_what_episode()
 
 
-def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch):
+def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, eager_reading):
     from dataclasses import replace
     from test_output_walk import _model, _capture_program_probe
     from What import What

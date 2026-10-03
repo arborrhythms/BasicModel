@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_mereological.py::test_where_poset_is_the_part_spec_incl_cross_boundary"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/run/worker-630.recycle.json"
+}

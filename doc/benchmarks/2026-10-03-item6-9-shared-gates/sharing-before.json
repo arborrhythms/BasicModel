@@ -1,0 +1,8 @@
+{
+  "training_calls": 2,
+  "expected_training_calls": 1,
+  "failures": 0,
+  "expected_failures": 0,
+  "selected": 2,
+  "original_exitstatus": 0
+}

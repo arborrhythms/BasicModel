@@ -1,0 +1,27 @@
+{
+  "part_1": {
+    "status": "complete; production arms passed within slow ceiling",
+    "head": "d679df2b",
+    "record_values_detached": false,
+    "focused_passed": 29,
+    "journal_layout_after_padding_fix_passed": 3,
+    "step5a_peak_bytes": 23650067080,
+    "cut_peak_bytes": 22594215672
+  },
+  "part_2": {
+    "step5a": "passed",
+    "cut": "passed",
+    "source_matched": true
+  },
+  "part_3": "complete: items 1-10; all 25 profiles passed; weekly selection/accounting checked; all three MPS cases passed, including saved closing-alias and inactive-journal fixes; final full sweep remains part 5",
+  "part_4": "implemented and frozen for closing measurements; scoped reconstruction, uninformed relative errors, penalties apart, answer-only gradient projection and reconstruction-constrained selection; 308 focused pre-closing cases passed; full source/port records in cost-function/",
+  "part_5": "Measurements and source-matched sweep complete; stopped for review. Class 9/10, reconstruction 0/10, strict half-control 0/10; named table 33/34 including one passing exact run; MM_grammar median .0625. Sweep: 5090 cases in 110.70 minutes, 4760 passed, 11 failed, 318 skipped, 1 expected failure; no process stops. See closing/review-findings.md for unresolved failures.",
+  "review13": "six repairs and minor corrections implemented; 38 focused cases passed; journal shape warm-up measured; first full weekly selection running on immutable source copy with continuation of unattempted cases only",
+  "review_status": {
+    "stopped_for_review": true,
+    "item_6_9_closed": false,
+    "committed": false,
+    "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99"
+  },
+  "weekly": "Still running on frozen review-13 source. Timestamped partial counts and failures are in review13/weekly-progress-at-review.json; they are not the new cost-function receipt."
+}

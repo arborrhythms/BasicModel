@@ -155,11 +155,11 @@ def test_order_projection_compiles_and_restores_with_its_optimizer_moments():
         torch._dynamo.reset()
 
 
-def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch):
+def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch, eager_reading):
     from test_compiled_word_chunk import _tiny_canonical_model
 
     torch.manual_seed(613)
-    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8,16")
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
     model.conceptualSpace.intra_loss_weight = 0.0
@@ -171,7 +171,7 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
     generator = model.languageSpace.generate_policy
     generate_before = [p.detach().clone() for p in generator.parameters()]
     optimizer = model.getOptimizer(lr=1e-3)
-    words = ["a bicycle has a wheel", "a wheel belongs to a bicycle"]
+    words = ["a b c d e", "f g h i j"]
     inputs = model.inputSpace.prepInput(words)
     data = model.inputSpace.data
     supervised_before = data.has_supervised_outputs

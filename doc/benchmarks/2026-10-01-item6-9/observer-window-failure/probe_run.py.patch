@@ -1,0 +1,38 @@
+--- a/probe_run.py
++++ b/probe_run.py
+@@ -28,6 +28,7 @@
+ import Spaces
+ import SentenceCompose
+ import probe_variants
++from probe_observation import full_choice
+ 
+ probe_variants.install(args.variant, Models, SentenceCompose)
+ 
+@@ -89,18 +90,15 @@
+     return run_original(self, *a, **k)
+ Models.BasicModel.runBatch = run
+ 
+-selection_original = Language.OperationSelectionLayer.forward
+-def selection(self, x, **kw):
+-    hard, path, routing = selection_original(self, x, **kw)
+-    STATE['calls'].append(dict(
+-        x=x.detach().double().clone(),
+-        depth=None if kw.get('depth') is None else kw['depth'].detach().reshape(-1).tolist(),
+-        kind=routing['kind'].reshape(-1).tolist(), op=routing['op'].reshape(-1).tolist(),
+-        pos=routing['position'].reshape(-1).tolist(),
+-        valid=routing['valid'].reshape(-1).tolist() if 'valid' in routing else None,
+-        names=(list(self.op_names or []), list(self.unary_names or []))))
+-    return hard, path, routing
+-Language.OperationSelectionLayer.forward = selection
++selection_original = Language.LanguageSpace.choose_operation
++def selection(self, state, row_gate, **kw):
++    result = selection_original(self, state, row_gate, **kw)
++    choice = result[0] if isinstance(result, tuple) else result
++    layer = self.language_layer.operation_layer
++    STATE['calls'].append(full_choice(state, choice,
++        (list(layer.op_names or []), list(layer.unary_names or []))))
++    return result
++Language.LanguageSpace.choose_operation = selection
+ 
+ 
+ def observe_trial(path, trial, cost, training):

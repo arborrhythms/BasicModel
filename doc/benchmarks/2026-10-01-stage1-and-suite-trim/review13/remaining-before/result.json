@@ -1,0 +1,194 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+    "test/test_training_device.py::test_slow_selection_alone_keeps_the_calibrated_cpu_device",
+    "test/test_training_device.py::test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_retired_guard_covers_both_grammars",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_orphaned_prototype_interfaces_are_retired",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_compiled_k2_case_keeps_inductor",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_shared_ladder_minimum_count_is_restored",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_unused_mixing_bank_does_not_stage"
+  ],
+  "completed": [
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+    "test/test_training_device.py::test_slow_selection_alone_keeps_the_calibrated_cpu_device",
+    "test/test_training_device.py::test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_retired_guard_covers_both_grammars",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_orphaned_prototype_interfaces_are_retired",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_compiled_k2_case_keeps_inductor",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_shared_ladder_minimum_count_is_restored",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_unused_mixing_bank_does_not_stage"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/remaining-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/remaining-before/worker-000.json"
+      ],
+      "pid": 4836,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 743573856,
+      "elapsed_seconds": 8.28955612500431,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/remaining-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+        "test/test_training_device.py::test_slow_selection_alone_keeps_the_calibrated_cpu_device",
+        "test/test_training_device.py::test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_retired_guard_covers_both_grammars",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_orphaned_prototype_interfaces_are_retired",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_compiled_k2_case_keeps_inductor",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_shared_ladder_minimum_count_is_restored",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_unused_mixing_bank_does_not_stage"
+      ],
+      "completed": [
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+        "test/test_training_device.py::test_slow_selection_alone_keeps_the_calibrated_cpu_device",
+        "test/test_training_device.py::test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_retired_guard_covers_both_grammars",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_orphaned_prototype_interfaces_are_retired",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_compiled_k2_case_keeps_inductor",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_shared_ladder_minimum_count_is_restored",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_unused_mixing_bank_does_not_stage"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.04216408299544128,
+          "message": "test/test_mixing_reconstruction_bank.py:26: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes\n    assert candidates == [word.encode('utf-8') for word in surface.split()], candidates\nE   AssertionError: [b'caf\\xc3\\x83\\xc2\\xa9']\nE   assert [b'caf\\xc3\\x83\\xc2\\xa9'] == [b'caf\\xc3\\xa9', b'ab']\nE     \nE     At index 0 diff: b'caf\\xc3\\x83\\xc2\\xa9' != b'caf\\xc3\\xa9'\nE     Right contains one more item: b'ab'\nE     Use -v to get more diff",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        },
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0009362499986309558,
+          "message": "test/test_mixing_reconstruction_bank.py:49: in test_mixing_bank_uses_byte_preserving_word_texts\n    assert bytes(isp._ar_target_word_bytes[isp._ar_target_word_mask].tolist()) == observed\nE   AssertionError: assert b'caf\\xc3\\x83\\xc2\\xa9' == b'caf\\xc3\\xa9'\nE     \nE     At index 4 diff: b'\\x83' != b'\\xa9'\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_training_device.py::test_slow_selection_alone_keeps_the_calibrated_cpu_device",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00022600000374950469,
+          "message": "test/test_training_device.py:16: in test_slow_selection_alone_keeps_the_calibrated_cpu_device\n    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == 'cpu'\nE   AssertionError: assert 'gpu' == 'cpu'\nE     \nE     - cpu\nE     + gpu",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_training_device.py::test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 4.561966416003997,
+          "message": "test/test_training_device.py:55: in test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu\n    assert result['exit_code'] == 0, result['reason']\nE   AssertionError: test_failure\nE   assert 1 == 0",
+          "stdout": "[collect] 3 selectors; limit 60s, 1.0 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 60s, 1.0 GiB\n[worker-000] exit 1; 2.0s; peak 0.18 GiB\n[worker-001] 1 selectors; limit 60s, 1.0 GiB\n[worker-001] exit 0; 1.3s; peak 0.04 GiB\n"
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_retired_guard_covers_both_grammars",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0008076669982983731,
+          "message": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:10: in test_retired_guard_covers_both_grammars\n    assert 'transitional_pos.grammar' in source\nE   assert 'transitional_pos.grammar' in '\"\"\"One table of retired interfaces; behavioral checks stay in their own files.\"\"\"\\nimport importlib\\nimport inspect\\n... for name in (\\'grammar2.cfg\\', \\'grammar_legacy.cfg\\'):\\n        assert not (ROOT / \\'data\\' / name).exists(), name\\n'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_orphaned_prototype_interfaces_are_retired",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00011050000466639176,
+          "message": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:15: in test_orphaned_prototype_interfaces_are_retired\n    assert not hasattr(Language, 'IdeaSubSpace')\nE   AssertionError: assert not True\nE    +  where True = hasattr(<module 'Language' from '/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py'>, 'IdeaSubSpace')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_compiled_k2_case_keeps_inductor",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0017570420022821054,
+          "message": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:25: in test_compiled_k2_case_keeps_inductor\n    assert '\"TheCompileBackend\", \"inductor\"' in source\nE   assert '\"TheCompileBackend\", \"inductor\"' in 'def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(\\n        tmp_path, monkeypatch):\\n    \"\"\"T...bool((lookup_rows[:, words:capacity] == -1).all())\\n    assert bool((lookup_rows[:, capacity + words:] == -1).all())\\n'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_shared_ladder_minimum_count_is_restored",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0015878330013947561,
+          "message": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:31: in test_shared_ladder_minimum_count_is_restored\n    assert 'cs.utility_min_count =' not in source\nE   assert 'cs.utility_min_count =' not in 'def test_ut...h features\\n'\nE     \nE     'cs.utility_min_count =' is contained here:\nE       ined.\nE           cs.utility_min_count = 3\nE           assert all(cs.category_utility(c) is None for c in cu[\"n_c\"])\nE           cs.utility_min_count = 1\nE           defined = [cs.category_utility(c) for c in cu[\"n_c\"]]\nE           assert any(v is not None for v in defined)       # units with features",
+          "stdout": ""
+        },
+        {
+          "nodeid": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_unused_mixing_bank_does_not_stage",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00015716600319137797,
+          "message": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py:46: in test_unused_mixing_bank_does_not_stage\n    assert touched == []\nE   AssertionError: assert ['_word_activ...object_atoms'] == []\nE     \nE     Left contains 3 more items, first extra item: '_word_active_mask'\nE     Use -v to get more diff",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/remaining-before",
+  "elapsed_seconds": 10.472972417002893,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 743573856,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/remaining-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/remaining-before/collect.json"
+    ],
+    "pid": 4820,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181158728,
+    "elapsed_seconds": 1.7808835420000833,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/remaining-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+        "test/test_training_device.py::test_slow_selection_alone_keeps_the_calibrated_cpu_device",
+        "test/test_training_device.py::test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_retired_guard_covers_both_grammars",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_orphaned_prototype_interfaces_are_retired",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_compiled_k2_case_keeps_inductor",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_shared_ladder_minimum_count_is_restored",
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review13/test_review_coverage_probe.py::test_unused_mixing_bank_does_not_stage"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

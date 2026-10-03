@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-02T21:51:40.990946+00:00",
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "source_matched": true,
+  "checkpoint_changes": [],
+  "mnist_data_matched": true,
+  "environment_unchanged": true,
+  "diff_check_exit_code": 0,
+  "documentation_links": {
+    "files": 257,
+    "failures": 0
+  },
+  "full_sweep_complete": true,
+  "all_requested_jobs_accounted": true,
+  "duplicates_within_scopes": 0,
+  "assertions_not_verified_for_stopped_cases": true,
+  "accepted": false,
+  "committed": false,
+  "final_case_counts": {
+    "passed": 4662,
+    "failed": 23,
+    "skipped": 290,
+    "xpassed": 1
+  },
+  "measurement_harness_unchanged": true
+}

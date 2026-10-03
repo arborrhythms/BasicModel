@@ -1,0 +1,109 @@
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -18716,9 +18716,9 @@
+     def _exploration_prefix_slots(self, actions, forced, owners):
+         """Chronological prefix per sentence, including interleaved closing slots.
+ 
+-        Exploit already updated the parameters. Replaying its hard choices
+-        preserves the zero-temperature counterfactual's prefix under those
+-        updated weights, while recomputing candidates and their live credit.
++        Neither trial has updated the parameters yet. Replaying the hard
++        choices preserves the zero-temperature counterfactual's prefix,
++        while recomputing candidates and their live credit for its own graph.
+         """
+         words = self.inputSpace._word_active_mask.shape[1]
+         closing = max(1, 2 * int(self.conceptualSpace.stm.capacity))
+@@ -20638,15 +20638,27 @@
+         slots = lang[13][:, sid].reshape(root.shape[0], 3, root.shape[-1])
+         depth = lang[14][:, sid]
+         if getattr(self, 'answer_synthesis', False):
++            data = self.inputSpace.data
++            questions = self._sentence_answer_questions
++            desired = tuple(data.what(question) for question in questions)
++            values = [answer.what if answer.available and question.relation is WhatRelation.SUPERVISED
++                      else None for question, answer in zip(questions, desired)]
++            if not any(value is not None for value in values):
++                return None
+             # Realize this trial's completed field without a query or a write.
+             # Generation is the reading map in these configurations. Its
+             # normal batch-end call still takes the default state cut.
+-            meanings = observation['meanings']
++            # Match _commit_sentence's completed point: an open clause may
++            # still describe two pre-fusion roles, which are not an end state.
++            meanings = [
++                replace(ConceptualMeaning.from_description(clause.point),
++                        mode=meaning.mode, polarity=meaning.polarity, sentence_kind='idea')
++                if clause is not None and clause.relation is None else meaning
++                for meaning, clause in zip(observation['meanings'], observation['clauses'])]
+             fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
+             idea = torch.stack([root[b].new_zeros(3, root.shape[-1])
+                                 if value is None else value.roles
+                                 for b, value in enumerate(meanings)])
+-            questions = self._sentence_answer_questions
+             context, _ = self._what_grammar_context(questions, device=root.device, dtype=root.dtype)
+             held = AnswerDerivation(answer_symbol=None, sentence_states=fields,
+                 conceptual_answer=idea, questions=questions, conditioning_context=context,
+@@ -20656,12 +20668,6 @@
+             pred = construction.actual
+             # Supplied answers retain Data.what's authority, including empty
+             # rows and text targets. Desired values only score the fixed output.
+-            data = self.inputSpace.data
+-            desired = tuple(data.what(question) for question in questions)
+-            values = [answer.what if answer.available and question.relation is WhatRelation.SUPERVISED
+-                      else None for question, answer in zip(questions, desired)]
+-            if not any(value is not None for value in values):
+-                return None
+             if any(isinstance(value, str) for value in values):
+                 filler = next(value for value in values if isinstance(value, str))
+                 mask = active & torch.tensor([isinstance(value, str) for value in values], device=root.device)
+--- a/test/test_supplied_answer_training.py
++++ b/test/test_supplied_answer_training.py
+@@ -95,3 +95,48 @@
+         model.End()
+         model.symbolSpace.soft_reset()
+         torch._dynamo.reset()
++
++
++def test_native_trial_reads_the_completed_point_with_live_credit():
++    from Meaning import ConceptualMeaning
++    from Models import BasicModel
++    from What import What
++    model, state, parameters = _sentence(True)
++    root = state[1][9][:, 0]
++    meanings = [ConceptualMeaning(torch.stack((row, row, torch.zeros_like(row))),
++                                  torch.tensor([True, True, False])) for row in root]
++    clauses = [SimpleNamespace(point=row, relation=None, meaning=meaning)
++               for row, meaning in zip(root, meanings)]
++    model.answer_synthesis = True
++    model._sentence_answer_questions = tuple(What.supervised(i) for i in range(2))
++    model.inputSpace.data.what = lambda question: SimpleNamespace(available=True, what=0.)
++    model._what_grammar_context = lambda *args, **kwargs: (None, None)
++    model.outputSpace.prepOutput = lambda values: torch.tensor(values)[:, None]
++    seen = []
++    def realize(understanding, derivation, *, detach_understanding=True):
++        assert not detach_understanding
++        assert [int(field.meaning.role_mask.sum()) for field in derivation.sentence_states] == [1, 1]
++        seen.append(derivation.conceptual_answer)
++        return SimpleNamespace(actual=(derivation.conceptual_answer.flatten(1) @ parameters[-1])[:, None])
++    model.reverseOutput = realize
++    error = BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
++                                              dict(meanings=meanings, clauses=clauses))
++    assert len(seen) == 1
++    torch.testing.assert_close(seen[0][:, 0], root)
++    gradients = torch.autograd.grad(error.sum(), parameters, allow_unused=True)
++    assert all(g is not None and bool(g.abs().any()) for g in gradients)
++
++
++def test_automatic_answers_do_not_start_a_supplied_answer_trial():
++    from Models import BasicModel
++    from What import What
++    model, state, _ = _sentence(True)
++    model.answer_synthesis = True
++    model._sentence_answer_questions = tuple(What.future(i) for i in range(2))
++    model.inputSpace.data.what = lambda question: SimpleNamespace(available=True, what='automatic')
++    def forbidden(*args, **kwargs):
++        raise AssertionError('an automatic answer must not start a supervised generation trial')
++    model.reverseOutput = forbidden
++    model._what_grammar_context = lambda *args, **kwargs: (None, None)
++    assert BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
++                                              dict(meanings=[None, None])) is None

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_echoic_decoder.py::test_sentence_cost_is_not_diluted_by_other_packed_sentences",
+    "test/test_echoic_decoder.py::test_output_spelling_uses_the_echoic_shortlist",
+    "test/test_trial_policy_ownership.py"
+  ],
+  "pid": 77182,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 771278456,
+  "elapsed_seconds": 5.934164250007598,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-closing/probes/decoder-scoring-owned-output/run.log"
+}

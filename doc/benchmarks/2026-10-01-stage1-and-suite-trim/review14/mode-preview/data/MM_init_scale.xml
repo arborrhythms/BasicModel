@@ -1,0 +1,76 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_init_scale: MM_xor_fixture + <WholeSpace><initScale>. Fixture for
+       test/test_init_scale.py's end-to-end wiring check that <initScale>
+       reaches the WholeSpace codebooks (.what symbol store + analysis_store)
+       so their prefill rows land at the small operating point. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
+    <symbolicOrder>0</symbolicOrder>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <learningRate>0.005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8</nInput>
+    <nVectors>256</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+    <butterfly>false</butterfly>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>word</lexer>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <initScale>0.02</initScale>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nVectors>1</nVectors>
+    <nOutput>1</nOutput>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <start>S</start>
+      <grammar>
+        <S>S = not(S)</S>
+        <S>S = intersection(S, S)</S>
+        <S>S = union(S, S)</S>
+      </grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

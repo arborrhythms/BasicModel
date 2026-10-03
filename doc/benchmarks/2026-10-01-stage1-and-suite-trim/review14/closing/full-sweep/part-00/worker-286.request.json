@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_idea_decode.py::test_idea_decode_defaults_off",
+    "test/test_idea_decode.py::test_gate_skips_generate_rebuild_when_on"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/closing/full-sweep/part-00/worker-286.recycle.json"
+}

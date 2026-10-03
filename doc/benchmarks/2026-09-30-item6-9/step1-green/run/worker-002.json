@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step1.py::test_gate_measures_answers_not_placeholder[predictions2-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010774577967822552,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

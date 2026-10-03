@@ -34,6 +34,8 @@ class ClauseScope(nn.Module):
             return torch.tensor(rows or [(0,) * 6], dtype=torch.long)
         self.register_buffer('binary', table(binary), persistent=False)
         self.register_buffer('unary', table(unary), persistent=False)
+        self.register_buffer('binary_same_reference', torch.tensor(
+            [rule.method_name == 'conjunction' for rule in binary] or [False]), persistent=False)
 
     @staticmethod
     def empty(buffer):
@@ -110,6 +112,11 @@ class ClauseScope(nn.Module):
         reference = torch.where(sentence & relative, local_ref, -1)
         reference = torch.where(preserved & ~closing, previous_ref, reference)
         parent = torch.stack((flags, reference), -1)
+        same_reference = (binary & self.binary_same_reference.to(state.device)[
+            choice.local_op.clamp(0, self.binary_same_reference.shape[0]-1)]
+            & (left[:, 1] == right[:, 1]) & (left[:, 1] != -1) & (left[:, 1] != 0))
+        parent = torch.where(same_reference[:, None], left, parent)
+        closing = closing & ~same_reference
         rewritten = torch.where((unary & choice.applied)[:, None, None]
                                 & (torch.arange(K, device=state.device)[None, :, None] == choice.position[:, None, None]),
                                 parent[:, None], state)

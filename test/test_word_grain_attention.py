@@ -142,8 +142,7 @@ _REGISTRY = {"hello": 7, "world": 9}
 _POS_TO_ROW = {7: 2, 9: 2}
 
 
-def _run_unreduce(attention_mode, *, hot_ref=None, word_store=False,
-                  break_retrieval=False):
+def _run_unreduce(attention_mode, *, hot_ref=None, break_retrieval=False):
     """Drive the REAL unreduce; capture the reverse kwargs via a layer spy.
 
     Returns (captured_kwargs, retrieval_calls)."""
@@ -181,19 +180,8 @@ def _run_unreduce(attention_mode, *, hot_ref=None, word_store=False,
 
     lift.reverse = rev_spy
 
-    orig_space = Language.TheXMLConfig.space
-
-    def patched_space(section, key, default=None, *a, **k):
-        if section == 'PartSpace' and key == 'wordStore':
-            return bool(word_store)
-        return orig_space(section, key, default, *a, **k)
-
-    Language.TheXMLConfig.space = patched_space
-    try:
-        lang = LanguageLayer.__new__(LanguageLayer)
-        lang.unreduce(sub, syn, grammar=g)
-    finally:
-        Language.TheXMLConfig.space = orig_space
+    lang = LanguageLayer.__new__(LanguageLayer)
+    lang.unreduce(sub, syn, grammar=g)
     return captured, retrieval_calls
 
 
@@ -207,39 +195,16 @@ def test_primer_fires_retrieval_on_lift_family():
     assert sorted(kwargs['right_rows'].tolist()) == [2]
 
 
-def test_word_rows_restrict_when_attention_off():
-    """THE Task-C SS-side pin: attention off + wordStore on -> the reverse is
-    restricted to the WS word-whole rows (registry through _ws_pos_to_row)."""
-    kwargs, calls = _run_unreduce('off', word_store=True)
-    assert calls == []                                   # heat path dormant
-    assert kwargs.get('left_rows') is not None
-    assert kwargs['left_rows'].tolist() == [2]
-    assert kwargs['right_rows'].tolist() == [2]
 
 
-def test_off_without_word_store_is_plain_reverse():
+def test_attention_off_is_plain_reverse():
     """Both gates off -> the pre-existing plain reverse (no kwargs at all)."""
-    kwargs, calls = _run_unreduce('off', word_store=False)
+    kwargs, calls = _run_unreduce('off')
     assert calls == [] and kwargs == {}
 
 
-def test_heat_rows_take_precedence_over_word_rows():
-    """A successful heat retrieval SUPPRESSES the word-rows restriction
-    (the ``'left_rows' not in reverse_kwargs`` gate)."""
-    kwargs, calls = _run_unreduce('primer', hot_ref=0, word_store=True)
-    assert calls == ['primer', 'primer']
-    assert sorted(kwargs['left_rows'].tolist()) == [0, 1]   # heat, not [2]
 
 
-def test_retrieval_failure_degrades_to_word_rows():
-    """The ON-path degradation contract, word-grain form: a retrieval
-    failure empties the heat kwargs and the word-rows restriction still
-    applies -- generation never breaks."""
-    kwargs, calls = _run_unreduce('primer', hot_ref=0, word_store=True,
-                                  break_retrieval=True)
-    assert calls and calls[0] == 'primer'
-    assert kwargs.get('left_rows') is not None
-    assert kwargs['left_rows'].tolist() == [2]              # the word rows
 
 
 def test_real_lift_reverse_completes_under_priming():

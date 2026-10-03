@@ -1,0 +1,5 @@
+test/test_test_modes.py::test_weekly_includes_the_parked_inline_suites
+test/test_test_modes.py::test_weekly_source_copy_survives_edits_to_the_working_tree
+test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+
+3 tests collected in 0.49s

@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_relative_error.py",
+    "test/test_generation_lesson.py",
+    "test/test_sentence_compose.py",
+    "test/test_compose_deadline.py",
+    "test/test_tied_operator_reconstruction.py",
+    "test/test_tied_reconstruction_objective.py",
+    "test/test_grammar_separator.py",
+    "test/test_sentence_journal.py",
+    "test/test_sentence_end_state.py",
+    "test/test_occurrence_coordinates.py",
+    "test/test_aligned_fold_binding.py",
+    "test/test_detached_reverse_objective.py",
+    "test/test_stm_recon_from_cleared_cache.py",
+    "test/test_train_compile_target.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

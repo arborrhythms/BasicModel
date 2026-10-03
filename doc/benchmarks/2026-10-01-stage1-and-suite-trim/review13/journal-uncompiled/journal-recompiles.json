@@ -1,0 +1,57 @@
+{
+  "runs": [
+    {
+      "samples": [
+        "a b",
+        "c d"
+      ],
+      "seconds": 0.11042791600630153,
+      "new_captures": [],
+      "journal": [
+        2,
+        12,
+        48
+      ]
+    },
+    {
+      "samples": [
+        "a b c",
+        "c d a"
+      ],
+      "seconds": 0.1377133340065484,
+      "new_captures": [],
+      "journal": [
+        2,
+        15,
+        48
+      ]
+    },
+    {
+      "samples": [
+        "a b",
+        "c d"
+      ],
+      "seconds": 0.07603179199941223,
+      "new_captures": [],
+      "journal": [
+        2,
+        12,
+        48
+      ]
+    },
+    {
+      "samples": [
+        "a b c",
+        "c d a"
+      ],
+      "seconds": 0.09999299999617506,
+      "new_captures": [],
+      "journal": [
+        2,
+        15,
+        48
+      ]
+    }
+  ],
+  "captures": []
+}

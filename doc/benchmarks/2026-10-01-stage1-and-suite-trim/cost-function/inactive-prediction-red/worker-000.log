@@ -1,0 +1,10 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_functional_prediction_cost_does_not_mutate_an_inactive_row ________
+test/test_sentence_journal.py:120: in test_functional_prediction_cost_does_not_mutate_an_inactive_row
+    layer = IntraSentenceLayer(concept_dim=2, working_dim=2, stm_capacity=3)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: IntraSentenceLayer.__init__() missing 1 required positional argument: 'routing_dim'
+=========================== short test summary info ============================
+FAILED test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row
+1 failed in 2.13s

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/bin/etc/SigmaPi.py"
+  ],
+  "pid": 81488,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 353403960,
+  "elapsed_seconds": 3.0716930419948767,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/inline-etc-SigmaPi.log"
+}

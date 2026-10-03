@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_masked_semantic.py::test_masked_ir_training_engages"
+  ],
+  "completed": [
+    "test/test_masked_semantic.py::test_masked_ir_training_engages"
+  ],
+  "slow_selected": [
+    "test/test_masked_semantic.py::test_masked_ir_training_engages"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_masked_semantic.py::test_masked_ir_training_engages",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010566700075287372,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_masked_semantic.py', 128, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

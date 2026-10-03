@@ -1,0 +1,92 @@
+[
+  {
+    "file": "test/test_lexicon_ownership.py",
+    "test": "test_perceptualspace_lex_and_embed_renamed_to_embed",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_lexicon_ownership.py",
+    "test": "test_embedding_symbolic_back_ref_wired",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_lexicon_ownership.py",
+    "test": "test_get_embedding_returns_perceptual",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_lexicon_ownership.py",
+    "test": "test_output_space_text_mode_reads_perceptual",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_lexicon_ownership.py",
+    "test": "test_optimizer_excludes_emb_params_when_frozen",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_lexicon_ownership.py",
+    "test": "test_getW_wraps_into_unit_cell",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_embedding_can_tokenize",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_embedding_creates_reversible_dictionary",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_train_embeddings_includes_emb_params",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_frozen_embeddings_default",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_token_stream_available",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_per_doc_spans_created",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_per_doc_span_counts",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_doc_spans_store_token_offsets",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_vectors_constructor_enables_reconstruction",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_basicmodel.py",
+    "test": "test_reconstruct_from_known_vectors",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "test": "test_legacy_analysis_modes_are_parked_and_meronomy_is_canonical",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  },
+  {
+    "file": "test/test_meronomy_ladder.py",
+    "test": "test_undivided_legacy_modes_stage_no_spans",
+    "reason": "\u00a716.2: retired word-lexicon interface; meronomy storage/byte-span behaviour retained separately."
+  }
+]

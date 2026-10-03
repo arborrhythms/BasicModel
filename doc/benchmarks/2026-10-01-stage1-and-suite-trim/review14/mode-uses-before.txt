@@ -1,0 +1,273 @@
+data/MM_5M_IR.xml:45:       at nDim=8 each; mirrors MM_20M_legacy.xml's re-architecture. -->
+bin/export_mlx.py:5:    python bin/export_mlx.py data/MM_20M_legacy.xml out.pte
+bin/export_mlx.py:67:                   help="Path to the model XML config (e.g. data/MM_20M_legacy.xml)")
+bin/export_mlx.py:316:        # Legacy two-step: to_edge -> .to_backend -> .to_executorch
+data/MM_qa.xml:25:       it is dark when no consumer is wired). NEVER mutate the shared MM_20M_legacy.xml;
+data/MM_symbol_tower.xml:6:       MM_20M_legacy.xml for mereology experiments (it is a reference config pinned by
+data/MM_mereology.xml:6:       MM_20M_legacy.xml for mereology experiments (it is a reference config pinned by
+data/MM_20M_xor.xml:6:       A sibling of MM_20M_legacy.xml that does supervised XOR with
+data/MM_20M_xor.xml:13:       unlike the byte-cursor AR path in MM_20M_legacy.xml, which stubs the label to 0.
+data/MM_reading.xml:25:       it is dark when no consumer is wired). NEVER mutate the shared MM_20M_legacy.xml;
+bin/bm.py:15:    python bm.py --config ../data/MM_20M_legacy.xml
+bin/bm.py:16:    python bm.py --config ../data/MM_20M_legacy.xml "hello"
+data/MM_mereology_serial.xml:19:       NEVER mutate the shared MM_20M_legacy.xml. With <mereologyRaise> OFF this would
+test/test_lexicon_unit_ball.py:317:class TestTorusLegacyMode(unittest.TestCase):
+bin/Mereology.py:733:        Legacy helper retained for callers that pre-date the
+data/MM_global.xml:25:       it is dark when no consumer is wired). NEVER mutate the shared MM_20M_legacy.xml;
+bin/Legacy.py:45:LEGACY_PART_SYNTHESIS_MODES = frozenset({
+bin/Legacy.py:89:    if value not in LEGACY_PART_SYNTHESIS_MODES:
+bin/Legacy.py:116:        "lexicon": part_space._embed_lexicon,
+bin/Legacy.py:117:        "bpe": part_space._embed_bpe,
+bin/Legacy.py:118:        "none": part_space._embed_byte,
+bin/Legacy.py:119:        "mphf": part_space._embed_mphf,
+bin/Legacy.py:1086:            # These ops were parked in bin/Legacy.py (2026-07-17): documented-
+bin/Legacy.py:1091:                                 f"{name!r} should be parked in Legacy, not live")
+bin/Legacy.py:1129:            # 'copy' was parked in bin/Legacy.py (2026-07-17): a retained
+bin/Legacy.py:1142:            # bin/Legacy.py (2026-07-17): documented-dormant, no live grammar
+bin/Legacy.py:1152:            parked in bin/Legacy.py (2026-07-17) — retired from the live symbolic
+bin/Legacy.py:1154:            now asserted on the Legacy classes, not the live registry."""
+test/test_mereology.py:10:class tests live in Legacy.py.
+bin/util.py:572:    training bench (basicmodel/bin/bench_compile.py, MM_20M_legacy.xml,
+bin/util.py:816:    # 'error_buf'" — observed on ``MM_20M_legacy.xml`` (2026-06-11; reproduced
+test/test_truth_grounded_reasoning.py:159:    """Legacy vector helpers and the current full-description Exist adapter."""
+test/test_truth_grounded_reasoning.py:229:class TestLegacyConsolidation(unittest.TestCase):
+test/test_space_equiv_selfcheck.py:2:Targets PartSpace._embed_bpe -- the same pre-VQ, frozen-vocab-
+test/test_space_equiv_selfcheck.py:25:    n = run_space_gate(Spaces.PartSpace, "_embed_bpe",
+test/test_space_equiv_selfcheck.py:26:                        candidate_fn=Spaces.PartSpace._embed_bpe_trie,
+test/test_space_equiv_selfcheck.py:32:    ref = Spaces.PartSpace._embed_bpe_trie
+test/test_space_equiv_selfcheck.py:45:        run_space_gate(Spaces.PartSpace, "_embed_bpe",
+test/test_compile_static_loop.py:114:    runs cleanly (unlike MM_20M_legacy, which is dim-mismatched / xfail)."""
+data/model.xsd:145:      <!-- Legacy/direct LiftLayer adverb helper flag. The live AdverbLayer
+data/model.xsd:631:       project. Legacy booleans true/false are accepted as deprecated
+data/model.xsd:1090:                 by bin/Legacy.py, never entering the canonical branch. -->
+data/model.xsd:1325:                 bin/Legacy.py. -->
+bin/bench_train_word_bucket.py:411:    # Legacy/static paths still need a complete eager primer. The functional
+test/test_symbolic_iteration.py:127:    m = _build("MM_20M_legacy.xml")
+test/test_symbolic_iteration.py:164:    m = _build("MM_20M_legacy.xml")
+test/test_symbolic_iteration.py:196:    m = _build("MM_20M_legacy.xml")
+test/test_symbolic_iteration.py:237:    m = _build("MM_20M_legacy.xml")
+test/test_symbolic_iteration.py:272:    m = _build("MM_20M_legacy.xml")
+test/test_symbolic_iteration.py:303:    m = _build("MM_20M_legacy.xml")
+test/test_retired_names.py:106:        xor=_xor_model.__wrapped__, enum=lambda: _build('MM_20M_legacy.xml'))
+bin/Models.py:470:    """Legacy static three-stage peer scheduler.
+bin/Models.py:2101:        # Legacy/direct LiftLayer adverb helper flag. The live AdverbLayer
+bin/Models.py:2702:        # Legacy checkpoints have no active_mask key; VectorQuantize's load
+bin/Models.py:4490:        Legacy configs retain the old WS envelope until explicitly migrated.
+bin/Models.py:4706:                # Legacy configs retain their broad per-stage WS snapshot.
+bin/Models.py:5140:                f"[{self.name}] Legacy checkpoint at {path} has no "
+bin/Models.py:5820:            # Legacy row-to-spelling caches are superseded by migrated DEF forms.
+bin/Models.py:6056:        # Legacy lexicon / BPE / MPHF path: keep the existing decode.
+bin/Models.py:7114:        Legacy parity episodes have no :class:`ThoughtState` and are left to
+bin/Models.py:8480:        # ``data/MM_20M_legacy.xml``). The old ``BASICMODEL_MPS_COMPILE`` opt-in gate
+bin/Models.py:12500:        can be captured independently. Legacy configurations default to graph.
+bin/Models.py:15210:                # of the idea-only reverse student.  Legacy/eval paths retain
+bin/Models.py:15244:            # Legacy event reconstruction starts from the owned conceptual
+bin/Models.py:15899:            # Legacy-parity hot path (L6 in the handoff): a single
+bin/Models.py:16806:        # concept/symbol namespace. Legacy configs omit the knob and retain the
+bin/Models.py:16866:        # Legacy loss knobs migrate into the one hard-choice contract.
+bin/Models.py:17237:            # reset boundary. Legacy configs retain their prior terminal-only
+bin/Models.py:17343:        # learns selected properties from the reconstruction gradient. Legacy
+bin/Models.py:17543:        # META structure. Legacy configs keep the prior WholeSpace host until
+bin/Models.py:19182:        ``[B,nIdeas,M]`` per-word slot axis ``_embed_bpe``'s
+bin/Models.py:19211:        # in-vocab percept) is written by ``_embed_bpe`` /
+test/test_meronomy_ladder.py:3:Phase 0: the Legacy move and the symbolic loop's ``forward`` / ``reverse``
+test/test_meronomy_ladder.py:25:import Legacy  # noqa: E402
+test/test_meronomy_ladder.py:33:# -- Phase 0: the analysis cuts route through Legacy, byte-identically ----------
+test/test_meronomy_ladder.py:36:    assert Legacy.LEGACY_WHOLE_ANALYSIS_MODES == {
+test/test_meronomy_ladder.py:38:    assert "meronomy" not in Legacy.LEGACY_WHOLE_ANALYSIS_MODES
+test/test_meronomy_ladder.py:40:        Legacy.normalize_whole_analysis_mode("meronomy")
+test/space_equiv.py:12:then gate pre-VQ substeps (_embed_bpe), exactly as bpe_gpu_equiv does.
+test/space_equiv.py:94:    cfg = str(_p / "data" / "MM_bpe.xml")
+test/slow_weekly.py:26:INLINE_SUITES = ('bin/Legacy.py', 'bin/etc/SPNN.py', 'bin/etc/SigmaPi.py', 'bin/etc/SymPercept.py')
+bin/embed.py:1342:        # Legacy sphere artifacts have norm ~= 1 so each component is
+bin/embed.py:2154:    """Yield the same byte spans that ``PartSpace._embed_mphf`` hashes.
+bin/Layers.py:5055:    Legacy :class:`SigmaLayer` (tanh/atanh additive fold) stays untouched
+bin/Layers.py:6131:    # Legacy slot-surface attributes: consumers of the slot layers read
+bin/Layers.py:7418:        Legacy path (no basis or odd last dim): the stored vector is
+bin/Layers.py:7461:        # Legacy contradiction warning: anti-parallel cosine only applies
+bin/Layers.py:8011:        Legacy path (odd last dim): two truths pointing in opposite
+bin/Layers.py:8061:        # Legacy pairwise anti-parallel check.
+bin/Layers.py:8094:        Legacy (odd last dim): pair is a contradiction when cosine
+bin/Layers.py:8121:        # Legacy: anti-parallel pairs.
+bin/Layers.py:8160:        negative-pole mass. Legacy: use the sign of the mean activation.
+bin/Layers.py:8983:        # Legacy records keep their old fingerprint exactly. Only rows that
+bin/Layers.py:9474:            warnings.warn('Legacy LTM rows have unknown order; decoding requires an explicit order stamp.',
+bin/Layers.py:9489:        # Legacy conversation records had no grammatical mode or evidence kind.
+bin/Layers.py:9933:        Legacy np1/vp/np2 tensors remain views; ``meaning`` is an owned detached
+bin/Layers.py:10669:                 # Legacy-named kwargs accepted for back-compat; ignored.
+bin/Layers.py:11830:            # Legacy seed API expects contiguous STM slots. The full
+bin/Layers.py:12261:        """Legacy alias for ``predict_next``.
+bin/Layers.py:14401:        Returns a dict the GPU tokenizer + the rewired _embed_bpe consume.
+bin/Layers.py:14519:        Bit-identical semantics to ``_embed_bpe``'s Python sweep:
+test/test_test_modes.py:13:        'bin/Legacy.py', 'bin/etc/SPNN.py', 'bin/etc/SigmaPi.py', 'bin/etc/SymPercept.py')
+test/test_chunk_layer_bpe.py:13:  5. Loading ``MM_bpe.xml`` propagates ``chunking`` / ``nVectors``
+test/test_chunk_layer_bpe.py:161:        """MM_bpe.xml config should produce a BPE-mode ChunkLayer."""
+test/test_chunk_layer_bpe.py:166:        cfg_path = os.path.join(_PROJECT, "data", "MM_bpe.xml")
+test/test_chunk_layer_bpe.py:173:                         "MM_bpe.xml must set chunking=bpe")
+test/test_thought_operation_catalog.py:509:    class LegacyFold:
+test/test_thought_operation_catalog.py:525:    layer = LegacyFold()
+test/tools/probe_mm5m_perf.py:25:CONFIG_PATH = str(PROJECT / "data" / "MM_20M_legacy.xml")
+test/test_conceptual_recurrence.py:163:    m = _build("MM_20M_legacy.xml")
+test/test_conceptual_recurrence.py:180:    # is retired). Builds from the STOCK MM_20M_legacy.xml with no injected knob.
+test/test_conceptual_recurrence.py:185:    p = os.path.join(data_dir, "MM_20M_legacy.xml")
+test/test_conceptual_recurrence.py:259:    """Write a 3-epoch copy of data/MM_20M_legacy.xml to /tmp and return its path.
+test/test_conceptual_recurrence.py:269:    with open(os.path.join(data_dir, "MM_20M_legacy.xml")) as fh:
+test/test_conceptual_recurrence.py:360:    p = os.path.join(data_dir, "MM_20M_legacy.xml")
+test/test_conceptual_recurrence.py:417:    m = _build("MM_20M_legacy.xml")
+test/tools/bpe_gpu_match_check.py:3:Before the (intricate) _embed_bpe rewire, verify the foundational
+test/tools/bpe_gpu_match_check.py:38:    cfg = str(_p / "data" / "MM_20M_legacy.xml")
+test/tools/bpe_gpu_match_check.py:54:    orig = Spaces.PartSpace._embed_bpe
+test/tools/bpe_gpu_match_check.py:63:    Spaces.PartSpace._embed_bpe = _wrap
+test/tools/bpe_gpu_match_check.py:69:        Spaces.PartSpace._embed_bpe = orig
+test/test_two_mode_dispatch.py:289:class TestLegacySerialDerivation(unittest.TestCase):
+test/test_stage_3_parser_cleanup.py:135:    """Legacy configs that still set retired knobs must error loudly.
+bin/reasoning.py:43:    """Legacy query interface; Exist accepts one complete ConceptualMeaning.
+bin/reasoning.py:357:        Legacy vector-only operands have no concept handle and remain unknown.
+test/test_brick_no_sync.py:47:    ("MM_20M_legacy.xml", "text", {
+test/tools/bench_lexicon_paths.py:64:    # Legacy wrapped-MSE form. distance_sq broadcasts to [B, V, D]
+test/test_use_flags.py:33:#   - MM_20M_legacy.xml         -- reconstruct=concepts fails validate_config
+test/test_use_flags.py:49:    "MM_bpe.xml":            "all",
+test/test_input_word_cursor.py:328:        "MM_20M_legacy.xml", dataset="'text'")
+test/tools/brick_attr_probe.py:19:Defaults: MM_xor.xml, batchSize=2. MM_20M_legacy.xml uses the FineWeb shard
+test/tools/brick_attr_probe.py:174:    if cfg_name == "MM_20M_legacy.xml":
+test/test_space_carrier_bridge.py:49:class _LegacySubspace:
+test/test_space_carrier_bridge.py:99:    legacy = _LegacySubspace(
+test/tools/brick_recon.py:50:    if cfg_name == "MM_20M_legacy.xml":
+test/tools/probe_mm5m_paths.py:18:CONFIG_PATH = str(PROJECT / "data" / "MM_20M_legacy.xml")
+test/test_modality_configs.py:29:_BROKEN = {"model.xml", "MM_20M_legacy.xml", "MM_400M.xml", "MM_shamatha.xml",
+test/test_compiled_word_chunk.py:383:        # Legacy student compatibility is explicit now that production uses
+test/test_mlx_export.py:87:    m = _build("MM_20M_legacy.xml"); m.eval()
+test/test_mlx_export.py:118:    m = _build("MM_20M_legacy.xml"); m.eval()
+test/test_mlx_export.py:185:    model_xml = os.path.join(os.path.dirname(_BIN), "data", "MM_20M_legacy.xml")
+test/test_mlx_export.py:245:    model_xml = os.path.join(os.path.dirname(_BIN), "data", "MM_20M_legacy.xml")
+test/tools/bench_throughput.py:18:e.g. MM_20M_legacy.xml text "8,16,32,64,128,256"
+test/tools/bench_throughput.py:45:    cfg_name = sys.argv[1] if len(sys.argv) > 1 else "MM_20M_legacy.xml"
+test/test_dimensional_governance.py:52:    m = _build("MM_20M_legacy.xml"); Models.TheData.load("xor")
+test/test_dimensional_governance.py:161:    src = _ref_text("MM_20M_legacy.xml")
+test/test_dimensional_governance.py:179:    src = _ref_text("MM_20M_legacy.xml")
+test/test_dimensional_governance.py:195:    for cfg in ("MM_20M_legacy.xml", "XOR_exact.xml"):
+test/tools/_faithfulness_rest.py:117:    from Legacy import TrueLayer, SwapLayer, CopyLayer  # parked 2026-07-17
+test/test_thought_legacy_boundaries.py:1:"""Legacy adapters cannot discard or corrupt the ordinary history owner."""
+test/test_discourse_cache_dtype.py:27:    cfg = str(_root / "data" / "MM_20M_legacy.xml")
+test/tools/_sweep_chunking.py:3:Builds temp configs from MM_20M_legacy.xml with a WORKING 1024-wide InputSpace
+test/tools/_sweep_chunking.py:14:with open(os.path.join(PROJECT, "data", "MM_20M_legacy.xml")) as f:
+test/test_train_compile_target.py:23:        "--model", "data/MM_20M_legacy.xml",
+test/test_train_compile_target.py:27:    assert args.model == "data/MM_20M_legacy.xml"
+test/test_train_compile_target.py:73:    xml_path = tmp_path / "data" / "MM_20M_legacy.xml"
+test/test_train_compile_target.py:75:    assert out == str(tmp_path / "output" / "mlx" / "MM_20M_legacy.pte")
+test/tools/bpe_gpu_equiv.py:11:drifted codebook. Instead, for every ``_embed_bpe`` invocation we run
+test/tools/bpe_gpu_equiv.py:47:_REFERENCE_EMBED_BPE = Spaces.PartSpace._embed_bpe_trie
+test/tools/bpe_gpu_equiv.py:48:_CANDIDATE_EMBED_BPE = Spaces.PartSpace._embed_bpe_gpu
+test/tools/bpe_gpu_equiv.py:81:    """Monkeypatch ``_embed_bpe`` so every call runs candidate+reference
+test/tools/bpe_gpu_equiv.py:102:    Spaces.PartSpace._embed_bpe = _gated
+test/tools/bpe_gpu_equiv.py:108:    cfg = str(_p / "data" / "MM_20M_legacy.xml")
+test/tools/bpe_gpu_equiv.py:123:        Spaces.PartSpace._embed_bpe = _REFERENCE_EMBED_BPE
+test/tools/bpe_gpu_equiv.py:131:        print("[bpe-equiv] WARNING: 0 _embed_bpe calls (config not "
+test/tools/bpe_gpu_equiv.py:134:    print(f"[bpe-equiv] PASS: {n} _embed_bpe call(s) GPU==trie "
+test/test_config_matrix.py:47:    pytest.param("data/MM_20M_legacy.xml", id="legacy"),                  # bpe/byte back-compat
+test/test_discourse_space.py:198:        """Legacy callers unpack ``(prediction, confidence)``.
+test/test_dual_input_contract.py:58:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:91:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:112:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:141:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:161:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:198:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:218:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:267:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:308:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:360:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:395:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:416:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:443:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:485:    m = _build("MM_20M_legacy.xml")
+test/test_dual_input_contract.py:526:    m = _build("MM_20M_legacy.xml")
+bin/Language.py:51:# true/false/swap/copy/area/luminosity/isaPart were parked in bin/Legacy.py
+bin/Language.py:1202:                # Legacy flat form — treat as parse.
+bin/Language.py:1604:        # Legacy syntax: <S>body</S> with nonterminal as tag. Kept for
+bin/Language.py:1812:        # Legacy tolerance: ``<C>C = pi(C)</C>`` is the per-space_role element
+bin/Language.py:4637:    """Legacy explicit geometric parthood experiment.
+bin/Language.py:4690:    """Legacy explicit alias for :class:`QueryLayer`."""
+bin/Language.py:4695:    """Legacy explicit equality experiment answered as mutual parthood."""
+bin/Language.py:4971:    # false/swap/copy/area/luminosity/isaPart parked in bin/Legacy.py
+bin/Language.py:5109:    # copy/swap (T5 BINARY_ELISION) were parked in bin/Legacy.py
+bin/Language.py:5293:    Legacy grammar layers retain their tensor-shaped kernels behind
+bin/Language.py:9814:        # Legacy WS-as-symbol-dictionary configurations stored operation
+bin/Language.py:9828:        # sites. Legacy ``pi`` / ``sigma`` names alias to the new
+bin/Language.py:10055:        # per-label slot reservation.  Legacy XML grammars stay at 64
+bin/Language.py:11196:        Legacy path kept so ``WholeSpace.forward`` (and its tests) can
+bin/Language.py:11710:                    # Legacy flat list: shared across rows.
+bin/Language.py:11815:        ``.reverse`` rules are listed for that space_role. Legacy
+bin/Language.py:13113:        # Legacy action keys exist only to migrate the output-owned chooser.
+bin/Language.py:14356:    # Legacy spellings of the two entries above (kept for older callers;
+test/test_recon_bench.py:67:    """MM_20M_legacy (byte cursor) decodes via the _last_host_slab stash."""
+test/test_recon_bench.py:68:    rec = run_config("data/MM_20M_legacy.xml", epochs=1, seed=0,
+test/test_per_word_capture_gate_cuda.py:59:    cfg = str(_root / "data" / "MM_20M_legacy.xml")
+test/test_wide_concept_codebook.py:40:    # Legacy activation may have any number of nonzero entries.
+test/test_unified_lexicon_codebook.py:54:     (PartSpace._embed / _embed_bpe / _embed_mphf -- see #3 below)
+test/test_unified_lexicon_codebook.py:81:   - Runtime entry: ``PartSpace._embed_mphf`` (line 8540) is the
+test/test_unified_lexicon_codebook.py:82:     ``<synthesis>mphf</synthesis>`` path; ``_embed_bpe`` (line 7776) is
+test/test_unified_lexicon_codebook.py:134:     PartSpace._embed_bpe_trie line 7847) is what changes -- the
+test/test_unified_lexicon_codebook.py:286:    C4. ``_embed`` (line 7650), ``_embed_bpe_trie`` (line 7847),
+test/test_unified_lexicon_codebook.py:287:        ``_embed_mphf`` (line 8540), ``_embed_byte`` (line 8449):
+test/test_unified_lexicon_codebook.py:370:          MM_20M_legacy.xml: IS.nOutput=1024 * nDim=6 = 6144;
+test/test_unified_lexicon_codebook.py:558:  MM_20M_legacy.xml              -- OPEN: needs controller decision on invariant
+test/test_unified_lexicon_codebook.py:565:  LM_5M_IR.xml, MM_400M.xml, MM_5M_AR.xml, MM_5M_IR.xml, MM_bpe.xml,
+test/test_unified_lexicon_codebook.py:911:        self._load_and_validate(os.path.join(_DATA_DIR, "MM_20M_legacy.xml"))
+bin/Spaces.py:1222:# Legacy standalone fixture period. Complete models use the registry capacity.
+bin/Spaces.py:7041:    # Legacy alias. New code should use Start() / End() for symmetry
+bin/Spaces.py:7853:                # Legacy path: read vectors from Basis slots
+bin/Spaces.py:8777:        Legacy booleans are accepted for backward compatibility
+bin/Spaces.py:11113:        # Legacy alias: hasAttention is parsed but no longer builds QKV attention.
+bin/Spaces.py:11181:        # remain callable through Legacy.py for checkpoint/config parity, but
+bin/Spaces.py:11188:            self._legacy_synthesis_mode = None
+bin/Spaces.py:11198:            from Legacy import normalize_part_synthesis_mode
+bin/Spaces.py:11199:            self._legacy_synthesis_mode = normalize_part_synthesis_mode(
+bin/Spaces.py:11201:            self.synthesis_mode = self._legacy_synthesis_mode
+bin/Spaces.py:11234:        if self._legacy_synthesis_mode is not None:
+bin/Spaces.py:11235:            from Legacy import validate_part_synthesis
+bin/Spaces.py:11236:            validate_part_synthesis(self, self._legacy_synthesis_mode)
+bin/Spaces.py:11320:        # (``_embed_bpe_gpu``) is bit-identical to the trie path
+bin/Spaces.py:11582:        map + inverse table + codebook + byte fallback). Legacy
+bin/Spaces.py:12760:    def _embed_bpe(self, upstream_vspace):
+bin/Spaces.py:12781:                return self._embed_bpe_gpu(upstream_vspace)
+bin/Spaces.py:12784:        return self._embed_bpe_trie(upstream_vspace)
+bin/Spaces.py:12786:    def _embed_bpe_gpu(self, upstream_vspace):
+bin/Spaces.py:12798:                "PartSpace._embed_bpe_gpu: upstream subspace.what "
+bin/Spaces.py:12830:    def _embed_bpe_trie(self, upstream_vspace):
+bin/Spaces.py:12831:        """Legacy trie-walk BPE path -- the verified reference and the
+bin/Spaces.py:12863:                "PartSpace._embed_bpe: upstream subspace.what is empty. "
+bin/Spaces.py:12929:                    f"_embed_bpe: key {latin1!r} missing from frozen "
+bin/Spaces.py:13001:        """Shared tail for both _embed_bpe paths: gather codebook
+bin/Spaces.py:13129:        # mask. Clear any stale value when _embed_bpe is used directly
+bin/Spaces.py:13436:    def _embed_byte(self, upstream_vspace):
+bin/Spaces.py:13460:                "PartSpace._embed_byte: no delivered bytes and no "
+bin/Spaces.py:13514:        # and ``_embed_bpe``).
+bin/Spaces.py:13525:    def _embed_lexicon(self, upstream_vspace):
+bin/Spaces.py:13537:                "PartSpace._embed_lexicon: upstream subspace.what is "
+bin/Spaces.py:13568:    def _embed_mphf(self, upstream_vspace):
+bin/Spaces.py:13573:        ``_embed_bpe_trie`` for that word position only -- the verified
+bin/Spaces.py:13576:        Word boundary detection mirrors ``_embed_bpe_trie``'s walk
+bin/Spaces.py:13578:        contract matches ``_embed_bpe_trie`` exactly: routes through the
+bin/Spaces.py:13589:            ``_embed_bpe_trie``'s inner loop), emit each sub-token.
+bin/Spaces.py:13594:        ``_embed_bpe_trie`` for the whole batch in that case (never
+bin/Spaces.py:13602:            return self._embed_bpe_trie(upstream_vspace)
+bin/Spaces.py:13607:                "PartSpace._embed_mphf: upstream subspace.what is "
+bin/Spaces.py:13628:        # tuples per (b, word_slot). Mirrors ``_embed_bpe_trie``'s walk
+bin/Spaces.py:13714:        # ``_embed_bpe_trie``'s inner loop, scoped to one word).
+bin/Spaces.py:13717:            Mirrors ``_embed_bpe_trie._resolve``.
+bin/Spaces.py:13726:                    f"_embed_mphf OOV-fallback: key {latin1!r} missing "
+bin/Spaces.py:13755:                # ``_embed_bpe_trie``'s inner loop but scoped to this
+bin/Spaces.py:13807:        ``_embed_lexicon``); writes the embedded event + ``_embedded_input`` +
+bin/Spaces.py:13821:        if self._legacy_synthesis_mode is not None:
+bin/Spaces.py:13822:            from Legacy import embed_part_stem
+bin/Spaces.py:13824:                self, upstream_vspace, self._legacy_synthesis_mode)
+bin/Spaces.py:13966:            if self._legacy_synthesis_mode is not None:
+bin/Spaces.py:13967:                from Legacy import embed_part_stem
+bin/Spaces.py:13969:                    self, vspace, self._legacy_synthesis_mode)
+bin/Spaces.py:14009:        #     ``_embed_bpe`` itself. Only correct when there's no AR
+bin/Spaces.py:14324:                # Legacy (no stamps anywhere in the row): decode every slot.
+bin/Spaces.py:15153:        # not allocate-then-replace large W/EMA tables.  Legacy and mixing
+bin/Spaces.py:15357:        Legacy regime: returns None — the ``.event`` Codebook built by
+bin/Spaces.py:21221:        # B has completed SS work.  Legacy callers leave this false and retain
+bin/Spaces.py:23126:            from Legacy import stage_analysis_spans_legacy
+bin/Spaces.py:23191:        ``meronomy`` mode until Phase 2 and by the Legacy ``word`` /

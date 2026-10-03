@@ -1,0 +1,586 @@
+{
+  "clock": "time.perf_counter; CPU synchronous wall time",
+  "compose_scope": "sentence_pair compose callbacks, excluding separately timed restore; cached perception",
+  "backward_scope": "BasicModel._backward_training_loss; optimizer steps are in other",
+  "scoring_scope": "sentence reconstruction and row-local prediction preview",
+  "snapshot_scope": "pre-sentence scratch tensor bindings; no deep model copy",
+  "restore_scope": "scratch STM/trace publication before each compose trial",
+  "other_scope": "perception, optimizer steps, winner commits, staging, answers and batch housekeeping",
+  "epoch_tail": "excluded here; unchanged baseline throughput includes epoch tails",
+  "rows": [
+    {
+      "exploit_compose": 47.39621420693584,
+      "explore_compose": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "batch_backward": 0.0,
+      "sentence_scoring": 113.15455937501974,
+      "snapshot": 6.249174475669861e-07,
+      "restore": 0.00018483400344848633,
+      "index": 0,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 162.35724662500434,
+      "other": 1.8062875841278583,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            3.0222692657844163e-05
+          ],
+          [
+            2.5510951672913507e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 51.385561041068286,
+      "explore_compose": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "batch_backward": 0.0,
+      "sentence_scoring": 0.053818542044609785,
+      "snapshot": 7.080379873514175e-07,
+      "restore": 0.00016429182142019272,
+      "index": 1,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 51.58494299999438,
+      "other": 0.14539841702207923,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            2.7524218239705078e-05
+          ],
+          [
+            2.5510951672913507e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.2601806668099016,
+      "explore_compose": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "batch_backward": 0.0,
+      "sentence_scoring": 0.05720941605977714,
+      "snapshot": 7.080379873514175e-07,
+      "restore": 0.0001835410948842764,
+      "index": 2,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.4632081671152264,
+      "other": 0.14563383511267602,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            0.005068144295364618
+          ],
+          [
+            2.7579675588640384e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.2197087078820914,
+      "explore_compose": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "batch_backward": 0.0,
+      "sentence_scoring": 0.04844512487761676,
+      "snapshot": 4.5890919864177704e-07,
+      "restore": 0.00015829200856387615,
+      "index": 3,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.39987674984149635,
+      "other": 0.13156416616402566,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            2.8019774617860094e-05
+          ],
+          [
+            0.0214727483689785
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 104.90231312508695,
+      "explore_compose": 113.79496429208666,
+      "exploit_backward": 1.8149418330285698,
+      "explore_backward": 0.38023787504062057,
+      "batch_backward": 0.0003337920643389225,
+      "sentence_scoring": 450.38509733392857,
+      "snapshot": 7.920898497104645e-07,
+      "restore": 0.00041279103606939316,
+      "index": 4,
+      "train": true,
+      "split": "train",
+      "warmup": true,
+      "total": 674.5144355830271,
+      "other": 3.236133748665452,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            2.1508187273866497e-05,
+            0.005967104807496071
+          ],
+          [
+            2.7579675588640384e-05,
+            2.7579675588640384e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.4058357081376016,
+      "explore_compose": 0.4106499988120049,
+      "exploit_backward": 0.3677055421285331,
+      "explore_backward": 0.38920395891182125,
+      "batch_backward": 0.0003457912243902683,
+      "sentence_scoring": 0.11450366675853729,
+      "snapshot": 7.501803338527679e-07,
+      "restore": 0.00040995911695063114,
+      "index": 5,
+      "train": true,
+      "split": "train",
+      "warmup": true,
+      "total": 1.8653837500605732,
+      "other": 0.17672837479040027,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            2.181375566578936e-05,
+            2.181375566578936e-05
+          ],
+          [
+            2.2463736968347803e-05,
+            2.2474470824818127e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.33414541697129607,
+      "explore_compose": 0.34395883325487375,
+      "exploit_backward": 0.3254457078874111,
+      "explore_backward": 0.3166289159562439,
+      "batch_backward": 0.0003250839654356241,
+      "sentence_scoring": 0.10400933329947293,
+      "snapshot": 7.920898497104645e-07,
+      "restore": 0.0003989578690379858,
+      "index": 6,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 1.5777343329973519,
+      "other": 0.15282129170373082,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            2.699252581805922e-05,
+            2.699252581805922e-05
+          ],
+          [
+            4.257991531630978e-05,
+            4.257991531630978e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.4016299170907587,
+      "explore_compose": 0.41548270895145833,
+      "exploit_backward": 0.38153258292004466,
+      "explore_backward": 0.37024400010704994,
+      "batch_backward": 0.0003364579752087593,
+      "sentence_scoring": 0.11183420801535249,
+      "snapshot": 7.499475032091141e-07,
+      "restore": 0.0004042079672217369,
+      "index": 7,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 1.8450344579759985,
+      "other": 0.1635696250014007,
+      "sentence_winners": [
+        [
+          true,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            0.043544355779886246,
+            3.060018570977263e-05
+          ],
+          [
+            4.399239696795121e-05,
+            4.399239696795121e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.33452054182998836,
+      "explore_compose": 0.3346007918007672,
+      "exploit_backward": 0.3145101659465581,
+      "explore_backward": 0.31950083281844854,
+      "batch_backward": 0.000323000131174922,
+      "sentence_scoring": 0.10003512515686452,
+      "snapshot": 6.249174475669861e-07,
+      "restore": 0.0004025413654744625,
+      "index": 8,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 1.5484737909864634,
+      "other": 0.14458016701973975,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            3.2093732443172485e-05,
+            0.027579758316278458
+          ],
+          [
+            2.5141982405330054e-05,
+            2.5141982405330054e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.3361873319372535,
+      "explore_compose": 6.0348034161143005,
+      "exploit_backward": 0.32617887505330145,
+      "explore_backward": 0.33391425013542175,
+      "batch_backward": 0.0003415830433368683,
+      "sentence_scoring": 0.10554679110646248,
+      "snapshot": 6.249174475669861e-07,
+      "restore": 0.0004022088833153248,
+      "index": 9,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 7.279167999979109,
+      "other": 0.14179291878826916,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            0.014269903302192688,
+            0.014269903302192688
+          ],
+          [
+            3.457214552327059e-05,
+            3.457214552327059e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.39322175015695393,
+      "explore_compose": 0.4103732081130147,
+      "exploit_backward": 0.37657666578888893,
+      "explore_backward": 0.37557450006715953,
+      "batch_backward": 0.00033220788463950157,
+      "sentence_scoring": 0.11576679116114974,
+      "snapshot": 7.499475032091141e-07,
+      "restore": 0.00040341680869460106,
+      "index": 10,
+      "train": true,
+      "split": "train",
+      "warmup": false,
+      "total": 1.831795166945085,
+      "other": 0.15954587701708078,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            3.43411484209355e-05,
+            3.43411484209355e-05
+          ],
+          [
+            2.9070384698570706e-05,
+            2.9070384698570706e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.21840937505476177,
+      "explore_compose": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "batch_backward": 0.0,
+      "sentence_scoring": 0.04632345796562731,
+      "snapshot": 6.658956408500671e-07,
+      "restore": 0.00017012516036629677,
+      "index": 11,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.38635074999183416,
+      "other": 0.12144712591543794,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            4.0012499084696174e-05
+          ],
+          [
+            3.5042332456214353e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.26199562498368323,
+      "explore_compose": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "batch_backward": 0.0,
+      "sentence_scoring": 0.058106208918616176,
+      "snapshot": 7.08969309926033e-07,
+      "restore": 0.00016150018200278282,
+      "index": 12,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.439159041037783,
+      "other": 0.11889499798417091,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            3.66902349924203e-05
+          ],
+          [
+            3.5042332456214353e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.26552504231221974,
+      "explore_compose": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "batch_backward": 0.0,
+      "sentence_scoring": 0.05295979208312929,
+      "snapshot": 6.66128471493721e-07,
+      "restore": 0.00015866686590015888,
+      "index": 13,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.43570816703140736,
+      "other": 0.11706399964168668,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            3.855702016153373e-05
+          ],
+          [
+            4.0001901652431116e-05
+          ]
+        ]
+      ]
+    },
+    {
+      "exploit_compose": 0.21518241707235575,
+      "explore_compose": 0.0,
+      "exploit_backward": 0.0,
+      "explore_backward": 0.0,
+      "batch_backward": 0.0,
+      "sentence_scoring": 0.051002792082726955,
+      "snapshot": 8.749775588512421e-07,
+      "restore": 0.00016870792023837566,
+      "index": 14,
+      "train": false,
+      "split": "validation",
+      "warmup": false,
+      "total": 0.38188799982890487,
+      "other": 0.11553320777602494,
+      "sentence_winners": [
+        [
+          false,
+          false
+        ]
+      ],
+      "sentence_costs": [
+        [
+          [
+            4.107284621568397e-05
+          ],
+          [
+            3.6830642784480006e-05
+          ]
+        ]
+      ]
+    }
+  ],
+  "summaries": {
+    "warmup_training": {
+      "batches": 2,
+      "mean_seconds": {
+        "exploit_compose": 52.654074416612275,
+        "explore_compose": 57.10280714544933,
+        "exploit_backward": 1.0913236875785515,
+        "explore_backward": 0.3847209169762209,
+        "batch_backward": 0.0003397916443645954,
+        "sentence_scoring": 225.24980050034355,
+        "snapshot": 7.711350917816162e-07,
+        "restore": 0.00041137507651001215,
+        "other": 1.7064310617279261,
+        "total": 338.1899096665438
+      },
+      "fraction": {
+        "exploit_compose": 0.15569380667959412,
+        "explore_compose": 0.1688483467817028,
+        "exploit_backward": 0.003226955199978023,
+        "explore_backward": 0.0011375883962817129,
+        "batch_backward": 1.0047361989588361e-06,
+        "sentence_scoring": 0.6660453019501394,
+        "snapshot": 2.2801836179617466e-09,
+        "restore": 1.2164025736771067e-06,
+        "other": 0.005045777573347685
+      }
+    },
+    "warmed_training": {
+      "batches": 5,
+      "mean_seconds": {
+        "exploit_compose": 0.3599409915972501,
+        "explore_compose": 1.507843791646883,
+        "exploit_backward": 0.34484879951924086,
+        "explore_backward": 0.3431724998168647,
+        "batch_backward": 0.00033166659995913504,
+        "sentence_scoring": 0.10743844974786043,
+        "snapshot": 7.08363950252533e-07,
+        "restore": 0.0004022665787488222,
+        "other": 0.15246197590604424,
+        "total": 2.8164411497768014
+      },
+      "fraction": {
+        "exploit_compose": 0.12779993348193158,
+        "explore_compose": 0.5353720214485495,
+        "exploit_backward": 0.1224413297421711,
+        "explore_backward": 0.1218461460996835,
+        "batch_backward": 0.0001177608841517669,
+        "sentence_scoring": 0.03814688254940983,
+        "snapshot": 2.5151029706715857e-07,
+        "restore": 0.00014282797237950498,
+        "other": 0.05413284631142625
+      }
+    },
+    "evaluation": {
+      "batches": 8,
+      "mean_seconds": {
+        "exploit_compose": 12.527847135264892,
+        "explore_compose": 0.0,
+        "exploit_backward": 0.0,
+        "explore_backward": 0.0,
+        "batch_backward": 0.0,
+        "sentence_scoring": 14.190303088631481,
+        "snapshot": 6.769842002540827e-07,
+        "restore": 0.00016874488210305572,
+        "other": 0.33772791671799496,
+        "total": 27.05604756248067
+      },
+      "fraction": {
+        "exploit_compose": 0.463033157608637,
+        "explore_compose": 0.0,
+        "exploit_backward": 0.0,
+        "explore_backward": 0.0,
+        "batch_backward": 0.0,
+        "sentence_scoring": 0.5244780508262243,
+        "snapshot": 2.502154827643319e-08,
+        "restore": 6.2368637441729905e-06,
+        "other": 0.012482529679846184
+      }
+    }
+  }
+}

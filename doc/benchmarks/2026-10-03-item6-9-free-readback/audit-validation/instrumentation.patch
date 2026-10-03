@@ -1,0 +1,28 @@
+--- BasicModel._sentence_path_cost.original
++++ BasicModel._sentence_path_cost.observed
+@@ -63,4 +63,5 @@
+         cost = root.sum(-1) * 0
+     elif cost.ndim == 0:
+         cost = cost.expand(B)
++    _objective_probe.trial(self, locals())
+     return cost, reconstruction, observation, pending
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -118,6 +118,7 @@
+         trial_mode=trial_mode,
+     )
+     self._sentence_answer_questions = what_questions
++    _objective_probe.opened(self, locals())
+ 
+     # Advance the serialized model clock once per PROCESSED batch (this
+     # point is past the no-batch early raise, so it ticks exactly once on
+--- BasicModel._run_batch_once.original
++++ BasicModel._run_batch_once.observed
+@@ -939,6 +939,7 @@
+         gradient_objectives = {name: self.errors.total(objective=name)
+             for name in ('reconstruction', 'output', 'expectation')} if train else None
+ 
++        _objective_probe.batch(self, locals())
+         # Snapshot the breakdown before the backward pass so later
+         # calls to TheError.covariance() can see it in the history
+         # even if the step is aborted by a non-finite detector below.

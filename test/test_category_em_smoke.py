@@ -123,6 +123,7 @@ def _terminal_ss(model):
     return model._concept_owner()
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_codebook_enables_and_em_populates_on_real_model():
     path = _write_category_config()
     try:
@@ -149,6 +150,7 @@ def test_codebook_enables_and_em_populates_on_real_model():
         os.unlink(path)
 
 
+@pytest.mark.usefixtures('eager_reading')
 def test_mlp_chooser_sized_and_context_built():
     path = _write_category_config(mlp=True)
     try:

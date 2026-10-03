@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/separator-green/run/worker-014.recycle.json"
+}

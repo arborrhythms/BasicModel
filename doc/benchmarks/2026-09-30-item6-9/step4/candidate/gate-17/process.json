@@ -1,0 +1,11 @@
+{
+  "label": "candidate",
+  "kind": "xor",
+  "reserved_bytes": 6875586090.4,
+  "gate": 17,
+  "trial": null,
+  "exit_code": 0,
+  "peak_memory_bytes": 4900344872,
+  "reason": "exit",
+  "elapsed_seconds": 109.74681437504478
+}

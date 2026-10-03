@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient"
+  ],
+  "completed": [
+    "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.030187999999725434,
+      "message": "test/test_supplied_answer_training.py:42: in test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient\n    torch.testing.assert_close(cost, torch.tensor([36., 100.]))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 2 / 2 (100.0%)\nE   Greatest absolute difference: 100.0 at index (1,) (up to 1e-05 allowed)\nE   Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax"
+  ],
+  "completed": [
+    "test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax"
+  ],
+  "slow_selected": [
+    "test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010666693560779095,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_thinking_training.py', 153, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,20 @@
+......FF                                                                 [100%]
+=================================== FAILURES ===================================
+________ test_disabled_sentence_prediction_leaves_adam_momentum_unused _________
+test/test_sentence_compose.py:223: in test_disabled_sentence_prediction_leaves_adam_momentum_unused
+    cost, *_ = BasicModel._sentence_path_cost(
+bin/Models.py:20922: in _sentence_path_cost
+    prediction_errors, contrast_errors = disc._sentence_prediction_errors
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute '_sentence_prediction_errors'. Did you mean: 'sentence_prediction_cost'?
+_______ test_legacy_event_reporting_does_not_zero_the_sentence_objective _______
+test/test_sentence_compose.py:252: in test_legacy_event_reporting_does_not_zero_the_sentence_objective
+    assert model._d3_active and not model.reconstruct_in_loop
+E   assert (False)
+E    +  where False = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...es=29, out_features=16, bias=False)\n  )\n  (question_conditioner): Linear(in_features=29, out_features=16, bias=False)\n)._d3_active
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused
+FAILED test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective
+2 failed, 6 passed in 141.51s (0:02:21)

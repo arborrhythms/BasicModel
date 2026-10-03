@@ -1,0 +1,17 @@
+{
+  "config": "data/MM_phrase_decode.xml",
+  "seed": null,
+  "backend": "none",
+  "measurement": "one first training batch at configured batch; no graph capture or evaluation",
+  "guard_gib": 8,
+  "build_seconds": 6.401579708006466,
+  "batch": 12,
+  "scope": "understanding",
+  "reconstruct_in_loop": true,
+  "training_seconds": 7.260372208998888,
+  "output_loss": 0.08285548537969589,
+  "reconstruction_loss": 0.30970320105552673,
+  "completed": true,
+  "missing_surface_sentences_at_last_boundary": 0,
+  "total_seconds": 13.662812166992808
+}

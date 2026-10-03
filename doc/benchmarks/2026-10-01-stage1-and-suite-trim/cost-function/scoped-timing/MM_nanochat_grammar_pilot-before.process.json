@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped_timing.py",
+    "--child",
+    "--source",
+    "/Users/arogers/github/WikiOracle/basicmodel/tmp/scoped-reconstruction-price",
+    "--config",
+    "data/MM_nanochat_grammar_pilot.xml",
+    "--arm",
+    "before",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped-timing/MM_nanochat_grammar_pilot-before.json"
+  ],
+  "pid": 12276,
+  "exit_code": 137,
+  "reason": "memory",
+  "peak_memory_bytes": 9038617920,
+  "elapsed_seconds": 13.686678375001065,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/scoped-timing/MM_nanochat_grammar_pilot-before.log"
+}

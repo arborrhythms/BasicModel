@@ -10,10 +10,10 @@ def test_explicit_training_device_is_preserved(tmp_path, monkeypatch, device):
     assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == device
 
 
-def test_slow_training_defaults_to_a_required_accelerator(tmp_path, monkeypatch):
+def test_slow_selection_alone_keeps_the_calibrated_cpu_device(tmp_path, monkeypatch):
     monkeypatch.delenv('BASICMODEL_DEVICE', raising=False)
     monkeypatch.setenv('RUN_SLOW', '1')
-    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == 'gpu'
+    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == 'cpu'
 
 
 def test_quick_suite_retains_its_cpu_default(tmp_path, monkeypatch):
@@ -22,24 +22,24 @@ def test_quick_suite_retains_its_cpu_default(tmp_path, monkeypatch):
     assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == 'cpu'
 
 
-def test_all_dispatches_slow_training_to_gpu_and_ordinary_checks_to_cpu(tmp_path, monkeypatch):
+def test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu(tmp_path, monkeypatch):
     import torch
     if not (torch.cuda.is_available() or torch.backends.mps.is_available()):
         pytest.skip('real accelerator required for the mixed-device integration')
     monkeypatch.delenv('BASICMODEL_DEVICE', raising=False)
     monkeypatch.setenv('RUN_SLOW', '1')
     monkeypatch.delenv('PYTEST_PLUGINS', raising=False)
-    (tmp_path / 'pytest.ini').write_text('[pytest]\nmarkers =\n    slow: substantial training\n')
+    (tmp_path / 'pytest.ini').write_text('[pytest]\nmarkers =\n    slow: substantial training\n    device(name): explicit worker device\n')
     (tmp_path / 'test_small.py').write_text(
-        "import os\nfrom pathlib import Path\n"
+        "import os,pytest\nfrom pathlib import Path\n"
         "def check(name):\n"
         " assert os.environ['BASICMODEL_DEVICE'] == 'cpu'\n"
         " with Path('devices').open('a') as f: f.write(name+':cpu\\n')\n"
-        "def test_before(): check('before')\n"
+        "@pytest.mark.slow\ndef test_before(): check('before')\n"
         "def test_after(): check('after')\n")
     (tmp_path / 'test_training.py').write_text(
         "import os,pytest\nfrom pathlib import Path\n"
-        "@pytest.mark.slow\ndef test_training():\n"
+        "@pytest.mark.slow\n@pytest.mark.device('gpu')\ndef test_training():\n"
         " import torch\n"
         " device=os.environ['BASICMODEL_DEVICE']\n"
         " assert device == 'mps' or device.startswith('cuda')\n"
@@ -70,10 +70,10 @@ def test_parallel_pool_keeps_one_accelerator_training_lane(tmp_path, monkeypatch
     monkeypatch.delenv('BASICMODEL_DEVICE', raising=False)
     monkeypatch.setenv('RUN_SLOW', '1')
     monkeypatch.delenv('PYTEST_PLUGINS', raising=False)
-    (tmp_path / 'pytest.ini').write_text('[pytest]\nmarkers =\n    slow: substantial training\n')
+    (tmp_path / 'pytest.ini').write_text('[pytest]\nmarkers =\n    slow: substantial training\n    device(name): explicit worker device\n')
     (tmp_path / 'test_training.py').write_text(
         "import os,time,pytest\nfrom pathlib import Path\n"
-        "@pytest.mark.slow\n@pytest.mark.parametrize('case',range(2))\n"
+        "@pytest.mark.slow\n@pytest.mark.device('gpu')\n@pytest.mark.parametrize('case',range(2))\n"
         "def test_training(case):\n"
         " import torch\n"
         " device=os.environ['BASICMODEL_DEVICE']\n"

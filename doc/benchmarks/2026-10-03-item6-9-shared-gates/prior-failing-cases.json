@@ -1,0 +1,206 @@
+[
+  {
+    "nodeid": "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.9907825420086738,
+      "message": "test/test_byte_reconstruction.py:53: in test_compiled_byte_reconstruction_handles_lookahead_and_nul\n    torch.testing.assert_close(actual, expected)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 1 / 2 (50.0%)\nE   Greatest absolute difference: 4.605203866958618e-05 at index (1,) (up to 1e-05 allowed)\nE   Greatest relative difference: 0.0006995004368945956 at index (1,) (up to 1.3e-06 allowed)",
+      "stdout": "",
+      "scope": "full sweep",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-060.log"
+    },
+    "prior_classification": "New numerical compiled/eager parity regression; unwaived"
+  },
+  {
+    "nodeid": "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.041953957988880575,
+      "message": "test/test_concept_memberships.py:195: in test_feature_growth_preserves_frozen_rows_and_optimizer_moments\n    moment = optimizer.state[old]['exp_avg'].clone()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   KeyError: 'exp_avg'",
+      "stdout": "",
+      "scope": "full sweep",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-112.log"
+    },
+    "prior_classification": "Remaining optimizer-state observer port; unwaived"
+  },
+  {
+    "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.2611258329998236,
+      "message": "test/test_grammar_word_learning.py:189: in test_normal_text_reconstruction_updates_the_grammar_chooser\n    assert any(name.startswith(\"mlp.\") for name in changed)\nE   assert False\nE    +  where False = any(<generator object test_normal_text_reconstruction_updates_the_grammar_chooser.<locals>.<genexpr> at 0x1263a52f0>)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n",
+      "scope": "full sweep",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-283.log"
+    },
+    "prior_classification": "New one-batch chooser-displacement failure; unwaived"
+  },
+  {
+    "nodeid": "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 61.61679383300361,
+      "message": "test/test_output_path_supervised.py:134: in test_output_path_memorizes_supervised_labels_on_the_serial_topology\n    assert _memorize(m, epochs=40, lr=1e-3) >= 1.0\nE   assert 0.96875 >= 1.0\nE    +  where 0.96875 = _memorize(BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...=29, out_features=136, bias=False)\\n  )\\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\\n), epochs=40, lr=0.001)",
+      "stdout": " of 16).\r\nbatch = 0 (\u0394=1.951s, 100.00%)\r\nTraining throughput: 1 batches in 1.464s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.469s, 100.00%)\r\nTraining throughput: 1 batches in 1.467s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.468s, 100.00%)\r\nTraining throughput: 1 batches in 1.465s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.547s, 100.00%)\r\nTraining throughput: 1 batches in 1.545s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.453s, 100.00%)\r\nTraining throughput: 1 batches in 1.452s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.444s, 100.00%)\r\nTraining throughput: 1 batches in 1.442s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.477s, 100.00%)\r\nTraining throughput: 1 batches in 1.475s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.557s, 100.00%)\r\nTraining throughput: 1 batches in 1.555s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.451s, 100.00%)\r\nTraining throughput: 1 batches in 1.449s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.458s, 100.00%)\r\nTraining throughput: 1 batches in 1.456s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.942s, 100.00%)\r\nTraining throughput: 1 batches in 1.442s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.468s, 100.00%)\r\nTraining throughput: 1 batches in 1.467s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.458s, 100.00%)\r\nTraining throughput: 1 batches in 1.456s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.550s, 100.00%)\r\nTraining throughput: 1 batches in 1.548s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.360s, 100.00%)\r\nTraining throughput: 1 batches in 1.358s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.429s, 100.00%)\r\nTraining throughput: 1 batches in 1.427s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.439s, 100.00%)\r\nTraining throughput: 1 batches in 1.439s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.543s, 100.00%)\r\nTraining throughput: 1 batches in 1.538s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.374s, 100.00%)\r\nTraining throughput: 1 batches in 1.374s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.464s, 100.00%)\r\nTraining throughput: 1 batches in 1.462s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.970s, 100.00%)\r\nTraining throughput: 1 batches in 1.466s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.379s, 100.00%)\r\nTraining throughput: 1 batches in 1.376s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.510s, 100.00%)\r\nTraining throughput: 1 batches in 1.510s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.434s, 100.00%)\r\nTraining throughput: 1 batches in 1.432s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.450s, 100.00%)\r\nTraining throughput: 1 batches in 1.449s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.392s, 100.00%)\r\nTraining throughput: 1 batches in 1.388s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.430s, 100.00%)\r\nTraining throughput: 1 batches in 1.430s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.533s, 100.00%)\r\nTraining throughput: 1 batches in 1.531s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.459s, 100.00%)\r\nTraining throughput: 1 batches in 1.458s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\nbatch = 0 (\u0394=1.490s, 100.00%)\r\nTraining throughput: 1 batches in 1.489s; word units 100.0% of 16 words (letters-only 100.0% of 16).\r\n",
+      "scope": "moved cases"
+    },
+    "prior_classification": "Persistent unseeded learning shortfall; unwaived"
+  },
+  {
+    "nodeid": "test/test_partspace_dynamic_capacity.py::test_checkpoint_restores_fixed_owner_and_optimizer_by_name",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_checkpoint_restores_fixed_owner_and_optimizer_by_name",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.1254090830043424,
+      "message": "test/test_partspace_dynamic_capacity.py:273: in test_checkpoint_restores_fixed_owner_and_optimizer_by_name\n    assert tuple(restored_optimizer.state[restored_w][\"exp_avg\"].shape) \\\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   KeyError: 'exp_avg'",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1329/test_checkpoint_restores_fixed0/grown.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1329/test_checkpoint_restores_fixed0/grown.ckpt\r\n[BasicModel] optimizer checkpoint remapped by parameter name: restored 1 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)\r\n",
+      "scope": "full sweep",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-487.log"
+    },
+    "prior_classification": "Remaining checkpoint optimizer-state observer port; unwaived"
+  },
+  {
+    "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.38183558301534504,
+      "message": "test/test_prepared_answer_boundary.py:80: in test_prepared_answer_generates_more_words_than_the_captured_input\n    assert lengths.tolist() == [4, 1]\nE   assert [0, 1] == [4, 1]\nE     \nE     At index 0 diff: 0 != 4\nE     Use -v to get more diff",
+      "stdout": "",
+      "scope": "full sweep",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-525.log"
+    },
+    "prior_classification": "New production regression: input search also changes answer generation; unwaived"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5710032500210218,
+      "message": "test/test_output_walk.py:641: in test_output_rule_inventory_comes_from_generate_even_without_compose_rule\n    assert count.tolist() == [live + 1]\nE   assert [0] == [3]\nE     \nE     At index 0 diff: 0 != 3\nE     Use -v to get more diff",
+      "stdout": "",
+      "scope": "full sweep",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-470.log"
+    },
+    "prior_classification": "New production regression: input search also changes answer generation; unwaived"
+  },
+  {
+    "nodeid": "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0004848340176977217,
+      "message": "test/test_reasoning.py:208: in test_agreeing_proposition_low_penalty\n    self.assertAlmostEqual(penalty.item(), 0.0, places=4)\nE   AssertionError: 0.28284263610839844 != 0.0 within 4 places (0.28284263610839844 difference)",
+      "stdout": "",
+      "scope": "full sweep",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-572.log"
+    },
+    "prior_classification": "New production regression: grammatical mean changes truth union; unwaived"
+  },
+  {
+    "nodeid": "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+    "scope": "full sweep",
+    "report": {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00038766697980463505,
+      "message": "test/test_reasoning.py:229: in test_unknown_proposition_zero_penalty\n    self.assertAlmostEqual(penalty.item(), 0.0, places=4)\nE   AssertionError: 0.7071067690849304 != 0.0 within 4 places (0.7071067690849304 difference)",
+      "stdout": "",
+      "scope": "full sweep",
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/full-sweep/part-00/worker-572.log"
+    },
+    "prior_classification": "New production regression: grammatical mean changes truth union; unwaived"
+  },
+  {
+    "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 218.6754308330128,
+      "message": "test/test_reconstruction_roundtrip.py:459: in test_mm20m_grammar_free_derivation_roundtrip\n    assert rec.exact_match_rate == 1.0\nE   AssertionError: assert 0.0 == 1.0\nE    +  where 0.0 = RunRecord(config='data/MM_ladder.xml', seed=109570816, epochs=3, wall_s_per_epoch=70.89063804202306, output_loss=0.037...e in ModelLoss and not exposed on the model', 'epoch_times_s': [71.4959544169833, 70.31837070902111, 71.462905375025]}).exact_match_rate",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 12.50%)\r\nbatch = 8 (\u0394=2.260s, 15.62%)\r\nbatch = 16 (\u0394=2.296s, 18.75%)\r\nbatch = 24 (\u0394=2.236s, 21.88%)\r\nbatch = 32 (\u0394=2.142s, 25.00%)\r\nbatch = 40 (\u0394=2.196s, 28.12%)\r\nbatch = 48 (\u0394=2.219s, 31.25%)\r\nbatch = 56 (\u0394=2.191s, 34.38%)\r\nbatch = 64 (\u0394=2.112s, 37.50%)\r\nbatch = 72 (\u0394=2.279s, 40.62%)\r\nbatch = 80 (\u0394=2.171s, 43.75%)\r\nbatch = 88 (\u0394=2.146s, 46.88%)\r\nbatch = 96 (\u0394=2.262s, 50.00%)\r\nbatch = 104 (\u0394=2.150s, 53.12%)\r\nbatch = 112 (\u0394=2.329s, 56.25%)\r\nbatch = 120 (\u0394=2.119s, 59.38%)\r\nbatch = 128 (\u0394=2.237s, 62.50%)\r\nbatch = 136 (\u0394=2.188s, 65.62%)\r\nbatch = 144 (\u0394=2.232s, 68.75%)\r\nbatch = 152 (\u0394=2.170s, 71.88%)\r\nbatch = 160 (\u0394=2.259s, 75.00%)\r\nbatch = 168 (\u0394=2.200s, 78.12%)\r\nbatch = 176 (\u0394=2.231s, 81.25%)\r\nbatch = 184 (\u0394=2.213s, 84.38%)\r\nbatch = 192 (\u0394=2.233s, 87.50%)\r\nbatch = 200 (\u0394=2.316s, 90.62%)\r\nbatch = 208 (\u0394=2.213s, 93.75%)\r\nbatch = 216 (\u0394=2.154s, 96.88%)\r\nbatch = 224 (\u0394=2.186s, 100.00%)\r\nbatch = 232 (\u0394=2.245s, 100.00%)\r\nbatch = 240 (\u0394=2.354s, 100.00%)\r\nbatch = 248 (\u0394=2.229s, 100.00%)\r\nTraining throughput: 32 batches in 71.495s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=2.224s, 12.50%)\r\nbatch = 8 (\u0394=2.229s, 15.62%)\r\nbatch = 16 (\u0394=2.235s, 18.75%)\r\nbatch = 24 (\u0394=2.219s, 21.88%)\r\nbatch = 32 (\u0394=2.266s, 25.00%)\r\nbatch = 40 (\u0394=2.099s, 28.12%)\r\nbatch = 48 (\u0394=2.201s, 31.25%)\r\nbatch = 56 (\u0394=2.165s, 34.38%)\r\nbatch = 64 (\u0394=2.171s, 37.50%)\r\nbatch = 72 (\u0394=2.287s, 40.62%)\r\nbatch = 80 (\u0394=2.143s, 43.75%)\r\nbatch = 88 (\u0394=2.194s, 46.88%)\r\nbatch = 96 (\u0394=2.178s, 50.00%)\r\nbatch = 104 (\u0394=2.124s, 53.12%)\r\nbatch = 112 (\u0394=2.307s, 56.25%)\r\nbatch = 120 (\u0394=2.184s, 59.38%)\r\nbatch = 128 (\u0394=2.205s, 62.50%)\r\nbatch = 136 (\u0394=2.213s, 65.62%)\r\nbatch = 144 (\u0394=2.224s, 68.75%)\r\nbatch = 152 (\u0394=2.188s, 71.88%)\r\nbatch = 160 (\u0394=2.278s, 75.00%)\r\nbatch = 168 (\u0394=2.208s, 78.12%)\r\nbatch = 176 (\u0394=2.215s, 81.25%)\r\nbatch = 184 (\u0394=2.215s, 84.38%)\r\nbatch = 192 (\u0394=2.176s, 87.50%)\r\nbatch = 200 (\u0394=2.234s, 90.62%)\r\nbatch = 208 (\u0394=2.131s, 93.75%)\r\nbatch = 216 (\u0394=2.160s, 96.88%)\r\nbatch = 224 (\u0394=2.159s, 100.00%)\r\nbatch = 232 (\u0394=2.179s, 100.00%)\r\nbatch = 240 (\u0394=2.154s, 100.00%)\r\nbatch = 248 (\u0394=2.161s, 100.00%)\r\nTraining throughput: 32 batches in 70.317s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=2.125s, 12.50%)\r\nbatch = 8 (\u0394=2.146s, 15.62%)\r\nbatch = 16 (\u0394=2.153s, 18.75%)\r\nbatch = 24 (\u0394=2.151s, 21.88%)\r\nbatch = 32 (\u0394=2.220s, 25.00%)\r\nbatch = 40 (\u0394=2.137s, 28.12%)\r\nbatch = 48 (\u0394=2.194s, 31.25%)\r\nbatch = 56 (\u0394=2.130s, 34.38%)\r\nbatch = 64 (\u0394=2.086s, 37.50%)\r\nbatch = 72 (\u0394=2.194s, 40.62%)\r\nbatch = 80 (\u0394=2.264s, 43.75%)\r\nbatch = 88 (\u0394=2.155s, 46.88%)\r\nbatch = 96 (\u0394=2.110s, 50.00%)\r\nbatch = 104 (\u0394=2.257s, 53.12%)\r\nbatch = 112 (\u0394=2.278s, 56.25%)\r\nbatch = 120 (\u0394=2.261s, 59.38%)\r\nbatch = 128 (\u0394=2.083s, 62.50%)\r\nbatch = 136 (\u0394=2.165s, 65.62%)\r\nbatch = 144 (\u0394=2.174s, 68.75%)\r\nbatch = 152 (\u0394=2.151s, 71.88%)\r\nbatch = 160 (\u0394=2.094s, 75.00%)\r\nbatch = 168 (\u0394=2.441s, 78.12%)\r\nbatch = 176 (\u0394=2.362s, 81.25%)\r\nbatch = 184 (\u0394=2.556s, 84.38%)\r\nbatch = 192 (\u0394=2.212s, 87.50%)\r\nbatch = 200 (\u0394=2.287s, 90.62%)\r\nbatch = 208 (\u0394=2.141s, 93.75%)\r\nbatch = 216 (\u0394=2.170s, 96.88%)\r\nbatch = 224 (\u0394=2.263s, 100.00%)\r\nbatch = 232 (\u0394=2.486s, 100.00%)\r\nbatch = 240 (\u0394=2.523s, 100.00%)\r\nbatch = 248 (\u0394=2.492s, 100.00%)\r\nTraining throughput: 32 batches in 71.462s; word units 87.5% of 768 words (letters-only 100.0% of 256).\r\nbatch = 0 (\u0394=4.972s, 100.00%)\r\nTraining throughput: 1 batches in 5.108s; word units 86.5% of 192 words (letters-only 100.0% of 64).\r\n",
+      "scope": "moved cases"
+    },
+    "prior_classification": "Persistent free-derivation learning/recovery gap; unwaived"
+  },
+  {
+    "nodeid": "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 12.666620665986557,
+      "message": "test/test_reverse_traversal.py:138: in test_byte_fidelity_is_zero_on_the_row_and_positive_off_it\n    assert max(own) < 1e-2\nE   assert 0.015291638672351837 < 0.01\nE    +  where 0.015291638672351837 = max([0.0007758690626360476, 0.001756995334289968, 0.015291638672351837, 0.0015879955608397722, 0.015291638672351837, 0.0007758690626360476])",
+      "stdout": "",
+      "scope": "moved cases"
+    },
+    "prior_classification": "Remaining direct-scorer fixture contract; unwaived"
+  },
+  {
+    "nodeid": "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 12.777164792001713,
+      "message": "test/test_reverse_traversal.py:533: in test_closing_chain_of_chunks_unwinds_to_the_words\n    assert torch.allclose(rec[:, w], want, atol=1e-4), (w, float((rec[:, w] - want).abs().max()))\nE   AssertionError: (0, 3.091318130493164)\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10c6953a0>(tensor([[ 1.5004e-02,  4.1727e-02,  1.1300e-01, -7.9466e-02,  1.0458e-01,\\n          9.2496e-02,  5.0956e-02,  7.6502e-...    -9.9166e-03, -1.4093e-02,  4.4341e-02, -8.9732e-02,  1.6500e-01,\\n          6.0469e-02]], grad_fn=<SelectBackward0>), tensor([[-0.0766,  0.3599, -0.7820,  0.0715,  0.6648, -0.2868,  1.6206, -1.5967,\\n         -0.0517, -0.3060,  0.2485, -... -0.4297, -0.0442, -0.4147,  1.7669,\\n          0.4896, -0.1952,  0.1624, -0.5749,  0.0158, -3.1811,  0.2042, -1.3905]]), atol=0.0001)\nE    +    where <built-in method allclose of type object at 0x10c6953a0> = torch.allclose",
+      "stdout": "",
+      "scope": "moved cases"
+    },
+    "prior_classification": "Remaining synthetic inverse fixture port; unwaived"
+  },
+  {
+    "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.20086237500072457,
+      "message": "test/test_sparse_concept_e2e.py:302: in test_two_phase_forward_cutover_stamps_terminal_activations\n    assert acts[start0:end0].count_nonzero() == 0\nE   assert tensor(8) == 0\nE    +  where tensor(8) = <built-in method count_nonzero of Tensor object at 0x1231ec820>()\nE    +    where <built-in method count_nonzero of Tensor object at 0x1231ec820> = tensor([[[[0., 0.]],\\n\\n         [[1., 1.]],\\n\\n         [[1., 1.]],\\n\\n         [[1., 1.]]],\\n\\n\\n        [[[0., 0.]],\\n\\n      ...],\\n\\n\\n        [[[0., 0.]],\\n\\n         [[0., 0.]],\\n\\n         [[0., 0.]],\\n\\n         [[0., 0.]]]], grad_fn=<SliceBackward0>).count_nonzero",
+      "stdout": "",
+      "scope": "moved cases"
+    },
+    "prior_classification": "Incomplete terminal-field observer port; unwaived"
+  },
+  {
+    "nodeid": "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "scope": "extra slow cases",
+    "report": {
+      "nodeid": "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.37093479197937995,
+      "message": "test/test_word_store.py:550: in test_reverse_chooser_picks_fold_op_by_roundtrip\n    assert got == {tuple(W[r1].tolist()), tuple(W[r2].tolist())}\nE   assert {(0.032511834...6077576, ...)} == {(0.032511834...6077576, ...)}\nE     \nE     Extra items in the right set:\nE     (0.03251183405518532, 0.0028807956259697676, 0.01345168985426426, 0.028815440833568573, 0.0, 0.051028355956077576, ...)\nE     Use -v to get more diff",
+      "stdout": "",
+      "scope": "moved cases"
+    },
+    "prior_classification": "Remaining operator fixture port; unwaived"
+  }
+]

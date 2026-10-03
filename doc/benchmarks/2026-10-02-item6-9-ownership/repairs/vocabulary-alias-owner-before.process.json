@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_objective_ownership.py::test_answer_vocabulary_alias_keeps_perceptual_owner"
+  ],
+  "pid": 24314,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 433276224,
+  "elapsed_seconds": 3.8535507500055246,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/vocabulary-alias-owner-before.log"
+}

@@ -1,0 +1,234 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-001.json"
+      ],
+      "pid": 57465,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 258294768,
+      "elapsed_seconds": 2.406197916949168,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.4347291658632457,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-000.json"
+      ],
+      "pid": 57464,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 666125824,
+      "elapsed_seconds": 5.2641481251921505,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+        "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+        "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+        "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+      ],
+      "completed": [
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+        "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+        "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+        "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.7588167500216514,
+          "message": "",
+          "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.29093299992382526,
+          "message": "",
+          "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n  Building span table: 0/4 docs\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.127s)\r\n"
+        },
+        {
+          "nodeid": "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00012595904991030693,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.0010123748797923326,
+          "message": "test/test_sentence_compose.py:55: in test_sentence_winners_are_row_local_and_precede_the_next_perception\n    assert updates[1] > updates[0] and updates[3] > updates[2]\nE   assert (0.0 > 0.0)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-003.json"
+      ],
+      "pid": 57479,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 610698728,
+      "elapsed_seconds": 4.625127375125885,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.3497574999928474,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-002.json"
+      ],
+      "pid": 57466,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1824361376,
+      "elapsed_seconds": 236.46568254102021,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 231.1106827079784,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 25769803776,
+    "aggregate_memory_bytes": 25769803776,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 10,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run",
+  "elapsed_seconds": 238.6609497498721,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 1824361376,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/collect.json"
+    ],
+    "pid": 57457,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180863792,
+    "elapsed_seconds": 1.7743335000704974,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+        "doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+        "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+        "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+        "test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted",
+        "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

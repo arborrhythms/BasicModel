@@ -1,0 +1,14 @@
+{
+  "cause": "Variant MODEL_COMPILE=none inherited by final MM jobs; accepted MM measurements use eager.",
+  "incomplete_attempts": 3,
+  "completed_attempts": 0,
+  "partial_epochs": [
+    800,
+    500,
+    300
+  ],
+  "candidate_changed": false,
+  "variant_results_affected": false,
+  "statistical_failures_retried": false,
+  "repair": "Override MM dispatch to eager; log dispatch environment; retain all original 30 variant results."
+}

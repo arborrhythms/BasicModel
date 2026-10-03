@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_decode_exemplars.py::test_mm_phrase_decode_builds_and_wires_idea_decode"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-690.recycle.json"
+}

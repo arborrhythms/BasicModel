@@ -101,10 +101,3 @@ class TestInsertIdea(unittest.TestCase):
         first = _write_point(store, torch.ones(store.nDim))
         second = _write_point(store, torch.ones(store.nDim))
         self.assertNotEqual(int(store.row_ids[first]), int(store.row_ids[second]))
-
-
-def test_wholespace_has_no_meta_decode_or_persisted_taxonomy():
-    from Spaces import WholeSpace
-    for name in ('insert_percept', 'insert_whole', 'insert_meta', 'reverse_decode',
-                 'taxonomy_parent', 'taxonomy_children'):
-        assert not hasattr(WholeSpace, name)

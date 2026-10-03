@@ -1,0 +1,17 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
+    "test/test_doc_links.py",
+    "--tb=short"
+  ],
+  "pid": 88997,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 432882984,
+  "elapsed_seconds": 4.416282791993581,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/last-port-check/output.log"
+}

@@ -1,0 +1,29 @@
+...............s..ssssssssssss.........................................s [ 66%]
+s.........FF........................                                     [100%]
+=================================== FAILURES ===================================
+___ TestRuntimeSplitIngestion.test_store_truths_idempotent_clear_then_record ___
+test/test_runtime_split_ingestion.py:109: in test_store_truths_idempotent_clear_then_record
+    torch.testing.assert_close(store.c_plus[rows], torch.zeros(1))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 1 (100.0%)
+E   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)
+__________ TestRuntimeSplitIngestion.test_store_truths_records_truths __________
+test/test_runtime_split_ingestion.py:97: in test_store_truths_records_truths
+    torch.testing.assert_close(store.c_plus[rows], torch.zeros(2))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 2 (100.0%)
+E   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record
+FAILED test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths
+2 failed, 91 passed, 15 skipped, 1 warning in 6.60s

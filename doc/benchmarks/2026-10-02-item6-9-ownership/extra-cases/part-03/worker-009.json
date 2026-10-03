@@ -1,0 +1,58 @@
+{
+  "exit_code": 125,
+  "selected": [
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+    "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+    "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+    "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+    "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+  ],
+  "completed": [
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+    "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic"
+  ],
+  "slow_selected": [
+    "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+    "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+    "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+    "test/test_reading_attention.py::test_producer_writes_teacher_scope_and_registers_loss",
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+    "test/test_reading_attention.py::test_producer_scope_clears_past_last_word",
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reading_attention.py::test_reading_attention_on_builds_producer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.1776897920062765,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_reading_attention_off_has_no_module",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.15856124999118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 6.239292875005049,
+      "message": "test/test_reading_attention.py:308: in test_forward_is_finite_and_deterministic\n    assert torch.equal(out1, out2), \"the eval forward must be deterministic\"\nE   AssertionError: the eval forward must be deterministic\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10ced53a0>(tensor([[[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]]]), tensor([[[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.5000]],\\n\\n        [[0.4999]]]))\nE    +    where <built-in method equal of type object at 0x10ced53a0> = torch.equal",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+  "device": "cpu"
+}

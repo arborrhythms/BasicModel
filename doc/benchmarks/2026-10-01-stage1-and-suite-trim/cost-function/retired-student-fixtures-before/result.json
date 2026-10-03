@@ -1,0 +1,195 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite",
+    "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name",
+    "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+    "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite",
+    "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name",
+    "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-000.json"
+      ],
+      "pid": 89673,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 433227024,
+      "elapsed_seconds": 3.7534818749991246,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root"
+      ],
+      "completed": [
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.012263208998774644,
+          "message": "test/test_compiled_word_chunk.py:939: in test_tiny_canonical_detached_reverse_stops_at_root\n    model = _tiny_canonical_model(\ntest/test_compiled_word_chunk.py:393: in _tiny_canonical_model\n    init_config(\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-350/test_tiny_canonical_detached_r0/tiny_chunk_model.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-350/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:70: element detachedReverse: Schemas validity error : Element 'detachedReverse': The actual value 'true' does not match the fixed value constraint 'false'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-350/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:71: element reconstructInLoop: Schemas validity error : Element 'reconstructInLoop': The actual value 'false' does not match the fixed value constraint 'true'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-350/test_tiny_canonical_detached_r0/tiny_chunk_model.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-001.json"
+      ],
+      "pid": 89689,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 433063160,
+      "elapsed_seconds": 3.8014153749973048,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite"
+      ],
+      "completed": [
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.012204708000354003,
+          "message": "test/test_compiled_word_chunk.py:966: in test_tiny_canonical_detached_reverse_train_step_is_finite\n    model = _tiny_canonical_model(tmp_path, monkeypatch, detached_reverse=True)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_compiled_word_chunk.py:393: in _tiny_canonical_model\n    init_config(\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:70: element detachedReverse: Schemas validity error : Element 'detachedReverse': The actual value 'true' does not match the fixed value constraint 'false'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml:71: element reconstructInLoop: Schemas validity error : Element 'reconstructInLoop': The actual value 'false' does not match the fixed value constraint 'true'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-351/test_tiny_canonical_detached_r0/tiny_chunk_model.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-002.json"
+      ],
+      "pid": 89700,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 437486888,
+      "elapsed_seconds": 3.7945690420019673,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name"
+      ],
+      "completed": [
+        "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.023604290996445343,
+          "message": "test/test_tied_reconstruction_objective.py:69: in test_student_checkpoint_migrates_shared_weights_and_adam_by_name\n    legacy = _build_ladder_variant(tmp_path, \"old_student\", [\ntest/test_meronomy_ladder.py:480: in _build_ladder_variant\n    init_config(path=str(config), defaults_path=str(_DATA / \"model.xml\"))\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml:111: element detachedReverse: Schemas validity error : Element 'detachedReverse': The actual value 'true' does not match the fixed value constraint 'false'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-003.json"
+      ],
+      "pid": 89716,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 434898240,
+      "elapsed_seconds": 3.7934104580053827,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective"
+      ],
+      "completed": [
+        "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.02275358300539665,
+          "message": "test/test_sentence_compose.py:234: in test_legacy_event_reporting_does_not_zero_the_sentence_objective\n    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',\ntest/test_compiled_word_chunk.py:393: in _tiny_canonical_model\n    init_config(\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-353/test_legacy_event_reporting_do0/tiny_chunk_model.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-353/test_legacy_event_reporting_do0/tiny_chunk_model.xml:71: element reconstructInLoop: Schemas validity error : Element 'reconstructInLoop': The actual value 'false' does not match the fixed value constraint 'true'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-353/test_legacy_event_reporting_do0/tiny_chunk_model.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 3600,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before",
+  "elapsed_seconds": 19.425545999998576,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 437486888,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/collect.json"
+    ],
+    "pid": 89660,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 429573320,
+    "elapsed_seconds": 3.799119832998258,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/retired-student-fixtures-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_stops_at_root",
+        "test/test_compiled_word_chunk.py::test_tiny_canonical_detached_reverse_train_step_is_finite",
+        "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name",
+        "test/test_sentence_compose.py::test_legacy_event_reporting_does_not_zero_the_sentence_objective"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

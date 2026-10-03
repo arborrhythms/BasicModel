@@ -6,8 +6,8 @@ Covers the relocation from `BaseModel`:
   * `Luminosity` — totalArea − pairwise(overlap × DoT_disagreement)
   * `Ops.hyperrectangle_volume` / `Ops.hyperrectangle_overlap_volume`
 
-Also re-asserts retained Phase 1b utilities (`CopyLayer`,
-`_gaussian_kernel_overlap`, `ste_answer`) that survived the revert.
+Also exercises `_gaussian_kernel_overlap` and `ste_answer`; parked grammar
+class tests live in Legacy.py.
 """
 
 from __future__ import annotations
@@ -22,9 +22,7 @@ import torch
 _project = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_project / "bin"))
 
-from Legacy import CopyLayer, SwapLayer  # noqa: E402  (parked 2026-07-17)
 from Layers import (  # noqa: E402
-    GRAMMAR_LAYER_CLASSES,
     Ops,
     _DEFAULT_SUBSYMBOLIC_SIGMA,
     _gaussian_kernel_overlap,
@@ -205,39 +203,6 @@ class TestLuminosity(unittest.TestCase):
 # Retained Phase 1b utilities
 # ---------------------------------------------------------------------------
 
-class TestCopyLayer(unittest.TestCase):
-    def test_copy_layer_forward_returns_left(self):
-        layer = CopyLayer()
-        a = torch.tensor([[1.0, 2.0]])
-        b = torch.tensor([[3.0, 4.0]])
-        self.assertTrue(torch.equal(layer.forward(a, b), a))
-
-    def test_copy_layer_reverse_pseudo_inverse(self):
-        layer = CopyLayer()
-        parent = torch.tensor([[1.0, 2.0]])
-        left, right = layer.reverse(parent)
-        self.assertTrue(torch.equal(left, parent))
-        self.assertTrue(torch.equal(right, parent))
-
-    def test_copy_layer_parked_in_legacy(self):
-        # 'copy' was parked in bin/Legacy.py (2026-07-17): a retained
-        # utility, but dispatched by no live grammar, so it is no longer
-        # in the live registry.
-        self.assertNotIn('copy', GRAMMAR_LAYER_CLASSES)
-
-    def test_swap_and_copy_dual(self):
-        a = torch.tensor([[1.0, 2.0]])
-        b = torch.tensor([[3.0, 4.0]])
-        self.assertTrue(torch.equal(SwapLayer().forward(a, b), b))
-        self.assertTrue(torch.equal(CopyLayer().forward(a, b), a))
-
-    def test_introspection_layers_parked_in_legacy(self):
-        # ``area`` / ``luminosity`` / ``isaPart`` were parked in
-        # bin/Legacy.py (2026-07-17): documented-dormant, no live grammar
-        # dispatches them. The measures still live on the Mereology mixin;
-        # the wrapper layers are revivable from Legacy.
-        for name in ('area', 'luminosity', 'isaPart'):
-            self.assertNotIn(name, GRAMMAR_LAYER_CLASSES)
 
 
 class TestSTEAnswer(unittest.TestCase):

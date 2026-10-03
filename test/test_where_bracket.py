@@ -6,8 +6,9 @@ START position (mirrors the `.when` v2 ladder): LF pair at ``<wherePeriod>``
 ``decode`` = atan2 per pair + HF branch resolution by LF, minus the
 ``where_origin`` seam shift. The endpoint-sum bracket is RETIRED from the muxed
 band (the END is content-terminated, Alec 2026-07-09); the analyzer's
-``EndpointSumWhere`` span key (perceptual_analyzer.py) is a separate codec and
-keeps the bracket -- test_ps_where.py covers it.
+standalone ``EndpointSumWhere`` span key was a separate codec. That prototype
+and its tests were retired in the October 1 suite trim; these tests cover the
+live start-position ladder.
 """
 import math, os, sys, unittest
 from pathlib import Path

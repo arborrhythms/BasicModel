@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_train_compile_target.py::test_mlx_compile_target_does_not_set_training_compile_env"
+  ],
+  "completed": [
+    "test/test_train_compile_target.py::test_mlx_compile_target_does_not_set_training_compile_env"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "test/test_train_compile_target.py::test_mlx_compile_target_does_not_set_training_compile_env",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015829200128791854,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

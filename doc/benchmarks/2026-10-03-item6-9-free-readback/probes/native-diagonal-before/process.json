@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-item6-9-free-readback/native_stride_probe.py"
+  ],
+  "pid": 45251,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 350111280,
+  "elapsed_seconds": 3.079949541017413,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/probes/native-diagonal-before/run.log"
+}

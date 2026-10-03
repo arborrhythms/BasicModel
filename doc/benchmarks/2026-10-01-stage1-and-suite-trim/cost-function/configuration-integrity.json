@@ -1,0 +1,411 @@
+{
+  "commit": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "files": [
+    {
+      "file": "data/BasicModel.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/BasicModel_answers_benchmark.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/BasicModel_answers_tied_benchmark.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/BasicModel_expectation_benchmark.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/BasicModel_long_tied_benchmark.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/BasicModel_output_tied_benchmark.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/HeadEmission.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/LM_5M.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/LM_5M_IR.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_20M_fineweb.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_20M_grammar.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_20M_legacy.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_20M_xor.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_400M.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_5M_AR.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_5M_IR.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_add.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_add_verb.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_boolean.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_bpe.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_decode.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_global.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_grammar.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_grammar_wording.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_init_scale.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_ladder.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_ladder_idiom.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_ladder_text.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_ladder_textpacked.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_ltm_consolidation_fixture.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_ltm_consolidation_serial_fixture.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_ltm_consolidation_stateful_fixture.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_masked_semantic.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_math.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_mereology.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_mereology_serial.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_meronomy_smoke.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_nanochat_grammar_gate.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_nanochat_grammar_pilot.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_overlap_tiling.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_phrase_decode.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_qa.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_query_reasoning.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_reading.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_sequence_predict.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_shamatha.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_sparse_concept.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_symbol_tower.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_symbolic_iter.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_xor.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_xor_fixture.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_xor_loopback.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_xor_step3.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MM_xor_step4.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/MentalModel.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/POS_smoke.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/RamsifiedModel.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/XOR_exact.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/XOR_grammar.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/XOR_pos.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/XOR_recon.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/XOR_spaces.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/complete.grammar",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/default.grammar",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/ergodic-only.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/ergodic.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/idempotent.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/ladder.grammar",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/matrix/MM_20M_grammar_reading.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/matrix/MM_20M_grammar_wordstore.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/matrix/MM_20M_xor_noraise.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/mnist.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/model.xml",
+      "bytes_equal": false,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/model.xsd",
+      "bytes_equal": false,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/shamatha.grammar",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/simple.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/stream_smoke.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/tied_reconstruction_output_benchmark.grammar",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/tomatoes.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/xor.grammar",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    },
+    {
+      "file": "data/xor.xml",
+      "bytes_equal": true,
+      "noncomment_content_equal": true
+    }
+  ],
+  "all_noncomment_content_equal": true
+}

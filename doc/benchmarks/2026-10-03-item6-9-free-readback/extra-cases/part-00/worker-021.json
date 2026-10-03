@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_empty_is_none"
+  ],
+  "completed": [
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_empty_is_none"
+  ],
+  "slow_selected": [
+    "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_empty_is_none"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_cs_to_ss_forward.py::test_forward_concept_to_symbol_empty_is_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04590745799941942,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

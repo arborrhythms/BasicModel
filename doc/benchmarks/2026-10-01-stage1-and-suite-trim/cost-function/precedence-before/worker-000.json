@@ -1,0 +1,54 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+    "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+    "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+    "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction"
+  ],
+  "completed": [
+    "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+    "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+    "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+    "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_lower_total_explore_cannot_win_with_worse_reconstruction",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00036329199792817235,
+      "message": "test/test_reconstruction_precedence.py:13: in test_lower_total_explore_cannot_win_with_worse_reconstruction\n    chosen, _, wins = sentence_pair(None, compose, score, lambda loss: None,\nE   TypeError: sentence_pair() got an unexpected keyword argument 'reconstruction'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_projection_preserves_reconstruction_other_objectives_and_reading_map",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 9.049999789567664e-05,
+      "message": "test/test_reconstruction_precedence.py:20: in test_projection_preserves_reconstruction_other_objectives_and_reading_map\n    from SentenceCompose import reconstruction_answer_correction\nE   ImportError: cannot import name 'reconstruction_answer_correction' from 'SentenceCompose' (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_projection_includes_the_trial_perception_pullback",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 9.304100240115076e-05,
+      "message": "test/test_reconstruction_precedence.py:37: in test_projection_includes_the_trial_perception_pullback\n    from SentenceCompose import fork_perception, reconstruction_answer_correction\nE   ImportError: cannot import name 'reconstruction_answer_correction' from 'SentenceCompose' (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_nonopposing_answer_and_absent_reconstruction_need_no_correction",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 8.937499660532922e-05,
+      "message": "test/test_reconstruction_precedence.py:49: in test_nonopposing_answer_and_absent_reconstruction_need_no_correction\n    from SentenceCompose import reconstruction_answer_correction\nE   ImportError: cannot import name 'reconstruction_answer_correction' from 'SentenceCompose' (/Users/arogers/github/WikiOracle/basicmodel/bin/SentenceCompose.py)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

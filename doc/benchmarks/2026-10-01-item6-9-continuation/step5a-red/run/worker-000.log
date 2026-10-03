@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient _
+test/test_supplied_answer_training.py:42: in test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient
+    torch.testing.assert_close(cost, torch.tensor([36., 100.]))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 2 (100.0%)
+E   Greatest absolute difference: 100.0 at index (1,) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)
+=========================== short test summary info ============================
+FAILED test/test_supplied_answer_training.py::test_supplied_answer_is_in_trial_cost_with_code_chooser_and_readout_gradient
+1 failed in 2.44s

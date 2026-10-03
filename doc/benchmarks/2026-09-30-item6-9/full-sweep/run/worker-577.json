@@ -1,0 +1,25 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_tied_reconstruction_migration.py::test_input_reconstruction_does_not_enter_free_generate"
+  ],
+  "completed": [
+    "test/test_tied_reconstruction_migration.py::test_input_reconstruction_does_not_enter_free_generate"
+  ],
+  "slow_selected": [
+    "test/test_tied_reconstruction_migration.py::test_input_reconstruction_does_not_enter_free_generate"
+  ],
+  "reports": [
+    {
+      "nodeid": "test/test_tied_reconstruction_migration.py::test_input_reconstruction_does_not_enter_free_generate",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00020279106684029102,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_tied_reconstruction_migration.py', 231, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

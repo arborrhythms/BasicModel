@@ -1,0 +1,7 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.5728252080734819</pre></td><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py:23: in test_identical_second_trial_never_wins_and_both_use_original_parameters
+    assert observations == [2., 2.], observations
+E   AssertionError: [2.0, 1.600000023841858]
+E   assert [2.0, 1.600000023841858] == [2.0, 2.0]
+E     
+E     At index 1 diff: 1.600000023841858 != 2.0
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr></table></body></html>

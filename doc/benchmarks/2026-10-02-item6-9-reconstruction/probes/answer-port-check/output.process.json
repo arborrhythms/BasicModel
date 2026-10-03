@@ -1,0 +1,20 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_output_path_supervised.py::test_serial_answer_path_varies_with_the_input",
+    "test/test_objective_ownership.py",
+    "test/test_free_reconstruction.py",
+    "test/test_inter_sentence_prediction_shape.py",
+    "test/test_sentence_expectation.py",
+    "--tb=short"
+  ],
+  "pid": 88596,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1060964128,
+  "elapsed_seconds": 9.669770250009606,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/answer-port-check/output.log"
+}

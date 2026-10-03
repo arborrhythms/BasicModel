@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_grammar_reconstruction_gate.py",
+    "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent"
+  ],
+  "pid": 19839,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 523814376,
+  "elapsed_seconds": 4.374468167006853,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/readback-order-ported-01.log"
+}

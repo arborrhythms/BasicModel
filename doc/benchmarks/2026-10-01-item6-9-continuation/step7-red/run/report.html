@@ -1,0 +1,62 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 6/6 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_inverse_unary_exclusion.py::test_closing_does_not_spend_rounds_repeating_not_at_one_slot</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0036172079999232665</pre></td><td><pre>test/test_inverse_unary_exclusion.py:26: in test_closing_does_not_spend_rounds_repeating_not_at_one_slot
+    assert result[&#x27;used&#x27;].tolist() == [2]  # not, then STOP
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert [6] == [2]
+E     
+E     At index 0 diff: 6 != 2
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[False]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0009412079998583067</pre></td><td><pre>test/test_inverse_unary_exclusion.py:36: in test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible
+    _, path, route = function(value, slots=2, previous_unary=torch.tensor([[0, -1]]))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: OperationSelectionLayer.forward() got an unexpected keyword argument &#x27;previous_unary&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[True]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.1018686669995077</pre></td><td><pre>test/test_inverse_unary_exclusion.py:36: in test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible
+    _, path, route = function(value, slots=2, previous_unary=torch.tensor([[0, -1]]))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:563: in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1261: in compile_wrapper
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: OperationSelectionLayer.forward() got an unexpected keyword argument &#x27;previous_unary&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0009150410005531739</pre></td><td><pre>test/test_inverse_unary_exclusion.py:52: in test_serial_window_excludes_the_inverse_at_the_same_physical_slot
+    choice = LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=2,
+E   TypeError: LanguageSpace.choose_operation() got an unexpected keyword argument &#x27;previous_unary&#x27;</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.005486541998834582</pre></td><td><pre>test/test_inverse_unary_exclusion.py:63: in test_exploration_forces_only_a_round_with_a_legal_alternative
+    assert exploit[&#x27;used&#x27;].tolist() == [2]
+E   assert [6] == [2]
+E     
+E     At index 0 diff: 6 != 2
+E     Use -v to get more diff</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_inverse_unary_exclusion.py::test_single_legal_derivation_is_compared_without_inventing_an_alternative</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.008806916999674286</pre></td><td><pre>test/test_inverse_unary_exclusion.py:72: in test_single_legal_derivation_is_compared_without_inventing_an_alternative
+    exploit, explore = layer.derive_pair(value, rounds=6, slots=1, greedy=True)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7593: in derive_pair
+    explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+bin/Language.py:7575: in derive
+    _, x, route = self(
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7508: in forward
+    torch._assert_async((~active | has_choice).all(),
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: compose has no legal alternative at the selected exploration round</pre></td><td><pre></pre></td></tr></table></body></html>

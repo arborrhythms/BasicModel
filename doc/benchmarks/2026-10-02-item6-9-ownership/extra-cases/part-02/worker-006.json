@@ -1,0 +1,37 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "completed": [
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "slow_selected": [
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07204666700272355,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.5506088330002967,
+      "message": "test/test_frozen_concepts.py:136: in test_reading_wiring_desires_staged_wholes\n    assert b_read is not None, \"staged rows must be primed\"\nE   AssertionError: staged rows must be primed\nE   assert None is not None",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.549s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,20 @@
+{
+  "targets": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "prediction_logit": 0.0,
+  "kind_raw_cross_entropy": 0.6931471805599453,
+  "target_entropy": 0.0,
+  "float32_epsilon": 1.1920928955078125e-07,
+  "epsilon_divided_kind_error": 5814539.9840226015,
+  "native_readout_l1_weights": [
+    0.01,
+    0.01,
+    0.01,
+    0.01
+  ],
+  "normalizer_for_targetless_regularizer": null
+}

@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 2.1041966669727117,
+      "message": "doc/benchmarks/2026-09-30-item6-9/probe_step3.py:38: in test_grammar_resolves_each_word_to_its_full_object_code\n    assert len(seen) == 8, f'every real word must resolve once; observed {len(seen)} object leaves'\nE   AssertionError: every real word must resolve once; observed 0 object leaves\nE   assert 0 == 8\nE    +  where 0 = len([])",
+      "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

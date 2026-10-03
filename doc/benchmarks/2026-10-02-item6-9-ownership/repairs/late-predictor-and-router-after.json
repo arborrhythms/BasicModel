@@ -1,0 +1,19 @@
+{
+  "command": [
+    "env",
+    "RUN_SLOW=1",
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+    "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer",
+    "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows"
+  ],
+  "pid": 21892,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1124272120,
+  "elapsed_seconds": 9.843890875010402,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/late-predictor-and-router-after.log"
+}

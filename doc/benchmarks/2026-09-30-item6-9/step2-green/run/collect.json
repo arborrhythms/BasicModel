@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[1]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_answer_reads_understanding_with_gradient_cut[3]",
+    "doc/benchmarks/2026-09-30-item6-9/probe_step2.py::test_named_concept_head_keeps_its_identity_carrier"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

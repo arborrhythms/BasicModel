@@ -1,0 +1,94 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events"
+  ],
+  "completed": [
+    "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.044415832991944626,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005552333997911774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002617750011268072,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012894792002043687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07926099999167491,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 176.91977295800461,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 49.47074083299958,
+      "message": "_fn(index):\nE             i0 = index\nE             tmp0 = ops.index_expr(i0, torch.int64)\nE             tmp1 = ops.constant(1, torch.int64)\nE             tmp2 = tmp0 < tmp1\nE             tmp3 = ops.constant(False, torch.bool)\nE             tmp4 = ops.constant(False, torch.bool)\nE             tmp5 = ops.where(tmp2, tmp3, tmp4)\nE             return tmp5\nE         ,\nE         ranges=[2],\nE         origin_node=lift_fresh_copy,\nE         origins=OrderedSet([lift_fresh_copy, _tensor_constant0]),\nE         stack_traces = {,\nE           File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12539, in _reconstruct_sentences,\nE             prefer_left = torch.tensor([,\nE                           ^^^^^^^^^^^^^^,\nE           File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__,\nE             return func(*args, **kwargs),\nE                    ^^^^^^^^^^^^^^^^^^^^^,\nE         ,\nE         }\nE       )\nE     )), TensorBox(StorageBox(\nE       InputBuffer(name='arg2_1', layout=FixedLayout('cpu', torch.float32, size=[4, s38, 10], stride=[10*s38, 10, 1]))\nE     )), TensorBox(StorageBox(\nE       InputBuffer(name='arg13_1', layout=FixedLayout('cpu', torch.float32, size=[4, s56, s90], stride=[s56*s90, s90, 1]))\nE     )), s13, s19, s37, s38, s56, s60, s8, s80, s90, s96, s98, TensorBox(\nE       View(\nE         StorageBox(\nE           Pointwise(\nE             'cpu',\nE             torch.int64,\nE             def inner_fn(index):\nE                 _ = index\nE                 tmp0 = ops.index_expr(0, torch.int64)\nE                 return tmp0\nE             ,\nE             ranges=[1],\nE             origin_node=iota_1,\nE             origins=OrderedSet([iota_1]),\nE             stack_traces = {,\nE               File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12706, in _reconstruct_sentences,\nE                 slot_ids = torch.arange(slots, device=dev).reshape(1, slots),\nE                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^,\nE               File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__,\nE                 return func(*args, **kwargs),\nE                        ^^^^^^^^^^^^^^^^^^^^^,\nE             ,\nE             }\nE           )\nE         ),\nE         size=[1, 1],\nE         reindex=lambda i0, i1: [0],\nE         origins=OrderedSet([view_2, iota_1]),\nE         stack_traces = {,\nE           File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12706, in _reconstruct_sentences,\nE             slot_ids = torch.arange(slots, device=dev).reshape(1, slots),\nE                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^,\nE           File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__,\nE             return func(*args, **kwargs),\nE                    ^^^^^^^^^^^^^^^^^^^^^,\nE         ,\nE         }\nE       )\nE     ), 10)\nE   Found from : \nE      File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12745, in _reconstruct_sentences\nE       _s, pre_stack, pre_depth, pre_bad = _reconstruction_while_loop(\nE                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 379, in _reconstruction_while_loop\nE       return torch.while_loop(condition, body, values)\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py\", line 122, in __torch_function__\nE       return func(*args, **kwargs)\nE              ^^^^^^^^^^^^^^^^^^^^^\nE   \nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018989160016644746,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

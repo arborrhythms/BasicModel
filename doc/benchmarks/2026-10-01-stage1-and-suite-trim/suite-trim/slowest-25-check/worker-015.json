@@ -1,0 +1,12 @@
+{
+  "exit_code": 2,
+  "selected": [
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+  "device": "cpu"
+}

@@ -29,7 +29,7 @@ def _build_gate_model():
     from Models import BaseModel
     from util import init_config, init_device
     init_device("cpu")
-    cfg = str(_root / "data" / "MM_20M_grammar.xml")
+    cfg = str(_root / "data" / "MM_ladder.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -49,14 +49,15 @@ def test_false_gate_contribution_is_zero():
     inputTensor = isp.prepInput(list(inp[:1]))
     in_sub = m._lex_embed_stem(inputTensor)
     m._per_word_prelude(in_sub)
-    out_slot = m._per_word_contributions
+    m._stage_reconstruction_teacher()
+    m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
+        isp._word_active_mask.shape[1], isp._word_active_mask.device)
+    out_slot = m._per_word_contributions = [None] * isp._word_active_mask.shape[1]
     B = isp._ar_embedded_N.shape[0] if isp._ar_embedded_N is not None else 1
     gate_false = torch.zeros(B, 1, dtype=torch.bool)
     w = isp.word_at(0)
     m._per_word_body_step(w, 0, gate_false, out_slot)
-    if not out_slot:
-        pytest.skip("body did not produce an idea_bd to contribute")
-    contribution = out_slot[-1]
+    contribution = out_slot[0]
     assert torch.all(contribution == 0), (
         "False-gate contribution must be zero; got non-zero "
         f"max abs {contribution.abs().max().item()}")
@@ -71,6 +72,9 @@ def test_false_gate_preserves_stm_buffer():
     inputTensor = isp.prepInput(list(inp[:1]))
     in_sub = m._lex_embed_stem(inputTensor)
     m._per_word_prelude(in_sub)
+    m._stage_reconstruction_teacher()
+    m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
+        isp._word_active_mask.shape[1], isp._word_active_mask.device)
     stm = m.conceptualSpace.stm
     if stm is None:
         pytest.skip("model has no STM")

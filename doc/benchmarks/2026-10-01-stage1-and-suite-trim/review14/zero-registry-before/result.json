@@ -1,0 +1,105 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+  ],
+  "completed": [
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero-registry-before/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero-registry-before/worker-000.json"
+      ],
+      "pid": 57035,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 550700424,
+      "elapsed_seconds": 4.341959916011547,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero-registry-before/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+        "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "completed": [
+        "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+        "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.022808791996794753,
+          "message": "test/test_sentence_compose.py:223: in test_disabled_sentence_prediction_leaves_adam_momentum_unused\n    cost, *_ = BasicModel._sentence_path_cost(\nbin/Models.py:20797: in _sentence_path_cost\n    prediction_errors, contrast_errors = disc._sentence_prediction_errors\n                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_sentence_prediction_errors'. Did you mean: 'sentence_prediction_cost'?",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.00027762500394601375,
+          "message": "test/test_generation_lesson.py:28: in test_sentence_generation_lesson_keeps_its_weighted_output_gradient\n    cost, *_ = BasicModel._sentence_path_cost(\nbin/Models.py:20786: in _sentence_path_cost\n    errors.merge(self._grammar_lesson_errors[name], prefix='grammar.',\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_grammar_lesson_errors'. Did you mean: 'grammar_lesson_weight'?",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 120,
+    "suite_seconds": 300,
+    "batch_size": 16,
+    "max_files": 2
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero-registry-before",
+  "elapsed_seconds": 6.749019625000074,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 550700424,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero-registry-before/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero-registry-before/collect.json"
+    ],
+    "pid": 57025,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 182895480,
+    "elapsed_seconds": 1.9979509999975562,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero-registry-before/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+        "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_conceptual_introspection.py::TestSTEWrapper::test_forward_returns_answer"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-122.recycle.json"
+}

@@ -1,0 +1,120 @@
+{
+  "files": 46,
+  "old_test_bodies": 645,
+  "old_test_names_removed_or_renamed": [
+    {
+      "file": "test/test_concept_memberships.py",
+      "test": "test_distributed_codes_follow_features_at_the_boundary_only",
+      "new": "test_definition_boundary_preserves_gradient_owned_codes",
+      "reason": "Feature membership remains independent evidence; reset must not replace reconstruction-owned codes."
+    },
+    {
+      "file": "test/test_context_rotation.py",
+      "test": "test_situation_weight_adds_only_bounded_prior_anchors",
+      "new": null,
+      "reason": "Rotation retired by \u00a720.3; no compatibility implementation."
+    },
+    {
+      "file": "test/test_context_rotation.py",
+      "test": "test_expectation_weight_one_removes_arriving_context_from_rotation",
+      "new": null,
+      "reason": "Rotation retired by \u00a720.3; no compatibility implementation."
+    },
+    {
+      "file": "test/test_context_rotation.py",
+      "test": "test_cold_expectation_at_weight_one_does_not_learn_from_arriving_words",
+      "new": null,
+      "reason": "Rotation retired by \u00a720.3; no compatibility implementation."
+    },
+    {
+      "file": "test/test_contextual_concept_codebook.py",
+      "test": "test_contextual_codebook_is_non_grad_buffer_and_rotates_without_projection",
+      "new": "test_reconstruction_lookup_trains_selected_codes_without_projection",
+      "reason": "\u00a720 parameter, unconstrained gradient and checkpoint contract replaces the buffer/rotation contract."
+    },
+    {
+      "file": "test/test_contextual_concept_codebook.py",
+      "test": "test_contextual_reducer_is_deterministic_row_reduced_and_skips_normalizer",
+      "new": null,
+      "reason": "\u00a720 parameter, unconstrained gradient and checkpoint contract replaces the buffer/rotation contract."
+    },
+    {
+      "file": "test/test_contextual_concept_codebook.py",
+      "test": "test_context_owned_dictionary_is_excluded_from_optimizer_groups",
+      "new": "test_dictionary_is_included_once_in_optimizer_groups",
+      "reason": "\u00a720 parameter, unconstrained gradient and checkpoint contract replaces the buffer/rotation contract."
+    },
+    {
+      "file": "test/test_contextual_concept_codebook.py",
+      "test": "test_contextual_buffer_preserves_frozen_capacity_and_state_dict_storage",
+      "new": "test_parameter_preserves_frozen_capacity_and_state_dict_storage",
+      "reason": "\u00a720 parameter, unconstrained gradient and checkpoint contract replaces the buffer/rotation contract."
+    },
+    {
+      "file": "test/test_inter_sentence_prediction_shape.py",
+      "test": "test_prediction_trains_live_context_encoder_but_not_observed_target",
+      "new": "test_prediction_trains_predictor_with_detached_context_and_target",
+      "reason": "\u00a715 detaches predictor sources and targets; predictor gradients and graph lifetime are checked."
+    },
+    {
+      "file": "test/test_inter_sentence_prediction_shape.py",
+      "test": "test_consuming_prediction_loss_ends_encoder_graph_lifetime",
+      "new": "test_consuming_prediction_loss_never_retains_encoder_graph",
+      "reason": "\u00a715 detaches predictor sources and targets; predictor gradients and graph lifetime are checked."
+    },
+    {
+      "file": "test/test_masked_semantic.py",
+      "test": "test_reconstruction_uses_category_evidence",
+      "new": "test_reconstruction_uses_word_definition_evidence",
+      "reason": "Use actual terminal concept owner; a grammar-free category bank has no live role centroids. Definition-evidence ablation preserves input-dependence assertion."
+    },
+    {
+      "file": "test/test_row_local_concept_optimizer.py",
+      "test": "test_post_step_concept_projection_is_row_local_and_signed_bounded",
+      "new": "test_row_local_reconstruction_step_preserves_unconstrained_codes",
+      "reason": "\u00a720 retires post-step projection; sparse touched-row updates and untouched-row identity remain."
+    },
+    {
+      "file": "test/test_sentence_expectation.py",
+      "test": "test_full_role_loss_trains_source_and_predictor_but_never_target",
+      "new": "test_full_role_loss_trains_predictor_but_never_source_or_target",
+      "reason": "\u00a715 predictor-only learning with detached context and target."
+    },
+    {
+      "file": "test/test_serial_object_meta.py",
+      "test": "test_serial_object_meta_off_does_not_build_word_index",
+      "new": null,
+      "reason": "Tensor peer boundaries and whitespace perception units replace the old word-only/WholeSpace.forward observers. Disabled old-mode indexing contract is retired."
+    },
+    {
+      "file": "test/test_sparse_concept_e2e.py",
+      "test": "test_conceptual_sbow_situates_live_sparse_codes",
+      "new": "test_distributional_code_cost_is_off_in_reconstruction_round",
+      "reason": "\u00a720 distributional pressure is off; no SBOW gradient on codes."
+    },
+    {
+      "file": "test/test_word_store.py",
+      "test": "test_words_summary_row_running_mean",
+      "new": null,
+      "reason": "Kept meronomy fixture, independent model per case, XOR smoke corpus, exact native object codes. Retired wordStore summary/WS identity tests and grammar detached-student tests removed (\u00a715.6/\u00a714)."
+    },
+    {
+      "file": "test/test_word_store.py",
+      "test": "test_ws_word_whole_registry_resolves_to_rows",
+      "new": null,
+      "reason": "Kept meronomy fixture, independent model per case, XOR smoke corpus, exact native object codes. Retired wordStore summary/WS identity tests and grammar detached-student tests removed (\u00a715.6/\u00a714)."
+    },
+    {
+      "file": "test/test_word_store.py",
+      "test": "test_leaf_distill_default_off",
+      "new": null,
+      "reason": "Kept meronomy fixture, independent model per case, XOR smoke corpus, exact native object codes. Retired wordStore summary/WS identity tests and grammar detached-student tests removed (\u00a715.6/\u00a714)."
+    },
+    {
+      "file": "test/test_word_store.py",
+      "test": "test_leaf_distill_trains_root_toward_leaves",
+      "new": null,
+      "reason": "Kept meronomy fixture, independent model per case, XOR smoke corpus, exact native object codes. Retired wordStore summary/WS identity tests and grammar detached-student tests removed (\u00a715.6/\u00a714)."
+    }
+  ]
+}

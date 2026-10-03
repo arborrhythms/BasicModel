@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_live_references.py::test_operation_runs_on_the_selected_occurrence_eager_and_compiled"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/full-sweep/run/worker-149.recycle.json"
+}

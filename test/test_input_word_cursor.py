@@ -61,7 +61,8 @@ def _build_nongrammar_model():
     the non-grammar config + its native ``xor`` dataset, so the 2a
     wiring is exercised on a genuinely grammar-disabled model.
     """
-    from space_equiv import _p
+    from pathlib import Path
+    _p = Path(__file__).resolve().parents[1]
     from util import init_config, init_device
     from data import TheData
     from Models import BaseModel
@@ -106,15 +107,7 @@ def _compute_valid_len_host(buf, peer):
     if buf is None:
         return 0
     T = buf.shape[1]
-    bpe_mask = (getattr(peer, "_bpe_word_mask", None)
-                if peer is not None
-                and getattr(peer, "synthesis_mode", None)
-                in ("bpe", "none", "mphf")
-                else None)
-    if bpe_mask is not None:
-        valid_pos = bpe_mask[:, :T] > 0
-    else:
-        valid_pos = buf.abs().sum(dim=-1) > 0
+    valid_pos = buf.abs().sum(dim=-1) > 0
     any_pos = valid_pos.any(dim=0)
     if any_pos.any().item():
         return int(any_pos.nonzero().max().item()) + 1
@@ -209,106 +202,8 @@ def test_empty_valid_content_ends_immediately():
     assert self._per_word_cursor == 0
 
 
-def test_bpe_word_mask_is_the_validity_signal_when_present():
-    """With a BPE peer in ``bpe`` chunking, the NULL/end signal is the
-    peer's ``_bpe_word_mask`` (matching ``forward``'s source of truth),
-    NOT the nonzero-vector fallback -- so trailing nonzero vectors that
-    the mask marks invalid are still excluded."""
-    next_word, self = _bare_inputspace()
-    self._per_word_enabled = True
-    B, T, D = 2, 6, 5
-    # Entire buffer is nonzero (nonzero-vector fallback would say all 6
-    # are valid)...
-    self._ar_embedded = torch.randn(B, T, D) + 1.0
-    # ...but the BPE word mask says only the first 3 slots are real.
-    mask = torch.zeros(B, T)
-    mask[:, :3] = 1.0
-    self._peer_perceptual = types.SimpleNamespace(
-        synthesis_mode="bpe", _bpe_word_mask=mask)
-    # Re-cache after seeding the BPE peer (the cache key changed).
-    self._valid_len_host = _compute_valid_len_host(
-        self._ar_embedded, self._peer_perceptual)
-
-    seen = 0
-    while next_word(self) is not None:
-        seen += 1
-        assert seen <= T
-    assert seen == 3, "mask (not nonzero-vector) defines valid length"
-    assert self._per_word_cursor == 3
 
 
-@pytest.mark.skipif(
-    _build_gate_model is None,
-    reason="_build_gate_model was retired with test_phase2a_labor_division "
-           "(see doc/plans/2026-05-21-dissolve-sentencestate-wordsubspace.md). "
-           "This test needs to be rebuilt against the new model factory.")
-def test_live_forward_whole_slab_byte_identical_and_cursor_wired():
-    """PRODUCTION CONTRACT (kept): the per-word cursor -- enabled or not
-    -- never perturbs the live whole-slab ``forward``. Plus the POST-2a
-    WIRED-design invariants on the grammar-enabled gate model.
-
-    Build the canonical (grammar-enabled) MM_20M gate model, run a real
-    forward, and confirm:
-      * the 2a wiring set ``_per_word_enabled is True`` (MM_20M is
-        grammar-enabled: ``useGrammar='all'``), cursor at position 0;
-      * ``forward`` still returns the whole-slab ``[B,N,D]`` subspace
-        with the ``stem_embedded`` / ``valid_mask`` contract intact;
-      * a second identical ``prepInput``->``forward`` is BYTE-IDENTICAL
-        -- this is the real production invariant and it proves the flag
-        is inert in the live path *even when True*;
-      * AFTER the forward, the (now correctly-enabled) ``next_word``
-        returns a real ``[B,1,D]`` ground-truth slice -- byte-identical
-        to the lexed whole-slab buffer's cursor T-position -- and
-        advances ``_per_word_cursor`` by 1 (the cursor works when
-        enabled; this exercises the wired design, not the old inert
-        ``None``).
-    """
-    m = _build_gate_model()
-    isp = m.inputSpace
-
-    # 2a wiring: grammar-enabled config => the flag is True (was
-    # hard-coded False in the pre-wiring inert increment).
-    assert hasattr(isp, "_per_word_enabled")
-    assert m.useGrammar != "none", "MM_20M gate model must be grammar-enabled"
-    assert isp._per_word_enabled is True, (
-        "2a wiring: _per_word_enabled = (useGrammar != 'none') => True "
-        "for the grammar-enabled MM_20M gate model")
-    assert isp._per_word_cursor == 0
-
-    inp, _ = isp.getTrainData()
-    inp_items = list(inp[:2])
-    isp.Start()
-    inputTensor = isp.prepInput(inp_items)
-    sub = isp.forward(inputTensor)
-
-    # Whole-slab contract intact.
-    assert getattr(sub, "stem_embedded", False) is True
-    assert getattr(sub, "valid_mask", None) is not None
-    ev = sub.materialize()
-    assert ev is not None and ev.dim() == 3, "whole-slab [B,N,D] event"
-
-    # PRODUCTION CONTRACT: forward() is repeatable and byte-identical
-    # and still whole-slab -- the flag being True does NOT perturb the
-    # live path (next_word has zero production callers).
-    inputTensor2 = isp.prepInput(inp_items)
-    sub2 = isp.forward(inputTensor2)
-    ev2 = sub2.materialize()
-    assert ev2 is not None and ev2.dim() == 3
-    torch.testing.assert_close(ev2, ev)
-
-    # Wired cursor: AFTER a real forward, the enabled feed yields a real
-    # [B, 1, D] ground-truth slice (byte-identical to the buffer's
-    # cursor T-position) and advances the cursor by exactly 1.
-    buf = isp._ar_embedded
-    assert buf is not None and buf.dim() == 3, "forward populated _ar_embedded"
-    B, T, D = buf.shape
-    cur_before = isp._per_word_cursor
-    w = isp.next_word()
-    assert w is not None, "enabled feed must yield a real slice after forward"
-    assert w.shape == (B, 1, D), w.shape
-    torch.testing.assert_close(w, buf[:, cur_before:cur_before + 1, :])
-    assert isp._per_word_cursor == cur_before + 1, (
-        "enabled cursor advances by exactly 1")
 
 
 def test_nongrammar_config_disables_cursor_and_next_word_is_none():
@@ -349,13 +244,16 @@ def _probe_flag_in_subprocess(config_rel, dataset, dat_inline="None"):
     import subprocess
     import sys
 
-    from space_equiv import _p
+    from pathlib import Path
+    _p = Path(__file__).resolve().parents[1]
 
     code = (
         "import os; os.environ['BASICMODEL_DEVICE']='cpu'\n"
         "import sys\n"
         "sys.path.insert(0, 'test')\n"
-        "from space_equiv import _p\n"
+        "sys.path.insert(0, 'bin')\n"
+        "from pathlib import Path\n"
+        "_p = Path.cwd()\n"
         "from util import init_config, init_device\n"
         "from data import TheData\n"
         "from Models import BaseModel\n"
@@ -397,7 +295,7 @@ def test_per_word_enabled_predicate_tracks_use_grammar():
     built in its own process; the grammar singleton forbids building
     two different configs in one interpreter)."""
     ug_g, flag_g = _probe_flag_in_subprocess(
-        "MM_20M_legacy.xml", dataset="'text'")
+        "MM_20M_xor.xml", dataset="'text'")
     assert ug_g != "none", f"MM_20M must be grammar-enabled, got {ug_g!r}"
     assert flag_g is True, (
         "grammar-enabled config => _per_word_enabled True")

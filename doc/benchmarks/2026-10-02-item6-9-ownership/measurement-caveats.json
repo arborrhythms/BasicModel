@@ -1,0 +1,15 @@
+{
+  "first_class_and_xor_audit": {
+    "run": "gate-05-trial-01",
+    "backend": "none",
+    "cause": "objective_conflicts_probe imports Models/util after setting MODEL_COMPILE=none. In ordinary pytest gates the autouse fixture imports util while MODEL_COMPILE=eager, before the gate changes the environment.",
+    "comparison_runs_backend": "eager graph capture",
+    "source_config_optimizer_seed_bar_changes": false,
+    "action": "Retain the predeclared first outcome; no retry or replacement. Report this runtime-policy difference separately; numerical equivalence of these particular trainings was not measured."
+  },
+  "reconstruction_gate": {
+    "contract": "Free inverse with known object vocabulary; original source leaf witnesses do not enter this decoder.",
+    "training_cost": "Tied inverse of the shared trial record, including operation witnesses and primed candidates.",
+    "action": "Preserve the existing gate and bar; do not equate a low tied training loss with a passing free read-back."
+  }
+}

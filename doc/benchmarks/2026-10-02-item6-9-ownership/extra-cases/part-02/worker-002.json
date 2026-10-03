@@ -1,0 +1,103 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave"
+  ],
+  "completed": [
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave"
+  ],
+  "slow_selected": [
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.1525495829992,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.2443386249942705,
+      "message": "test/test_dual_towers.py:66: in test_subsymbolic_passes_keep_the_same_native_geometry\n    assert got == want, (cfg, got)\nE   AssertionError: ('data/MM_ladder.xml', [4096, 4096, 4096, 4096])\nE   assert [4096, 4096, 4096, 4096] == [8, 8, 8]\nE     \nE     At index 0 diff: 4096 != 8\nE     Left contains one more item: 4096\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.001430332995369099,
+      "message": "test/test_dual_towers.py:75: in test_default_expectation_adds_only_its_owned_checkpoint_keys\n    assert discourse is not None\nE   assert None is not None",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014189999928930774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.1136246669921093,
+      "message": "test/test_dual_towers.py:145: in test_ws_routes_universe_on_parallel_path\n    assert stamps == [\"universe\"] * len(stamps), stamps\nE   AssertionError: ['universe', 'property-neutral', 'property-neutral']\nE   assert ['universe', ...erty-neutral'] == ['universe', ...', 'universe']\nE     \nE     At index 1 diff: 'property-neutral' != 'universe'\nE     Use -v to get more diff",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 1.112s; word units 100.0% of 12 words (letters-only 100.0% of 4).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.6157704590004869,
+      "message": "test/test_dual_towers.py:163: in test_ws_routing_after_serial_migration\n    assert stamps[-1] == \"universe\", stamps     # LIVE unity, per-word\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: [None, None, None, None]\nE   assert None == 'universe'",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 1.614s; word units 83.3% of 12 words (letters-only 100.0% of 4).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.1948240000056103,
+      "message": "test/test_dual_towers.py:192: in test_written_order0_words_are_present_after_one_smoke_epoch\n    assert a0 is not None and torch.is_tensor(a0)\nE   assert (None is not None)",
+      "stdout": "batch = 0 (\u0394=2.320s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 0.646s; word units 100.0% of 12 words (letters-only 100.0% of 4).\r\nbatch = 0 (\u0394=0.655s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 0.547s; word units 100.0% of 12 words (letters-only 100.0% of 4).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_replaces_wave",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.6201360409904737,
+      "message": "test/test_dual_towers.py:223: in test_pyramid_replaces_wave\n    assert lv is not None and len(lv) >= 1, \"per-rung stats must populate\"\nE   AssertionError: per-rung stats must populate\nE   assert (None is not None)",
+      "stdout": "batch = 0 (\u0394=0.537s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).\r\nTraining throughput: 1 batches in 0.619s; word units 100.0% of 12 words (letters-only 100.0% of 4).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

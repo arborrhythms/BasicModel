@@ -1,0 +1,19 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer",
+    "test/test_per_word_ss_padding_noop.py",
+    "--tb=short"
+  ],
+  "pid": 88299,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 4902507464,
+  "elapsed_seconds": 23.92235691699898,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/fixture-seams-after/output.log"
+}

@@ -1,0 +1,344 @@
+[
+  {
+    "nodeid": "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+    "before_seconds": 185.84087391699723,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_assertion_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids",
+    "before_seconds": 341.6819943330047,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_bounded_stm_fold.py::test_sentence_end_reduces_toward_root",
+    "before_seconds": 385.37161270900106,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_bounded_stm_fold.py::test_stm_never_exceeds_cap_after_forward",
+    "before_seconds": 387.02947258300264,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "before_seconds": 182.659196624998,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built",
+    "before_seconds": 160.28677266700834,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_compile_static_loop.py::test_per_word_accumulator_is_fixed_length_not_word_count",
+    "before_seconds": 76.0177424170106,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "before_seconds": 743.9514287499915,
+    "change": "compiled graph is the subject; weekly tier"
+  },
+  {
+    "nodeid": "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "before_seconds": 76.87118349999946,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "before_seconds": 179.85898258299858,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "before_seconds": 155.66576737500145,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "before_seconds": 304.0390377920121,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "before_seconds": 202.1791511249903,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_expectation_defaults.py::test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_learning",
+    "before_seconds": null,
+    "change": "same numerical loop bodies; capture is not the subject; timeout-prone case moved to weekly tier"
+  },
+  {
+    "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm",
+    "before_seconds": 453.72328191601264,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_expectation_review.py::test_provisioning_keeps_its_existing_hard_reset_of_what_episode",
+    "before_seconds": 305.6941527080053,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+    "before_seconds": 308.5160350829974,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+    "before_seconds": 286.1297805840004,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_interleave_lifecycle.py::test_evaluation_epoch_preserves_an_unfinished_training_group",
+    "before_seconds": 225.60261487500975,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[False]",
+    "before_seconds": 287.4539111250051,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_bias_fires_on_real_model",
+    "before_seconds": 71.59769866600982,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]",
+    "before_seconds": 181.42575679100992,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle",
+    "before_seconds": 310.0769852910016,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestProvisioning::test_provision_idempotent_count_via_runepoch_trigger",
+    "before_seconds": 908.5139025419921,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings",
+    "before_seconds": 169.14355887500278,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps",
+    "before_seconds": 170.72506399999838,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward",
+    "before_seconds": 310.54188670900476,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only",
+    "before_seconds": 306.65118683400215,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision",
+    "before_seconds": 160.66614487499464,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth",
+    "before_seconds": 162.89774829200178,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows",
+    "before_seconds": 720.8896922910062,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned",
+    "before_seconds": 172.35671216700575,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data",
+    "before_seconds": 305.99442437500693,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_ltm_consolidation.py::TestSerialForwardAppendsStore::test_forward_grows_store_not_deque",
+    "before_seconds": 863.3327298329968,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+    "before_seconds": null,
+    "change": "same numerical loop bodies; capture is not the subject; long cold-start training in weekly tier"
+  },
+  {
+    "nodeid": "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "before_seconds": 118.0922712090105,
+    "change": "compiled graph is the subject; weekly tier"
+  },
+  {
+    "nodeid": "test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock",
+    "before_seconds": 93.7739747500018,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats",
+    "before_seconds": 92.59161624999251,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_occurrence_coordinates.py::test_native_program_captures_the_symbol_band_and_one_field_time",
+    "before_seconds": 92.58877845799725,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_output_percept_readout.py::test_model_checkpoint_preserves_readout_and_adam[False]",
+    "before_seconds": 544.0804916249908,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_compiled_understanding_captures_explicit_sentence_products",
+    "before_seconds": 228.58934229100123,
+    "change": "compiled graph is the subject; weekly tier"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_held_answer_idea_ignores_later_staging_and_memory_context",
+    "before_seconds": 186.0808996669948,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_materialised_answer_uses_one_conditioning_application",
+    "before_seconds": 143.25460637499054,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_resolved_recall_keeps_its_program_after_memory_advances",
+    "before_seconds": 202.66977300000144,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present",
+    "before_seconds": 63.60339729199768,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+    "before_seconds": 185.58533625000564,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_query_phase_fullgraph.py::test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths",
+    "before_seconds": null,
+    "change": "compiled graph is the subject; weekly tier"
+  },
+  {
+    "nodeid": "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+    "before_seconds": 123.05144133399881,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+    "before_seconds": 573.8616199170065,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "before_seconds": 413.50979666700005,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+    "before_seconds": 296.1697045000037,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+    "before_seconds": 91.30196733299817,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+    "before_seconds": 73.38283741699706,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_runepoch_runtime_split_no_raise",
+    "before_seconds": 75.357640000002,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record",
+    "before_seconds": 158.23790654199547,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[True]",
+    "before_seconds": 366.030439167007,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+    "before_seconds": 300.4429962919967,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict",
+    "before_seconds": 93.02416129098856,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled",
+    "before_seconds": 90.44240929099033,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial",
+    "before_seconds": 91.4385624580027,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent",
+    "before_seconds": 91.63182954098738,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition",
+    "before_seconds": 95.09302620800736,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "before_seconds": 176.91977295800461,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "before_seconds": 385.57844158301305,
+    "change": "same numerical loop bodies; capture is not the subject"
+  },
+  {
+    "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "before_seconds": 125.54509558400605,
+    "change": "compiled graph subject; weekly tier"
+  },
+  {
+    "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True]",
+    "before_seconds_lower_bound": 813,
+    "change": "Compilation retained; same two sentences and assertions; 128-byte/eight-slot fixture reduced to 16 bytes/three slots, one symbolic pass. Capturing process sampled before interruption."
+  },
+  {
+    "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "before_seconds": null,
+    "before_note": "Prior weekly failure is recorded, but this inventory has no isolated successful case duration.",
+    "change": "compiled graph across lengths is the subject; weekly tier; old first-weekly failure observed retired journal lifetime"
+  },
+  {
+    "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "before_seconds": null,
+    "before_note": "Prior weekly failure is recorded, but this inventory has no isolated successful case duration.",
+    "change": "owned backward contract port; heavy packed reading kept in weekly tier"
+  }
+]

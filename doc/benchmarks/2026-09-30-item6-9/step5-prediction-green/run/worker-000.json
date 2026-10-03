@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5_prediction.py::test_sentence_prediction_trials_backpropagate_independently"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-09-30-item6-9/probe_step5_prediction.py::test_sentence_prediction_trials_backpropagate_independently"
+  ],
+  "slow_selected": [],
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-09-30-item6-9/probe_step5_prediction.py::test_sentence_prediction_trials_backpropagate_independently",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4681152501143515,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

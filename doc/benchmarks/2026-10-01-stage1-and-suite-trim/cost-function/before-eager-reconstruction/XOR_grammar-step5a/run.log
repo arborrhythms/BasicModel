@@ -1,0 +1,39 @@
+Starting with dynamic 2-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/stage1/XOR_grammar_reconstruction.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+  warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+[AMP] off (fp32, MODEL_AMP unset or =off)
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+batch = 0 (warm-up, 100.00%)
+Train Loss: output=0.1728, reconstruction=0.0019
+Epoch [2/400]
+batch = 0 (Δ=15.255s, 100.00%)
+Train Loss: output=0.1837, reconstruction=1.3811
+Epoch [3/400]
+batch = 0 (Δ=15.081s, 100.00%)
+Train Loss: output=0.1766, reconstruction=0.8547
+Epoch [4/400]
+batch = 0 (Δ=15.210s, 100.00%)
+Train Loss: output=0.1686, reconstruction=1.4569
+Epoch [5/400]
+batch = 0 (Δ=15.494s, 100.00%)
+Train Loss: output=0.1710, reconstruction=1.4761
+Epoch [6/400]
+batch = 0 (Δ=15.527s, 100.00%)
+Train Loss: output=0.1623, reconstruction=0.8788
+Epoch [7/400]
+batch = 0 (Δ=15.057s, 100.00%)
+Train Loss: output=0.1631, reconstruction=0.8760
+Epoch [8/400]
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

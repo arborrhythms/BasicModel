@@ -1,0 +1,11 @@
+{
+  "head": "d679df2b5a2665d72a99ca4b6dfd47c1ba048e99",
+  "source_files": 720,
+  "source_matches_frozen": true,
+  "supporting_inputs_match_frozen": true,
+  "environment_unchanged": true,
+  "freeze_sha256": "7e07355abf5e1b6b1bea7a0fce68f18dd53a950a3fd5d607c04baa459666e26f",
+  "git_diff_check": "passed",
+  "committed": false,
+  "objective_conflict_measurements": "held for Claude; neither configuration started"
+}

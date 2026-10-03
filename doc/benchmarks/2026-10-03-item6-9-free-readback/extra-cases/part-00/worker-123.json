@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_relevance_bases.py::test_primed_reading_scope"
+  ],
+  "completed": [
+    "test/test_relevance_bases.py::test_primed_reading_scope"
+  ],
+  "slow_selected": [
+    "test/test_relevance_bases.py::test_primed_reading_scope"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_relevance_bases.py::test_primed_reading_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0653628750005737,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

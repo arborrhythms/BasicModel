@@ -1,0 +1,54 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+    "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+    "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction"
+  ],
+  "completed": [
+    "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+    "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+    "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+    "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_null_char_in_embedding_vocab",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0001519579964224249,
+      "message": "test/test_xor_spaces.py:369: in test_null_char_in_embedding_vocab\n    \"\\x00\", self.emb.pretrain.key_to_index,\n            ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_null_embedding_is_regular_vector",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00011470800382085145,
+      "message": "test/test_xor_spaces.py:382: in test_null_embedding_is_regular_vector\n    self.assertIn(\"\\x00\", self.emb.pretrain.key_to_index)\n                          ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_reconstruct_buffer_stops_at_null_token",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 9.770800534170121e-05,
+      "message": "test/test_xor_spaces.py:399: in test_reconstruct_buffer_stops_at_null_token\n    self.assertIn(\"\\x00\", emb.pretrain.key_to_index)\n                          ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_spaces.py::TestNullEOS::test_trailing_null_produces_clean_reconstruction",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00010566700075287372,
+      "message": "test/test_xor_spaces.py:445: in test_trailing_null_produces_clean_reconstruction\n    self.assertIn(\"\\x00\", emb.pretrain.key_to_index)\n                          ^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'RadixLayer' object has no attribute 'pretrain'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

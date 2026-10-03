@@ -167,26 +167,6 @@ class TestTanhFreePiSigmaXORTestpoint(unittest.TestCase):
         self.assertTrue(torch.allclose(pred, Y, atol=2e-2))
 
 
-class TestLogicalFunctionNet(unittest.TestCase):
-    """The SigmaPi.py LogicalFunctionNet runs without error."""
-
-    def test_forward_shape(self):
-        from SigmaPi import LogicalFunctionNet
-        model = LogicalFunctionNet(2, 3, 1)
-        x = torch.randn(4, 1, 2).to(TheDevice.get())
-        y = model(x)
-        self.assertEqual(y.shape, (4, 1, 1))
-
-    def test_backward_no_error(self):
-        from SigmaPi import LogicalFunctionNet
-        model = LogicalFunctionNet(2, 3, 1)
-        x = torch.randn(4, 1, 2).to(TheDevice.get())
-        y = model(x)
-        loss = y.sum()
-        loss.backward()
-        # Verify at least some parameters got gradients
-        grads = [p.grad for p in model.parameters() if p.grad is not None]
-        self.assertGreater(len(grads), 0)
 
 
 if __name__ == '__main__':

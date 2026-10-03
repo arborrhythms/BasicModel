@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-003.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-003.json"
+  ],
+  "pid": 57479,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 610698728,
+  "elapsed_seconds": 4.625127375125885,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-09-30-item6-9/step5-green-and-port-red/run/worker-003.log"
+}

@@ -1,0 +1,128 @@
+{
+  "bin/Spaces.py": {
+    "analysis_store =": [],
+    "stage_symbolic_virgin_rows": [],
+    "_ws_pos_to_row": [
+      {
+        "line": 19316,
+        "text": "        p2r = getattr(ws, '_ws_pos_to_row', None)"
+      }
+    ],
+    "property-neutral": [
+      {
+        "line": 23559,
+        "text": "        object.__setattr__(self, \"_ws_routed_source\", \"property-neutral\")"
+      }
+    ],
+    "_stage_mixing_grammar_leaf_mask": [],
+    "MM_20M_legacy": [],
+    "<grammar": [],
+    "def conceptualize": []
+  },
+  "bin/Models.py": {
+    "analysis_store =": [],
+    "stage_symbolic_virgin_rows": [],
+    "_ws_pos_to_row": [],
+    "property-neutral": [],
+    "_stage_mixing_grammar_leaf_mask": [],
+    "MM_20M_legacy": [
+      {
+        "line": 8441,
+        "text": "        # ``data/MM_20M_legacy.xml``). The old ``BASICMODEL_MPS_COMPILE`` opt-in gate"
+      }
+    ],
+    "<grammar": [],
+    "def conceptualize": []
+  },
+  "bin/Language.py": {
+    "analysis_store =": [],
+    "stage_symbolic_virgin_rows": [],
+    "_ws_pos_to_row": [
+      {
+        "line": 6377,
+        "text": "        # resolved through ``_ws_pos_to_row``) \u2014 the WS analogue of the"
+      },
+      {
+        "line": 6393,
+        "text": "                    _p2r = getattr(_ws_sp, '_ws_pos_to_row', None)"
+      }
+    ],
+    "property-neutral": [],
+    "_stage_mixing_grammar_leaf_mask": [],
+    "MM_20M_legacy": [],
+    "<grammar": [
+      {
+        "line": 445,
+        "text": "    legacy ``<grammar>...</grammar>`` block:"
+      },
+      {
+        "line": 448,
+        "text": "        <grammar name=\"default\">"
+      },
+      {
+        "line": 630,
+        "text": "    for the legacy inline ``<grammar>...</grammar>`` block. Attributes on"
+      },
+      {
+        "line": 2174,
+        "text": "          1. ``<grammar>name.grammar</grammar>`` -- string body whose"
+      },
+      {
+        "line": 2177,
+        "text": "          2. ``<grammar>...</grammar>`` -- inline XML grammar dict"
+      },
+      {
+        "line": 2194,
+        "text": "            # load_from_grammar_file (the <grammar>NAME.grammar</grammar>"
+      },
+      {
+        "line": 2217,
+        "text": "                    \"<grammar>NAME.grammar</grammar> instead. Falling \""
+      },
+      {
+        "line": 2237,
+        "text": "        # New path: ``<grammar>NAME.grammar</grammar>`` -- string body"
+      },
+      {
+        "line": 5164,
+        "text": "    \"\"\"Bind ``Ops.<grammar_op>`` to ``_OpHandle`` instances for the grammar"
+      }
+    ],
+    "def conceptualize": [
+      {
+        "line": 10568,
+        "text": "    def conceptualize(self, order, part=None, whole=None,"
+      }
+    ]
+  },
+  "test/test_input_word_cursor.py": {
+    "analysis_store =": [],
+    "stage_symbolic_virgin_rows": [],
+    "_ws_pos_to_row": [],
+    "property-neutral": [],
+    "_stage_mixing_grammar_leaf_mask": [],
+    "MM_20M_legacy": [
+      {
+        "line": 400,
+        "text": "        \"MM_20M_legacy.xml\", dataset=\"'text'\")"
+      }
+    ],
+    "<grammar": [
+      {
+        "line": 59,
+        "text": "    empty ``<grammar>``, inherits the ``not(S)`` NOOP fallback and"
+      }
+    ],
+    "def conceptualize": []
+  },
+  "data/MM_20M_legacy.xml": {
+    "analysis_store =": [],
+    "stage_symbolic_virgin_rows": [],
+    "_ws_pos_to_row": [],
+    "property-neutral": [],
+    "_stage_mixing_grammar_leaf_mask": [],
+    "MM_20M_legacy": [],
+    "<grammar": [],
+    "def conceptualize": []
+  }
+}

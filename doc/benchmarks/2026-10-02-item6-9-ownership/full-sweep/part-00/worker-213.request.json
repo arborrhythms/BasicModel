@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-213.recycle.json"
+}

@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_tied_vectors_compile.py::test_untied_vectors_compiles_fullgraph"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/full-sweep/part-00/worker-761.recycle.json"
+}

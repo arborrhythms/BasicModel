@@ -1,0 +1,308 @@
+..FF..................................FF......F............F..F......... [ 52%]
+.........F.......................................................        [100%]
+=================================== FAILURES ===================================
+______________ test_conjunction_reverse_with_basis_recovers_pair _______________
+
+    def test_conjunction_reverse_with_basis_recovers_pair():
+        torch.manual_seed(0)
+        lyr = ConjunctionLayer()
+        W = torch.rand(5, _V)
+        # parent = the AND (min) of two known codebook rows.
+        parent = torch.minimum(W[1], W[3]).unsqueeze(0)        # [1, V]
+        x1, x2 = lyr.reverse(parent, basis=_Basis(W))
+        assert tuple(x1.shape) == (1, _V) and tuple(x2.shape) == (1, _V)
+        # the recommender recovers operands whose intersection ~= parent.
+        recon = torch.minimum(x1, x2)
+>       assert torch.allclose(recon, parent, atol=1e-5)
+E       assert False
+E        +  where False = <built-in method allclose of type object at 0x10ca493a0>(tensor([[0.0223, 0.1689, 0.2939, 0.5185, 0.6977, 0.8000]]), tensor([[0.1610, 0.2823, 0.4556, 0.6323, 0.3489, 0.4017]]), atol=1e-05)
+E        +    where <built-in method allclose of type object at 0x10ca493a0> = torch.allclose
+
+test/test_boolean_reverse_recommender.py:67: AssertionError
+______________ test_disjunction_reverse_with_basis_recovers_pair _______________
+
+    def test_disjunction_reverse_with_basis_recovers_pair():
+        torch.manual_seed(0)
+        lyr = DisjunctionLayer()
+        W = torch.rand(5, _V)
+        parent = torch.maximum(W[0], W[2]).unsqueeze(0)        # OR (max)
+        x1, x2 = lyr.reverse(parent, basis=_Basis(W))
+        assert tuple(x1.shape) == (1, _V) and tuple(x2.shape) == (1, _V)
+        recon = torch.maximum(x1, x2)
+>       assert torch.allclose(recon, parent, atol=1e-5)
+E       assert False
+E        +  where False = <built-in method allclose of type object at 0x10ca493a0>(tensor([[0.4901, 0.8964, 0.4556, 0.6323, 0.6977, 0.8000]]), tensor([[0.4963, 0.7682, 0.2939, 0.5185, 0.6977, 0.8000]]), atol=1e-05)
+E        +    where <built-in method allclose of type object at 0x10ca493a0> = torch.allclose
+
+test/test_boolean_reverse_recommender.py:78: AssertionError
+______________________ test_execute_arity2_requires_right ______________________
+
+    def test_execute_arity2_requires_right():
+        """execute on an arity-2 rule without `right` raises a clear error."""
+        from Language import TheGrammar
+        from Layers import ConjunctionLayer
+    
+        saved_rules = list(TheGrammar.rules)
+        saved_configured = TheGrammar._configured
+        try:
+            TheGrammar.rules = []
+            TheGrammar.rules_upward = []
+            TheGrammar.rules_downward = []
+            TheGrammar.reverse_rules = []
+            TheGrammar._configured = False
+            TheGrammar.configure({'compose': {'symbols':
+                                  {'rule': ['S = conjunction(S, S)']}}})
+    
+            layer = _make_syntactic_layer_with({'conjunction': ConjunctionLayer()})
+            left = torch.tensor([[0.4, 0.7]])
+            right = torch.tensor([[0.6, 0.3]])
+    
+            # Arity-2 with right: should compose to min.
+            y = layer.execute(rule_id=0, left=left, right=right)
+>           assert torch.allclose(y, torch.minimum(left, right))
+E           assert False
+E            +  where False = <built-in method allclose of type object at 0x10ca493a0>(tensor([[0.4070, 0.3561]]), tensor([[0.4000, 0.3000]]))
+E            +    where <built-in method allclose of type object at 0x10ca493a0> = torch.allclose
+E            +    and   tensor([[0.4000, 0.3000]]) = <built-in method minimum of type object at 0x10ca493a0>(tensor([[0.4000, 0.7000]]), tensor([[0.6000, 0.3000]]))
+E            +      where <built-in method minimum of type object at 0x10ca493a0> = torch.minimum
+
+test/test_subspace_what_stm_contract.py:330: AssertionError
+____________ test_execute_superposed_independent_then_weighted_sum _____________
+
+    def test_execute_superposed_independent_then_weighted_sum():
+        """Each rule sees its own (left, right) and outputs combine by weighted sum.
+    
+        Pin the independent-contribution semantics: mutating one rule's
+        output must not affect another's, because the combine is one
+        stacked weighted sum (the plan's pseudo-code).
+        """
+        from Language import TheGrammar
+        from Layers import ConjunctionLayer, DisjunctionLayer
+    
+        saved_rules = list(TheGrammar.rules)
+        saved_configured = TheGrammar._configured
+        try:
+            TheGrammar.rules = []
+            TheGrammar.rules_upward = []
+            TheGrammar.rules_downward = []
+            TheGrammar.reverse_rules = []
+            TheGrammar._configured = False
+            TheGrammar.configure({'compose': {'symbols': {'rule': [
+                'S = conjunction(S, S)',
+                'S = disjunction(S, S)',
+            ]}}})
+    
+            layer = _make_syntactic_layer_with({
+                'conjunction': ConjunctionLayer(),
+                'disjunction': DisjunctionLayer(),
+            })
+            # Pre-compute hard outputs for each rule.
+            left = torch.tensor([[0.4, 0.7]])
+            right = torch.tensor([[0.6, 0.3]])
+            and_out = torch.minimum(left, right)
+            or_out  = torch.maximum(left, right)
+    
+            # 70/30 weight on conjunction vs disjunction.
+            w = torch.tensor([[0.7, 0.3]])  # [B=1, R=2]
+            got = layer.execute_superposed(
+                rule_weights=w, left=left, right=right, rule_ids=[0, 1])
+            expected = 0.7 * and_out + 0.3 * or_out
+>           assert torch.allclose(got, expected, atol=1e-6)
+E           assert False
+E            +  where False = <built-in method allclose of type object at 0x10ca493a0>(tensor([[0.4349, 0.3993]]), tensor([[0.4600, 0.4200]]), atol=1e-06)
+E            +    where <built-in method allclose of type object at 0x10ca493a0> = torch.allclose
+
+test/test_subspace_what_stm_contract.py:378: AssertionError
+________________ test_reduce_writes_parent_in_left_zeros_right _________________
+
+    def test_reduce_writes_parent_in_left_zeros_right():
+        """Hard REDUCE: parent at i=n_live-2, zero at j=n_live-1, occ updates."""
+        from Language import TheGrammar, RuleCodebook
+        from Layers import ConjunctionLayer
+    
+        saved_rules = list(TheGrammar.rules)
+        saved_configured = TheGrammar._configured
+        saved_vsym = TheGrammar.symbol_vocab_size
+        try:
+            TheGrammar.rules = []
+            TheGrammar.rules_upward = []
+            TheGrammar.rules_downward = []
+            TheGrammar.reverse_rules = []
+            TheGrammar._configured = False
+            TheGrammar.symbol_vocab_size = 5
+            TheGrammar.configure({'compose': {'symbols':
+                                  {'rule': ['S = conjunction(S, S)']}}})
+    
+            router = _make_minimal_signal_router(D=2)
+            sub = _make_stack_subspace_with_where(B=1, K=4, D=2, W=2)
+            rc = RuleCodebook(num_rules=1, grammar=TheGrammar)
+            layer = _make_syntactic_layer_for_stack({'conjunction': ConjunctionLayer()})
+    
+            # Push two non-negative scalars (ConjunctionLayer = monotonic min).
+            left_payload = torch.tensor([[0.3, 0.8]])
+            right_payload = torch.tensor([[0.5, 0.2]])
+            router.shift(sub, left_payload, where_id=1)
+            router.shift(sub, right_payload, where_id=2)
+    
+            # Reduce -> slot 0 gets the elementwise min, slot 1 is zeroed.
+            router.reduce(sub, layer, rule_id=0, rule_codebook=rc)
+    
+            what = sub.materialize(mode="what")
+            where = sub.materialize(mode="where")
+            occ = sub.materialize(mode="activation")
+            # Parent = min(left, right).
+            expected_parent = torch.minimum(left_payload, right_payload)[0]
+>           assert torch.allclose(what[0, 0, :], expected_parent)
+E           assert False
+E            +  where False = <built-in method allclose of type object at 0x10ca493a0>(tensor([0.3147, 0.3357]), tensor([0.3000, 0.2000]))
+E            +    where <built-in method allclose of type object at 0x10ca493a0> = torch.allclose
+
+test/test_subspace_what_stm_contract.py:584: AssertionError
+____________ test_forward_dispatches_to_forward_stack_with_actions _____________
+
+    def test_forward_dispatches_to_forward_stack_with_actions():
+        """languageLayer.forward(actions=...) is a thin wrapper around forward_stack."""
+        from Language import TheGrammar, RuleCodebook
+        from Layers import ConjunctionLayer
+    
+        saved_rules = list(TheGrammar.rules)
+        saved_configured = TheGrammar._configured
+        saved_vsym = TheGrammar.symbol_vocab_size
+        try:
+            TheGrammar.rules = []
+            TheGrammar.rules_upward = []
+            TheGrammar.rules_downward = []
+            TheGrammar.reverse_rules = []
+            TheGrammar._configured = False
+            TheGrammar.symbol_vocab_size = 5
+            TheGrammar.configure({'compose': {'symbols':
+                                  {'rule': ['S = conjunction(S, S)']}}})
+    
+            router = _make_minimal_signal_router(D=2)
+            sub = _make_stack_subspace_with_where(B=1, K=4, D=2, W=2)
+            rc = RuleCodebook(num_rules=1, grammar=TheGrammar)
+            layer = _make_syntactic_layer_for_stack({'conjunction': ConjunctionLayer()})
+    
+            actions = [
+                ('shift', torch.tensor([[0.6, 0.9]]), 1),
+                ('shift', torch.tensor([[0.4, 0.5]]), 2),
+                ('reduce', 0),
+            ]
+            # Spy on forward_stack to confirm the wrapper delegates to it.
+            calls = {'n': 0}
+            orig_fs = router.forward_stack
+    
+            def spy_fs(*a, **kw):
+                calls['n'] += 1
+                return orig_fs(*a, **kw)
+    
+            router.forward_stack = spy_fs
+            try:
+                out = router.forward(sub, layer, actions=actions, rule_codebook=rc)
+            finally:
+                router.forward_stack = orig_fs
+    
+            assert calls['n'] == 1
+            assert out is sub
+            # End state matches the manual shift+reduce path.
+            what = sub.materialize(mode="what")
+>           assert torch.allclose(what[0, 0, :], torch.tensor([0.4, 0.5]))
+E           assert False
+E            +  where False = <built-in method allclose of type object at 0x10ca493a0>(tensor([0.3259, 0.6111]), tensor([0.4000, 0.5000]))
+E            +    where <built-in method allclose of type object at 0x10ca493a0> = torch.allclose
+E            +    and   tensor([0.4000, 0.5000]) = <built-in method tensor of type object at 0x10ca493a0>([0.4, 0.5])
+E            +      where <built-in method tensor of type object at 0x10ca493a0> = torch.tensor
+
+test/test_subspace_what_stm_contract.py:1135: AssertionError
+______________ test_forward_stack_orchestrates_shift_then_reduce _______________
+
+    def test_forward_stack_orchestrates_shift_then_reduce():
+        """forward_stack runs a list of (shift/reduce) actions end-to-end."""
+        from Language import TheGrammar, RuleCodebook
+        from Layers import ConjunctionLayer
+    
+        saved_rules = list(TheGrammar.rules)
+        saved_configured = TheGrammar._configured
+        saved_vsym = TheGrammar.symbol_vocab_size
+        try:
+            TheGrammar.rules = []
+            TheGrammar.rules_upward = []
+            TheGrammar.rules_downward = []
+            TheGrammar.reverse_rules = []
+            TheGrammar._configured = False
+            TheGrammar.symbol_vocab_size = 5
+            TheGrammar.configure({'compose': {'symbols':
+                                  {'rule': ['S = conjunction(S, S)']}}})
+    
+            router = _make_minimal_signal_router(D=2)
+            sub = _make_stack_subspace_with_where(B=1, K=4, D=2, W=2)
+            rc = RuleCodebook(num_rules=1, grammar=TheGrammar)
+            layer = _make_syntactic_layer_for_stack({'conjunction': ConjunctionLayer()})
+    
+            actions = [
+                ('shift', torch.tensor([[0.6, 0.9]]), 1),
+                ('shift', torch.tensor([[0.4, 0.5]]), 2),
+                ('reduce', 0),
+            ]
+            router.forward_stack(sub, layer, actions=actions, rule_codebook=rc)
+    
+            what = sub.materialize(mode="what")
+            occ = sub.materialize(mode="activation")
+>           assert torch.allclose(what[0, 0, :], torch.tensor([0.4, 0.5]))
+E           assert False
+E            +  where False = <built-in method allclose of type object at 0x10ca493a0>(tensor([0.3259, 0.6111]), tensor([0.4000, 0.5000]))
+E            +    where <built-in method allclose of type object at 0x10ca493a0> = torch.allclose
+E            +    and   tensor([0.4000, 0.5000]) = <built-in method tensor of type object at 0x10ca493a0>([0.4, 0.5])
+E            +      where <built-in method tensor of type object at 0x10ca493a0> = torch.tensor
+
+test/test_subspace_what_stm_contract.py:1226: AssertionError
+__ test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty __
+
+    def test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty():
+        code=torch.nn.Parameter(torch.tensor([1.,2.])); reader=torch.nn.Parameter(torch.tensor([3.]))
+        named=[('codes',code),('reader',reader)]
+        old=Adam([code,reader],lr=.02)
+        (code.square().sum()+reader.square().sum()).backward();old.step();old.zero_grad()
+        live=MultiOptimizer([Adam([reader],lr=.02),SGD([code],lr=.02,momentum=.9)])
+        result=remap_optimizer_state_by_name(old.state_dict(),build_optimizer_param_manifest(old,named),
+            live.state_dict(),build_optimizer_param_manifest(live,named))
+        live.load_state_dict(result.state)
+        torch.testing.assert_close(live.state[reader]['exp_avg'],old.state[reader]['exp_avg'])
+>       assert not live.state[code]
+                   ^^^^^^^^^^^^^^^^
+
+test/test_objective_optimizer_resume.py:17: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Optimizer._MergedOptimizerState object at 0x1204cb740>
+param = Parameter containing:
+tensor([0.9800, 1.9800], requires_grad=True)
+
+    def __getitem__(self, param):
+        owner = self._owner(param)
+        if owner is None:
+>           raise KeyError(param)
+E           KeyError: Parameter containing:
+E           tensor([0.9800, 1.9800], requires_grad=True)
+
+bin/Optimizer.py:975: KeyError
+=============================== warnings summary ===============================
+test/test_subspace_what_stm_contract.py::test_word_admission_preserves_the_property_inventory
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:394: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_boolean_reverse_recommender.py::test_conjunction_reverse_with_basis_recovers_pair
+FAILED test/test_boolean_reverse_recommender.py::test_disjunction_reverse_with_basis_recovers_pair
+FAILED test/test_subspace_what_stm_contract.py::test_execute_arity2_requires_right
+FAILED test/test_subspace_what_stm_contract.py::test_execute_superposed_independent_then_weighted_sum
+FAILED test/test_subspace_what_stm_contract.py::test_reduce_writes_parent_in_left_zeros_right
+FAILED test/test_subspace_what_stm_contract.py::test_forward_dispatches_to_forward_stack_with_actions
+FAILED test/test_subspace_what_stm_contract.py::test_forward_stack_orchestrates_shift_then_reduce
+FAILED test/test_objective_optimizer_resume.py::test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty
+8 failed, 129 passed, 2 warnings in 6.95s

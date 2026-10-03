@@ -1,0 +1,20 @@
+bin/Layers.py:15159:        if getattr(self, "_slot_kinds", None) is not None:
+bin/Layers.py:15161:                self, "_slot_kinds", [[] for _ in range(batch)])
+bin/Layers.py:15173:    def kinds_enable(self, batch, depths=None, kind="other"):
+bin/Layers.py:15179:            self, "_slot_kinds",
+bin/Layers.py:15183:    def note_push_masked(self, gate_rows, kind):
+bin/Layers.py:15185:        ks = getattr(self, "_slot_kinds", None)
+bin/Layers.py:15326:    def note_push_all(self, kind):
+bin/Layers.py:15328:        ks = getattr(self, "_slot_kinds", None)
+bin/Layers.py:15749:        ks = getattr(self, "_slot_kinds", None)
+bin/Models.py:18753:            kinds = getattr(stm, '_slot_kinds', None)
+bin/Models.py:19222:    def _push_kind_word_col(self, p, B):
+bin/Models.py:20068:                            and getattr(stm, "_slot_kinds", None) is not None):
+bin/Models.py:20071:                        wcol = self._push_kind_word_col(p, len(gate_rows))
+bin/Models.py:20072:                        stm.note_push_masked(
+bin/Models.py:20075:                        stm.note_push_masked(
+bin/Models.py:20209:                        and getattr(stm, "_slot_kinds", None) is not None):
+bin/Models.py:20212:                    wcol = self._push_kind_word_col(p, len(gate_rows))
+bin/Models.py:20213:                    stm.note_push_masked(
+bin/Models.py:20215:                    stm.note_push_masked(
+bin/Spaces.py:14057:            stm.note_push_all("other")

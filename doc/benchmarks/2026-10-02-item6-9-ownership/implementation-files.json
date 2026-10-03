@@ -1,0 +1,387 @@
+[
+  {
+    "file": "Makefile",
+    "old_lines": 224,
+    "new_lines": 216,
+    "insertions": 3,
+    "deletions": 11
+  },
+  {
+    "file": "README.md",
+    "old_lines": 142,
+    "new_lines": 142,
+    "insertions": 2,
+    "deletions": 2
+  },
+  {
+    "file": "bin/GrammarLessons.py",
+    "old_lines": 221,
+    "new_lines": 222,
+    "insertions": 2,
+    "deletions": 1
+  },
+  {
+    "file": "bin/Language.py",
+    "old_lines": 14413,
+    "new_lines": 14407,
+    "insertions": 31,
+    "deletions": 37
+  },
+  {
+    "file": "bin/Layers.py",
+    "old_lines": 19401,
+    "new_lines": 19047,
+    "insertions": 4,
+    "deletions": 358
+  },
+  {
+    "file": "bin/Models.py",
+    "old_lines": 25509,
+    "new_lines": 25352,
+    "insertions": 319,
+    "deletions": 476
+  },
+  {
+    "file": "bin/ObjectiveOwnership.py",
+    "old_lines": 0,
+    "new_lines": 68,
+    "insertions": 68,
+    "deletions": 0
+  },
+  {
+    "file": "bin/SentenceCompose.py",
+    "old_lines": 191,
+    "new_lines": 158,
+    "insertions": 2,
+    "deletions": 35
+  },
+  {
+    "file": "bin/SentenceUnderstanding.py",
+    "old_lines": 0,
+    "new_lines": 96,
+    "insertions": 96,
+    "deletions": 0
+  },
+  {
+    "file": "bin/Spaces.py",
+    "old_lines": 22418,
+    "new_lines": 22233,
+    "insertions": 119,
+    "deletions": 304
+  },
+  {
+    "file": "bin/Understanding.py",
+    "old_lines": 286,
+    "new_lines": 288,
+    "insertions": 2,
+    "deletions": 0
+  },
+  {
+    "file": "bin/WhereRegistry.py",
+    "old_lines": 119,
+    "new_lines": 124,
+    "insertions": 6,
+    "deletions": 1
+  },
+  {
+    "file": "bin/data.py",
+    "old_lines": 1975,
+    "new_lines": 1964,
+    "insertions": 12,
+    "deletions": 23
+  },
+  {
+    "file": "bin/eval_where_tiling.py",
+    "old_lines": 177,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 177
+  },
+  {
+    "file": "bin/train.py",
+    "old_lines": 626,
+    "new_lines": 626,
+    "insertions": 4,
+    "deletions": 4
+  },
+  {
+    "file": "data/BasicModel_answers_benchmark.xml",
+    "old_lines": 115,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 115
+  },
+  {
+    "file": "data/BasicModel_expectation_benchmark.xml",
+    "old_lines": 114,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 114
+  },
+  {
+    "file": "data/BasicModel_long_tied_benchmark.xml",
+    "old_lines": 119,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 119
+  },
+  {
+    "file": "data/BasicModel_output_tied_benchmark.xml",
+    "old_lines": 120,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 120
+  },
+  {
+    "file": "data/HeadEmission.xml",
+    "old_lines": 88,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 88
+  },
+  {
+    "file": "data/LM_5M.xml",
+    "old_lines": 167,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 167
+  },
+  {
+    "file": "data/LM_5M_IR.xml",
+    "old_lines": 162,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 162
+  },
+  {
+    "file": "data/MM_20M_fineweb.xml",
+    "old_lines": 146,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 146
+  },
+  {
+    "file": "data/MM_20M_grammar.xml",
+    "old_lines": 140,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 140
+  },
+  {
+    "file": "data/MM_400M.xml",
+    "old_lines": 92,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 92
+  },
+  {
+    "file": "data/MM_5M_AR.xml",
+    "old_lines": 96,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 96
+  },
+  {
+    "file": "data/MM_5M_IR.xml",
+    "old_lines": 102,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 102
+  },
+  {
+    "file": "data/MM_add_verb.xml",
+    "old_lines": 112,
+    "new_lines": 111,
+    "insertions": 18,
+    "deletions": 19
+  },
+  {
+    "file": "data/MM_boolean.xml",
+    "old_lines": 136,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 136
+  },
+  {
+    "file": "data/MM_decode.xml",
+    "old_lines": 86,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 86
+  },
+  {
+    "file": "data/MM_init_scale.xml",
+    "old_lines": 76,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 76
+  },
+  {
+    "file": "data/MM_ladder_text.xml",
+    "old_lines": 254,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 254
+  },
+  {
+    "file": "data/MM_ladder_textpacked.xml",
+    "old_lines": 255,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 255
+  },
+  {
+    "file": "data/MM_ltm_consolidation_stateful_fixture.xml",
+    "old_lines": 88,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 88
+  },
+  {
+    "file": "data/MM_masked_semantic.xml",
+    "old_lines": 119,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 119
+  },
+  {
+    "file": "data/MM_mereology.xml",
+    "old_lines": 101,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 101
+  },
+  {
+    "file": "data/MM_mereology_serial.xml",
+    "old_lines": 100,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 100
+  },
+  {
+    "file": "data/MM_meronomy_smoke.xml",
+    "old_lines": 91,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 91
+  },
+  {
+    "file": "data/MM_nanochat_grammar_gate.xml",
+    "old_lines": 135,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 135
+  },
+  {
+    "file": "data/MM_nanochat_grammar_pilot.xml",
+    "old_lines": 158,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 158
+  },
+  {
+    "file": "data/MM_overlap_tiling.xml",
+    "old_lines": 75,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 75
+  },
+  {
+    "file": "data/MM_phrase_decode.xml",
+    "old_lines": 102,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 102
+  },
+  {
+    "file": "data/MM_qa.xml",
+    "old_lines": 121,
+    "new_lines": 128,
+    "insertions": 8,
+    "deletions": 1
+  },
+  {
+    "file": "data/MM_sparse_concept.xml",
+    "old_lines": 100,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 100
+  },
+  {
+    "file": "data/MM_symbol_tower.xml",
+    "old_lines": 113,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 113
+  },
+  {
+    "file": "data/MM_symbolic_iter.xml",
+    "old_lines": 74,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 74
+  },
+  {
+    "file": "data/MM_xor_step3.xml",
+    "old_lines": 73,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 73
+  },
+  {
+    "file": "data/MM_xor_step4.xml",
+    "old_lines": 77,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 77
+  },
+  {
+    "file": "data/XOR_recon.xml",
+    "old_lines": 78,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 78
+  },
+  {
+    "file": "data/XOR_spaces.xml",
+    "old_lines": 65,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 65
+  },
+  {
+    "file": "data/matrix/MM_20M_grammar_wordstore.xml",
+    "old_lines": 152,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 152
+  },
+  {
+    "file": "data/model.xml",
+    "old_lines": 551,
+    "new_lines": 550,
+    "insertions": 0,
+    "deletions": 1
+  },
+  {
+    "file": "data/model.xsd",
+    "old_lines": 1494,
+    "new_lines": 1475,
+    "insertions": 0,
+    "deletions": 19
+  },
+  {
+    "file": "data/simple.xml",
+    "old_lines": 44,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 44
+  },
+  {
+    "file": "data/tomatoes.xml",
+    "old_lines": 50,
+    "new_lines": 0,
+    "insertions": 0,
+    "deletions": 50
+  }
+]

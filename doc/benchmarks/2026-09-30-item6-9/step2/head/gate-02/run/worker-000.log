@@ -1,0 +1,26 @@
+.....F.                                                                  [100%]
+=================================== FAILURES ===================================
+____________ TestMMXorConvergence.test_mm_grammar_learns_xor_signal ____________
+test/test_mm_xor.py:179: in test_mm_grammar_learns_xor_signal
+    self._fit_xor(os.path.join(_PROJECT, "data", "MM_grammar.xml"),
+test/test_mm_xor.py:165: in _fit_xor
+    self.assertLess(best_loss, threshold,
+E   AssertionError: 0.23067627847194672 not less than 0.2 : XOR loss 0.230676 after at most 900 epochs
+----------------------------- Captured stdout call -----------------------------
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+=============================== warnings summary ===============================
+test/test_mm_xor.py::TestMMXorConvergence::test_convergence
+test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols
+test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal
+  /Users/arogers/github/WikiOracle/basicmodel/output/item69-head/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/output/item69-head/data/MM_xor.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal
+  /Users/arogers/github/WikiOracle/basicmodel/output/item69-head/bin/Models.py:7649: RuntimeWarning: output_state_boundary [config /Users/arogers/github/WikiOracle/basicmodel/output/item69-head/data/MM_grammar.xml]: supervised outputs with reconstruction and answerSynthesis=false use the direct head: output gradients train the whole input state; enable answerSynthesis for the concluded-idea state boundary
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal
+1 failed, 6 passed, 4 warnings in 187.89s (0:03:07)

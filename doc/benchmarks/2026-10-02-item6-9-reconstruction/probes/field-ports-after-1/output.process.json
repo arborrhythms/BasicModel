@@ -1,0 +1,24 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_contextual_concept_codebook.py",
+    "test/test_concept_memberships.py",
+    "test/test_masked_semantic.py",
+    "test/test_dual_towers.py",
+    "test/test_priming_energy.py",
+    "test/test_conceptualize.py",
+    "test/test_relevance_bases.py",
+    "test/test_free_reconstruction.py",
+    "test/test_objective_ownership.py",
+    "--tb=short"
+  ],
+  "pid": 87084,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 738985472,
+  "elapsed_seconds": 7.206027709005866,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-reconstruction/probes/field-ports-after-1/output.log"
+}

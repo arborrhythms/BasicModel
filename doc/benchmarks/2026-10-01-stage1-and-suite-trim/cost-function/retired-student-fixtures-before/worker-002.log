@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_student_checkpoint_migrates_shared_weights_and_adam_by_name _______
+test/test_tied_reconstruction_objective.py:69: in test_student_checkpoint_migrates_shared_weights_and_adam_by_name
+    legacy = _build_ladder_variant(tmp_path, "old_student", [
+test/test_meronomy_ladder.py:480: in _build_ladder_variant
+    init_config(path=str(config), defaults_path=str(_DATA / "model.xml"))
+bin/util.py:2028: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1932: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml:111: element detachedReverse: Schemas validity error : Element 'detachedReverse': The actual value 'true' does not match the fixed value constraint 'false'.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-352/test_student_checkpoint_migrat0/MM_ladder_old_student.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+=========================== short test summary info ============================
+FAILED test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_adam_by_name
+1 failed in 2.13s

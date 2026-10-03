@@ -1,0 +1,48 @@
+.F.F.                                                                    [100%]
+=================================== FAILURES ===================================
+_________ test_concept_index_read_sizes_inventory_by_explicit_nvectors _________
+test/test_word_store.py:635: in test_concept_index_read_sizes_inventory_by_explicit_nvectors
+    m, _ = Models.BaseModel.from_config(p)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1826: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6573: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1856: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24600: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - ConceptualSpace.activeVectors must be positive and no larger than its nVectors; got active=512, capacity=16
+____________________ test_stm_depth_tracks_valid_len_not_N _____________________
+test/test_per_word_ss_padding_noop.py:68: in test_stm_depth_tracks_valid_len_not_N
+    assert int(stm._depth.max()) == 1
+E   assert 3 == 1
+E    +  where 3 = int(tensor(3))
+E    +    where tensor(3) = <built-in method max of Tensor object at 0x131849db0>()
+E    +      where <built-in method max of Tensor object at 0x131849db0> = tensor([3]).max
+E    +        where tensor([3]) = ShortTermMemory()._depth
+----------------------------- Captured stdout call -----------------------------
+Loading text: 1 shard(s), max 8 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 8 docs -> 363 sentences (363 train, 0 val, 0 test)
+=============================== warnings summary ===============================
+test/test_dual_towers.py::test_ws_routing_after_serial_migration
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1705: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors
+FAILED test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N
+2 failed, 3 passed, 3 warnings in 21.53s

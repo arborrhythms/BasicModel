@@ -1,0 +1,19 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+____ TestAnalyseMigration.test_meronomy_synthesis_owns_full_surface_lexing _____
+test/test_analyse_chunking_forward.py:132: in test_meronomy_synthesis_owns_full_surface_lexing
+    lexicon = [t for t in self._tokens("meronomy", lexer="word")[0] if t]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_analyse_chunking_forward.py:124: in _tokens
+    unique = list(dict.fromkeys(tuple(pair) for pair in spans.tolist() if pair[1] > pair[0]))
+                                                        ^^^^^^^^^^^^
+E   AttributeError: 'list' object has no attribute 'tolist'
+=============================== warnings summary ===============================
+test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing
+1 failed, 2 passed, 1 warning in 2.20s

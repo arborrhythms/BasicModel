@@ -1,0 +1,280 @@
+{
+  "training_batches": 400,
+  "evaluation_batches": 1,
+  "last_training_trials": {
+    "exploit": {
+      "pair": 399,
+      "trial": "exploit",
+      "train": true,
+      "scope": "batch",
+      "batch": 399,
+      "sid": 0,
+      "active": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "raw": {
+        "reconstruction": [
+          -0.0,
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "expectation_inter": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "expectation_contrastive": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "supplied_answer": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "grammar_lesson": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "weighted": {
+        "reconstruction": [
+          -0.0,
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "expectation": [
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206
+        ],
+        "supplied_answer": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "total": [
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206
+        ],
+        "legacy_intra": [
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206
+        ]
+      },
+      "evaluation_supplied_answer": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "grammar_terms": {},
+      "weights": {
+        "reconstruction": 0.1,
+        "expectation_inter": 0.1,
+        "expectation_contrastive": 0.0,
+        "supplied_answer": 0.0,
+        "grammar_lesson": 1.0
+      },
+      "reconstruction_enabled": false
+    },
+    "explore": {
+      "pair": 399,
+      "trial": "explore",
+      "train": true,
+      "scope": "batch",
+      "batch": 399,
+      "sid": 0,
+      "active": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "raw": {
+        "reconstruction": [
+          0.0,
+          -0.0,
+          0.0,
+          -0.0
+        ],
+        "expectation_inter": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "expectation_contrastive": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "supplied_answer": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "grammar_lesson": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "weighted": {
+        "reconstruction": [
+          0.0,
+          -0.0,
+          0.0,
+          -0.0
+        ],
+        "expectation": [
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206
+        ],
+        "supplied_answer": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "total": [
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206
+        ],
+        "legacy_intra": [
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206,
+          0.0015342303086072206
+        ]
+      },
+      "evaluation_supplied_answer": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "grammar_terms": {},
+      "weights": {
+        "reconstruction": 0.1,
+        "expectation_inter": 0.1,
+        "expectation_contrastive": 0.0,
+        "supplied_answer": 0.0,
+        "grammar_lesson": 1.0
+      },
+      "reconstruction_enabled": false
+    }
+  },
+  "last_batch": {
+    "raw": {
+      "lossOut": 0.13637296855449677,
+      "lossIn": 0.30006521940231323,
+      "lossRev": 0.30006521940231323,
+      "sbow": null,
+      "grammar_lesson": null,
+      "output_policy_loss": null,
+      "csbow": null,
+      "defsp": null,
+      "arma_loss": null,
+      "intra_loss": null,
+      "inter_loss": null,
+      "inter_contrastive": null,
+      "aux_total": null,
+      "expectation_policy_loss": null,
+      "selected_pol_loss": null,
+      "ld_loss": null,
+      "gate_l1": null,
+      "readout_l1": null,
+      "totalLoss": 0.1827487200498581
+    },
+    "weights": {
+      "lossOut": 0.9,
+      "lossIn": 0.1,
+      "lossRev": 0.1,
+      "sbow": 0.05,
+      "grammar_lesson": 1.0,
+      "output_policy_loss": 0.0,
+      "csbow": 0.0,
+      "defsp": 1.0,
+      "arma_loss": 0.0,
+      "intra_loss": 0.1,
+      "inter_loss": 0.1,
+      "inter_contrastive": 0.0,
+      "aux_total": 1.0,
+      "expectation_policy_loss": 0.0,
+      "selected_pol_loss": 0.0,
+      "ld_loss": 0.0,
+      "gate_l1": 1.0,
+      "readout_l1": 1.0
+    },
+    "train": false,
+    "split": "test"
+  },
+  "grammar_reconstructions": [
+    {
+      "texts": [
+        "world there",
+        "there there",
+        "world there",
+        "there there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  ],
+  "predictions": [
+    0.350686252117157,
+    0.6687062382698059,
+    0.4700273871421814,
+    0.5154287219047546
+  ],
+  "targets": [
+    [
+      0.0
+    ],
+    [
+      1.0
+    ],
+    [
+      1.0
+    ],
+    [
+      0.0
+    ]
+  ],
+  "inputs": [
+    "hello world",
+    "hello there",
+    "loving world",
+    "loving there"
+  ],
+  "seconds": 64.82610004100206
+}

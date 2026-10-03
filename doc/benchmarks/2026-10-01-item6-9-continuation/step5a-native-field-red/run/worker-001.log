@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_automatic_answers_do_not_start_a_supplied_answer_trial __________
+test/test_supplied_answer_training.py:141: in test_automatic_answers_do_not_start_a_supplied_answer_trial
+    assert BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
+bin/Models.py:20655: in _sentence_answer_error
+    construction = self.reverseOutput(understanding, held, detach_understanding=False)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_supplied_answer_training.py:138: in forbidden
+    raise AssertionError('an automatic answer must not start a supervised generation trial')
+E   AssertionError: an automatic answer must not start a supervised generation trial
+=========================== short test summary info ============================
+FAILED test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial
+1 failed in 2.73s

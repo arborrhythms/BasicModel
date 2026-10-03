@@ -1,0 +1,661 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter",
+    "test/test_type_run_spans.py::test_lut_type_assignments",
+    "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+    "test/test_type_run_spans.py::test_example_words_split_on_space",
+    "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+    "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+    "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+    "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+    "test/test_type_run_spans.py::test_single_char",
+    "test/test_type_run_spans.py::test_punct_only_run",
+    "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+    "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+    "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+    "test/test_type_run_spans.py::test_stage_byte_mode_returns_none",
+    "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+    "test/test_type_run_spans.py::test_stage_word_mode_type_runs",
+    "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+    "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+    "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+    "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+    "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary",
+    "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+    "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+    "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+    "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+    "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+    "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+    "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+    "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+    "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+    "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction"
+  ],
+  "completed": [
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+    "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter",
+    "test/test_type_run_spans.py::test_lut_type_assignments",
+    "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+    "test/test_type_run_spans.py::test_example_words_split_on_space",
+    "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+    "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+    "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+    "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+    "test/test_type_run_spans.py::test_single_char",
+    "test/test_type_run_spans.py::test_punct_only_run",
+    "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+    "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+    "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+    "test/test_type_run_spans.py::test_stage_byte_mode_returns_none",
+    "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+    "test/test_type_run_spans.py::test_stage_word_mode_type_runs",
+    "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+    "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+    "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+    "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+    "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary",
+    "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+    "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+    "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+    "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+    "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+    "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+    "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+    "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+    "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+    "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-000.json"
+      ],
+      "pid": 53702,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 451265856,
+      "elapsed_seconds": 3.8919275420048507,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly"
+      ],
+      "completed": [
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.02323587500723079,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.05155200000444893,
+          "message": "test/test_analyse_chunking_forward.py:132: in test_meronomy_synthesis_owns_full_surface_lexing\n    lexicon = [t for t in self._tokens(\"meronomy\", lexer=\"word\")[0] if t]\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_analyse_chunking_forward.py:124: in _tokens\n    unique = list(dict.fromkeys(tuple(pair) for pair in spans.tolist() if pair[1] > pair[0]))\n                                                        ^^^^^^^^^^^^\nE   AttributeError: 'list' object has no attribute 'tolist'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010325708004529588,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-001.json"
+      ],
+      "pid": 53715,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434226496,
+      "elapsed_seconds": 3.8370339579996653,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+        "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter"
+      ],
+      "completed": [
+        "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+        "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00023879199579823762,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.045941584001411684,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-002.json"
+      ],
+      "pid": 53724,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 431211816,
+      "elapsed_seconds": 3.8502102499915054,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_type_run_spans.py::test_lut_type_assignments",
+        "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+        "test/test_type_run_spans.py::test_example_words_split_on_space",
+        "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+        "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+        "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+        "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+        "test/test_type_run_spans.py::test_single_char",
+        "test/test_type_run_spans.py::test_punct_only_run",
+        "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+        "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+        "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+        "test/test_type_run_spans.py::test_stage_byte_mode_returns_none",
+        "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+        "test/test_type_run_spans.py::test_stage_word_mode_type_runs",
+        "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity"
+      ],
+      "completed": [
+        "test/test_type_run_spans.py::test_lut_type_assignments",
+        "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+        "test/test_type_run_spans.py::test_example_words_split_on_space",
+        "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+        "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+        "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+        "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+        "test/test_type_run_spans.py::test_single_char",
+        "test/test_type_run_spans.py::test_punct_only_run",
+        "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+        "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+        "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+        "test/test_type_run_spans.py::test_stage_byte_mode_returns_none",
+        "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+        "test/test_type_run_spans.py::test_stage_word_mode_type_runs",
+        "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_type_run_spans.py::test_lut_type_assignments",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00016599999798927456,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010637500963639468,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_words_split_on_space",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005763329972978681,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002280000044265762,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00022733300284016877,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002205420023528859,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00033900000562425703,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_single_char",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004038339975522831,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_punct_only_run",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003036249981960282,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0001507499982835725,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00028916599694639444,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002257919986732304,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_stage_byte_mode_returns_none",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.004365291999420151,
+          "message": "test/test_type_run_spans.py:148: in test_stage_byte_mode_returns_none\n    assert _stage(mode, \"abc def\") is None\nE   AssertionError: assert tensor([[[0, 3],\\n         [4, 7]]]) is None\nE    +  where tensor([[[0, 3],\\n         [4, 7]]]) = _stage('byte', 'abc def')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002868416006094776,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_stage_word_mode_type_runs",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.006564249997609295,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003286332997959107,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-003.json"
+      ],
+      "pid": 53734,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 534545680,
+      "elapsed_seconds": 4.981914874995709,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+        "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+        "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+        "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary",
+        "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+        "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+        "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+        "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+        "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+        "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+        "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+        "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
+      ],
+      "completed": [
+        "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+        "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+        "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+        "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary",
+        "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+        "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+        "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+        "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+        "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+        "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+        "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+        "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00021033399389125407,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.005008207997889258,
+          "message": "test/test_type_run_spans.py:208: in test_live_ws_has_one_property_basis_with_canonical_teaching_rows\n    ws = _live_ws(\"word\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.004338124999776483,
+          "message": "test/test_type_run_spans.py:224: in test_property_teaching_rows_are_idempotent_on_rebuild\n    a = _live_ws(\"word\")\n        ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.004278708001947962,
+          "message": "test/test_type_run_spans.py:237: in test_byte_mode_owns_properties_without_a_type_dictionary\n    ws = _live_ws(\"byte\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.004289415999664925,
+          "message": "test/test_type_run_spans.py:246: in test_type_subspace_adds_no_state_dict_keys\n    word = _live_ws(\"word\")\n           ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.004550999990897253,
+          "message": "test/test_type_run_spans.py:265: in test_live_derived_lut_is_byte_identical_to_module_lut\n    ws = _live_ws(\"word\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.004105416999664158,
+          "message": "test/test_type_run_spans.py:270: in test_derived_cut_byte_identical_across_a_spread_of_inputs\n    ws = _live_ws(\"word\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.004421208999701776,
+          "message": "test/test_type_run_spans.py:292: in test_checkpoint_roundtrip_preserves_property_definitions_and_cut\n    a = _live_ws(\"word\")\n        ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.004337416001362726,
+          "message": "test/test_type_run_spans.py:309: in test_property_memberships_are_owned_parameters_and_train\n    ws = _live_ws(\"word\")\n         ^^^^^^^^^^^^^^^^\ntest/test_type_run_spans.py:192: in _live_ws\n    return WholeSpace([_NP, _D], [nS, _D], [nS, _D])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:20768: in __init__\n    raise ValueError(\"WholeSpace.analysis must be meronomy; old reading modes are retired\")\nE   ValueError: WholeSpace.analysis must be meronomy; old reading modes are retired",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010694160009734333,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010198375006439164,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.037274915986927226,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-004.json"
+      ],
+      "pid": 53748,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 717211112,
+      "elapsed_seconds": 5.212305999986711,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+        "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+        "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+        "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction"
+      ],
+      "completed": [
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+        "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+        "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+        "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00010329100769013166,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 9.345798753201962e-05,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.015009750000899658,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.30880441699991934,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.9412334999942686,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 600,
+    "suite_seconds": 1800,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after",
+  "elapsed_seconds": 26.100756207990344,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 717211112,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/collect.json"
+    ],
+    "pid": 53686,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 431850672,
+    "elapsed_seconds": 3.8078871670004446,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/mode-ports-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+        "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
+        "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+        "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter",
+        "test/test_type_run_spans.py::test_lut_type_assignments",
+        "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+        "test/test_type_run_spans.py::test_example_words_split_on_space",
+        "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+        "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+        "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+        "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+        "test/test_type_run_spans.py::test_single_char",
+        "test/test_type_run_spans.py::test_punct_only_run",
+        "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+        "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+        "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+        "test/test_type_run_spans.py::test_stage_byte_mode_returns_none",
+        "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+        "test/test_type_run_spans.py::test_stage_word_mode_type_runs",
+        "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+        "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+        "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+        "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+        "test/test_type_run_spans.py::test_byte_mode_owns_properties_without_a_type_dictionary",
+        "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+        "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+        "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+        "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+        "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+        "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+        "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+        "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+        "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+        "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+        "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+        "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

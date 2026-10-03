@@ -1,0 +1,47 @@
+{
+  "public_cost": [
+    0.8492311835289001,
+    1.7225902080535889
+  ],
+  "transaction_costs": [
+    [
+      0.00026829366106539965,
+      0.0002736636088229716
+    ]
+  ],
+  "records": [
+    {
+      "original": [
+        0.00026829366106539965,
+        0.0002736636088229716
+      ],
+      "replay_original": [
+        0.00026829366106539965,
+        0.0002736636088229716
+      ],
+      "replay_retained": [
+        0.00026829366106539965,
+        0.0002736636088229716
+      ],
+      "field_changes": {
+        "root": 0.0,
+        "end_slots": 0.0,
+        "end_depth": 0.0,
+        "roots": 0.0,
+        "depths": 0.0,
+        "word_values": 0.0,
+        "word_rows": 0.0,
+        "word_valid": 0.0,
+        "rule_ids": 0.0,
+        "arities": 0.0,
+        "rule_valid": 0.0,
+        "operand_positions": 0.0,
+        "operation_values": 0.0,
+        "witness_offsets": 0.0,
+        "journal_columns": 0.0,
+        "journal_valid": 0.0,
+        "sentence": 0.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows"
+  ],
+  "pid": 25313,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 432375128,
+  "elapsed_seconds": 3.596812209012569,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/commit-reading-owner-after.log"
+}

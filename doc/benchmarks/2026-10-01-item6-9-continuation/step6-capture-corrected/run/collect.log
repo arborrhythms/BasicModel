@@ -1,0 +1,4 @@
+test/test_grammar_reconstruction_gate.py::test_gate_captures_grammar_words_without_a_second_forward
+test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent
+
+2 tests collected in 1.99s

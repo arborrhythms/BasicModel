@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "test/test_sentence_priming.py",
+    "-q",
+    "--disable-warnings"
+  ],
+  "pid": 16211,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 507413896,
+  "elapsed_seconds": 3.8607130000018515,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-02-item6-9-ownership/repairs/priming-after.log"
+}

@@ -1,0 +1,32 @@
+Starting with dynamic 6-dim embedding (words added at runtime)
+  Building span table: 0/5 docs
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py", line 52, in <module>
+    if a.worker:worker(a.worker,a.output)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/configuration_timing.py", line 13, in worker
+    model,device,lr,batch=recon_bench._build_model(str(ROOT/config))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/recon_bench.py", line 128, in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1824, in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7116, in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1924, in create_from_config
+    self.create(
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 7136, in create
+    return self._create_per_stage(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 17388, in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+                       ^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 14648, in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13278, in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+ValueError: unresolved generate rule: S -> C

@@ -1,0 +1,759 @@
+{
+  "completed": [
+    {
+      "kind": "a",
+      "trial": 1,
+      "name": "a-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-01"
+        ],
+        "pid": 81578,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 677627464,
+        "elapsed_seconds": 77.9388229160104,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-01/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 1,
+      "name": "b-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-01"
+        ],
+        "pid": 81579,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 685950512,
+        "elapsed_seconds": 110.85705758305266,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-01/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 1,
+      "name": "c-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-01"
+        ],
+        "pid": 81580,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 675972608,
+        "elapsed_seconds": 79.69877433311194,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-01/driver.log"
+      }
+    },
+    {
+      "kind": "a",
+      "trial": 2,
+      "name": "a-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-02"
+        ],
+        "pid": 82213,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 671958552,
+        "elapsed_seconds": 77.34648116701283,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-02/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 2,
+      "name": "b-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-02"
+        ],
+        "pid": 82214,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 683984408,
+        "elapsed_seconds": 116.07474541594274,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-02/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 2,
+      "name": "c-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-02"
+        ],
+        "pid": 82215,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 674596376,
+        "elapsed_seconds": 78.32575987512246,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-02/driver.log"
+      }
+    },
+    {
+      "kind": "a",
+      "trial": 3,
+      "name": "a-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-03"
+        ],
+        "pid": 82606,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 678053424,
+        "elapsed_seconds": 78.20879141706973,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-03/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 3,
+      "name": "b-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-03"
+        ],
+        "pid": 82607,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 680658480,
+        "elapsed_seconds": 115.27802824997343,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-03/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 3,
+      "name": "c-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-03"
+        ],
+        "pid": 82746,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 676513304,
+        "elapsed_seconds": 78.63791158306412,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-03/driver.log"
+      }
+    },
+    {
+      "kind": "a",
+      "trial": 4,
+      "name": "a-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-04"
+        ],
+        "pid": 82923,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 680003096,
+        "elapsed_seconds": 78.08216975000687,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-04/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 4,
+      "name": "b-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-04"
+        ],
+        "pid": 83083,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 685524552,
+        "elapsed_seconds": 115.84483387484215,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-04/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 4,
+      "name": "c-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-04"
+        ],
+        "pid": 83084,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 676070936,
+        "elapsed_seconds": 78.88687470788136,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-04/driver.log"
+      }
+    },
+    {
+      "kind": "a",
+      "trial": 5,
+      "name": "a-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-05"
+        ],
+        "pid": 83308,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 671843816,
+        "elapsed_seconds": 77.43685195804574,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-05/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 5,
+      "name": "b-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-05"
+        ],
+        "pid": 83481,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 691275360,
+        "elapsed_seconds": 114.83194545796141,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-05/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 5,
+      "name": "c-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-05"
+        ],
+        "pid": 83639,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 676234776,
+        "elapsed_seconds": 78.95696775009856,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-05/driver.log"
+      }
+    },
+    {
+      "kind": "a",
+      "trial": 6,
+      "name": "a-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-06"
+        ],
+        "pid": 83647,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 669238856,
+        "elapsed_seconds": 78.4078236669302,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-06/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 6,
+      "name": "b-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-06"
+        ],
+        "pid": 84034,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 687834672,
+        "elapsed_seconds": 115.83141124993563,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-06/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 6,
+      "name": "c-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-06"
+        ],
+        "pid": 84035,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 677955120,
+        "elapsed_seconds": 80.69922354095615,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-06/driver.log"
+      }
+    },
+    {
+      "kind": "a",
+      "trial": 7,
+      "name": "a-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-07"
+        ],
+        "pid": 84036,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 671680000,
+        "elapsed_seconds": 79.05564208398573,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-07/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 7,
+      "name": "b-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-07"
+        ],
+        "pid": 84411,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 684017224,
+        "elapsed_seconds": 115.61304904194549,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-07/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 7,
+      "name": "c-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-07"
+        ],
+        "pid": 84419,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 678856216,
+        "elapsed_seconds": 78.64978399989195,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-07/driver.log"
+      }
+    },
+    {
+      "kind": "a",
+      "trial": 8,
+      "name": "a-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-08"
+        ],
+        "pid": 84568,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 669926960,
+        "elapsed_seconds": 77.56432295800187,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-08/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 8,
+      "name": "b-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-08"
+        ],
+        "pid": 84779,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 686261832,
+        "elapsed_seconds": 116.17143487511203,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-08/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 8,
+      "name": "c-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-08"
+        ],
+        "pid": 84906,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 673252936,
+        "elapsed_seconds": 76.59855720796622,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-08/driver.log"
+      }
+    },
+    {
+      "kind": "a",
+      "trial": 9,
+      "name": "a-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-09"
+        ],
+        "pid": 84934,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 676480536,
+        "elapsed_seconds": 78.6366372089833,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-09/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 9,
+      "name": "b-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-09"
+        ],
+        "pid": 85285,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 684475952,
+        "elapsed_seconds": 113.34560320805758,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-09/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 9,
+      "name": "c-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-09"
+        ],
+        "pid": 85297,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 671106560,
+        "elapsed_seconds": 78.89699683291838,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-09/driver.log"
+      }
+    },
+    {
+      "kind": "a",
+      "trial": 10,
+      "name": "a-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "a",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-10"
+        ],
+        "pid": 85302,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 676283952,
+        "elapsed_seconds": 79.93783345795237,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/a-10/driver.log"
+      }
+    },
+    {
+      "kind": "b",
+      "trial": 10,
+      "name": "b-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "b",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-10"
+        ],
+        "pid": 85611,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 688670232,
+        "elapsed_seconds": 114.40269166603684,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/b-10/driver.log"
+      }
+    },
+    {
+      "kind": "c",
+      "trial": 10,
+      "name": "c-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/probe_run.py",
+          "c",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-10"
+        ],
+        "pid": 85623,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 673859096,
+        "elapsed_seconds": 80.02866374980658,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/c-10/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 2,
+      "name": "mm-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-02/measurement.json"
+        ],
+        "pid": 86504,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 565118392,
+        "elapsed_seconds": 143.08812537509948,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-02/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 3,
+      "name": "mm-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-03/measurement.json"
+        ],
+        "pid": 86505,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 590169504,
+        "elapsed_seconds": 144.4022808340378,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-03/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 1,
+      "name": "mm-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-01/measurement.json"
+        ],
+        "pid": 86503,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 577029536,
+        "elapsed_seconds": 147.63541704206727,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-01/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 4,
+      "name": "mm-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-04/measurement.json"
+        ],
+        "pid": 87139,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 563922312,
+        "elapsed_seconds": 142.4018385000527,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-04/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 6,
+      "name": "mm-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-06/measurement.json"
+        ],
+        "pid": 87158,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 610026888,
+        "elapsed_seconds": 152.23730987496674,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-06/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 5,
+      "name": "mm-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-05/measurement.json"
+        ],
+        "pid": 87148,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 611960344,
+        "elapsed_seconds": 161.9488907090854,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-05/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 7,
+      "name": "mm-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-07/measurement.json"
+        ],
+        "pid": 87924,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 599655912,
+        "elapsed_seconds": 148.72084187506698,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-07/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 9,
+      "name": "mm-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-09/measurement.json"
+        ],
+        "pid": 88012,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 590841296,
+        "elapsed_seconds": 144.00704937498085,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-09/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 8,
+      "name": "mm-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-08/measurement.json"
+        ],
+        "pid": 87967,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 586204624,
+        "elapsed_seconds": 153.94956054212525,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-08/driver.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "trial": 10,
+      "name": "mm-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-10/measurement.json"
+        ],
+        "pid": 88621,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 609715664,
+        "elapsed_seconds": 121.51104045799002,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-10/driver.log"
+      }
+    }
+  ],
+  "active": [],
+  "pending": 0,
+  "session_seconds": 556.3769943339285,
+  "peak_memory_bytes": 2036912736,
+  "complete": true
+}

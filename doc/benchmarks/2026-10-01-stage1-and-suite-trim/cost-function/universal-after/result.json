@@ -1,0 +1,300 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+    "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+    "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+    "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+    "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+    "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+    "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-000.json"
+      ],
+      "pid": 89508,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 559908112,
+      "elapsed_seconds": 3.729601207996893,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 2.042525625001872,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-001.json"
+      ],
+      "pid": 89519,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430736632,
+      "elapsed_seconds": 3.6131502079952043,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences"
+      ],
+      "completed": [
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.04442195800220361,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-002.json"
+      ],
+      "pid": 89528,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 554354080,
+      "elapsed_seconds": 3.7700004170037573,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body"
+      ],
+      "completed": [
+        "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.17227241699583828,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n"
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-003.json"
+      ],
+      "pid": 89539,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 501548376,
+      "elapsed_seconds": 3.875880249994225,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients"
+      ],
+      "completed": [
+        "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.23034116700000595,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-004.json"
+      ],
+      "pid": 89547,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 425788712,
+      "elapsed_seconds": 3.642284125002334,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "completed": [
+        "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.011824374996649567,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-005.json"
+      ],
+      "pid": 89557,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 433603856,
+      "elapsed_seconds": 3.685846667001897,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "completed": [
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+          "phase": "call",
+          "outcome": "failed",
+          "duration": 0.022807208995800465,
+          "message": "test/test_sentence_comparison.py:36: in test_sentence_trials_keep_their_own_perception_pullbacks\n    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',\ntest/test_compiled_word_chunk.py:393: in _tiny_canonical_model\n    init_config(\nbin/util.py:2028: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1932: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-349/test_sentence_trials_keep_thei0/tiny_chunk_model.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-349/test_sentence_trials_keep_thei0/tiny_chunk_model.xml:71: element reconstructInLoop: Schemas validity error : Element 'reconstructInLoop': The actual value 'false' does not match the fixed value constraint 'true'.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-349/test_sentence_trials_keep_thei0/tiny_chunk_model.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+          "stdout": ""
+        }
+      ],
+      "recycled": false
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-006.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-006.json"
+      ],
+      "pid": 89566,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 612517352,
+      "elapsed_seconds": 4.278977542002394,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/worker-006.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "completed": [
+        "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.5947154160021455,
+          "message": "",
+          "stdout": "Starting with dynamic 2-dim embedding (words added at runtime)\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 3600,
+    "batch_size": 1,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after",
+  "elapsed_seconds": 29.145249250002962,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 612517352,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/collect.json"
+    ],
+    "pid": 89499,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180831048,
+    "elapsed_seconds": 1.7884288330023992,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/universal-after/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding",
+        "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+        "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+        "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+        "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+        "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+        "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "type": "BackendCompilerFailed",
+  "message": "backend='compile_reconstruction' raised:\nRuntimeError: It seems one of cond's output stride is not a simple accumulative multiplication of sizes. This could be because cond returns a slice of a tensor, which is not dense in memory. True branch has size torch.Size([1032]), stride (1033,) and false branch has size torch.Size([1032]) stride (1,). Hint: can call t.contiguous(). \n\nSet TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"\n",
+  "seconds": 216.16453929099953
+}

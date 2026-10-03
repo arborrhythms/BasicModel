@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient ___
+test/test_grammar_reconstruction_gate.py:15: in test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient
+    assert torch.equal(pair, basis[0]) or torch.equal(pair, basis[0].flip(0))
+E   assert (False or False)
+E    +  where False = <built-in method equal of type object at 0x10cfa93a0>(tensor([[0.0944, 0.1056],\n        [0.0944, 0.1056]], grad_fn=<StackBackward0>), tensor([[0.2000, 0.0000],\n        [0.0000, 0.2000]]))
+E    +    where <built-in method equal of type object at 0x10cfa93a0> = torch.equal
+E    +  and   False = <built-in method equal of type object at 0x10cfa93a0>(tensor([[0.0944, 0.1056],\n        [0.0944, 0.1056]], grad_fn=<StackBackward0>), tensor([[0.0000, 0.2000],\n        [0.2000, 0.0000]]))
+E    +    where <built-in method equal of type object at 0x10cfa93a0> = torch.equal
+E    +    and   tensor([[0.0000, 0.2000],\n        [0.2000, 0.0000]]) = <built-in method flip of Tensor object at 0x12856c6e0>(0)
+E    +      where <built-in method flip of Tensor object at 0x12856c6e0> = tensor([[0.2000, 0.0000],\n        [0.0000, 0.2000]]).flip
+=========================== short test summary info ============================
+FAILED test/test_grammar_reconstruction_gate.py::test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient
+1 failed in 2.14s

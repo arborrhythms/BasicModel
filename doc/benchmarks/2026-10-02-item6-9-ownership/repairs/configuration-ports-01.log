@@ -1,0 +1,121 @@
+...........Fs.....ss..F.s..............F................................ [ 25%]
+........................................................................ [ 51%]
+........................................................................ [ 77%]
+...............................................................          [100%]
+=================================== FAILURES ===================================
+_____________ test_checkpoint_restores_optimizer_counters_and_rng ______________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-816/test_checkpoint_restores_optim0')
+
+    def test_checkpoint_restores_optimizer_counters_and_rng(tmp_path):
+        import Language
+        import Models
+        from util import init_config, init_device
+    
+        init_device("cpu")
+        cfg = PROJECT / "data" / "MM_xor.xml"
+        init_config(path=str(cfg), defaults_path=str(PROJECT / "data" / "model.xml"))
+        Language.TheGrammar._configured = False
+        Models.TheData.load("xor")
+        model, _ = Models.BasicModel.from_config(str(cfg), data=Models.TheData)
+        model._optimizer = model.getOptimizer(lr=1e-4)
+        model.runEpoch(optimizer=model._optimizer, batchSize=2,
+                       split="train", max_batches=1)
+        model._train_batches_seen = 7
+        assert model._epoch_batches_seen == 1
+        path = tmp_path / "resume.ckpt"
+        model.save_weights(str(path))
+        saved = torch.load(path, map_location="cpu", weights_only=False)
+        saved_rng = saved["training_state"]["torch_rng_state"]
+        assert saved["optimizer_state"] is not None
+    
+        Language.TheGrammar._configured = False
+        restored, _ = Models.BasicModel.from_config(str(cfg), data=Models.TheData)
+        assert restored.load_weights(str(path), require_match=True)
+        opt = restored.getOptimizer(lr=1e-4)
+        assert restored._training_step_count == model._training_step_count
+        assert restored._train_batches_seen == 7
+        assert restored._epoch_batches_seen == 1
+        assert restored._resume_batches_to_skip == 1
+        assert restored._checkpoint_batch_size == 2
+        assert torch.equal(torch.get_rng_state(), saved_rng)
+        assert opt.state_dict()["state"]
+        with pytest.raises(ValueError, match="different batch size"):
+            restored.runEpoch(optimizer=opt, batchSize=1,
+                              split="train", max_batches=1)
+        cursor = Models.TheData.data_loader(
+            split="train", num_streams=2,
+            slab_bytes=int(restored.inputSpace.outputShape[0])).dataset
+        total_ticks = 0
+        while not cursor.all_done():
+            cursor.next_tick()
+            total_ticks += 1
+        before = restored._training_step_count
+        restored.runEpoch(optimizer=opt, batchSize=2, split="train")
+>       assert restored._training_step_count == before + total_ticks - 1
+E       assert 2 == ((1 + 4) - 1)
+E        +  where 2 = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...t(\n    (0-2): 3 x _BodyStage()\n  )\n  (where_encoding): WhereEncoding()\n  (when_encoding): WhenStartDurationEncoding()\n)._training_step_count
+
+test/test_fineweb_preflight.py:166: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 0.333s; word units 100.0% of 4 words (letters-only 100.0% of 4).
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-816/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-816/test_checkpoint_restores_optim0/resume.ckpt
+[BasicModel] optimizer checkpoint remapped by parameter name: restored 8 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.027s; word units 100.0% of 4 words (letters-only 100.0% of 4).
+__________________ test_cs_ws_recurrent_input_mismatch_raises __________________
+
+    def test_cs_ws_recurrent_input_mismatch_raises():
+        # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=1024 and
+        # WS.nInputDim=1024. Force WS.nInputDim to mismatch while leaving its
+        # native peer output alone.
+        src = _ref_text("MM_20M_xor.xml")
+        broken = src.replace(
+            "<nInputDim>1024</nInputDim>\n    <nVectors>65536</nVectors>\n"
+            "    <nDim>1024</nDim>\n    <nOutput>1024</nOutput>",
+            "<nInputDim>999</nInputDim>\n    <nVectors>65536</nVectors>\n"
+            "    <nDim>1024</nDim>\n    <nOutput>1024</nOutput>")
+>       assert broken != src, "fixture edit did not apply (SS block changed?)"
+E       AssertionError: fixture edit did not apply (SS block changed?)
+E       assert '<?xml version="1.0" ?>\n<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n       xsi:noNamespaceSchemaLoc...l\'s default. -->\n  <SymbolSpace>\n    <downwardGeneration>false</downwardGeneration>\n  </SymbolSpace>\n\n</model>\n' != '<?xml version="1.0" ?>\n<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n       xsi:noNamespaceSchemaLoc...l\'s default. -->\n  <SymbolSpace>\n    <downwardGeneration>false</downwardGeneration>\n  </SymbolSpace>\n\n</model>\n'
+
+test/test_dimensional_governance.py:167: AssertionError
+_________________ test_relative_links_resolve[doc/Lexicon.md] __________________
+
+path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/Lexicon.md')
+
+    @pytest.mark.parametrize("path", _markdown_files(),
+                             ids=lambda p: str(p.relative_to(_ROOT)))
+    def test_relative_links_resolve(path):
+        text = path.read_text(encoding="utf-8")
+        missing = []
+        for target in _relative_targets(text):
+            if not target:
+                continue
+            resolved = (path.parent / target).resolve()
+            if not resolved.exists():
+                missing.append(target)
+>       assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"
+E       AssertionError: doc/Lexicon.md: unresolved ['../test/tools/bench_codebook_lookup.py']
+E       assert not ['../test/tools/bench_codebook_lookup.py']
+
+test/test_doc_links.py:51: AssertionError
+=============================== warnings summary ===============================
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1739: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+FAILED test/test_dimensional_governance.py::test_cs_ws_recurrent_input_mismatch_raises
+FAILED test/test_doc_links.py::test_relative_links_resolve[doc/Lexicon.md] - ...
+3 failed, 272 passed, 4 skipped, 2 warnings in 4.33s

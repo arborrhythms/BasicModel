@@ -1,0 +1,9 @@
+a: none; expected none
+b: none; expected none
+c: none; expected none
+mm: none; expected eager
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/mm-environment-failure/probe_dispatch.py", line 29, in <module>
+    assert actual == expected, f'{kind} dispatch inherits incorrect MODEL_COMPILE={actual}'
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: mm dispatch inherits incorrect MODEL_COMPILE=none

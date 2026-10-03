@@ -1,0 +1,57 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+  ],
+  "completed": [
+    "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+  ],
+  "slow_selected": [
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018768329755403101,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012099999003112316,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 494, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.0030564579938073,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 6.25%)\r\nbatch = 1 (\u0394=0.038s, 12.50%)\r\nbatch = 2 (\u0394=0.024s, 18.75%)\r\nbatch = 3 (\u0394=0.024s, 25.00%)\r\nbatch = 4 (\u0394=0.024s, 31.25%)\r\nbatch = 5 (\u0394=0.024s, 37.50%)\r\nbatch = 6 (\u0394=0.026s, 43.75%)\r\nbatch = 7 (\u0394=0.026s, 50.00%)\r\nbatch = 8 (\u0394=0.024s, 56.25%)\r\nbatch = 9 (\u0394=0.026s, 62.50%)\r\nbatch = 10 (\u0394=0.026s, 68.75%)\r\nbatch = 11 (\u0394=0.026s, 75.00%)\r\nbatch = 12 (\u0394=0.025s, 81.25%)\r\nbatch = 13 (\u0394=0.025s, 87.50%)\r\nbatch = 14 (\u0394=0.025s, 93.75%)\r\nbatch = 15 (\u0394=0.025s, 100.00%)\r\nTraining throughput: 16 batches in 0.883s; word units 100.0% of 64 words.\r\nbatch = 0 (\u0394=0.058s, 100.00%)\r\nTraining throughput: 1 batches in 0.057s; word units 100.0% of 16 words.\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00022337501286529005,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 537, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

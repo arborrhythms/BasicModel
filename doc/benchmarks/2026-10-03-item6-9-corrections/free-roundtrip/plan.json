@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip"
+  ],
+  "runs": 1,
+  "memory_bytes": 8589934592,
+  "timeout": 1800,
+  "seed": null,
+  "compile": "none",
+  "device": "cpu"
+}

@@ -1,11 +1,13 @@
 """The sentence-phase guard must preserve real fullgraph forward/backward."""
 
+import pytest
 import torch
 
 from Models import _ensure_grad_anchors
 from test_compiled_word_chunk import _stage_fullgraph_tensor_peer, _tiny_canonical_model
 
 
+@pytest.mark.slow
 def test_query_mask_preserves_real_fullgraph_forward_backward_across_lengths(tmp_path, monkeypatch):
     torch.manual_seed(313)
     model = _tiny_canonical_model(tmp_path, monkeypatch)

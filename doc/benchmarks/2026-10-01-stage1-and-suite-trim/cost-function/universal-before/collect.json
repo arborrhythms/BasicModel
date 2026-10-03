@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/cost-function/test_universal_reconstruction_probe.py::test_default_xor_reconstructs_its_understanding"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

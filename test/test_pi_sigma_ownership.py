@@ -77,43 +77,11 @@ class TestOwnership(unittest.TestCase):
     SigmaLayer / PiLayer instances."""
 
 
-    def test_conceptual_no_sigma_percept(self):
-        # Post-Stage-1.C: CS no longer owns sigma_percept. The atomic
-        # forward C-space_role fold is retired; CS.forward is STM bookkeeping
-        # (see test_cs_stm_bookkeeping.py for the positive contract).
-        model = _make_plain_model()
-        self.assertFalse(
-            hasattr(model.conceptualSpace, 'sigma_percept'),
-            "ConceptualSpace.sigma_percept must be retired by "
-            "Stage 1.C.")
 
 
-    def test_symbolic_has_no_sigma(self):
-        model = _make_plain_model()
-        self.assertFalse(hasattr(model.wholeSpace, 'sigma'),
-                         "WholeSpace.sigma moved to PartSpace "
-                         "(Pi/Sigma swap); SS is pi-only (analysis).")
-
-    def test_conceptual_has_no_bare_sigma(self):
-        # Post-Stage-1.C: the bare ``sigma`` attribute (and
-        # ``sigma_percept``) is retired. Stage 10 reintroduces
-        # ``sigma_in`` / ``sigma_cs`` as the per-stage owned sigmas;
-        # the BARE ``sigma`` attribute is still retired (it never
-        # existed under either contract).
-        model = _make_plain_model()
-        self.assertFalse(hasattr(model.conceptualSpace, 'sigma'),
-                         "ConceptualSpace must NOT own a bare ``sigma`` "
-                         "attribute; the atomic C-space_role fold is retired "
-                         "by Stage 1.C. Stage 10's sigma_in / sigma_cs "
-                         "are differently named.")
 
 
-    def test_output_has_no_pilayer(self):
-        model = _make_plain_model()
-        self.assertFalse(hasattr(model.outputSpace, '_piLayer'),
-                         "OutputSpace._piLayer is replaced by "
-                         "_linearLayer (InvertibleLinearLayer) under "
-                         "the ownership rule.")
+
 
     def test_output_linear_layer_when_nonlinear_output(self):
         """If the active config exercises the nonlinear_output path,
@@ -126,40 +94,6 @@ class TestOwnership(unittest.TestCase):
             )
 
 
-class TestForwardReverseAliases(unittest.TestCase):
-    """The bare ``forwardPi`` / ``reversePi`` / ``forwardSigma`` /
-    ``reverseSigma`` pointer attributes were removed by the
-    2026-05-01 syntactic-layer refactor. Likewise, SS no longer has
-    ``sigma`` or ``_sigma_reverse`` after the ownership-rule cleanup.
-    """
-
-    def test_aliases_removed(self):
-        model = _make_plain_model()
-        cs = model.conceptualSpace
-        ws = model.wholeSpace
-        self.assertFalse(hasattr(cs, 'forwardPi'),
-                         "ConceptualSpace.forwardPi alias removed")
-        self.assertFalse(hasattr(cs, 'reversePi'),
-                         "ConceptualSpace.reversePi alias removed")
-        self.assertFalse(hasattr(ws, 'forwardSigma'),
-                         "WholeSpace.forwardSigma alias removed")
-        self.assertFalse(hasattr(ws, 'reverseSigma'),
-                         "WholeSpace.reverseSigma alias removed")
-        self.assertFalse(hasattr(ws, '_sigma_reverse'),
-                         "WholeSpace._sigma_reverse removed with sigma")
-
-    def test_conceptual_no_sigma_percept_forward(self):
-        # Post-Stage-1.C: the ``sigma_percept`` SigmaLayer (and the
-        # ``_sigma_percept_reverse`` two-pass ergodic helper) are
-        # retired with the atomic C-space_role fold. CS.forward is now STM
-        # bookkeeping (see test_cs_stm_bookkeeping.py).
-        model = _make_plain_model()
-        cs = model.conceptualSpace
-        self.assertFalse(hasattr(cs, 'sigma_percept'),
-                         "CS.sigma_percept retired by Stage 1.C.")
-        self.assertFalse(hasattr(cs, '_sigma_percept_reverse'),
-                         "CS._sigma_percept_reverse retired with "
-                         "``sigma_percept``.")
 
 
 class TestConceptualSpaceSTMBookkeeping(unittest.TestCase):

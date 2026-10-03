@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_symbol_learning_stats.py::test_xml_config_enabled_flag_round_trip"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-stage1-and-suite-trim/closing/full-sweep/part-00/worker-721.recycle.json"
+}

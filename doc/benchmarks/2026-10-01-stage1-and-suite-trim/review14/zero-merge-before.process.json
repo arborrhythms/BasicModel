@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero_merge_probe.py"
+  ],
+  "pid": 57012,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 218628888,
+  "elapsed_seconds": 2.0505966670025373,
+  "log": "doc/benchmarks/2026-10-01-stage1-and-suite-trim/review14/zero-merge-before.log"
+}

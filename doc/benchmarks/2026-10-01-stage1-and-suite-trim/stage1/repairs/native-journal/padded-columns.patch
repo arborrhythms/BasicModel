@@ -1,0 +1,20 @@
+--- before
++++ after
+@@ -20517,10 +20517,13 @@
+         """
+         B, W = active.shape
+         positions = torch.arange(W, device=active.device).expand(B, -1)
+-        first = torch.cat((torch.ones(B, 1, device=active.device, dtype=torch.bool),
+-                           sentence_ids[:, 1:] != sentence_ids[:, :-1]), dim=1)
+-        starts = torch.where(active & first, positions, 0).cummax(dim=1).values
+-        local = torch.where(active, positions - starts, 0)
++        # Count actual words, so an inactive column inside a sentence
++        # neither consumes a frame nor makes its next word alias the first.
++        ordinal = active.long().cumsum(dim=1) - 1
++        owners = sentence_ids.clamp(0, W - 1)
++        starts = torch.full_like(positions, W).scatter_reduce(
++            1, owners, torch.where(active, ordinal, W), reduce='amin')
++        local = torch.where(active, ordinal - starts.gather(1, owners), 0)
+         words = max(1, int(torch.where(active, local + 1, 0).amax().item()))
+         rounds = (3 * local[..., None] + torch.arange(3, device=active.device)).flatten(1)
+         endings = (3 * words + torch.arange(trace_width - 3 * W,

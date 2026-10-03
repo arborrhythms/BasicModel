@@ -1,0 +1,54 @@
+FFFFF...                                                                 [100%]
+=================================== FAILURES ===================================
+___________________ test_byte_witness_round_trips_non_ascii ____________________
+test/test_meronomy_utf8.py:52: in test_byte_witness_round_trips_non_ascii
+    assert raw.decode("utf-8") == surface, surface
+E   AssertionError: café déjà
+E   assert 'caf? d?j?' == 'café déjà'
+E     
+E     - café déjà
+E     + caf? d?j?
+_________ test_byte_witness_offsets_cover_the_surface_without_overlap __________
+test/test_meronomy_utf8.py:60: in test_byte_witness_offsets_cover_the_surface_without_overlap
+    assert spans[-1][1] == len(surface.encode("utf-8"))
+E   AssertionError: assert 9 == 12
+E    +  where 12 = len(b'caf\xc3\xa9 d\xc3\xa9j\xc3\xa0')
+E    +    where b'caf\xc3\xa9 d\xc3\xa9j\xc3\xa0' = <built-in method encode of str object at 0x109bcbb90>('utf-8')
+E    +      where <built-in method encode of str object at 0x109bcbb90> = 'café déjà'.encode
+_________________ test_split_multibyte_witness_keeps_raw_bytes _________________
+test/test_meronomy_utf8.py:69: in test_split_multibyte_witness_keeps_raw_bytes
+    assert raw == "é".encode("utf-8")
+E   AssertionError: assert b'?' == b'\xc3\xa9'
+E     
+E     At index 0 diff: b'?' != b'\xc3'
+E     Use -v to get more diff
+______________ test_admitted_word_and_utf8_bytes_replay_together _______________
+test/test_meronomy_utf8.py:80: in test_admitted_word_and_utf8_bytes_replay_together
+    assert raw.decode("utf-8") == "book café"
+E   AssertionError: assert 'book caf?' == 'book café'
+E     
+E     - book café
+E     ?         ^
+E     + book caf?
+E     ?         ^
+_____ test_surface_witness_replays_words_and_spaces[the book has a cover] ______
+test/test_meronomy_utf8.py:90: in test_surface_witness_replays_words_and_spaces
+    assert raw.decode("utf-8") == surface
+E   AssertionError: assert 'the book has a ' == 'the book has a cover'
+E     
+E     - the book has a cover
+E     ?                -----
+E     + the book has a
+=============================== warnings summary ===============================
+test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii - ...
+FAILED test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap
+FAILED test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes
+FAILED test/test_meronomy_utf8.py::test_admitted_word_and_utf8_bytes_replay_together
+FAILED test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]
+5 failed, 3 passed, 1 warning in 2.78s

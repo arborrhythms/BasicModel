@@ -1,0 +1,24 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+  ],
+  "completed": [
+    "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.012379833002341911,
+      "message": "test/test_generation_lesson.py:28: in test_sentence_generation_lesson_keeps_its_weighted_output_gradient\n    cost, *_ = BasicModel._sentence_path_cost(\nbin/Models.py:20911: in _sentence_path_cost\n    errors.merge(self._grammar_lesson_errors[name], prefix='grammar.',\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_grammar_lesson_errors'. Did you mean: 'grammar_lesson_weight'?",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

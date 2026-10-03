@@ -1,0 +1,53 @@
+[
+  {
+    "name": "mm-01",
+    "completed_epochs": 800,
+    "process": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-01/measurement.json"
+      ],
+      "pid": 85708,
+      "exit_code": 143,
+      "reason": "signal",
+      "peak_memory_bytes": 620086760,
+      "elapsed_seconds": 142.113930542022,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-01/driver.log"
+    }
+  },
+  {
+    "name": "mm-02",
+    "completed_epochs": 500,
+    "process": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-02/measurement.json"
+      ],
+      "pid": 86018,
+      "exit_code": 130,
+      "reason": "campaign_stopped",
+      "peak_memory_bytes": 599147984,
+      "elapsed_seconds": 90.90619854116812,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-02/driver.log"
+    }
+  },
+  {
+    "name": "mm-03",
+    "completed_epochs": 300,
+    "process": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measure_mm_grammar.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-03/measurement.json"
+      ],
+      "pid": 86122,
+      "exit_code": 130,
+      "reason": "campaign_stopped",
+      "peak_memory_bytes": 614466976,
+      "elapsed_seconds": 60.70533633395098,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9/measurements/mm-03/driver.log"
+    }
+  }
+]

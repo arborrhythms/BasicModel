@@ -1,0 +1,32 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_native_production_objective_measurements _________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1190/test_native_production_objecti0')
+
+    @pytest.mark.slow
+    def test_native_production_objective_measurements(tmp_path):
+        arm = "ownership"
+        """Measure each objective without changing native capacity or the batch."""
+        output_root = Path(os.environ.get("OBJECTIVE_CONFLICTS_OUTPUT", str(tmp_path)))
+        output = output_root / ("BasicModel_answers_tied_benchmark-" + arm)
+        output.mkdir(parents=True, exist_ok=False)
+        observer = ROOT / "test/objective_conflicts_probe.py"
+        shutil.copyfile(observer, output / "observer-source.py.txt")
+        env = dict(os.environ)
+        env.pop("BASIC_SEED", None)
+        with (output / "run.log").open("w") as log:
+            result = subprocess.run(
+                [sys.executable, str(observer), "--config", "BasicModel_answers_tied_benchmark",
+                 "--arm", arm, "--output", str(output)],
+                cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
+            )
+>       assert result.returncode == 0, f"Objective measurement failed; see {output / 'run.log'}"
+E       AssertionError: Objective measurement failed; see /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-item6-9-free-readback/native-stage1/BasicModel_answers_tied_benchmark-ownership/run.log
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '/Users/arogers/github/WikiOrac.../benchmarks/2026-10-03-item6-9-free-readback/native-stage1/BasicModel_answers_tied_benchmark-ownership'], returncode=1).returncode
+
+test/test_objective_conflicts_slow.py:38: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_objective_conflicts_slow.py::test_native_production_objective_measurements
+1 failed in 225.13s (0:03:45)

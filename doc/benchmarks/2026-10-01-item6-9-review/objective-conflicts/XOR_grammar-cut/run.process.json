@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/observe.py",
+    "--config",
+    "XOR_grammar",
+    "--arm",
+    "cut",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/XOR_grammar-cut"
+  ],
+  "pid": 59675,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 754959944,
+  "elapsed_seconds": 68.4010465829997,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-01-item6-9-review/objective-conflicts/XOR_grammar-cut/run.log"
+}

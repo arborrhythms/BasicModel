@@ -1,0 +1,15 @@
+{
+  "config": "data/RamsifiedModel.xml",
+  "seed": null,
+  "measurement": "one first training batch, including cold capture; no evaluation",
+  "backend": "none",
+  "build_seconds": 1.6029888749981183,
+  "batch": 64,
+  "serial": true,
+  "tied": false,
+  "training_seconds": 0.6892397089977749,
+  "output_loss": 0.1728748381137848,
+  "reconstruction_loss": 0.3521292805671692,
+  "completed": true,
+  "total_seconds": 2.292233041996951
+}

@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 7/7 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_identical_second_trial_never_wins_and_both_use_original_parameters</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.4347291658632457</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.7588167500216514</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 4-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.29093299992382526</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 4-dim embedding (words added at runtime)
+  Building span table: 0/4 docs
+batch = 0 (warm-up)
+batch = 0 (Δ=0.127s)
+</pre></td></tr><tr><td><pre>test/test_compose_pair_driver.py::test_flattened_temperature_driver_is_deleted</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00012595904991030693</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.0010123748797923326</pre></td><td><pre>test/test_sentence_compose.py:55: in test_sentence_winners_are_row_local_and_precede_the_next_perception
+    assert updates[1] &gt; updates[0] and updates[3] &gt; updates[2]
+E   assert (0.0 &gt; 0.0)</pre></td><td><pre></pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_replaying_real_greedy_derivation_ties_in_every_row</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>2.3497574999928474</pre></td><td><pre></pre></td><td><pre>Starting with dynamic 2-dim embedding (words added at runtime)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>doc/benchmarks/2026-09-30-item6-9/probe_step5.py::test_sentence_trials_keep_their_own_perception_pullbacks</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>231.1106827079784</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr></table></body></html>

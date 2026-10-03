@@ -1,0 +1,14 @@
+...F.F                                                                   [100%]
+=================================== FAILURES ===================================
+__ TestPerceptStoreIntegration.test_embed_radix_respects_promotion_threshold ___
+test/test_perceptual_loopback.py:439: in test_embed_radix_respects_promotion_threshold
+    self.assertIsNotNone(
+E   AssertionError: unexpectedly None : 'promotable' should have promoted on hit 3 (threshold reached)
+_ TestPerceptStoreIntegration.test_radix_percept_store_roundtrips_inserted_words _
+test/test_perceptual_loopback.py:366: in test_radix_percept_store_roundtrips_inserted_words
+    self.assertIsNotNone(
+E   AssertionError: unexpectedly None : word 'world' should have been promoted into the PerceptStore by _embed_radix after 4 hits
+=========================== short test summary info ============================
+FAILED test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_embed_radix_respects_promotion_threshold
+FAILED test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_percept_store_roundtrips_inserted_words
+2 failed, 4 passed in 2.33s

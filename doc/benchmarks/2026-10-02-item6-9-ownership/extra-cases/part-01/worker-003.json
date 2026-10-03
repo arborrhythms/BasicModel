@@ -1,0 +1,26 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_conceptualize.py::test_conceptualize_dispatch"
+  ],
+  "completed": [
+    "test/test_conceptualize.py::test_conceptualize_dispatch"
+  ],
+  "slow_selected": [
+    "test/test_conceptualize.py::test_conceptualize_dispatch"
+  ],
+  "requested_devices": {},
+  "reports": [
+    {
+      "nodeid": "test/test_conceptualize.py::test_conceptualize_dispatch",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.04614720799145289,
+      "message": "test/test_conceptualize.py:46: in test_conceptualize_dispatch\n    assert c1 is not None and len(c1) == 3\nE   assert ((2, 3) is not None and 2 == 3)\nE    +  where 2 = len((2, 3))",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}
