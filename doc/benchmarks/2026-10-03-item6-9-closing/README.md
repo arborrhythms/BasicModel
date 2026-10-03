@@ -227,3 +227,7 @@ and audit arrays are retained unchanged. The former long todo entry is preserved
 in [todo-history.md](todo-history.md); item 6.9 moves to Done. Next is decoder
 exploration at the start of the operators update, followed by item 6.8. There
 is no conference freeze. Publication checks do not repeat the training campaign.
+
+Accepted implementation commit: `bfe6a0d76f5af098c84c6a17a1a8a2f4c0e4c731`. The publication follow-up
+records this hash in Done; the reviewed source is unchanged. Publication
+documentation validation passes 273 cases.

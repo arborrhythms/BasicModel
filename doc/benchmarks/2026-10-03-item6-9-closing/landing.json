@@ -14,5 +14,6 @@
   "publication_documentation_checks": {
     "passed": 273,
     "pytest_seconds": 3.34
-  }
+  },
+  "implementation_commit": "bfe6a0d76f5af098c84c6a17a1a8a2f4c0e4c731"
 }
