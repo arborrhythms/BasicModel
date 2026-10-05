@@ -40,7 +40,7 @@ _FORBIDDEN_STATE_TOKENS = {
 # compose/generate faces and join their checked thought descriptors only at a
 # completed boundary.
 _REQUIRED_OPS = {
-    "part", "whole", "equal", "exist", "lookup", "quantize", "arma", "what",
+    "part", "whole", "equal", "what",
     "not", "non",
     "conjunction", "disjunction", "intersection", "union",
     "lift", "verb", "adverb", "lower",
@@ -85,11 +85,11 @@ def test_symbolicspace_owns_its_starts():
     g = _load()
     ws_syms = {sym for pat in g.ws_start_patterns for sym in pat}
     # part / whole / equal are compositional relation forms heading the
-    # relative-truth start; exist_O1 remains the absolute-truth start.
-    assert "exist_O1" in ws_syms, ws_syms
+    # relative-truth start; S is the absolute-truth start, without a truth-reducing wrapper.
+    assert "S" in ws_syms, ws_syms
     assert g.ws_relative_starts == frozenset({
         'part_O1', 'whole_O1', 'equal_O1', 'implies_O1', 'operator_O1'})
-    assert "exist_O1" in g.ws_absolute_starts
+    assert "S" in g.ws_absolute_starts
 
 
 def test_no_top_level_start():
@@ -154,9 +154,8 @@ def test_forward_reverse_pairing():
     up = {r.method_name for r in g.rules_upward if r.method_name}
     dn = {r.method_name for r in g.rules_downward if r.method_name}
     assert _REQUIRED_OPS <= up
-    # ``lookup`` is intentionally compose-only: retrieval has no faithful
-    # structural inverse.
-    assert (_REQUIRED_OPS - {"lookup"}) <= dn
+    # Non is an exclusion and has no faithful inverse.
+    assert (_REQUIRED_OPS - {"non"}) <= dn
 
 
 def test_transitional_baseline_uses_the_same_structural_relation_contract():

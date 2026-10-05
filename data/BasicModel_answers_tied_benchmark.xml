@@ -2,10 +2,10 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="model.xsd">
   <!--Tied reconstruction comparison to the preserved BasicModel_answers_benchmark.xml. Native widths, math data and loss weights are unchanged.-->
   <architecture>
-    <serial>true</serial>
-    <subsymbolicOrder>4</subsymbolicOrder>
+
+    <bindingDepth>4</bindingDepth>
     <conceptBinding>aligned</conceptBinding>
-    <symbolicOrder>4</symbolicOrder>
+    <conceptLayers>5</conceptLayers>
     <syntacticOrder>0</syntacticOrder>
     <mereologyRaise>true</mereologyRaise>
     <serialObjectMeta>true</serialObjectMeta>
@@ -51,10 +51,10 @@
       <teacherReconstruction>true</teacherReconstruction>
       <leafDistillWeight>0.0</leafDistillWeight>
       <sentenceExpectation>true</sentenceExpectation>
-      <armaScale>0.0</armaScale>
+      <sentenceExpectationArmaScale>0.0</sentenceExpectationArmaScale>
       <intraLossWeight>0.0</intraLossWeight>
-      <interLossWeight>0.1</interLossWeight>
-      <interContrastiveWeight>0.0</interContrastiveWeight>
+      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <sentenceExpectationContrastiveWeight>0.0</sentenceExpectationContrastiveWeight>
       <interContrastiveTemp>0.1</interContrastiveTemp>
       <autoload>false</autoload>
       <autosave>false</autosave>
@@ -98,7 +98,7 @@
     <butterfly>true</butterfly>
     <nInput>8</nInput>
     <nInputDim>1032</nInputDim>
-    <nVectors>8</nVectors>
+    <nVectors>9</nVectors>
     <nDim>136</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>136</nOutputDim>

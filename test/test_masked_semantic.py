@@ -114,7 +114,7 @@ def test_config_is_masked_parallel_semantic():
     """Structural pins: masked-IR training on the parallel sparse path."""
     m = _cached("base")["model"]
     assert m.mask_rate == 0.3
-    assert m.serial is False and m.symbolicOrder == 3
+    assert m.word_brackets is False and m.concept_order_limit == 3
     assert m.useGrammar == "none", (
         "an operator grammar would halve the tile taper and clip the "
         "whole-slab masked-LM compare")

@@ -1,0 +1,33 @@
+........................................................................ [ 35%]
+......................F................................................. [ 70%]
+..................................................ssssssssss             [100%]
+=================================== FAILURES ===================================
+____ test_unrelated_true_episode_cannot_establish_the_next_parent_relation _____
+test/test_taxonomy_policy.py:35: in test_unrelated_true_episode_cannot_establish_the_next_parent_relation
+    assert model.reason_about(QuerySpec.from_surface('exist', fact)).support_true == 1
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22450: in reason_about
+    return self._run_public_thought(
+bin/Models.py:22410: in _run_public_thought
+    meaning = self._public_query_meaning(meaning, row=row)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22443: in _public_query_meaning
+    return registry.form("exist", ConceptualMeaning.from_description(query.left),
+bin/Queries.py:1826: in form
+    operation, form = self._operation_form(semantic_id)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1758: in _operation_form
+    raise ValueError(
+E   ValueError: thought operation 'exist' is not registered by this grammar
+=============================== warnings summary ===============================
+test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation
+1 failed, 193 passed, 10 skipped, 1 warning in 7.44s

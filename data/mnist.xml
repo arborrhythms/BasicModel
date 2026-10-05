@@ -2,10 +2,10 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
-    <subsymbolicOrder>2</subsymbolicOrder>
+    <bindingDepth>2</bindingDepth>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <symbolicOrder>0</symbolicOrder>
+    <conceptLayers>1</conceptLayers>
     <weightsPath>mnist_weights.ckpt</weightsPath>
 
     <data>
@@ -44,7 +44,7 @@
 
   <WholeSpace>
     <nOutput>8</nOutput>
-    <nVectors>8</nVectors>
+    <nVectors>9</nVectors>
   </WholeSpace>
 
   <OutputSpace>

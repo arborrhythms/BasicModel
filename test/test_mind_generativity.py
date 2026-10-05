@@ -21,6 +21,11 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
     try:
         op_index = list(language._generate_binary_names).index('lower')
         op = language._generate_binary_ops[op_index]
+        # Unallocated rows no longer invent distinct word codes. Populate
+        # the five leaves with actual forms through the existing admission.
+        from test_definition_rows import admit
+        for form in ('a', 'b', 'c', 'd', 'e'):
+            admit(model, form)
         from Queries import _basis
         basis = _basis(model.conceptualSpace).detach().clone()
         model._concept_owner().prime_seen(torch.arange(5))

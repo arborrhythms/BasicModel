@@ -20,13 +20,13 @@
 
     <!-- Iteration depth of the P→C→S pipeline.  order > 1 partitions
          the symbolic codebook geometrically (see Reasoning.md). -->
-    <subsymbolicOrder>1</subsymbolicOrder>
+    <bindingDepth>1</bindingDepth>
 
     <!-- Stage 1.E (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
          <serial> selects the per-word grammatical body. It is omitted here
          so legacy configs keep deriving the mode from symbolicOrder > 0.
-         New configs should set <serial>true|false</serial> explicitly. -->
-    <!-- <serial>false</serial> -->
+         New configs should set  explicitly. -->
+    <!--  -->
 
     <!-- Hard compose sampling only; zero selects exact-logit argmax.
          Both training derivations use this temperature. Model softmax
@@ -41,7 +41,7 @@
          grammar-derived default: 1 when the XML enables a non-substrate rule
          (useGrammar != 'none'), else 0. Concrete configs should set this
          explicitly when they need a symbolic loop limit. -->
-    <!-- <symbolicOrder>0</symbolicOrder> -->
+    <!-- <conceptLayers>1</conceptLayers> -->
 
     <!-- Concept rows compose by union; the optional conjunctive pass
          discovers co-present wholes. Pool participation is an EWMA of use. -->
@@ -80,7 +80,7 @@
     <whatThinkingDepth>1</whatThinkingDepth>
     <!-- One completed selected grammatical question owns this many shared
          controller/query-work units. Policy sampling remains separately off. -->
-    <selectedThoughtBudget>32</selectedThoughtBudget>
+    <attentionBudget>32</attentionBudget>
 
     <!-- Reverse from the idea rather than replaying the forward grammar trace.
          When true, reverse() clears current_rules/generate_rules and the
@@ -169,7 +169,7 @@
     <discontinuityLambda>0.0</discontinuityLambda>
 
     <!-- Passes allowed to retarget perception: all, off, or indices 1..T-1. -->
-    <subsymbolicLoop>all</subsymbolicLoop>
+
     <!-- Completed learning updates without improved local both evidence,
          before discontiguous support may raise conceptual order. -->
     <mereologyRefinePatience>3</mereologyRefinePatience>
@@ -280,7 +280,7 @@
       <sentenceExpectation>true</sentenceExpectation>
       <!-- Complete occupied local roles; root selects the old benchmark. -->
       <sentenceExpectationScope>structured</sentenceExpectationScope>
-      <armaScale>0.0</armaScale>
+      <sentenceExpectationArmaScale>0.0</sentenceExpectationArmaScale>
       <!-- Per-role negative image at the closing; zero is beginner's mind. -->
       <expectationGain>1</expectationGain>
       <!-- Residual credit for prior-only queries through the ordinary chooser. -->
@@ -300,8 +300,8 @@
            The predictor reads a bounded row/document observation view;
            targets and durable history are detached, current-step source
            representations may learn under the reconstruction budget. -->
-      <interLossWeight>0.1</interLossWeight>
-      <interContrastiveWeight>0.0</interContrastiveWeight>
+      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <sentenceExpectationContrastiveWeight>0.0</sentenceExpectationContrastiveWeight>
       <interContrastiveTemp>0.1</interContrastiveTemp>
       <!-- Hard normal grammatical-thought choices use their own explicit
            REINFORCE credit; zero preserves the deterministic safe baseline. -->
@@ -380,6 +380,13 @@
              ``P = sigma(P)`` (and matching ``.reverse`` rules)
              listed; otherwise the per-tier dispatch is a no-op. -->
         <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
           <percepts>
             <rule>P = sigma(P)</rule>
           </percepts>
@@ -476,6 +483,8 @@
   </ModalSpace>
 
   <ConceptualSpace>
+    <!-- Deterministic room between the part and property-whole bounds. -->
+    <latticeMargin>0</latticeMargin>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->

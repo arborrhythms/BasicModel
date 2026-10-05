@@ -79,7 +79,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
         concept_rows=128, part_rows=64, input_width=16, training_overrides={'intraLossWeight': 0},
         stm_capacity=3, chooser_depth=1,
-        architecture_overrides={'ltmConsolidation': True, 'symbolicOrder': 1})
+        architecture_overrides={'ltmConsolidation': True, 'conceptLayers': 2})
     # Completion is a fixture for this causal mechanism test. Both winners
     # must leave a real predecessor, regardless of the untrained chooser.
     _select_completed_binary_path(model)
@@ -109,7 +109,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
         if sid == 1:
             # The second sentence sees exactly the chain committed by the
             # first, including its occurrence identity, in both trials.
-            disc = model.symbolSpace.discourse
+            disc = model.symbolSpace.expectation
             assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
         fixed = cost.new_tensor([1., 2.] if alternative else [2., 1.])
         # Fix only the reconstruction comparison, preserving the trained
@@ -134,7 +134,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
         if torch.is_grad_enabled() and not torch.compiler.is_compiling():
             perceived.append(len(model._sentence_fields))
             if len(model._sentence_fields) == 1:
-                disc = model.symbolSpace.discourse
+                disc = model.symbolSpace.expectation
                 assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
         return perceive(*args, **kwargs)
     if not compiled:
@@ -148,7 +148,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
     def observe(*args):
         events.append(('commit', args[1]))
         result = commit(*args)
-        disc = model.symbolSpace.discourse
+        disc = model.symbolSpace.expectation
         context = tuple(tuple(row) for row in disc._inter_context_occurrences)
         assert [len(row) for row in context] == [args[1] + 1] * 2
         assert all(occurrence is not None for row in context for occurrence in row)
@@ -188,8 +188,8 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
 
 
 def test_prediction_preview_is_per_row_and_does_not_append_an_observation():
-    from Layers import InterSentenceLayer
-    layer = InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=4,
+    from Layers import BracketExpectation
+    layer = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
         concept_dim=4, batch=2, expectation_scope='structured')
     layer.set_inter_loss_weight(1.)
     # This test uses real prediction equations; opposed row targets must not
@@ -223,7 +223,7 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
     observation = dict(observed_depths=[1], observed=[root],
         mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None])
     model = SimpleNamespace(reconstruct_in_loop=False, inter_loss_weight=0.,
-        inter_contrastive_weight=0., symbolSpace=SimpleNamespace(discourse=disc),
+        inter_contrastive_weight=0., symbolSpace=SimpleNamespace(expectation=disc),
         _publish_sentence_scratch=lambda state: None,
         _trial_understanding=lambda *args: object(),
         _tensor_pushed_ideas=root[:, None],
@@ -242,8 +242,8 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
 
 
 def test_already_trained_observation_keeps_policy_and_skips_duplicate_loss():
-    from Layers import InterSentenceLayer
-    layer = InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=4,
+    from Layers import BracketExpectation
+    layer = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
         concept_dim=4, batch=1, expectation_scope='structured')
     layer.set_inter_loss_weight(1.)
     payloads = [torch.ones(3, 4)]

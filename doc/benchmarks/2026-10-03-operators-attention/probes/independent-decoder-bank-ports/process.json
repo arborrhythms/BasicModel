@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_output_walk.py",
+    "test/test_prepared_answer_boundary.py",
+    "test/test_readback_operand_unaries.py",
+    "test/test_grammar_separator.py"
+  ],
+  "pid": 5038,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2330201448,
+  "elapsed_seconds": 48.18094120797468,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/independent-decoder-bank-ports/run.log"
+}

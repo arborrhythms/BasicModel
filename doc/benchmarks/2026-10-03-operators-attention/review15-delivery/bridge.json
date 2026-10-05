@@ -1,0 +1,22 @@
+{
+  "head": "802abb1acc95e1bddc8cb237b13230a336681c49",
+  "status": "held before green full sweep and gate measurements",
+  "current_source_matches_final_focused": true,
+  "final_focused_counts": {
+    "passed": 504,
+    "skipped": 33,
+    "failed": 1,
+    "xfailed": 1
+  },
+  "original_output_regressions_fixed": 16,
+  "chooser_test_unchanged": true,
+  "protected_docs_unchanged": true,
+  "seed_calls_unchanged": true,
+  "gate_bars_and_guards_unchanged": true,
+  "historical_measurement_files_verified": 1533,
+  "gate_trainings": 0,
+  "whole_old_new_test_ports": 174,
+  "supplement_files": 383,
+  "supplement_bytes": 31148838,
+  "pending": "Resolve the strict-win / unchanged chooser-fixture conflict, then a green sweep and once-only gates; Claude review before commit."
+}

@@ -2407,6 +2407,26 @@ class GrammarLayer(Layer):
     space_role             = 'SS'
     reads_activation = False
 
+    # Computation and grammatical roles are declarations, independent of the
+    # spelling used to register or rename a rule.
+    # Pure structural kernels write the selected serial carrier; their
+    # generation face emits percepts under the walk's work meter. These are
+    # one declaration, narrowed by the face, never extra effects at runtime.
+    effect_reads = ('percept', 'knowing', 'symbolic', 'serial', 'priming', 'budget')
+    effect_writes = ('serial', 'percept', 'budget')
+    field_eligible = False
+    case_head_role = 0
+    order_delta = 0
+    inverse_kind = None
+    clause_form = None
+    head_role = 0
+    relation_kind = None
+    scope_transparent = False
+    polarity_effect = None
+    meaning_mode = None
+    same_reference_idempotent = False
+    predicate_identity = None
+
     def compose_from_grammar_context(self, operands, *, context):
         """Adapt this legacy tensor layer to the public structural-face call.
 
@@ -3580,7 +3600,7 @@ class NegationLayer(Layer):
 # LowerLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
 
 
-# SymbolizeLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+# Binary SymbolizeLayer retired by the operator catalogue (§3.4).
 
 
 # ConjunctionLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
@@ -3608,6 +3628,9 @@ class EqualLayer(GrammarLayer):
 
     Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
     """
+    inverse_kind = 'search'
+    relation_kind = 'equal'
+    predicate_identity = 'equal'
     rule_name        = "equal"
     arity            = 2
     invertible       = False
@@ -3639,7 +3662,7 @@ class EqualLayer(GrammarLayer):
 # PartLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
 
 
-# QueryLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+# Query truth carriers retired; thought returns full conceptual content.
 
 
 def area_op(x, sigma=None):
@@ -8246,7 +8269,7 @@ class TruthLayer(Layer):
                 'grounded': grounded}
 
     def isConsistent(self):
-        """Fold stored truths via ``Ops.disjunction``; consistency summary.
+        """Fold signed observations via the catalogue's mean for consistency.
 
         Consolidated from ``Models.BaseModel.isConsistent``. Conflicting
         +/- assertions cancel dimensions. Returns
@@ -8258,10 +8281,11 @@ class TruthLayer(Layer):
                     'sites': torch.tensor([]), 'union_vector': torch.tensor([])}
 
         stored = self.truths[:n]
-
+        from Language import SumLayer
+        mean = SumLayer()
         union = stored[0].clone()
         for i in range(1, n):
-            union = Ops.disjunction(union, stored[i])
+            union = mean.compose(union, stored[i])
 
         score = union.abs().mean().item()
         threshold = 0.1
@@ -10265,6 +10289,15 @@ class _PendingMeaningExpectation:
     policy: tuple = ()
     work: int = 0
     frames: tuple = ()
+    walk: object = None
+    comparison: object = None
+
+    def detached(self):
+        from dataclasses import replace
+        return replace(self, prediction=self.prediction.detached(),
+            inputs=None if self.inputs is None else tuple(x.detach() for x in self.inputs),
+            frames=tuple(frame.detached() for frame in self.frames),
+            walk=None if self.walk is None else self.walk.detached())
 
 
 class SentenceExpectation(Layer):
@@ -10309,7 +10342,7 @@ class SentenceExpectation(Layer):
                                      missing_keys, unexpected_keys, error_msgs)
 
 
-class InterSentenceLayer(Layer):
+class BracketExpectation(Layer):
     """Sentence expectation with structured production and legacy predictors.
 
     The model selects ``expectation_scope="structured"``: every occupied
@@ -10356,7 +10389,7 @@ class InterSentenceLayer(Layer):
     (``context_window`` recent buffer, ``centroid_history`` repulsive
     ring, ``lam`` cosine push) and the QKVAttentionLayer-based
     predictive head.  See ``doc/Architecture.md`` §"Sentence-level
-    AR (InterSentenceLayer)" for the design rationale.
+    AR (BracketExpectation)" for the design rationale.
     """
 
     name = "Discourse"
@@ -10561,10 +10594,11 @@ class InterSentenceLayer(Layer):
         self._inter_last_pred_root = [None] * self._batch
         self._inter_loss_weight = 0.1
         self._expectation_policy_outcomes = []
+        self._expectation_walk_outcomes = []
         # Second accumulator: the InfoNCE next-idea CONTRASTIVE term -- ranks the
         # actual next root above the chain's past roots under cosine(pred, .).
         # Off (weight 0) -> the layer carries only the legacy MSE L_inter
-        # (byte-identical). Set by the host from <interContrastiveWeight>.
+        # (byte-identical). Set by the host from <sentenceExpectationContrastiveWeight>.
         self._inter_contrastive_accum = None
         self._inter_contrastive_count = 0
         self._inter_contrastive_weight = 0.0
@@ -10578,6 +10612,26 @@ class InterSentenceLayer(Layer):
         # observations to the store; this layer skips its duplicate deque.
         self._ltm_store = None
         self._ltm_consolidation = False
+
+        self.levels = ('byte','word','sentence','row')
+        self.enabled_levels = ('word','sentence')
+        self.word_dim = int(self.concept_dim or self.n_dim)
+        # Register with nn.Module, as the sentence head above does. Preserve
+        # the construction stream of the already accepted components.
+        with torch.random.fork_rng(devices=[]):
+            self.word_predictor = nn.Sequential(
+                nn.Linear((self.p+self.q)*self.word_dim,self.hidden_dim),nn.Tanh(),
+                nn.Linear(self.hidden_dim,self.word_dim))
+
+    def expect(self,level,*args,**kwargs):
+        """Expectation is indexed by its bracket level, with one owner."""
+        if level not in self.levels:raise ValueError('unknown expectation level')
+        if level not in self.enabled_levels:raise ValueError(f'{level} expectation is declared but disabled')
+        if level == 'word':
+            from WordExpectation import word_distribution
+            return word_distribution(self,*args,**kwargs)
+        if level == 'sentence':return self.predict_and_observe_stm_end_state(*args,**kwargs)
+        raise ValueError(f'{level} expectation awaits its scheduled landing')
 
     # -- per-batch resize ---------------------------------------------
     def ensure_batch(self, batch):
@@ -10797,7 +10851,7 @@ class InterSentenceLayer(Layer):
         names = (
             "_batch", "_s_history", "_s_count", "_e_history", "_e_count",
             "_staged_prediction", "_stm_end_states", "_inter_context",
-            "_inter_context_occurrences", "_expectation_policy_outcomes",
+            "_inter_context_occurrences", "_expectation_policy_outcomes", "_expectation_walk_outcomes",
             "_inter_last_pred_root", "_inter_last_meaning",
             "_last_expectation_comparisons",
             "_expectation_documents", "_inter_loss_accum", "_inter_loss_count",
@@ -10806,6 +10860,7 @@ class InterSentenceLayer(Layer):
         saved = {name: getattr(self, name) for name in names}
         self._external_observations_suspended = True
         self._expectation_policy_outcomes = []
+        self._expectation_walk_outcomes = []
         self._batch = 0
         self.ensure_batch(saved["_batch"])
         self._staged_prediction = None
@@ -10940,6 +10995,12 @@ class InterSentenceLayer(Layer):
                         (int(occupied.sum()), roles.detach().clone(), trust))
                 continue
             pending = self._inter_last_meaning[b]
+            if isinstance(pending, _PendingMeaningExpectation) and pending.walk is not None:
+                from WalkTrials import select_forecast
+                pending = select_forecast(pending, roles, occupied,
+                    None if sentence_kinds is None else sentence_kinds[b])
+            if isinstance(pending, _PendingMeaningExpectation) and pending.comparison is not None:
+                self._expectation_walk_outcomes.append((b, pending.comparison))
             prediction = (pending.prediction
                           if isinstance(pending, _PendingMeaningExpectation)
                           else pending)
@@ -11086,6 +11147,11 @@ class InterSentenceLayer(Layer):
         retired head's keys, and leave every other weight intact. The model's
         optimizer name manifest likewise starts the new head without old moments.
         """
+        word=prefix+'word_predictor.'
+        if (prefix+'predictor.0.weight' in state_dict
+                and not any(name.startswith(word) for name in state_dict)):
+            for name,value in self.word_predictor.state_dict().items():
+                state_dict[word+name]=value.detach().clone()
         head = prefix + "_inter_predictor."
         if (self.expectation_scope != "structured"
                 or not any(k.startswith(head + "pi.") for k in state_dict)):
@@ -11116,6 +11182,7 @@ class InterSentenceLayer(Layer):
         self._inter_last_meaning = [None] * self._batch
         self._inter_last_pred_root = [None] * self._batch
         self._expectation_policy_outcomes = []
+        self._expectation_walk_outcomes = []
         self._inter_loss_accum = self._inter_contrastive_accum = None
         self._inter_loss_count = self._inter_contrastive_count = 0
         self._s_history.zero_()
@@ -11197,7 +11264,7 @@ class InterSentenceLayer(Layer):
             if payload is not None:
                 if not torch.isfinite(payload).all():
                     raise FloatingPointError(
-                        "InterSentenceLayer.observe_stm_end_state: row "
+                        "BracketExpectation.observe_stm_end_state: row "
                         f"{b} STM end-state payload contains NaN/Inf "
                         "(depth={}, shape={}). Refusing to store a "
                         "corrupt end-state in the LTM chain."
@@ -11560,7 +11627,7 @@ class InterSentenceLayer(Layer):
             context, routing=None, parallel=False)         # [1, D]
         if not torch.isfinite(payload_root_hat).all():
             raise FloatingPointError(
-                "InterSentenceLayer.predict_next_end_state: predicted "
+                "BracketExpectation.predict_next_end_state: predicted "
                 "end-state root contains NaN/Inf. Refusing to emit a "
                 "corrupt prediction.")
         root_vec = payload_root_hat.reshape(-1)[:D]         # [D]
@@ -11608,6 +11675,11 @@ class InterSentenceLayer(Layer):
                             payload, depths[b], layout,
                             None if role_masks is None else role_masks[b])
                         pending = self._inter_last_meaning[b]
+                        if isinstance(pending, _PendingMeaningExpectation) and pending.walk is not None:
+                            from WalkTrials import select_forecast
+                            pending = select_forecast(pending, roles, occupied,
+                                None if sentence_kinds is None else sentence_kinds[b])
+                            self._inter_last_meaning[b] = pending
                         prediction = (pending.prediction if isinstance(
                             pending, _PendingMeaningExpectation) else pending)
                         if prediction is not None:
@@ -11698,7 +11770,7 @@ class InterSentenceLayer(Layer):
         self._inter_error_registry().squared('root', pred_root, actual_root, category='expectation')
         if not torch.isfinite(step_loss).all():
             raise FloatingPointError(
-                "InterSentenceLayer._accumulate_inter_loss: L_inter step "
+                "BracketExpectation._accumulate_inter_loss: L_inter step "
                 "is NaN/Inf. Refusing to accumulate a corrupt loss term.")
         if self._inter_loss_accum is None:
             self._inter_loss_accum = step_loss
@@ -11744,12 +11816,12 @@ class InterSentenceLayer(Layer):
                 maxlen=self._inter_chain_window)
         self._inter_last_pred_root = [None] * self._batch
         self._inter_last_meaning = [
-            None if value is None else _PendingMeaningExpectation(
-                value.prediction.detached(), value.source_occurrences, value.stream,
-                value.document, None if value.inputs is None else tuple(x.detach() for x in value.inputs),
-                value.versions, value.policy, value.work,
-                tuple(frame.detached() for frame in value.frames))
+            None if value is None else value.detached()
             for value in self._inter_last_meaning]
+
+    def consume_expectation_walk_outcomes(self):
+        outcomes, self._expectation_walk_outcomes = self._expectation_walk_outcomes, []
+        return outcomes
 
     def consume_expectation_policy_outcomes(self):
         outcomes, self._expectation_policy_outcomes = self._expectation_policy_outcomes, []
@@ -11757,7 +11829,7 @@ class InterSentenceLayer(Layer):
 
     def set_inter_loss_weight(self, weight):
         """Set the inter-loss accumulation gate (read from the
-        ``interLossWeight`` knob by the host at construction)."""
+        ``sentenceExpectationLossWeight`` knob by the host at construction)."""
         self._inter_loss_weight = float(weight)
 
     def reset_expectation_metrics(self):
@@ -11796,12 +11868,15 @@ class InterSentenceLayer(Layer):
     def set_expectation_enabled(self, enabled):
         """Toggle expectation; retain durable observations and start fresh on enable."""
         enabled = bool(enabled)
+        self.enabled_levels = tuple(level for level in ('word', 'sentence')
+            if (enabled if level == 'sentence' else level in self.enabled_levels))
         if enabled == self.expectation_enabled:
             return
         self.expectation_enabled = enabled
         self.detach_prediction_context()
         self._inter_last_meaning = [None] * self._batch
         self._expectation_policy_outcomes = []
+        self._expectation_walk_outcomes = []
         for chain in self._inter_context:
             chain.clear()
         for chain in self._inter_context_occurrences:
@@ -11818,7 +11893,7 @@ class InterSentenceLayer(Layer):
 
     def set_inter_contrastive(self, weight, temp=0.1):
         """Set the InfoNCE next-idea contrastive gate + softmax temperature
-        (read from ``interContrastiveWeight`` / ``interContrastiveTemp``)."""
+        (read from ``sentenceExpectationContrastiveWeight`` / ``interContrastiveTemp``)."""
         self._inter_contrastive_weight = float(weight)
         self._inter_contrastive_temp = max(1e-4, float(temp))
 
@@ -11852,7 +11927,7 @@ class InterSentenceLayer(Layer):
                            torch.zeros(1, dtype=torch.long, device=logits.device), category='expectation')
         if not torch.isfinite(step).all():
             raise FloatingPointError(
-                "InterSentenceLayer._accumulate_inter_contrastive: InfoNCE "
+                "BracketExpectation._accumulate_inter_contrastive: InfoNCE "
                 "step is NaN/Inf. Refusing to accumulate a corrupt loss term.")
         if self._inter_contrastive_accum is None:
             self._inter_contrastive_accum = step
@@ -11889,6 +11964,7 @@ class InterSentenceLayer(Layer):
         if batch is None:
             self._last_expectation_comparisons = [None] * self._batch
             self._expectation_policy_outcomes = []
+            self._expectation_walk_outcomes = []
         else:
             self._last_expectation_comparisons[int(batch)] = None
         if batch is None:
@@ -12255,7 +12331,7 @@ class IntraSentenceLayer(Layer):
         is a structural no-op beyond honoring an optional batch resize
         hint. The PI / Sigma sublayers carry no per-call state to clear.
         Present so the Space's Start/Reset cascade reaches the layer
-        without error (mirrors ``InterSentenceLayer.Reset``).
+        without error (mirrors ``BracketExpectation.Reset``).
         """
         if batch is not None:
             self._batch = int(batch)
@@ -16289,18 +16365,31 @@ class Ops:
 
     @staticmethod
     def _disjunction_kernel(x, y):
-        """Bundle two concepts by their arithmetic mean."""
-        return (x + y) * .5
+        """Probabilistic sum of magnitudes, with normalized combined identity."""
+        identity = x + y - x * y
+        norm = torch.linalg.vector_norm(identity, dim=-1, keepdim=True)
+        unit = identity / torch.where(norm > 0, norm, torch.ones_like(norm))
+        a = torch.linalg.vector_norm(x, dim=-1, keepdim=True)
+        b = torch.linalg.vector_norm(y, dim=-1, keepdim=True)
+        return (a + b - a * b) * unit
 
     @staticmethod
     def intersection(x, y, monotonic=False):
-        """The independent lattice meet; not the concept-binding product."""
-        return Ops._lower_kernel(x, y, mode='AND',
-                                 kind='strict' if monotonic else 'soft')
+        """Exact conceptual meet; a silent coordinate adds no restriction.
+
+        Explicit membership fields retain zero as false. Concept codes use
+        zero for an unspecified coordinate, so only their nonzero values
+        participate in the minimum. The same signed ordering handles evidence
+        against, without discarding it when it meets a positive coordinate.
+        """
+        meet = torch.minimum(x, y)
+        if monotonic:
+            return meet
+        return torch.where(x == 0, y, torch.where(y == 0, x, meet))
 
     @staticmethod
     def union(x, y, monotonic=False):
-        """The independent lattice join; not the concept-bundling mean."""
+        """The independent lattice join."""
         return Ops._lift_kernel(x, y, mode='OR',
                                 kind='strict' if monotonic else 'soft')
 
@@ -17242,7 +17331,7 @@ class ModelLoss(Loss):
                  what_scale=0.7, where_scale=0.2, when_scale=0.1,
                  embedding_scale=0.1,
                  certainty=False, nOutput=2,
-                 subsymbolicOrder=0,
+                 bindingDepth=0,
                  nWhere=None, nWhen=None):
         """Initialize ModelLoss; allocate state for the class contract.
         
@@ -17270,7 +17359,7 @@ class ModelLoss(Loss):
             self.output_criterion = CertaintyWeightedCrossEntropy()
         elif nOutput <= 2:
             self.output_criterion = nn.MSELoss()
-        elif subsymbolicOrder > 0:
+        elif bindingDepth > 0:
             self.output_criterion = nn.MSELoss()
         else:
             self.output_criterion = nn.CrossEntropyLoss()
@@ -17491,7 +17580,7 @@ class Error:
 
     _CATEGORIES = (
         "reconstruction", "prediction", "symbol",
-        "truth", "discourse", "embedding", "other", "expectation",
+        "truth", "expectation", "embedding", "other", "expectation",
         "grammar", "policy", "reg", "count", "intra", "inter",
     )
 
@@ -19006,12 +19095,10 @@ _MOVED_TO_LANGUAGE = frozenset({
     'VerbLayer',
     'AdverbLayer',
     'LowerLayer',
-    'SymbolizeLayer',
     'ConjunctionLayer',
     'DisjunctionLayer',
     'IsEqualLayer',
     'PartLayer',
-    'QueryLayer',
     'GRAMMAR_LAYER_CLASSES',
 })
 

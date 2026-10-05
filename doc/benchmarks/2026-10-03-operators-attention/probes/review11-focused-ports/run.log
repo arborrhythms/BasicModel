@@ -1,0 +1,70 @@
+........F...................................
+=================================== FAILURES ===================================
+____________ test_policy_still_learns_between_supported_operations _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x147bb6ff0>
+
+    def test_policy_still_learns_between_supported_operations(monkeypatch):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _ = decoder()
+        language = model.languageSpace
+        class Difference:
+            inverse_kind = 'search'
+            @staticmethod
+            def compose(left, right):
+                return left - right
+        language._generate_binary_ops += (Difference(),)
+        language.generate_policy = torch.nn.Linear(2, 3)
+        with torch.no_grad():
+            language.generate_policy.weight.zero_()
+            language.generate_policy.bias.copy_(torch.tensor([1., 0., 20.]))
+        event = torch.tensor([[[1., 1.], [0., 0.], [0., 0.]]], requires_grad=True)
+        bank = torch.tensor([[[1., 0.], [0., 1.], [1., 2.]]])
+        out, count, truncated, _, actions, alternatives = model._output_generate_walk(
+            event, 6, basis=bank, basis_valid=torch.ones(1, 3, dtype=torch.bool), return_candidates=True)
+        assert alternatives[0, 0] and actions[0, 0] == 0
+        assert count.tolist() == [2] and not truncated.any()
+        out[:, 0].square().sum().backward()
+        gradient = language.generate_policy.bias.grad
+>       assert gradient[:2].abs().sum() > 0
+E       assert tensor(0.) > 0
+E        +  where tensor(0.) = <built-in method sum of Tensor object at 0x1490c90e0>()
+E        +    where <built-in method sum of Tensor object at 0x1490c90e0> = tensor([0., 0.]).sum
+E        +      where tensor([0., 0.]) = <built-in method abs of Tensor object at 0x148e177f0>()
+E        +        where <built-in method abs of Tensor object at 0x148e177f0> = tensor([0., 0.]).abs
+
+test/test_review11_contracts.py:137: AssertionError
+=============================== warnings summary ===============================
+test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[XOR_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpj56co1jh/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp1mxanqpp/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpnt8513ya/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpry3mokzo/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review11_contracts.py::test_policy_still_learns_between_supported_operations
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py:730: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+1 failed, 43 passed, 6 warnings in 233.96s (0:03:53)

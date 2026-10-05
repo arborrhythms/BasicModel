@@ -1,0 +1,33 @@
+{
+  "head": "802abb1acc95e1bddc8cb237b13230a336681c49",
+  "worktrees": "worktree /Users/arogers/github/WikiOracle/.git/modules/basicmodel\nHEAD 802abb1acc95e1bddc8cb237b13230a336681c49\nbranch refs/heads/main\n\nworktree /private/tmp/basicmodel-aa5e018-reconstruction-baseline\nHEAD aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/basicmodel-preexpect-c391\nHEAD c3918a2929bfee34668300dfa3e7ae8f11febf2a\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/full-spec-history-checkout\nHEAD 4f30ac22f77d5f801d126df567ff5b78d982777d\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/full-spec-nested-checkout\nHEAD 4f30ac22f77d5f801d126df567ff5b78d982777d\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/full-spec-phase-checkout\nHEAD 4f30ac22f77d5f801d126df567ff5b78d982777d\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/wikioracle-item1c\nHEAD 2c2063aae5432a9d2a7ac2022ea41c9c62e8b8d1\ndetached\nprunable gitdir file points to non-existent location\n\n",
+  "changed_python_seed_calls": [],
+  "changed_xml_seeds": [],
+  "changed_declared_capacities": [
+    "data/BasicModel.xml",
+    "data/BasicModel_answers_tied_benchmark.xml",
+    "data/MM_grammar.xml",
+    "data/MM_grammar_wording.xml",
+    "data/MM_shamatha.xml",
+    "data/XOR_grammar.xml",
+    "data/XOR_pos.xml",
+    "data/mnist.xml",
+    "data/xor.xml"
+  ],
+  "protected_files_unchanged": {
+    "test/test_explicit_dimensions.py": true,
+    "test/test_mm_xor.py": true,
+    "test/test_reconstruction_roundtrip.py": true,
+    "test/bounded_tests.py": true,
+    "Makefile": true,
+    "pytest.ini": true,
+    "data/eval/nanochat_grammar_gate.json": true
+  },
+  "guards": {
+    "worker_gib": 8,
+    "worker_timeout_seconds": 1800,
+    "aggregate_gib": 28,
+    "workers": 10,
+    "cpu_headroom": "unchanged bounded worker policy"
+  }
+}

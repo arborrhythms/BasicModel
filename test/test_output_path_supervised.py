@@ -202,7 +202,8 @@ def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, out
 
 
 def _dedicated_answer_parameters(m):
-    return [p for p in m.synthesis_parameters() if p.requires_grad]
+    decoder={id(p) for p in m.languageSpace.generate_policy.parameters()}
+    return [p for p in m.synthesis_parameters() if p.requires_grad and id(p) not in decoder]
 
 
 def _answer_training_probe(m, opt, questions):
@@ -229,7 +230,8 @@ def _answer_training_probe(m, opt, questions):
             return backward(total, amp_scaler, **kwargs)
         params = _dedicated_answer_parameters(m)
         observed["params"] = params
-        observed["before"] = [p.detach().clone() for p in params]
+        initial = dict(zip(map(id, initial_params), initial_values))
+        observed["before"] = [initial.get(id(p), p.detach().clone()) for p in params]
         observed["total_grads"] = torch.autograd.grad(
             total, params, retain_graph=True, allow_unused=True)
         c = m._last_answer_construction
@@ -497,7 +499,7 @@ def test_native_checkpoint_restores_active_answer_widths(tmp_path, legacy_only, 
             u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
             m.reverseOutput(u, m.resolveAnswer(u, (What.supervised(0), What.supervised(1))))
             m.question_conditioners[str(concept_width)].weight.fill_(0.02)
-            m.conceptualSpace.synthesis_layer.raw_L[1, 0] = 0.17
+            m.languageSpace.generate_policy.weight[1, 0] = 0.17
             m.outputSpace.percept_adapter.raw_L[32, 3] = -0.11
             if legacy_only:
                 narrow = m._question_conditioner(136, device=torch.device("cpu"), dtype=torch.float32)
@@ -510,10 +512,9 @@ def test_native_checkpoint_restores_active_answer_widths(tmp_path, legacy_only, 
         fresh = _native_answer_model(folder, False, concept_width=concept_width)
         assert fresh.load_weights(str(path), strict=True)
         for before, after in (
-                (m.conceptualSpace.synthesis_layer, fresh.conceptualSpace.synthesis_layer),
-                (m.perceptualSpace.synthesis_layer, fresh.perceptualSpace.synthesis_layer),
+                (m.languageSpace.generate_policy, fresh.languageSpace.generate_policy),
                 (m.outputSpace.percept_adapter, fresh.outputSpace.percept_adapter)):
-            assert before.nInput == after.nInput
+            assert getattr(before,"nInput",before.weight.shape[1] if hasattr(before,"weight") else None) == getattr(after,"nInput",after.weight.shape[1] if hasattr(after,"weight") else None)
             for key, value in before.state_dict().items():
                 torch.testing.assert_close(after.state_dict()[key], value, rtol=0, atol=0)
         if legacy_only:
@@ -532,3 +533,19 @@ def test_native_checkpoint_restores_active_answer_widths(tmp_path, legacy_only, 
                 model.End()
                 model.symbolSpace.soft_reset()
         torch._dynamo.reset()
+
+
+def test_question_conditions_the_first_occupied_answer_role():
+    from Models import BasicModel
+    m = BasicModel()
+    answer = torch.tensor([[[0., 0.], [.2, .3], [.4, .5]]])
+    module = m._question_conditioner(2, device=answer.device, dtype=answer.dtype)
+    context = torch.ones(1, module.in_features)
+    with torch.no_grad():
+        module.weight.fill_(.01)
+    got = m._condition_answer_on_question(answer, context)
+    torch.testing.assert_close(got[:, 0], answer[:, 0], rtol=0, atol=0)
+    torch.testing.assert_close(got[:, 2], answer[:, 2], rtol=0, atol=0)
+    torch.testing.assert_close(got[:, 1], answer[:, 1] + module(context))
+    got[:, 1].sum().backward()
+    assert module.weight.grad.abs().sum() > 0

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "-p",
+    "native_observer",
+    "test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]"
+  ],
+  "pid": 87102,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 677856816,
+  "elapsed_seconds": 4.6521116660151165,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/native-empty/run.log"
+}

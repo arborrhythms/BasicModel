@@ -15,16 +15,16 @@ from test_sentence_expectation import layer, observe
 
 
 def language_and_program(mode='particular'):
-    rule = SimpleNamespace(method_name='sum', lhs='exist_O1',
+    rule = SimpleNamespace(method_name='sum', lhs='S',
         reference_orders=(('I1', 1),), reference_kinds=(('I1', mode),))
     language = SimpleNamespace(_compose_binary_rules=(rule,), _compose_unary_rules=(),
-        forward_binary_step=lambda a, b, *_: a + b)
+        forward_binary_step=lambda a, b, *_: (a + b) * .5)
     leaves = torch.eye(4)[[0, 2]]
     program = AnswerProgram(rows=torch.tensor([0, 2]), word_rows=torch.tensor([0, 2]),
         activations=torch.ones(2), leaves=leaves,
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1]]),
         targets=torch.tensor([0, 1, 1]),
-        end_state=torch.stack((leaves.sum(0), torch.zeros(4), torch.zeros(4))),
+        end_state=torch.stack((leaves.mean(0), torch.zeros(4), torch.zeros(4))),
         concept_ids=torch.tensor([1, 3]), reference_orders=torch.tensor([1, -1]))
     return language, program
 
@@ -47,7 +47,7 @@ def test_same_individual_uses_prior_sentence_point_and_keeps_own_words():
     clause = finish_reading(language, resolved)
     assert clause.refs[0] == prior.row_id
     torch.testing.assert_close(clause.meaning.roles[0], prior.point)
-    torch.testing.assert_close(clause.point, prior.point + original.leaves[1])
+    torch.testing.assert_close(clause.point, (prior.point + original.leaves[1]) * .5)
     torch.testing.assert_close(resolved.leaves, original.leaves, rtol=0, atol=0)
     torch.testing.assert_close(resolved.word_rows, original.word_rows)
 

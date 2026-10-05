@@ -31,8 +31,9 @@ def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
     cs, (a, b, _), store, model = _setup()
     fact = model.grammatical_thoughts.form('part', a, b, mode='assertive')
     order = terminal_model_index(model, fact.role_refs)
-    store.append_meaning(fact, trust=1, order=order)
-    assert model.reason_about(QuerySpec.from_surface('exist', fact)).support_true == 1
+    store.append_meaning(fact, trust=1, order=order,
+                         evidence=(1., 0.))
+    assert model.reason_about(model.grammatical_thoughts.form('what', fact)).support_true == 1
     result = model.reason_about(QuerySpec.from_surface('part', a, b))
     assert result.support_true == 0
 

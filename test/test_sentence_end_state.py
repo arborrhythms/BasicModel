@@ -84,8 +84,14 @@ def test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path():
     choice = SimpleNamespace(kind=torch.tensor([1, 2]), position=torch.tensor([0, 1]),
         applied=torch.tensor([True, False]), candidate=candidate)
     journal = torch.zeros(2, 5, 12)
-    compiled = torch.compile(BasicModel._tensor_record_operation_values, backend='eager', fullgraph=True)
-    recorded = compiled(journal, torch.tensor(2), (buffer,), choice)
+    def record(journal,slot,buffer,candidate):
+        rows=torch.arange(buffer.shape[0])
+        left=buffer[rows,(choice.position+1).clamp_max(2)]
+        right=buffer[rows,choice.position]
+        frame=torch.cat((left,right,candidate),-1)
+        return BasicModel._tensor_record_selected_values(journal,slot,frame,choice.applied)
+    compiled = torch.compile(record, backend='eager', fullgraph=True)
+    recorded = compiled(journal, torch.tensor(2), buffer, candidate)
     expected = torch.cat((buffer[0, 1], buffer[0, 0], candidate[0]))
     torch.testing.assert_close(recorded[0, 2], expected, rtol=0, atol=0)
     assert not recorded[1].any()
@@ -120,10 +126,11 @@ def test_closing_discards_operations_without_changing_other_live_rows():
     from Models import BasicModel
 
     lang = tuple(torch.ones(2, 4) for _ in range(25)) + (
-        torch.ones(2, 4, dtype=torch.long), torch.ones(2, 4, dtype=torch.bool))
+        torch.ones(2, 4, dtype=torch.long), torch.ones(2, 4, dtype=torch.bool),
+        torch.ones(2, 4))  # selected operation log-probabilities
     _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),
                                                                   torch.tensor([True, False]))
-    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26):
+    for index in (4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27):
         expected = -1 if index in (4, 5, 15, 16, 17, 18, 23, 25) else 0
         assert (cleared[index][0] == expected).all()
         torch.testing.assert_close(cleared[index][1], lang[index][1], rtol=0, atol=0)

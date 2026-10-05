@@ -368,8 +368,8 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
         self.assertEqual(len(store), n0, "CS.Reset must not clear")
         m.dispatch_per_row_reset([True])
         self.assertEqual(len(store), n0, "per-row reset cascade must not clear")
-        if m.symbolSpace.discourse is not None:
-            m.symbolSpace.discourse.reset()
+        if m.symbolSpace.expectation is not None:
+            m.symbolSpace.expectation.reset()
             self.assertEqual(len(store), n0, "discourse.reset must not clear")
 
     def test_state_dict_keys_present(self):
@@ -410,16 +410,16 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
 
 class TestDiscourseConsolidationWiring(unittest.TestCase):
     def test_discourse_is_built(self):
-        # sentenceExpectation builds symbolSpace.discourse.
+        # sentenceExpectation builds symbolSpace.expectation.
         m = _make_model(_SERIAL_CONFIG)
-        self.assertIsNotNone(m.symbolSpace.discourse,
+        self.assertIsNotNone(m.symbolSpace.expectation,
                              "sentenceExpectation must build the discourse")
 
     def test_discourse_wired_to_store_when_consolidated(self):
         # FU3 (Change 2): the discourse AR predictor is wired to read the
         # unified store (not its deque) when consolidated.
         m = _make_model(_SERIAL_CONFIG)
-        disc = m.symbolSpace.discourse
+        disc = m.symbolSpace.expectation
         self.assertIs(disc._ltm_store, m.symbolSpace.ltm_store)
         self.assertTrue(disc._ltm_consolidation)
 
@@ -429,8 +429,8 @@ class TestDiscourseConsolidationWiring(unittest.TestCase):
         # consolidation/sentenceExpectation here -> just assert the wiring
         # default on a non-consolidated build (the OFF fixture has no
         # discourse, so check the attribute default on a fresh layer).
-        from Layers import InterSentenceLayer
-        layer = InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=8,
+        from Layers import BracketExpectation
+        layer = BracketExpectation(n_symbols=4, max_depth=8, n_dim=8,
                                    p=2, q=1, concept_dim=8)
         self.assertIsNone(layer._ltm_store)
         self.assertFalse(layer._ltm_consolidation)
@@ -443,7 +443,7 @@ class TestStoreBackedChain(unittest.TestCase):
         from Layers import TernaryTruthStore as T
         m = _make_model(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
-        disc = m.symbolSpace.discourse
+        disc = m.symbolSpace.expectation
         store.reset()
         D = store.nDim
         a = torch.zeros(D); a[0] = 1.0           # oldest (ts 0)
@@ -468,7 +468,7 @@ class TestStoreBackedChain(unittest.TestCase):
         from Layers import TernaryTruthStore as T
         m = _make_model(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
-        disc = m.symbolSpace.discourse
+        disc = m.symbolSpace.expectation
         store.reset()
         D = store.nDim
         np1 = torch.zeros(D); np1[0] = 1.0       # idea1
@@ -489,7 +489,7 @@ class TestStoreBackedChain(unittest.TestCase):
     def test_get_stm_chain_respects_n_window(self):
         m = _make_model(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
-        disc = m.symbolSpace.discourse
+        disc = m.symbolSpace.expectation
         store.reset()
         D = store.nDim
         for i in range(5):
@@ -510,7 +510,7 @@ class TestObserveSkipsDequeWhenConsolidated(unittest.TestCase):
         # predict/observe L_inter cycle.
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
-        disc = m.symbolSpace.discourse
+        disc = m.symbolSpace.expectation
         self.assertGreater(len(store), 0)
         deque_before = [len(dq) for dq in disc._stm_end_states]
         D = store.nDim
@@ -877,7 +877,7 @@ class TestSerialForwardAppendsStore(unittest.TestCase):
         # without error.
         m = _make_model(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
-        disc = m.symbolSpace.discourse
+        disc = m.symbolSpace.expectation
         opt = m.getOptimizer(lr=0.01)
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")

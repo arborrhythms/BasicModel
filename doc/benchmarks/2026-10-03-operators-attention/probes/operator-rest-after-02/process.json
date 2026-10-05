@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_grammar_binary_ops.py",
+    "test/test_grammar_space_scoped_starts.py",
+    "test/test_decoder_exploration.py"
+  ],
+  "pid": 84584,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 640649208,
+  "elapsed_seconds": 8.79602354200324,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/operator-rest-after-02/run.log"
+}

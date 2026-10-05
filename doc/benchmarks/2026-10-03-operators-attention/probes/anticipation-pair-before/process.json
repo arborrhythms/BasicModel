@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-operators-attention/forecast_trial_probe.py"
+  ],
+  "pid": 6296,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 429098160,
+  "elapsed_seconds": 3.584553708002204,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/anticipation-pair-before/run.log"
+}

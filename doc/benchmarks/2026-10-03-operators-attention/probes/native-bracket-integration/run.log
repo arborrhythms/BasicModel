@@ -1,0 +1,176 @@
+..........................sss....F.sF............                        [100%]
+=================================== FAILURES ===================================
+___________ test_selected_surface_preserves_complete_content_meaning ___________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14b3ffb00>
+
+    def test_selected_surface_preserves_complete_content_meaning(monkeypatch):
+        from dataclasses import replace
+        from types import SimpleNamespace
+        from test_selected_relation_meaning import _program_owner
+        _cs, _grammar, registry, owner, _leaves, program, _a, _b = _program_owner(
+            monkeypatch, interrogative=True)
+        entry = program()
+        original = owner.program_meaning(entry, registry)
+        surface = len(owner._compose_binary_rules)
+        object.__setattr__(owner, "_compose_binary_rules", owner._compose_binary_rules + (
+            SimpleNamespace(method_name="surface"),))
+        actions = torch.cat((torch.tensor([[0, -1, 2]]), entry.actions,
+                             torch.tensor([[1, surface, -1]])))
+        attached = replace(entry, rows=torch.cat((entry.rows, entry.rows[:1])),
+                           word_rows=torch.cat((entry.word_rows, entry.word_rows[:1])),
+                           activations=torch.cat((entry.activations, entry.activations[:1])),
+                           concept_ids=torch.cat((entry.concept_ids, entry.concept_ids[:1])),
+                           leaves=torch.cat((entry.leaves, torch.randn_like(entry.leaves[:1]))),
+                           lexical_forms=(None,) * 3, actions=actions)
+        recovered = owner.program_meaning(attached, registry)
+>       assert recovered.metadata() == original.metadata()
+               ^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'metadata'
+
+test/test_surface_grammar.py:78: AttributeError
+______________ test_normal_batch_trains_supplied_grammar_lessons _______________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1547/test_normal_batch_trains_suppl0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14aeeecc0>
+eager_reading = None
+
+    def test_normal_batch_trains_supplied_grammar_lessons(tmp_path, monkeypatch, eager_reading):
+        import json
+        from pathlib import Path
+        from test_compiled_word_chunk import _tiny_canonical_model
+        curriculum = json.loads((Path(__file__).resolve().parents[1] / "data/grammar_wording.json").read_text())
+        chosen = ("wheels belong to bicycles", "bicycles are equal to wheels")
+        lessons = [next(row for row in curriculum["train"] if row["text"] == text) for text in chosen]
+        torch.manual_seed(942)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8")
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        data = model.inputSpace.data
+        data.grammar_lessons = {"train": lessons}
+        data.has_supervised_outputs = False
+        chooser = model.languageSpace._tree_layer(2).chooser
+        generator = model.languageSpace.generate_policy
+        surface = next(op.gl for op in model.languageSpace._tree_layer(2).ops
+                       if getattr(getattr(op, "gl", op), "rule_name", None) == "surface")
+        owners = (chooser, generator, surface.marker_map, surface.marker_prior)
+        model.loss.reconstruction_scale = 0.  # isolate the supplied lessons
+        before = [[p.detach().clone() for p in owner.parameters()] for owner in owners]
+        optimizer = model.getOptimizer(lr=.003)
+        try:
+            inputs = model.inputSpace.prepInput(list(chosen))
+            from reading_fixtures import capture_readings
+            with capture_readings(model) as readings:
+>               result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,
+                    split="train", optimizer=optimizer, source_rows=[0, 1],
+                    batch_override=(inputs, torch.empty(2, 0)))
+
+test/test_surface_grammar.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13634: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14001: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8759: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10201: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8456: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22869: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17110: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21433: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20992: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20152: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20120: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19650: in _sentence_path_cost
+    objectives = self._grammar_lesson_objectives([program],
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+programs = [AnswerProgram(rows=tensor([3, 4, 5]), word_rows=tensor([3, 4, 5]), activations=tensor([-0.4824, -0.8155,  0.7616], gr...rders=tensor([0, 0, 0]), leaf_evidence=tensor([[0.0000, 0.4824],
+        [0.0000, 0.8155],
+        [0.7616, 0.0000]]))]
+split = 'train', source_rows = [0]
+
+    def _grammar_lesson_objectives(self, programs, *, split, source_rows):
+        """Score supplied annotations after the student has fixed its parse.
+    
+        No labels enter forward, resolution or generation. Ordinary unlabelled
+        corpora have no lessons. Stable source rows, not a word-to-operation
+        map, select the teacher target for an annotated training presentation.
+        """
+        if split != "train" or self.grammar_lesson_weight <= 0:
+            return None
+        table = getattr(self.inputSpace.data, "grammar_lessons", {}).get(split, ())
+        if not table:
+            return None
+        if source_rows is None or len(source_rows) != len(programs):
+            raise ValueError("annotated grammar training requires stable source rows")
+        lessons = []
+        for row, program in zip(source_rows, programs):
+            if isinstance(row, (tuple, list)) and len(row) == 1:
+                row = row[0]
+            if not isinstance(row, (int, np.integer)):
+                raise ValueError("grammar lessons require unpacked sentence source rows")
+            if not 0 <= int(row) < len(table) or program is None:
+                raise ValueError("grammar lesson requires a live captured source row")
+            lesson = table[int(row)]
+            # Guard against accidentally crediting a different staged input.
+            owner = self._concept_owner()
+            words = [owner.word_surface_for_row(int(value))
+                     for value in program.word_rows.detach().cpu().tolist()]
+            if any(value is None for value in words) or b" ".join(words).decode("utf8") != lesson["text"]:
+>               raise ValueError("grammar lesson text does not match its captured forward words")
+E               ValueError: grammar lesson text does not match its captured forward words
+
+bin/Models.py:13495: ValueError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning
+FAILED test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons
+2 failed, 43 passed, 4 skipped, 1 warning in 9.88s

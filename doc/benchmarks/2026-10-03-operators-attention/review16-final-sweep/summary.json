@@ -1,0 +1,25 @@
+{
+  "counts": {
+    "passed": 4898,
+    "skipped": 286,
+    "xpassed": 1,
+    "failed": 2
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_signal_router_layer.py::test_chosen_operator_gradient_is_probability_weighted",
+      "message": "test/test_signal_router_layer.py:30: in test_chosen_operator_gradient_is_probability_weighted\n    torch.testing.assert_close(x.grad, torch.full_like(x, .5))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 2 / 2 (100.0%)\nE   Greatest absolute difference: 0.5 at index (0, 0, 0) (up to 1e-05 allowed)\nE   Greatest relative difference: 1.0 at index (0, 0, 0) (up to 1.3e-06 allowed)",
+      "classification": "port",
+      "reason": "Superseded compose straight-through gradient; \u00a716.3 uses the full selected operator gradient and a separate score-function chooser surrogate."
+    },
+    {
+      "nodeid": "test/test_signal_router_unary.py::test_unary_and_stop_anchors_receive_gradient",
+      "message": "test/test_signal_router_unary.py:40: in test_unary_and_stop_anchors_receive_gradient\n    assert step.stop_anchor.grad.abs().sum() > 0\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'abs'",
+      "classification": "port",
+      "reason": "Superseded compose straight-through gradient; \u00a716.3 uses the full selected operator gradient and a separate score-function chooser surrogate."
+    }
+  ],
+  "elapsed_seconds": 776.7291903750156,
+  "selected": 5187,
+  "completed": 5187
+}

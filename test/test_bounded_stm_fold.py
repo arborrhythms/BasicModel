@@ -58,7 +58,8 @@ def test_compose_single_reduction_space_role():
     layer = m.symbolSpace.languageLayer.operation_layer
     assert layer is m._stm_reducer()
     assert layer.r_reduce >= 8
-    assert layer.r_apply > 0
+    assert layer.r_apply == 0  # not belongs to the field, not unary grammar
+    assert 5 in layer.attention_operations
 
 
 def test_lift_lower_stay_invertible_cs_ops():

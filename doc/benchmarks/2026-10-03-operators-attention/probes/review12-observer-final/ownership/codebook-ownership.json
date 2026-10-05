@@ -1,0 +1,94 @@
+[
+  {
+    "stage": 0,
+    "contextual_rotation_only": false,
+    "contextual_learning_rate": 0.0,
+    "parameters": [
+      {
+        "name": "W",
+        "shape": [
+          6,
+          10
+        ],
+        "requires_grad": true
+      }
+    ],
+    "buffers": [
+      {
+        "name": "vq.cluster_size",
+        "shape": [
+          6
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.embed_avg",
+        "shape": [
+          6,
+          10
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq._b_norms_sq",
+        "shape": [
+          6
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.active_mask",
+        "shape": [
+          6
+        ],
+        "requires_grad": false
+      }
+    ]
+  },
+  {
+    "stage": 1,
+    "contextual_rotation_only": false,
+    "contextual_learning_rate": 0.0,
+    "parameters": [
+      {
+        "name": "W",
+        "shape": [
+          6,
+          10
+        ],
+        "requires_grad": true
+      }
+    ],
+    "buffers": [
+      {
+        "name": "vq.cluster_size",
+        "shape": [
+          6
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.embed_avg",
+        "shape": [
+          6,
+          10
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq._b_norms_sq",
+        "shape": [
+          6
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.active_mask",
+        "shape": [
+          6
+        ],
+        "requires_grad": false
+      }
+    ]
+  }
+]

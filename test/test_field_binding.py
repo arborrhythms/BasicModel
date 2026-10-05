@@ -54,7 +54,7 @@ def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, sourc
     before_pair = before[slot, 0, 0].detach().clone()
     model = _model_with(source, SimpleNamespace())
     model.conceptualSpaces = torch.nn.ModuleList([source])
-    model.serial = source_serial
+    model.word_brackets = source_serial
     model.concept_binding = binding
     model.nConceptCodes = source.nVectors
     checkpoint = tmp_path / "shared-inventory.pt"
@@ -65,11 +65,11 @@ def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, sourc
     restored._concept_binding = binding
     target = _model_with(restored, SimpleNamespace())
     target.conceptualSpaces = torch.nn.ModuleList([restored])
-    target.serial = not source_serial
+    target.word_brackets = not source_serial
     target.concept_binding = binding
     target.nConceptCodes = restored.nVectors
     assert target.load_weights(checkpoint, strict=True, require_match=True)
-    assert target.serial is (not source_serial)
+    assert target.word_brackets is (not source_serial)
     assert restored._serial is (not source_serial)
     assert restored._csw_row_of(cid) == row
     old_store = Spaces._concept_alloc_of(source).layer(0)

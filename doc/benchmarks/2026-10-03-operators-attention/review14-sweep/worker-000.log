@@ -1,0 +1,87 @@
+........................................................................ [ 53%]
+.........................s......F..F..........................           [100%]
+=================================== FAILURES ===================================
+_______ test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0] _______
+test/test_arithmetic_isolation.py:110: in test_numeric_and_renamed_sentence_paths_keep_oracles_out
+    assert not torch.equal(answer.concepts[0], answer.concepts[1])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10a3c93a0>(tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]), tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]))
+E    +    where <built-in method equal of type object at 0x10a3c93a0> = torch.equal
+________ test_provisioning_retains_completed_fields_and_shared_row_ids _________
+test/test_assertion_provenance.py:10: in test_provisioning_retains_completed_fields_and_shared_row_ids
+    model = _make_model_provisioned(_SERIAL_CONFIG)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_ltm_consolidation.py:81: in _make_model_provisioned
+    m.provision_ltm()
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6997: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7032: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13619: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13746: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14121: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8815: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10309: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8500: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+=============================== warnings summary ===============================
+test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7162: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1773/test_supervised_update_cannot_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_attention_promotion.py:231: UserWarning: Space ownership migration: removed 102 duplicate alias checkpoint keys.
+    assert target.load_weights(path, require_match=True)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]
+FAILED test/test_assertion_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+2 failed, 131 passed, 1 skipped, 4 warnings in 10.11s

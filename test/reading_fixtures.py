@@ -145,11 +145,13 @@ def force_absolute_reading(model):
     allowed = ('lift', 'union', 'intersection', 'sum')
     def binary_scores(*args, **kwargs):
         stop, scores = binary(*args, **kwargs)
-        mask = torch.tensor([name in allowed for name in binary_names], device=scores.device)
+        mask = torch.tensor([name in allowed for name in binary_names], device=scores.device, dtype=torch.bool)
         return stop, scores.masked_fill(~mask, -torch.inf) + 1e6
     def unary_scores(*args, **kwargs):
         stop, scores = unary(*args, **kwargs)
-        mask = torch.tensor([name in ('not', 'non') for name in unary_names], device=scores.device)
+        if kwargs.get('op_offset') == layer.r_reduce + layer.r_apply:
+            return stop, scores  # supplied grammar does not force attention
+        mask = torch.tensor([name in ('not', 'non') for name in unary_names], device=scores.device, dtype=torch.bool)
         return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
     layer.chooser.score_binary = binary_scores
     layer.chooser.score_unary = unary_scores
@@ -184,7 +186,7 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     owner.conceptualSpace = SimpleNamespace(_ltm_consolidation=store is not None,
         _incoming_trust_multiplier=lambda: trust)
     owner._concept_owner = lambda: owner.conceptualSpace
-    owner.symbolSpace = SimpleNamespace(ltm_store=store, discourse=discourse)
+    owner.symbolSpace = SimpleNamespace(ltm_store=store, expectation=discourse)
     readings = (entry if active else None,)
     owner._capture_reading_programs = lambda **kwargs: (readings, {sid: readings})
     owner._expectation_documents_for_slot = lambda *args: [document]

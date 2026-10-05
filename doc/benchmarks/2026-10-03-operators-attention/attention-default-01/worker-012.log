@@ -1,0 +1,178 @@
+.........s..........F................................................... [ 34%]
+...............................F...............................F.F.F..FF [ 69%]
+...............................................................          [100%]
+=================================== FAILURES ===================================
+_____ test_answer_path_operators_are_independently_owned_and_keep_learning _____
+test/test_joint_objectives.py:306: in test_answer_path_operators_are_independently_owned_and_keep_learning
+    assert not shared & {p.data_ptr() for p in answer_only}  # answer path exempt
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert not ({509436796416, 509437691392, 509437692928, 509437696000, 509437699072, 509437706240, ...} & {509436796416, 509445246464, 509682302976, 509682303872, 509682304768, 509682305664, ...})
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+__________ test_native_progress_and_trained_artifact_evaluation_path ___________
+test/test_learning_readiness.py:149: in test_native_progress_and_trained_artifact_evaluation_path
+    model.runBatch(train=True, split='train', batchSize=2, optimizer=optimizer,
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13634: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14001: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8759: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10201: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8456: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22852: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13060: in _lex_embed_stem
+    self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+bin/Spaces.py:9873: in finalize_stem
+    return self._finalize_serial_word_stem(sub, ps)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9772: in _finalize_serial_word_stem
+    self._finalize_sentence_word_layout(active)
+bin/Spaces.py:9811: in _finalize_sentence_word_layout
+    raise RuntimeError(
+E   RuntimeError: packed surface word layout differs from the staged sentence boundaries; refusing to train misaligned roots
+________ TestLexiconOwnership.test_embedding_lives_on_perceptual_space _________
+test/test_lexicon_ownership.py:49: in test_embedding_lives_on_perceptual_space
+    m = _build_text_model()
+        ^^^^^^^^^^^^^^^^^^^
+test/test_lexicon_ownership.py:42: in _build_text_model
+    m.create_from_config(tmp.name, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+____ TestLexiconOwnership.test_optimizer_includes_emb_params_when_trainable ____
+test/test_lexicon_ownership.py:76: in test_optimizer_includes_emb_params_when_trainable
+    m = _build_text_model(train_embeddings=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_lexicon_ownership.py:42: in _build_text_model
+    m.create_from_config(tmp.name, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+________ TestLexiconOwnership.test_save_and_load_embeddings_round_trip _________
+test/test_lexicon_ownership.py:66: in test_save_and_load_embeddings_round_trip
+    m = _build_text_model()
+        ^^^^^^^^^^^^^^^^^^^
+test/test_lexicon_ownership.py:42: in _build_text_model
+    m.create_from_config(tmp.name, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+__________ TestCheckpointBundle.test_ckpt_includes_embedding_vectors ___________
+test/test_lexicon_ownership.py:212: in test_ckpt_includes_embedding_vectors
+    m = _build_text_model()
+        ^^^^^^^^^^^^^^^^^^^
+test/test_lexicon_ownership.py:42: in _build_text_model
+    m.create_from_config(tmp.name, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+_________ TestCheckpointBundle.test_ckpt_includes_vocab_and_bpe_extras _________
+test/test_lexicon_ownership.py:245: in test_ckpt_includes_vocab_and_bpe_extras
+    m = _build_text_model()
+        ^^^^^^^^^^^^^^^^^^^
+test/test_lexicon_ownership.py:42: in _build_text_model
+    m.create_from_config(tmp.name, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+=============================== warnings summary ===============================
+test/test_iterated_symbolic_wave.py::test_depth_d_sigma_path_completes_in_one_pass
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning
+FAILED test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+FAILED test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_lives_on_perceptual_space
+FAILED test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_includes_emb_params_when_trainable
+FAILED test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_and_load_embeddings_round_trip
+FAILED test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_embedding_vectors
+FAILED test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras
+7 failed, 199 passed, 1 skipped, 2 warnings in 11.27s

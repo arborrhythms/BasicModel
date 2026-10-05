@@ -1,0 +1,265 @@
+.FFF....FFF.F.FFF....                                                    [100%]
+=================================== FAILURES ===================================
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True] __
+test/test_grammar_separator.py:74: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    model(model.inputSpace.prepInput(texts))
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8308: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23092: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17249: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21627: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21186: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20316: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:141: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20266: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:20897: in stage_cs_lang
+    resolved = FunctionalPeerSTM.resolve_top_reference(
+bin/Models.py:1440: in resolve_top_reference
+    gate = row_gate.reshape(B).to(
+           ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: shape '[4]' is invalid for input of size 16
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True] ___
+test/test_grammar_separator.py:74: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    model(model.inputSpace.prepInput(texts))
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8308: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23092: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17249: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21627: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21186: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20316: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:141: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20266: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:20897: in stage_cs_lang
+    resolved = FunctionalPeerSTM.resolve_top_reference(
+bin/Models.py:1440: in resolve_top_reference
+    gate = row_gate.reshape(B).to(
+           ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: shape '[4]' is invalid for input of size 16
+_________ test_normal_text_reconstruction_updates_the_grammar_chooser __________
+test/test_grammar_word_learning.py:188: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    assert "operand_order.weight" in changed
+E   AssertionError: assert 'operand_order.weight' in set()
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+______ test_prepared_answer_generates_more_words_than_the_captured_input _______
+test/test_prepared_answer_boundary.py:61: in test_prepared_answer_generates_more_words_than_the_captured_input
+    assert bool(direction.abs().sum() > 0)
+E   assert False
+E    +  where False = bool(tensor(0.) > 0)
+E    +    where tensor(0.) = <built-in method sum of Tensor object at 0x144741900>()
+E    +      where <built-in method sum of Tensor object at 0x144741900> = tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0....., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]).sum
+E    +        where tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0....., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]) = <built-in method abs of Tensor object at 0x144f5c960>()
+E    +          where <built-in method abs of Tensor object at 0x144f5c960> = tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0....., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]).abs
+_ test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[False] _
+test/test_prepared_answer_boundary.py:191: in test_answer_loss_trains_an_executed_shared_inverse_without_state_credit
+    assert any(g is not None and bool(g.abs().any()) for g in gradients[1:])
+E   assert False
+E    +  where False = any(<generator object test_answer_loss_trains_an_executed_shared_inverse_without_state_credit.<locals>.<genexpr> at 0x144381000>)
+_ test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[True] _
+test/test_prepared_answer_boundary.py:191: in test_answer_loss_trains_an_executed_shared_inverse_without_state_credit
+    assert any(g is not None and bool(g.abs().any()) for g in gradients[1:])
+E   assert False
+E    +  where False = any(<generator object test_answer_loss_trains_an_executed_shared_inverse_without_state_credit.<locals>.<genexpr> at 0x14487a960>)
+_______ test_native_packed_unary_preference_still_records_every_sentence _______
+test/test_reduction_pressure.py:161: in test_native_packed_unary_preference_still_records_every_sentence
+    assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) - before == 2
+E   assert (3 - 0) == 2
+E    +  where 3 = int(tensor(3))
+E    +    where tensor(3) = <built-in method sum of Tensor object at 0x145030690>()
+E    +      where <built-in method sum of Tensor object at 0x145030690> = tensor([4, 4, 4, 4, 4, 1, 3, 0]) != 4.sum
+E    +        where 4 = TernaryTruthStore().REL_DEF
+____________ test_review15_measurement_wiring_on_one_ordinary_batch ____________
+test/test_review14_contracts.py:156: in test_review15_measurement_wiring_on_one_ordinary_batch
+    assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+E   AssertionError: F                                                                        [100%]
+E     =================================== FAILURES ===================================
+E     ___________ test_margin_and_ownership_observe_the_same_actual_steps ____________
+E     
+E         def test_margin_and_ownership_observe_the_same_actual_steps():
+E             from test_mm_xor import _fresh_model
+E             import review15_gate_observer
+E             model, _, data = _fresh_model('data/XOR_grammar.xml')
+E             optimizer = model.getOptimizer(lr=.01)
+E             raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+E             batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+E             from review15_run_audit import observe_run, json_value
+E             with observe_run() as run_audit:
+E     >           model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py:16: 
+E     _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+E     doc/benchmarks/2026-10-03-operators-attention/review15_run_audit.py:72: in observed_epoch
+E         value=epoch(model,*args,**kwargs)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     test/objective_conflicts_probe.py:710: in observed_run_epoch
+E         return original_run_epoch(model,*args,**kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:15729: in runEpoch
+E         result, _ = self.runBatch(
+E     bin/Models.py:13653: in runBatch
+E         return self._run_sentence_batch(*args, **kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:13780: in _run_sentence_batch
+E         return self._run_batch_once(**call)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1813/test_review15_measurement_wiri0/ownership/_run_batch_once.instrumented.py:375: in _run_batch_once
+E         _what_answers = self._what_or_think(
+E     bin/Models.py:8812: in _what_or_think
+E         return self.what(questions, input_data, executor=executor, record=record, score=score)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:10309: in what
+E         execution = self._execute_input_sentence(input_data, executor)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:153: in masked
+E         return method(self, *args, **kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:8497: in _execute_input_sentence
+E         return (executor or self.forward)(input_data)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:153: in masked
+E         return method(self, *args, **kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:8308: in forward
+E         return self._forward_per_stage(inputData)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:23092: in _forward_per_stage
+E         body_result = self._forward_body(
+E     bin/Models.py:17249: in _forward_body
+E         return self._forward_body_per_word(
+E     bin/Models.py:21627: in _forward_body_per_word
+E         self._run_tensor_peer_word_pipeline(N_words))
+E         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:21186: in _run_tensor_peer_word_pipeline
+E         feedback, trip_count) = self._run_sentence_word_bricks(
+E     bin/Models.py:20316: in _run_sentence_word_bricks
+E         (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+E     test/objective_conflicts_probe.py:680: in paired
+E         value=original_pair(cache,compose,observed_score,step,active=active,training=training,before_step=before_step)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/SentenceCompose.py:141: in sentence_pair
+E         exploit = compose(cache, None)
+E                   ^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:20266: in compose
+E         current_lang, current_stm, current_feedback = compose_word(
+E     bin/Models.py:20897: in stage_cs_lang
+E         resolved = FunctionalPeerSTM.resolve_top_reference(
+E     bin/Models.py:1440: in resolve_top_reference
+E         gate = row_gate.reshape(B).to(
+E                ^^^^^^^^^^^^^^^^^^^
+E     _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+E     
+E     self = <torch.utils._device.DeviceContext object at 0x116a773e0>
+E     func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+E     args = (tensor([[True, True, True, True],
+E             [True, True, True, True],
+E             [True, True, True, True],
+E             [True, True, True, True]]), 4)
+E     kwargs = {}
+E     
+E         def __torch_function__(self, func, types, args=(), kwargs=None):
+E             kwargs = kwargs or {}
+E             if func in _device_constructors() and kwargs.get("device") is None:
+E                 kwargs["device"] = self.device
+E     >       return func(*args, **kwargs)
+E                    ^^^^^^^^^^^^^^^^^^^^^
+E     E       RuntimeError: shape '[4]' is invalid for input of size 16
+E     
+E     .venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+E     ----------------------------- Captured stdout call -----------------------------
+E     [AMP] off (fp32, MODEL_AMP unset or =off)
+E     =============================== warnings summary ===============================
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+E         return func(*args, **kwargs)
+E     
+E     -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+E     =========================== short test summary info ============================
+E     FAILED doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E     1 failed, 4 warnings in 1.90s
+E     
+E   assert 1 == 0
+_____ test_noninvertible_compose_transform_uses_the_bounded_candidate_path _____
+test/test_tied_operator_reconstruction.py:324: in test_noninvertible_compose_transform_uses_the_bounded_candidate_path
+    assert not left.requires_grad and not right.requires_grad
+E   assert (not True)
+E    +  where True = tensor([[0.4900, 0.5100]], grad_fn=<SelectBackward0>).requires_grad
+_____________ test_masked_candidate_values_do_not_poison_hard_pair _____________
+test/test_tied_operator_reconstruction.py:370: in test_masked_candidate_values_do_not_poison_hard_pair
+    assert not left.requires_grad and not right.requires_grad
+E   assert (not True)
+E    +  where True = tensor([[0.2000, 0.6800]], grad_fn=<SelectBackward0>).requires_grad
+=============================== warnings summary ===============================
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7159: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp2r8avov6/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser
+FAILED test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input
+FAILED test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[False]
+FAILED test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[True]
+FAILED test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence
+FAILED test/test_review14_contracts.py::test_review15_measurement_wiring_on_one_ordinary_batch
+FAILED test/test_tied_operator_reconstruction.py::test_noninvertible_compose_transform_uses_the_bounded_candidate_path
+FAILED test/test_tied_operator_reconstruction.py::test_masked_candidate_values_do_not_poison_hard_pair
+10 failed, 11 passed, 1 warning in 21.85s

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-operators-attention/open_read_baseline.py"
+  ],
+  "pid": 93595,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 504972560,
+  "elapsed_seconds": 4.122181332990294,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/before-attention-open-cost/run.log"
+}

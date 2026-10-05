@@ -17,6 +17,10 @@ def test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence(monkeypat
     monkeypatch.setattr(torch, 'while_loop', eager_while)
     model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
     try:
+        # This fixture supplies two one-leaf derivations. The free decoder's
+        # randomly initialized inverse preference is not the scope under test.
+        from test_output_walk import _stop
+        _stop(model)
         isp = model.inputSpace
         # Two one-leaf sentences, optionally each followed by whitespace.
         width = 4 if whitespace_mask else 2

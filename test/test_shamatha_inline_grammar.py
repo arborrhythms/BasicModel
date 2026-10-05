@@ -46,8 +46,9 @@ class TestShamathaInlineGrammar(unittest.TestCase):
         ahead of not(S), join(C, C), and intersection(C, C)."""
         _fresh_model()
         cfg = TheXMLConfig.get("SymbolSpace.language.grammar")
-        self.assertIn("S", cfg)
-        s_rules = cfg["S"]
+        self.assertIn("compose", cfg)
+        s_rules = cfg["compose"]["rule"]
+        s_rules = [rule.removeprefix("S = ") for rule in s_rules if isinstance(rule,str)]
         if isinstance(s_rules, str):
             s_rules = [s_rules]
         self.assertIn("disjunction(S, S)", s_rules)

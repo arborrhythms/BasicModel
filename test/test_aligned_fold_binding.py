@@ -53,7 +53,7 @@ def test_basicmodel_selects_three_folds_per_tower():
     arch = root.find("architecture")
     assert arch is not None
     assert arch.findtext("conceptBinding") == "aligned"
-    assert int(arch.findtext("subsymbolicOrder")) - 1 == 3
+    assert int(arch.findtext("bindingDepth")) - 1 == 3
     assert arch.findtext("sentenceProtocol") == "false"
 
 

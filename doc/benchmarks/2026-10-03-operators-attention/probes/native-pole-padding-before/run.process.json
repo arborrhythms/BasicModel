@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py::test_native_pole_read_omits_padding_without_changing_evidence"
+  ],
+  "pid": 9702,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 454854048,
+  "elapsed_seconds": 3.860531957994681,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/native-pole-padding-before/run.log"
+}

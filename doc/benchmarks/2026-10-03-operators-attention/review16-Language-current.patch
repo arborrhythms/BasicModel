@@ -1,0 +1,236 @@
+--- incoming/bin/Language.py
++++ bin/Language.py
+@@ -7134,8 +7134,9 @@
+     The slab width and round budget are static. Only the occupied depth changes;
+     binary rewrites remove one operand, unary rewrites preserve depth, and STOP
+     is admissible only when the sequence fits its destination row. The chosen
+-    candidate has a hard forward value and a probability-weighted straight-
+-    through gradient. There is no compose policy/advantage objective.
++    candidate retains its own operand/operator gradient. The selector learns
++    only from the reconstruction-owned paired-cost surrogate at the sampled
++    departure; neither the hard argmax nor STOP supplies a pathwise gradient.
+     """
+ 
+     def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=0.0, reduce_pressure=1.0,
+@@ -7174,25 +7175,77 @@
+         self.unary_names = list(unary_names) if unary_names is not None else None
+         self.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
+ 
+-    def select_logits(self, logits, *, structural, masked_action=None, replay_action=None, sample=False):
++    def select_logits(self, logits, *, structural, masked_action=None, replay_action=None, sample=False,
++                      departure_eligible=None):
+         """The 7.5 categorical selection law, shared by every candidate kind."""
+         probabilities=_masked_softmax_lastdim(logits)
+         selected=logits
+         if masked_action is not None:
+             ids=torch.arange(logits.shape[-1],device=logits.device)[None]
+             other=logits.masked_fill(ids==masked_action[:,None],-torch.inf)
+-            selected=torch.where(torch.isfinite(other).any(-1,keepdim=True),other,logits)
++            if departure_eligible is not None:
++                other=other.masked_fill(~departure_eligible,-torch.inf)
++            selected=torch.where((masked_action>=0)[:,None] & torch.isfinite(other).any(-1,keepdim=True),other,logits)
+         action=structural_argmax(selected,structural)
+         if self.training and sample and self.temperature>0:
+             noise=-torch.log(-torch.log(torch.rand_like(logits).clamp(torch.finfo(logits.dtype).tiny,1-torch.finfo(logits.dtype).eps)))
+             action=(selected/self.temperature+noise).argmax(-1)
+         if masked_action is not None:
+             departure = (masked_action >= 0) & torch.isfinite(other).any(-1)
+-            action = torch.where(departure, sample_eligible_logits(selected), action)
++            # Compose uses a uniform proposal over distinct values. Its own
++            # softmax remains the probability credited by the surrogate.
++            proposal = (selected if departure_eligible is None else
++                        torch.where(torch.isfinite(selected), 0., -torch.inf))
++            action = torch.where(departure, sample_eligible_logits(proposal), action)
+         if replay_action is not None:
+             action=torch.where(replay_action>=0,replay_action,action)
+         legal=torch.isfinite(selected.gather(1,action[:,None])).squeeze(1)
+         return action,probabilities,legal
++
++    @staticmethod
++    def _distinct_departures(x, depth, candidates, logits, reference, n_binary, n_unary,
++                             r_reduce, r_apply, stop_exact=None):
++        """One representative of each distinct numerical next state.
++
++        Exact equality is the value criterion; no tolerance, target, or
++        reconstruction cost enters a choice. Identity unaries are omitted.
++        Known exactly readable leaves also exclude STOP from exploration.
++        Comparing in fixed-size blocks bounds temporary pairwise storage.
++        """
++        x, candidates = x.detach(), candidates.detach()
++        B, N, D = x.shape
++        A = logits.shape[1]
++        ids = torch.arange(A, device=x.device)
++        binary = ids < n_binary
++        unary = (ids >= n_binary) & (ids < n_binary + n_unary)
++        position = torch.where(binary, ids // max(1, r_reduce),
++            (ids - n_binary) // max(1, r_apply)).clamp(0, N - 1)
++        columns = torch.arange(N, device=x.device)
++        source = columns[None] + (binary[:, None] & (columns[None] > position[:, None])).long()
++        states = x[:, None].expand(B, A, N, D).gather(2,
++            source.clamp_max(N - 1)[None, :, :, None].expand(B, A, N, D))
++        rewrite = (binary | unary)[:, None] & (columns[None] == position[:, None])
++        states = torch.where(rewrite[None, :, :, None], candidates[:, :, None], states)
++        counts = depth[:, None] - binary.long()[None]
++        states = torch.where(columns[None, None, :, None] < counts[:, :, None, None], states, 0.)
++        allowed = torch.isfinite(logits)
++        unchanged = (states == x[:, None]).all(-1).all(-1)
++        allowed = allowed & ~(unary[None] & unchanged)
++        if stop_exact is not None:
++            allowed = allowed & ~((ids == A - 1)[None] & stop_exact[:, None])
++        reference = reference.clamp(0, A - 1)
++        ref_state = states.gather(1, reference[:, None, None, None].expand(B, 1, N, D))
++        ref_count = counts.gather(1, reference[:, None])
++        same_reference = (states == ref_state).all(-1).all(-1) & (counts == ref_count)
++        allowed = allowed & ~same_reference
++        representatives = []
++        for first in range(0, A, 16):
++            same = (states[:, first:first + 16, None] == states[:, None]).all(-1).all(-1)
++            same = same & (counts[:, first:first + 16, None] == counts[:, None])
++            earlier = ids[None] < ids[first:first + 16, None]
++            duplicates = (same & earlier[None] & allowed[:, None]).any(-1)
++            representatives.append(allowed[:, first:first + 16] & ~duplicates)
++        return torch.cat(representatives, -1)
+ 
+     def attend(self, keys, legal, space, *, prior=None, masked_action=None, replay_action=None):
+         """Field locations in this same chooser; symbols enter forward after gloss."""
+@@ -7223,7 +7276,7 @@
+                 masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+                 grammar_context=None, replay_action=None, allowance=None,
+                 rounds_left=None, load_depth=None, reference_data=None,
+-                previous_unary=None):
++                previous_unary=None, stop_exact=None):
+         B, N, D = x.shape
+         if N < 1:
+             raise ValueError("compose needs a nonempty static slab")
+@@ -7242,21 +7295,23 @@
+         unary = self._stacked_applied(x, grammar_context, reference_data)
+         content = x[..., :self.d_model]
+         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
++        score_cats = None if cat_ctx is None else cat_ctx.detach()
++        score_context = None if what_ctx is None else what_ctx.detach()
+         stop_scores, binary_scores = self.chooser.score_binary(
+-            content, binary[..., :self.d_model], self.stop_anchor,
+-            self.reduce_anchor, cat_ctx=cat_ctx, what_ctx=what_ctx)
++            content.detach(), binary[..., :self.d_model].detach(), self.stop_anchor,
++            self.reduce_anchor, cat_ctx=score_cats, what_ctx=score_context)
+         _, unary_scores = self.chooser.score_unary(
+-            content, unary[..., :self.d_model], self.stop_anchor,
+-            self.apply_anchor, cat_ctx=cat_ctx, what_ctx=what_ctx,
++            content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
++            self.apply_anchor, cat_ctx=score_cats, what_ctx=score_context,
+             op_offset=self.r_reduce)
+         prior = self._category_reduce_prior(cat_ctx)
+         if prior is not None:
+-            binary_scores = binary_scores + prior.to(binary_scores)
++            binary_scores = binary_scores + prior.detach().to(binary_scores)
+         prior = self._category_apply_prior(cat_ctx)
+         if prior is not None:
+-            unary_scores = unary_scores + prior.to(unary_scores)
++            unary_scores = unary_scores + prior.detach().to(unary_scores)
+         if op_prior is not None:
+-            binary_scores = binary_scores + op_prior.to(binary_scores)
++            binary_scores = binary_scores + op_prior.detach().to(binary_scores)
+         deadline = torch.zeros_like(depth, dtype=torch.bool)
+         needs_reduction = torch.zeros_like(depth, dtype=torch.bool)
+         if rounds_left is not None:
+@@ -7296,13 +7351,21 @@
+         # weight; neither that exclusion nor sampling temperature changes it.
+         flags = (self.structural_ops * (N - 1)
+                  + self.unary_structural_ops * N + (True,))
++        nb = (N - 1) * self.r_reduce
++        nu = N * self.r_apply
++        candidates = torch.cat((binary.reshape(B, nb, D), unary.reshape(B, nu, D),
++                                x.new_zeros(B, 1, D)), 1)
++        greedy = structural_argmax(logits, flags)
++        reference = (greedy if masked_action is None else
++                     torch.where(masked_action >= 0, masked_action, greedy))
++        departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
++            nb, nu, self.r_reduce, self.r_apply, stop_exact=stop_exact)
+         action, probabilities, has_choice = self.select_logits(logits, structural=flags,
+-            masked_action=masked_action,replay_action=replay_action,sample=sample)
++            masked_action=masked_action,replay_action=replay_action,sample=sample,
++            departure_eligible=departure_eligible)
+         torch._assert_async((~active | has_choice).all(),
+                             "compose has no legal alternative at the selected exploration round")
+         active = active & has_choice
+-        nb = (N - 1) * self.r_reduce
+-        nu = N * self.r_apply
+         is_binary = active & (action < nb)
+         is_unary = active & (action >= nb) & (action < nb + nu)
+         kind = torch.where(is_binary, 1, torch.where(is_unary, 2, 0))
+@@ -7310,27 +7373,21 @@
+                                (action - nb) // max(1, self.r_apply)).clamp(0, N - 1)
+         local_op = torch.where(is_binary, action % max(1, self.r_reduce),
+                                (action - nb) % max(1, self.r_apply))
+-        candidates = torch.cat((binary.reshape(B, nb, D), unary.reshape(B, nu, D),
+-                                x.new_zeros(B, 1, D)), 1)
+         chosen = candidates.gather(1, action[:, None, None].expand(B, 1, D)).squeeze(1)
+         probability = probabilities.gather(1, action[:, None])
+-        weighted = probability * chosen
+-        chosen_st = chosen.detach() + (weighted - weighted.detach())
+         next_depth = depth - is_binary.long()
+         # A single deletion/rewrite, not tile compaction or a length DP.
+         source = positions.expand(B, N) + (is_binary[:, None] & (positions > position[:, None])).long()
+         base = x.gather(1, source.clamp_max(N - 1)[..., None].expand(B, N, D))
+         selected = (is_binary | is_unary)[:, None] & (positions == position[:, None])
+-        path = torch.where(selected[..., None], chosen_st[:, None], base)
++        path = torch.where(selected[..., None], chosen[:, None], base)
+         hard = torch.where(selected[..., None], chosen.detach()[:, None], base)
+-        stop_weighted = probability[:, :, None] * x
+-        stop_path = x.detach() + (stop_weighted - stop_weighted.detach())
+-        path = torch.where((active & (kind == 0))[:, None, None], stop_path, path)
++        path = torch.where((active & (kind == 0))[:, None, None], x, path)
+         path = torch.where((positions < next_depth[:, None])[..., None], path, 0.)
+         hard = torch.where((positions < next_depth[:, None])[..., None], hard, 0.)
+         routing = dict(action=torch.where(active, action, -1), kind=kind, position=position, op=local_op,
+                        depth=next_depth, probabilities=probabilities, logits=logits,
+-                       probability=probability.squeeze(-1), candidate=chosen_st,
++                       probability=probability.squeeze(-1), candidate=chosen,
+                        stopped=active & (kind == 0), valid=active,
+                        binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, self.r_reduce),
+                        unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, self.r_apply))
+@@ -7339,7 +7396,8 @@
+         history = history.gather(1, source.clamp_max(N - 1))
+         history = torch.where(selected, torch.where(is_unary, local_op, -1)[:, None], history)
+         routing['previous_unary'] = torch.where(positions < next_depth[:, None], history, -1)
+-        routing['alternatives'] = active & (torch.isfinite(logits).sum(-1) > 1)
++        routing['alternatives'] = active & departure_eligible.any(-1)
++        routing['departure_eligible'] = departure_eligible
+         if reference_data is not None:
+             b_operands = torch.stack((reference_data['left'], reference_data['right']), -2)
+             u_operands = torch.stack(
+@@ -12712,6 +12770,26 @@
+         # STOP tests the whole sentence/STM depth, not the two-slot window.
+         limit = torch.as_tensor(slots, device=buffer.device)
+         stop_slots = torch.where(depth <= limit, n, 0)
++        # A STOP departure cannot improve already exact leaf read-back. This
++        # uses the same primed bank as reconstruction and the leaves' source
++        # identities, without cost evaluation, targets, or another random draw.
++        stop_exact = None
++        bank = getattr(self, '_compose_primed_bank', None)
++        if bank is not None:
++            from SentenceUnderstanding import readback_scores
++            identities = state[4].gather(1, source)
++            exact = []
++            for i in range(n):
++                scores = readback_scores(window[:, i].detach(), bank.codes.detach(),
++                    bank.weights.detach(), percept_width=bank.percept_width)
++                scores = scores.masked_fill(~(bank.valid & bank.byte_valid.any(-1)), -torch.inf)
++                winner = scores.argmax(-1, keepdim=True)
++                exact.append((identities[:, i] >= 0)
++                    & (bank.rows.gather(1, winner).squeeze(1) == identities[:, i])
++                    & (scores.gather(1, winner).squeeze(1) > 0))
++            live = torch.arange(n, device=buffer.device)[None] < window_depth[:, None]
++            stop_exact = ((torch.stack(exact, -1) | ~live).all(-1)
++                          & (depth > 0) & (depth <= n))
+         references = None
+         if reference_scope is not None:
+             from ReferenceContext import prepare_operands
+@@ -12730,6 +12808,7 @@
+             active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
+             replay_action=replay_action, allowance=slots if allowance is None else allowance,
+             rounds_left=rounds_left, load_depth=depth,
++            stop_exact=stop_exact,
+             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
+             op_prior=op_prior, grammar_context=self._structural_context(
+                 phase='compose', input_stream=buffer), reference_data=references)

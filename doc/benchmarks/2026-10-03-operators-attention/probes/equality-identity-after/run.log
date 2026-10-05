@@ -1,0 +1,113 @@
+..................................F..................F...........F...... [ 59%]
+.................................................                        [100%]
+=================================== FAILURES ===================================
+__ test_tiny_concept_inventory_keeps_thought_families_structural_not_partial ___
+
+    def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
+        """Inventory VP setup stays all-or-nothing beside the row-free part VP."""
+        from Queries import GrammaticalThoughtRegistry
+    
+        space = _cs()
+        # IDs start at one, so equal and quantize do not fit a two-row inventory.
+        # Part is a grammar predicate and requires no inventory row.
+        # The underlying fixture basis stays intact; this owns only the allocator's
+        # physical-capacity boundary used by setup preflight.
+        space.nVectors = 2
+        grammar = Grammar()
+        grammar.configure({"compose": {"rule": [
+            "part_O1 = part.forward(part_I1, part_I2)",
+            "equal_O1 = equal.forward(equal_I1, equal_I2)",
+    
+        ]}, "thought": {"rule": [
+            "part_O1 = part.thought(part_I1, part_I2)",
+            "equal_O1 = equal.thought(equal_I1, equal_I2)",
+            "quantize_O1 = quantize.thought(quantize_I1)",
+        ]}})
+    
+        registry = GrammaticalThoughtRegistry.install(space, grammar)
+    
+        assert tuple(item.semantic_id for item in registry.operations) == (
+            "part", "equal", "quantize")
+>       assert registry.executable_operation_ids == ("part",)
+E       AssertionError: assert ('part', 'equal', 'quantize') == ('part',)
+E         
+E         Left contains 2 more items, first extra item: 'equal'
+E         Use -v to get more diff
+
+test/test_thought_operation_catalog.py:228: AssertionError
+____ test_descriptor_scopes_hide_undeclared_capability_methods_at_execution ____
+
+    def test_descriptor_scopes_hide_undeclared_capability_methods_at_execution():
+        """A descriptor's declared reads, not the raw owner, define its surface."""
+        from types import SimpleNamespace
+        import torch
+        from Queries import (
+            ThoughtExecutorDescriptor, ThoughtGrammarContext, ThoughtSignature,
+        )
+        from QueryWork import QueryWorkBudget
+    
+        seen = {}
+    
+        def execute(context, _arguments):
+            seen["facts"] = hasattr(context.ltm, "existence_evidence")
+            seen["lookup"] = hasattr(context.ltm, "lookup")
+            seen["equal"] = hasattr(context.conceptual_space, "equal")
+            return {"value": None, "incomplete": ()}
+    
+        descriptor = ThoughtExecutorDescriptor(
+            "probe", "ltm-facts", ("concept",), Mind.SERIAL,
+            (Mind.LTM,), (Mind.SERIAL,), "probe", execute)
+        operation = SimpleNamespace(
+            semantic_id="probe", operand_roles=("I1",), result_role="O1")
+        signature = ThoughtSignature(operation, descriptor, ("I1",))
+    
+        class LTM:
+            def existence_evidence(self, *_args, **_kwargs):
+                return {}
+    
+            def lookup(self, *_args, **_kwargs):
+                return {}
+    
+        class Conceptual:
+            def equal(self, *_args):
+                return 1.0
+    
+        context = ThoughtGrammarContext(
+            word_stream=(), conceptual_space=Conceptual(), primed_symbols=(),
+            ltm=LTM(), taxonomy=object(), work=QueryWorkBudget(2),
+            continuation=None, boundary=lambda _row: None)
+        signature.invoke(context, torch.ones(4))
+>       assert seen == {"facts": True, "lookup": False, "equal": False}
+E       AssertionError: assert {'facts': Fal...equal': False} == {'facts': Tru...equal': False}
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Differing items:
+E         {'facts': False} != {'facts': True}
+E         Use -v to get more diff
+
+test/test_thought_operation_catalog.py:888: AssertionError
+_____ test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation _____
+
+    def test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation():
+        cs, registry, a, b, context = _world()
+        question = registry.form('equal', a, b)
+        # Named VPs do not retire through the normal frozen-concept lifecycle.
+        # Simulate a missing native record in an incomplete structural restore.
+        cs._concept_allocator.drop(question.role_refs[1][1])
+        placement = dict(cs._concept_allocator.placement)
+>       with pytest.raises(ValueError, match='unavailable|retired|VP'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_grammatical_query_vps.py:141: Failed
+=============================== warnings summary ===============================
+test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial
+FAILED test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution
+FAILED test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation
+3 failed, 118 passed, 1 warning in 3.29s

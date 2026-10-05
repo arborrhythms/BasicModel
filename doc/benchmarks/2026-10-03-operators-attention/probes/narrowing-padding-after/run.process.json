@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py",
+    "test/test_nanochat_grammar_eval.py",
+    "test/test_decoder_exploration.py",
+    "test/test_walk_trials.py"
+  ],
+  "pid": 10676,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 762841224,
+  "elapsed_seconds": 16.840045166987693,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/narrowing-padding-after/run.log"
+}

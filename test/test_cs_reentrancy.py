@@ -16,12 +16,12 @@ RETIRED). New ownership / forward contract:
     reach). It is the symbolic-loop generalization operator and the
     binding target for the default ``S = sigma(S)`` grammar rule.
   * The non-grammar PARALLEL forward = perception (PS->CS_0) followed by
-    ``subsymbolicOrder`` applications of ``WholeSpace.sigma``
+    ``bindingDepth`` applications of ``WholeSpace.sigma``
     (``BasicModel._symbolic_sigma_step``); the reverse inverts each
     ``sigma`` before ``ConceptualSpace.reverse`` so the round-trip stays
     exact.
 
-The gate builds ``XOR_exact.xml`` (parallel, subsymbolicOrder=1, invertible
+The gate builds ``XOR_exact.xml`` (parallel, bindingDepth=1, invertible
 PS/CS/SS passthroughs, butterfly pi AND sigma) -- the fixture this refactor
 restored to exact 4/4 reconstruction (see
 test_explicit_dimensions.TestXorExactCliReconstruction for the end-to-end
@@ -88,9 +88,9 @@ class TestConceptualIsBookkeepingCarrier(unittest.TestCase):
         m = _make_model()
         self.assertIsInstance(m.conceptualSpaces, torch.nn.ModuleList)
         self.assertEqual(
-            len(m.conceptualSpaces), max(1, int(m.subsymbolicOrder)),
+            len(m.conceptualSpaces), max(1, int(m.bindingDepth)),
             "self.conceptualSpaces length must equal max(1, "
-            "subsymbolicOrder).")
+            "bindingDepth).")
 
 
 class TestSymbolicOwnsSigma(unittest.TestCase):

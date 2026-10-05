@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_review13_subspaces.py",
+    "test/test_derived_concept_codes.py",
+    "test/test_concept_code_ownership.py",
+    "test/test_objective_ownership.py",
+    "test/test_sentence_priming.py",
+    "test/test_review10_contracts.py",
+    "test/test_review11_contracts.py",
+    "test/test_review12_contracts.py",
+    "test/test_decoder_exploration.py",
+    "test/test_echoic_decoder.py",
+    "test/test_output_walk.py",
+    "test/test_tied_operator_reconstruction.py",
+    "test/test_free_reconstruction.py",
+    "test/test_readback_operand_unaries.py"
+  ],
+  "pid": 33073,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 3119304688,
+  "elapsed_seconds": 119.85684129199944,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review13-settled-mechanisms/run.log"
+}

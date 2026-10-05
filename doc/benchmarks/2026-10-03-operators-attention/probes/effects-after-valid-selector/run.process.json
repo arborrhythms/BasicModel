@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_effects.py",
+    "test/test_operator_catalogue.py",
+    "test/test_grammar_sections.py",
+    "test/test_symbolize_layer.py",
+    "test/test_grammar_order_typing.py",
+    "test/test_query_contract_boundaries.py"
+  ],
+  "pid": 91405,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 475235648,
+  "elapsed_seconds": 4.125405124999816,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/effects-after-valid-selector/run.log"
+}

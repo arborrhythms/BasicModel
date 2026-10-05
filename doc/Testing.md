@@ -2763,3 +2763,84 @@ test's disposition, full old/new bodies and the 25-case performance profiles.
 Compiler tests retain capture; ordinary ownership and gradient tests can use
 `eager_reading`, which executes the same loop bodies with ordinary autograd.
 Setting `MODEL_COMPILE=eager` alone still captures higher-order loop graphs.
+
+## October 3 decoder exploration, operators and one attention — review candidate
+
+The candidate starts from `802abb1a` in the existing working tree and remains
+uncommitted for Claude's review. The final default suite completes all **5,115**
+selected cases: **4,829 passed, 285 skipped, 1 existing xfailed**, exit 0, in
+123.65 seconds. Aggregate peak is 14.03 GiB; maximum worker peak is 3.74 GiB.
+The 8 GiB / 1,800-second worker guard, 28 GiB aggregate cap, ten-worker maximum
+and CPU-headroom policy remain unchanged. This is not a replacement for the
+previous failed weekly slow receipt.
+
+The unchanged MM_xor acceptance test passes at **.1826079786** within its
+200-epoch allowance (49 observed loss evaluations). All twelve grounded and
+word-boundary XOR variants pass at exact zero, and both original XOR_exact CLI
+checks produce **MSE 0 and reconstruction 4/4**. Forty-six retained reading/global
+capability checks pass, and the four actual shipped reference configurations
+pass finite forward and answer-reader gradient checks. The nine WholeSpace row
+increases required for the fixed word whole are disclosed in the receipt.
+
+**Held for §10's measurement, not rejected.** The round's single shared 400-epoch training
+records MSE **.3207185981**, three correct class labels and reconstruction **0/4**,
+with **zero ownership conflicts** over 1,200 backwards. The accepted 6.9 baseline
+remains **.1147481948, 0/4, zero conflicts**, with prior class **9/10** and
+reconstruction **5/10** unchanged. All five completed source-stage measurements,
+including the earlier bad operator-stage result, remain visible. None is a
+paired-initialization campaign. The round's single runs span .0013 to .875;
+the .321/.115 comparison is not a regression finding. The requested ten-run
+comparison uses one training per run for both unchanged bars against 9/10 and
+5/10, with ten MM_xor acceptance runs and ten sum controls.
+The decoder explores strictly better reconstructions but its greedy operation
+inference still stops at one leaf.
+
+Alec clarified that the NanoChat gate waits for item 4's trained checkpoint.
+Fresh BasicModel scoring stopped. One small evaluator mechanism check passes on
+`MM_grammar_wording.xml` over the first three unchanged manifest items, all 16
+choices and both prefix controls. The earlier failed fresh-model attempts and
+the acceptance/split probe remain saved; no partial result is a language gate.
+
+The [complete review receipt](benchmarks/2026-10-03-operators-attention/README.md)
+links source archives, failing probes saved before repairs, every whole old/new
+test port (including the grammar fixture), the seed/bar/guard audit, descriptive
+both-rate/discrimination/timing results and the walk-owner audit. Operators and
+6.8 mechanisms are implemented as a review candidate. The October 4 review
+requires sampled departures, the decoder's logit-margin/gradient audit and
+frozen evaluation without definition admission before the ten-run measurement.
+Nothing is committed until Claude reviews those results.
+
+**October 4 §10 measurement, completed once on frozen source:** XOR_grammar
+class **7/10**, reconstruction **0/10**, joint **0/10**; MM_xor **10/10**;
+sum control **0/10**. Each XOR training supplied both unchanged original bars.
+XOR final-error bands are **7 at 0, 0 at ¼, 1 between, 2 above ¼**. The
+class/reconstruction/sum counts are below the prior 9/10, 5/10 and 10/10;
+the receipt preserves every run and the failed negative controls. The audited
+tenth run records zero ownership conflicts over 1,200 backwards, decoder
+kept-path stability **.610763**, and nonzero gradient-driven margin motion,
+while STOP stays ahead of both binary undo choices throughout the budget.
+The targeted checks pass **129 tests with one existing skip**, and the
+one-batch observer check passes. No new full sweep or native run was added;
+the earlier results above remain identified with their earlier source.
+
+**October 4 §11 measurement, completed once on frozen model source:** the
+numeric reader is affine and decoder eligibility follows the disclosed
+single-code/pair residual comparison. XOR_grammar class **2/10**,
+reconstruction **6/10**, joint **2/10**; MM_xor **10/10**; sum control
+**10/10**. Bands: **2 at 0, 5 at ¼, 3 between, 0 above ¼**. Class is below
+the 9/10 comparison; reconstruction is above 5/10. All thirty runs, including
+every failed gate, are retained without retries. No measured model was repaired
+afterward. The tenth run has zero ownership conflicts and decoder kept-path
+stability **.339487**. STOP is ineligible at all audited first steps and the
+fixed-parent policy-margin change is zero.
+
+The focused checks plus the reader and echoic fixture ports cover **139
+distinct passing checks**, and the one-batch audit check passes. Complete
+old/new test bodies and unchanged assertion/seed checks are in the
+[one receipt](benchmarks/2026-10-03-operators-attention/README.md). Two
+test-only fixture ports followed measurement; the final source bridge proves
+model, data and protected gate code unchanged. Compiled decoder checks pass;
+one optional full-model compile probe was interrupted before measurement and
+is not counted as passing. No full sweep or attribution training was added.
+Fresh BasicModel scoring remains stopped, with item 4's trained gate pending.
+Nothing is committed; the result is held for Claude's review.

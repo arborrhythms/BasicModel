@@ -217,7 +217,7 @@ def run_config(config, epochs, seed, out_dir, profile=False,
     # Grammar readings expose a sentence inverse at the commit boundary;
     # their journal is intentionally discarded afterwards. Observe that
     # inverse during this eval pass rather than replaying source leaves.
-    sentence_decode = bool(getattr(model, 'serial', False)
+    sentence_decode = bool(getattr(model, 'word_brackets', False)
                            and getattr(model, 'languageSpace', None) is not None)
     if sentence_decode:
         original_stem = model._lex_embed_stem

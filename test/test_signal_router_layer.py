@@ -20,16 +20,19 @@ def test_layer_forward_shapes():
     assert route['binary_probabilities'].shape == (2, 4, 2)
     assert route['depth'].tolist() == [4, 4]
 
-def test_chosen_operator_gradient_is_probability_weighted():
+def test_chosen_operator_has_full_gradient_and_separate_probability_credit():
     x = torch.tensor([[[1.], [2.]]], requires_grad=True)
     step = OperationSelectionLayer(d_model=1, ops=[Add(), Mul()])
     with torch.no_grad():
         step.reduce_anchor.zero_()
     _, path, route = step(x)
     path.sum().backward()
-    torch.testing.assert_close(x.grad, torch.full_like(x, .5))
+    torch.testing.assert_close(x.grad, torch.ones_like(x))
     torch.testing.assert_close(route['probabilities'][0], torch.tensor([.5, .5, 0.]))
+    assert step.reduce_anchor.grad is None
+    (-route['probability'].sum()).backward()
     assert step.reduce_anchor.grad.abs().sum() > 0
+    torch.testing.assert_close(x.grad, torch.ones_like(x))
 
 def test_layer_n_one_stops_without_unary_ops():
     step = OperationSelectionLayer(d_model=3, ops=[Add()])

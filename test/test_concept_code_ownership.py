@@ -57,7 +57,9 @@ def test_concept_quantization_cannot_refresh_the_reconstruction_dictionary():
     from pathlib import Path
     import Models
     from test_mm_xor import _fresh_model
-    model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+    # Field dictionaries still have direct parameters. Serial word views are
+    # covered by test_derived_concept_codes, including their actual owner.
+    model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/MM_xor.xml'))
     seen = set()
     for cs in model.conceptualSpaces:
         cb = cs.similarity_codebook

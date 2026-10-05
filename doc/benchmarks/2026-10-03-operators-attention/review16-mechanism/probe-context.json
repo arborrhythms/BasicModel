@@ -1,0 +1,44 @@
+{
+  "kind": "mechanism check, not a gate",
+  "config": "XOR_grammar",
+  "epochs": 1,
+  "items": 4,
+  "source_matched": true,
+  "origin": "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1932/test_review16_measurement_wiri0/ownership",
+  "test": "test/test_review14_contracts.py::test_review16_measurement_wiring_on_one_ordinary_batch",
+  "sweep": "review16-green-sweep",
+  "training_batches": 1,
+  "correction": "The inherited complete.json reused label says tenth shared gate training. This folder is the ordinary-batch mechanism check only; the actual tenth gate audit is produced separately under review16-measurements/xor-10/ownership.",
+  "nonzero_advantage_sentences": 0,
+  "ownership_conflicts": 0,
+  "finite_differences": [
+    {
+      "logit": 1,
+      "epsilon": 0.0001,
+      "numeric": 0.0,
+      "analytic": 0.0,
+      "error": 0.0
+    },
+    {
+      "logit": 1,
+      "epsilon": 0.0001,
+      "numeric": 0.0,
+      "analytic": 0.0,
+      "error": 0.0
+    },
+    {
+      "logit": 1,
+      "epsilon": 0.0001,
+      "numeric": 0.0,
+      "analytic": 0.0,
+      "error": 0.0
+    },
+    {
+      "logit": 1,
+      "epsilon": 0.0001,
+      "numeric": 0.0,
+      "analytic": 0.0,
+      "error": 0.0
+    }
+  ]
+}

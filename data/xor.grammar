@@ -37,6 +37,13 @@
     <start name="connective">union_O1</start>
 
     <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
       <rule>not_O1 = not.forward(not_I1)</rule>
       <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
       <rule>union_O1 = union.forward(union_I1, union_I2)</rule>

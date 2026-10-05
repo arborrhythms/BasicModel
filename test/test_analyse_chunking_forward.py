@@ -21,7 +21,7 @@ def _write_xml(tmpdir, *, synthesis="meronomy", lexer="byte", analysis=None,
     xml = f"""<?xml version='1.0'?>
 <model>
   <architecture>
-    <subsymbolicOrder>2</subsymbolicOrder>
+    <bindingDepth>2</bindingDepth>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>

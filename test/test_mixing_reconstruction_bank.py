@@ -23,7 +23,8 @@ def test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes(tmp_pa
         candidates = [bytes(v[m].tolist()) for v, m, row in
                       zip(isp._ar_bank_bytes[0], isp._ar_bank_valid[0],
                           isp._ar_concept_lookup_rows[0]) if int(row) >= 0]
-        assert candidates == [word.encode('utf-8') for word in surface.split()], candidates
+        assert candidates == [b'caf', 'é'.encode('utf-8')], candidates
+        assert b''.join(candidates) == surface.strip().encode('utf-8')
         assert model._word_symbol_concept_ids() is None
     finally:
         model.End()
@@ -41,7 +42,7 @@ def test_mixing_bank_uses_byte_preserving_word_texts():
         _packed_sentence_ids=torch.zeros(1, 1, dtype=torch.long),
         _finalize_sentence_word_layout=lambda active: None)
     observed = 'café'.encode('utf-8')
-    model = SimpleNamespace(serial=True, reconstruct_in_loop=True, inputSpace=isp,
+    model = SimpleNamespace(word_brackets=True, reconstruct_in_loop=True, inputSpace=isp,
         _aligned_serial_word_mode=lambda: False,
         _concept_owner=lambda: SimpleNamespace(word_surface_for_row=lambda row: observed),
         perceptualSpace=SimpleNamespace(_forward_input={'word_texts': [[observed.decode('latin1')]]}))

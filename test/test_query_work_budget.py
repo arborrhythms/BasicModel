@@ -109,10 +109,10 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
         ltm=ThoughtLTMCapability(store=reader.reasoning_store,
             equal=reader.equal, tau_id=reader.tau_id, primed=(code,)))
     from test_query_vp_boundaries import _signature
-    result = _signature('exist', 'I1').invoke(
-        context, meaning)
+    result = _signature('what', 'I1').invoke(
+        context, replace(meaning, mode='interrogative'))
     assert read == [0] and result["records_scanned"] == 1
-    assert result["support_true"] == pytest.approx(.6)
+    assert result["value"][0]["trust"] == pytest.approx(.6)
     assert result["support_false"] == 0 and "work_budget" in result["incomplete"]
     assert meter.spent == 2
 

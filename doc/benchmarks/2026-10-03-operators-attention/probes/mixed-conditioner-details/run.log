@@ -1,0 +1,150 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+TRACE (tensor([[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [ 8, 22, 22, 22, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]]), tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False]])) TRUNC tensor([False, False])
+CONCEPT_NORMS tensor([[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+        [1.0000, 0.7616, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
+       grad_fn=<LinalgVectorNormBackward0>) IDEA tensor([[0.0000, 0.0000, 0.0000],
+        [0.0000, 1.0000, 0.7616]]) CONTEXT tensor([[ 0.0000e+00,  0.0000e+00,  1.0000e+00,  0.0000e+00,  0.0000e+00,
+          1.0000e+00,  1.0000e+00,  0.0000e+00,  3.9062e-03,  9.8017e-02,
+          9.9518e-01, -8.7423e-08, -1.0000e+00,  1.2241e-01,  9.9248e-01,
+         -7.0711e-01, -7.0711e-01,  0.0000e+00,  0.0000e+00,  0.0000e+00,
+          0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,
+          0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  1.0000e+00,  0.0000e+00,
+          0.0000e+00,  0.0000e+00,  3.9062e-03,  3.9062e-03,  1.2241e-01,
+          9.9248e-01, -7.0711e-01, -7.0711e-01,  1.2241e-01,  9.9248e-01,
+         -7.0711e-01, -7.0711e-01,  0.0000e+00,  0.0000e+00,  0.0000e+00,
+          0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,
+          0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]])
+GRADS [0.0, 1.8033243417739868, 0.06708560883998871, 0.3663901090621948, 1.4778611660003662]
+F
+=================================== FAILURES ===================================
+_________________________ test_mixed_gradient_details __________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10da5e7b0>
+
+    def test_mixed_gradient_details(monkeypatch):
+        import test_output_path_supervised as tests
+        original=tests._answer_training_probe
+        def run(m,*args):
+            result=original(m,*args)
+            c=m._last_answer_construction
+            print('TRACE',m._last_output_walk_trace,'TRUNC',m._output_truncated,flush=True)
+            print('CONCEPT_NORMS',c.concepts.norm(dim=-1),'IDEA',c.derivation.conceptual_answer.norm(dim=-1),'CONTEXT',c.derivation.conditioning_context,flush=True)
+            print('GRADS',[None if g is None else float(g.norm()) for g in result['total_grads']],flush=True)
+            return result
+        monkeypatch.setattr(tests,'_answer_training_probe',run)
+>       tests.test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row(None)
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+eager_reading = None
+
+    def test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row(eager_reading):
+        from copy import deepcopy
+        from test_output_walk import _model
+        m = _model()
+        m._tensor_peer_while_eager = True
+        m._chart_compose_per_word = lambda: None
+        data = m.inputSpace.data
+        saved_addresses = deepcopy(data.source_addresses["train"])
+        for address in data.source_addresses["train"]:
+            address["document"] = 0
+            address["sentence"] = address["row"]
+        opt = m.getOptimizer(lr=1e-3)
+        try:
+            # Put the automatic text first: it must not select the text modality
+            # and displace the second row's explicitly supplied numeric target.
+            questions = (What.future(0), What.supervised(1))
+            assert all(data.what(q).available for q in questions)
+            got = _answer_training_probe(m, opt, questions)
+            assert got["mask"] == [False, True]
+            assert got["actual_grad"] is not None
+            assert torch.count_nonzero(got["actual_grad"][0]) == 0
+            assert bool(got["actual_grad"][1].abs().sum() > 0)
+>           assert got["changed"][got["active_index"]]
+E           assert False
+
+test/test_output_path_supervised.py:380: AssertionError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py:102: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py:109: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py:129: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py:140: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytest.param(1032, id="production", marks=pytest.mark.slow),
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py:275: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py:306: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_path_supervised.py:388: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:323: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:539: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:621: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:705: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:742: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_output_walk.py:847: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpj7sx0eu1/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py::test_mixed_gradient_details
+1 failed, 15 warnings in 3.80s

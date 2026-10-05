@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_sentence_protocol.py",
+    "test/test_grammar_sentence_scope.py",
+    "test/test_word_admission.py",
+    "test/test_part_memberships.py",
+    "test/test_one_attention.py"
+  ],
+  "pid": 7926,
+  "exit_code": 4,
+  "reason": "exit",
+  "peak_memory_bytes": 295032,
+  "elapsed_seconds": 1.266246624989435,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/canonical-native-events-after/run.log"
+}

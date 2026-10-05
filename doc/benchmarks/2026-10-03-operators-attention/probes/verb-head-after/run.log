@@ -1,0 +1,35 @@
+...............................................................F........ [ 77%]
+.....................                                                    [100%]
+=================================== FAILURES ===================================
+_____ test_selected_relation_preserves_declared_outer_polarity[non-False] ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123296a20>
+wrapper = 'non', expected = False
+
+    @pytest.mark.parametrize("wrapper, expected", [("not", False), ("non", False)])
+    def test_selected_relation_preserves_declared_outer_polarity(
+            monkeypatch, wrapper, expected):
+        """A negating compose wrapper changes meaning metadata, not its operands."""
+        _cs, _grammar, registry, owner, leaves, program, a, b = _program_owner(
+            monkeypatch, interrogative=True)
+        unary = next(
+            index for index, rule in enumerate(owner._compose_unary_rules)
+            if rule.method_name == wrapper)
+        entry = program()
+        actions = torch.cat((entry.actions, torch.tensor(
+            [[2, unary, -1]], dtype=entry.actions.dtype)), dim=0)
+        meaning = owner.program_meaning(replace(entry, actions=actions), registry)
+>       assert meaning.mode == "interrogative"
+               ^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'mode'
+
+test/test_selected_relation_meaning.py:354: AttributeError
+=============================== warnings summary ===============================
+test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[non-False]
+1 failed, 92 passed, 1 warning in 3.09s

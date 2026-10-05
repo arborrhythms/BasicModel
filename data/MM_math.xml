@@ -11,8 +11,8 @@
        carries no arithmetic (Alec 2026-09-09): thinking chooses only
        between answering and opening a subquestion about a presented word. -->
   <architecture>
-    <subsymbolicOrder>3</subsymbolicOrder>
-    <symbolicOrder>0</symbolicOrder>
+    <bindingDepth>3</bindingDepth>
+    <conceptLayers>1</conceptLayers>
     <answerSynthesis>true</answerSynthesis>
     <whatThinkingDetach>episode</whatThinkingDetach>
     <whatThinkingIterations>8</whatThinkingIterations>

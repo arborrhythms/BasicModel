@@ -29,8 +29,8 @@ base = re.sub(r"(<WholeSpace>\n)",
 base = base.replace("<nInputDim>5</nInputDim>", "<nInputDim>1024</nInputDim>")
 _order = os.environ.get("SWEEP_ORDER")
 if _order:
-    base = re.sub(r"<subsymbolicOrder>\d+</subsymbolicOrder>",
-                  f"<subsymbolicOrder>{_order}</subsymbolicOrder>", base)
+    base = re.sub(r"<bindingDepth>\d+</bindingDepth>",
+                  f"<bindingDepth>{_order}</bindingDepth>", base)
 _promo = os.environ.get("SWEEP_PROMO")
 if _promo:
     base = re.sub(r"(\s*)(<synthesis>\w+</synthesis>)",

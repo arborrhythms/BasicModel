@@ -1,0 +1,377 @@
+.....F..F..............F................................................ [ 49%]
+..................................s...................................F. [ 98%]
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_sentence_path_has_no_native_prototype_or_evidence_gradient ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f42d070>
+
+    def test_sentence_path_has_no_native_prototype_or_evidence_gradient(monkeypatch):
+        import Models
+        from test_mm_xor import _fresh_model
+        model, _, data = _fresh_model('data/XOR_grammar.xml')
+        original = Models.BaseModel._backward_training_loss
+        observations = []
+        def backward(self,total,*args,**kwargs):
+            if getattr(self, '_sentence_backward', False):
+                parameters = [self.perceptualSpace.subspace.what.W]
+                parameters += [cs._concept_allocator.layer().features.values for cs in self.conceptualSpaces]
+                parameters = list({id(p):p for p in parameters if torch.is_tensor(p) and p.requires_grad}.values())
+                pullback = getattr(self, '_sentence_pullback', None)
+                grads = (pullback.gradients(total,parameters) if pullback is not None else
+                         torch.autograd.grad(total, parameters, retain_graph=True, allow_unused=True))
+                observations.append([0. if g is None else float(g.detach().abs().max()) for g in grads])
+            return original(self,total,*args,**kwargs)
+        monkeypatch.setattr(Models.BaseModel,'_backward_training_loss',backward)
+        optimizer = model.getOptimizer(lr=.01)
+        try:
+            raw,target = next(iter(data.data_loader(split='train',num_streams=4)))
+            batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+            model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',batch_override=batch)
+>           assert observations and all(not any(row) for row in observations), observations
+E           AssertionError: [[1.2789844183735966e-10, 0.0], [1.0197170191572624e-10, 0.0]]
+E           assert ([[1.2789844183735966e-10, 0.0], [1.0197170191572624e-10, 0.0]] and False)
+E            +  where False = all(<generator object test_sentence_path_has_no_native_prototype_or_evidence_gradient.<locals>.<genexpr> at 0x13cf28450>)
+
+test/test_review14_contracts.py:113: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+____________ test_review14_measurement_wiring_on_one_ordinary_batch ____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1801/test_review14_measurement_wiri0')
+
+    def test_review14_measurement_wiring_on_one_ordinary_batch(tmp_path):
+        import json, os, sys
+        from pathlib import Path
+        from bounded_tests import run_guarded, GIB
+        root=Path(__file__).resolve().parents[1]
+        receipt=root/'doc/benchmarks/2026-10-03-operators-attention'
+        env=os.environ.copy()
+        env.update(PYTEST_PLUGINS='review14_gate_observer',
+            OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
+            ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
+            REVIEW14_REPORTS=str(tmp_path/'reports.jsonl'),
+            PYTHONPATH=os.pathsep.join(map(str,(receipt,root/'bin',root/'test'))))
+        result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'review14_observer_probe.py')],
+            cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
+>       assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+E       AssertionError: F                                                                        [100%]
+E         =================================== FAILURES ===================================
+E         ___________ test_margin_and_ownership_observe_the_same_actual_steps ____________
+E         
+E             def test_margin_and_ownership_observe_the_same_actual_steps():
+E                 from test_mm_xor import _fresh_model
+E                 import review14_gate_observer
+E                 model, _, data = _fresh_model('data/XOR_grammar.xml')
+E                 optimizer = model.getOptimizer(lr=.01)
+E                 raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+E                 batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+E                 from review14_run_audit import observe_run, json_value
+E                 with observe_run() as run_audit:
+E                     model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+E         >           model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
+E         
+E         doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py:17: 
+E         _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+E         bin/Models.py:13619: in runBatch
+E             return self._run_sentence_batch(*args, **kwargs)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:13746: in _run_sentence_batch
+E             return self._run_batch_once(**call)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1801/test_review14_measurement_wiri0/ownership/_run_batch_once.instrumented.py:375: in _run_batch_once
+E             _what_answers = self._what_or_think(
+E         bin/Models.py:8815: in _what_or_think
+E             return self.what(questions, input_data, executor=executor, record=record, score=score)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:10309: in what
+E             execution = self._execute_input_sentence(input_data, executor)
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:153: in masked
+E             return method(self, *args, **kwargs)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:8500: in _execute_input_sentence
+E             return (executor or self.forward)(input_data)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:153: in masked
+E             return method(self, *args, **kwargs)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:8311: in forward
+E             return self._forward_per_stage(inputData)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:23009: in _forward_per_stage
+E             in_sub = self._lex_embed_stem(inputData)
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:13181: in _lex_embed_stem
+E             stage_input(self)
+E         bin/ModelAttention.py:206: in stage_input
+E             poles=native_word_poles(model,spans,forms,known)
+E                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/ModelAttention.py:87: in native_word_poles
+E             field = owner.cs_read_memberships((ids, positions,
+E         bin/Spaces.py:15332: in cs_read_memberships
+E             self._canonicalize_part_literals()
+E         bin/Spaces.py:15223: in _canonicalize_part_literals
+E             derived.admit('ps', resolved)
+E         bin/MereologicalCodes.py:57: in admit
+E             owner._preflight_concept_row(0)
+E         _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+E         
+E         self = ConceptualSpace(
+E           (subspace): SubSpace()
+E           (_owned_bases): ModuleDict(
+E             (event): Tensor()
+E             (what): Tensor()
+E            ...  (concept_parts_layer): ConceptualAttentionLayer(
+E             (conjunctive): SparseLayer()
+E             (features): SparseLayer()
+E           )
+E         )
+E         order = 0
+E         
+E             def _preflight_concept_row(self, order=0):
+E                 """Check the physical seat before changing identity or definition records."""
+E                 store = _concept_alloc_of(self).layer()
+E                 caps, capacity = self._order_caps(), int(self.nVectors)
+E                 if getattr(self, '_concept_binding', 'mixing') == 'aligned':
+E                     base, size = 0, capacity
+E                 elif int(order) == 0:
+E                     base = 0 if store._row_next.get(0, 0) < caps[0] else sum(caps)
+E                     size = caps[0] if base == 0 else capacity - base
+E                 else:
+E                     rung = min(int(order), len(caps) - 1)
+E                     base, size = sum(caps[:rung]), caps[rung]
+E                 next_row = int(store._row_next.get(base, 0))
+E                 while next_row < size and base + next_row in store._tensor_row_keys:
+E                     next_row += 1
+E                 if next_row >= size:
+E         >           raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E         E           RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+E         
+E         bin/Spaces.py:14735: RuntimeError
+E         ----------------------------- Captured stdout call -----------------------------
+E         [AMP] off (fp32, MODEL_AMP unset or =off)
+E         batch = 0 (warm-up, 100.00%)
+E         Training throughput: 1 batches in 1.040s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+E         =============================== warnings summary ===============================
+E         doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+E             return func(*args, **kwargs)
+E         
+E         -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+E         =========================== short test summary info ============================
+E         FAILED doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E         1 failed, 4 warnings in 2.17s
+E         
+E       assert 1 == 0
+
+test/test_review14_contracts.py:159: AssertionError
+_____ test_actual_occurrences_activate_words_outside_the_current_sentence ______
+
+    def test_actual_occurrences_activate_words_outside_the_current_sentence():
+        from test_mm_xor import _fresh_model
+        from MereologicalCodes import occurrence_memberships
+        model, _, _ = _fresh_model('data/XOR_grammar.xml')
+        text = ['hello world', 'hello there', 'loving world', 'loving there']
+        with torch.no_grad():
+            model.forward(model.inputSpace.prepInput(text))
+>           model.forward(model.inputSpace.prepInput(text))
+
+test/test_derived_concept_codes.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13181: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:206: in stage_input
+    poles=native_word_poles(model,spans,forms,known)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ModelAttention.py:87: in native_word_poles
+    field = owner.cs_read_memberships((ids, positions,
+bin/Spaces.py:15332: in cs_read_memberships
+    self._canonicalize_part_literals()
+bin/Spaces.py:15223: in _canonicalize_part_literals
+    derived.admit('ps', resolved)
+bin/MereologicalCodes.py:57: in admit
+    owner._preflight_concept_row(0)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...  (concept_parts_layer): ConceptualAttentionLayer(
+    (conjunctive): SparseLayer()
+    (features): SparseLayer()
+  )
+)
+order = 0
+
+    def _preflight_concept_row(self, order=0):
+        """Check the physical seat before changing identity or definition records."""
+        store = _concept_alloc_of(self).layer()
+        caps, capacity = self._order_caps(), int(self.nVectors)
+        if getattr(self, '_concept_binding', 'mixing') == 'aligned':
+            base, size = 0, capacity
+        elif int(order) == 0:
+            base = 0 if store._row_next.get(0, 0) < caps[0] else sum(caps)
+            size = caps[0] if base == 0 else capacity - base
+        else:
+            rung = min(int(order), len(caps) - 1)
+            base, size = sum(caps[:rung]), caps[rung]
+        next_row = int(store._row_next.get(base, 0))
+        while next_row < size and base + next_row in store._tensor_row_keys:
+            next_row += 1
+        if next_row >= size:
+>           raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E           RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+
+bin/Spaces.py:14735: RuntimeError
+_____________ test_native_part_evidence_does_not_allocate_concepts _____________
+
+    def test_native_part_evidence_does_not_allocate_concepts():
+        cs, cb, ps, alloc = fixture()
+        before = alloc.next_id
+        row = word(cs, [((4, 7), .5)])
+>       assert alloc.next_id == before + 1
+E       assert 4 == (1 + 1)
+E        +  where 4 = <Layers.ConceptAllocator object at 0x148c50a70>.next_id
+
+test/test_review14_addendum.py:11: AssertionError
+_ test_small_inventory_pairs_words_without_allocating_letter_rows[XOR_grammar-6] _
+
+config = 'XOR_grammar', capacity = 6
+
+    @pytest.mark.parametrize('config,capacity', [('XOR_grammar', 6), ('MM_grammar', 8)])
+    def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capacity):
+        from test_mm_xor import _fresh_model
+        model, _, _ = _fresh_model(f'data/{config}.xml')
+        try:
+            with torch.no_grad():
+                model.forward(model.inputSpace.prepInput(
+                    ['hello world', 'hello there', 'loving world', 'loving there']))
+            owner = model._concept_owner()
+            cb = owner.similarity_codebook
+            rows = model.inputSpace._ar_grammar_object_rows
+            word_rows = set(rows[rows >= 0].tolist())
+            assert owner.nVectors == capacity and cb.W.shape[0] == capacity
+>           assert len(word_rows) == 4
+E           assert 1 == 4
+E            +  where 1 = len({0})
+
+test/test_review14_addendum.py:38: AssertionError
+_ test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8] _
+
+config = 'MM_grammar', capacity = 8
+
+    @pytest.mark.parametrize('config,capacity', [('XOR_grammar', 6), ('MM_grammar', 8)])
+    def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capacity):
+        from test_mm_xor import _fresh_model
+        model, _, _ = _fresh_model(f'data/{config}.xml')
+        try:
+            with torch.no_grad():
+>               model.forward(model.inputSpace.prepInput(
+                    ['hello world', 'hello there', 'loving world', 'loving there']))
+
+test/test_review14_addendum.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes(), tower = 0, percepts = (6, 4, 7, 3, 8)
+
+    def admit(self, tower, percepts):
+        """Admission only: a native percept gains an address, never a free code."""
+        from Spaces import _concept_alloc_of
+        owner = self.owner
+        index = self._index()
+        tower = int(tower == 'ws')
+        missing = tuple(dict.fromkeys(int(pid) for pid in percepts if (tower, int(pid)) not in index))
+        if not missing:
+            return
+        if getattr(owner, '_online_learning_frozen', False):
+            raise RuntimeError('frozen learning cannot admit percept concepts')
+        if len(index) + len(missing) > len(self.basis):
+            raise RuntimeError('percept-concept lookup capacity exhausted')
+        alloc = _concept_alloc_of(owner)
+        # Preflight physical addresses as a group, without partial admission.
+        occupied = len(alloc.layer()._tensor_row_keys)
+        if occupied + len(missing) > int(owner.nVectors):
+>           raise RuntimeError('concept inventory exhausted before percept admission')
+E           RuntimeError: concept inventory exhausted before percept admission
+
+bin/MereologicalCodes.py:55: RuntimeError
+=============================== warnings summary ===============================
+test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7162: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpmhlnasvi/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7162: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpghhstpy1/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7162: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdw5n2hnv/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7162: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpgk0aor3i/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient
+FAILED test/test_review14_contracts.py::test_review14_measurement_wiring_on_one_ordinary_batch
+FAILED test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence
+FAILED test/test_review14_addendum.py::test_native_part_evidence_does_not_allocate_concepts
+FAILED test/test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows[XOR_grammar-6]
+FAILED test/test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8]
+6 failed, 139 passed, 1 skipped, 6 warnings in 151.93s (0:02:31)

@@ -1,0 +1,119 @@
+....F.....FF..sF.FF.F..sFFsFss..................................F....... [ 54%]
+........sssss.s..ss........................................              [100%]
+=================================== FAILURES ===================================
+_______ test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes _______
+test/test_meronomy_ladder.py:170: in test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes
+    assert units[0] == ["1", "2", " ", "plus", " ", "1"]
+E   AssertionError: assert ['12', ' ', 'plus', ' ', '1'] == ['1', '2', ' ...us', ' ', '1']
+E     
+E     At index 0 diff: '12' != '1'
+E     Right contains one more item: '1'
+E     Use -v to get more diff
+_____ test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse _____
+test/test_meronomy_ladder.py:215: in test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse
+    assert store.get_id(b"12") is None                  # digits are separate units
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert 8 is None
+E    +  where 8 = get_id(b'12')
+E    +    where get_id = RadixLayer(\n  (byte_fallback): BytesFallbackEncoder()\n).get_id
+____________ test_tiling_ladder_nests_units_in_space_bounded_wholes ____________
+test/test_meronomy_ladder.py:238: in test_tiling_ladder_nests_units_in_space_bounded_wholes
+    assert fake._staged_unit_clause[0].tolist() == [0, 0, 0, 0, -1, 1]   # the comma bounds, belongs to none
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert [0, 0, 0, -1, 1] == [0, 0, 0, 0, -1, 1]
+E     
+E     At index 3 diff: -1 != 0
+E     Right contains one more item: 1
+E     Use -v to get more diff
+______________ test_admitted_phrase_row_snaps_at_the_folded_slot _______________
+test/test_meronomy_ladder.py:397: in test_admitted_phrase_row_snaps_at_the_folded_slot
+    assert phrase_row.tolist() == [5] and count.tolist() == [1]
+E   assert ([-1] == [5]
+E     
+E     At index 0 diff: -1 != 5
+E     Use -v to get more diff)
+________ test_word_unit_fraction_counts_digit_wholes_as_sub_word_units _________
+test/test_meronomy_ladder.py:430: in test_word_unit_fraction_counts_digit_wholes_as_sub_word_units
+    assert m.__dict__["_word_unit_stats"] == [3, 2, 1, 1]
+E   assert [3, 3, 1, 1] == [3, 2, 1, 1]
+E     
+E     At index 1 diff: 3 != 2
+E     Use -v to get more diff
+___________ test_word_unit_fraction_is_zero_on_the_atomic_cold_start ___________
+test/test_meronomy_ladder.py:438: in test_word_unit_fraction_is_zero_on_the_atomic_cold_start
+    assert m.word_unit_fraction() == 0.0
+E   assert 1.0 == 0.0
+E    +  where 1.0 = word_unit_fraction()
+E    +    where word_unit_fraction = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).word_unit_fraction
+_____________ test_packed_rows_are_laid_out_in_units_of_the_ladder _____________
+test/test_meronomy_ladder.py:481: in test_packed_rows_are_laid_out_in_units_of_the_ladder
+    assert isp.sentence_unit_count("12 plus 1") == 6
+E   AssertionError: assert 5 == 6
+E    +  where 5 = sentence_unit_count('12 plus 1')
+E    +    where sentence_unit_count = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n).sentence_unit_count
+_____________ test_boundary_predicates_reproduce_the_priors_tiling _____________
+test/test_meronomy_ladder.py:582: in test_boundary_predicates_reproduce_the_priors_tiling
+    assert units == [["1", "2", " ", "plus", " ", "1"], ["hi", ",", " ", "there"],
+E   AssertionError: assert [['12', ' ', ...'abc', '123']] == [['1', '2', '...1', '2', ...]]
+E     
+E     At index 0 diff: ['12', ' ', 'plus', ' ', '1'] != ['1', '2', ' ', 'plus', ' ', '1']
+E     Use -v to get more diff
+______________ test_boundary_types_none_starts_without_boundaries ______________
+test/test_meronomy_ladder.py:615: in test_boundary_types_none_starts_without_boundaries
+    assert units[0] == ["1", "2", " ", "p", "l", "u", "s", " ", "1"]
+E   AssertionError: assert ['12', ' ', 'plus', ' ', '1'] == ['1', '2', ' ...'l', 'u', ...]
+E     
+E     At index 0 diff: '12' != '1'
+E     Right contains 4 more items, first extra item: 'u'
+E     Use -v to get more diff
+______ test_digit_identity_order_and_repetition_are_distinct_occurrences _______
+test/test_meronomy_ladder.py:686: in test_digit_identity_order_and_repetition_are_distinct_occurrences
+    assert units[0][:2] == ["1", "2"] and units[1][:2] == ["2", "1"] and units[2][:2] == ["1", "1"]
+E   AssertionError: assert (['12', ' '] == ['1', '2']
+E     
+E     At index 0 diff: '12' != '1'
+E     Use -v to get more diff)
+____ test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes _____
+test/test_mixing_reconstruction_bank.py:26: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+    assert candidates == [word.encode('utf-8') for word in surface.split()], candidates
+E   AssertionError: [b'caf']
+E   assert [b'caf'] == [b'caf\xc3\xa9']
+E     
+E     At index 0 diff: b'caf' != b'caf\xc3\xa9'
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7130: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1580/test_real_mnist_subset_trains_0/ergodic-only.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Tensor, pred_full shape=(2, 784, 9)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7130: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1580/test_real_mnist_subset_trains_1/ergodic-only.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Tensor, pred_full shape=(2, 784, 9)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_model_time_when.py::test_clock_increments_once_per_inference_batch
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7130: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes
+FAILED test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse
+FAILED test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes
+FAILED test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot
+FAILED test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units
+FAILED test/test_meronomy_ladder.py::test_word_unit_fraction_is_zero_on_the_atomic_cold_start
+FAILED test/test_meronomy_ladder.py::test_packed_rows_are_laid_out_in_units_of_the_ladder
+FAILED test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling
+FAILED test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries
+FAILED test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences
+FAILED test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+11 failed, 107 passed, 13 skipped, 5 warnings in 16.90s

@@ -15,9 +15,9 @@
        trials (reconstruction terms zeroed). All three new knobs default 0 so a
        config that omits them is byte-identical to an ordinary LM. -->
   <architecture>
-    <subsymbolicOrder>3</subsymbolicOrder>
+    <bindingDepth>3</bindingDepth>
     <l1Lambda>0.01</l1Lambda>
-    <symbolicOrder>1</symbolicOrder>
+    <conceptLayers>2</conceptLayers>
 
     <!-- Step 1: half the training batches are pure next-idea prediction. -->
     <predictionTrialRatio>0.5</predictionTrialRatio>
@@ -33,9 +33,9 @@
       <learningRate>0.01</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
       <sentenceExpectation>true</sentenceExpectation>
-      <interLossWeight>0.1</interLossWeight>
+      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
       <!-- the InfoNCE next-idea contrastive term -->
-      <interContrastiveWeight>0.5</interContrastiveWeight>
+      <sentenceExpectationContrastiveWeight>0.5</sentenceExpectationContrastiveWeight>
       <interContrastiveTemp>0.1</interContrastiveTemp>
     </training>
   </architecture>
@@ -83,6 +83,13 @@
       <start>S</start>
       <grammar>
         <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
           <symbols>
             <rule width="1..">S = NP</rule>
             <rule width="3..">S = lift(NP, VP)</rule>

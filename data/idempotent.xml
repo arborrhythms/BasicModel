@@ -49,7 +49,7 @@
   <architecture>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <symbolicOrder>0</symbolicOrder>
+    <conceptLayers>1</conceptLayers>
     <!-- idempotent reuses the snap primitive only; disable the truth
          weights so loss = reconstruction error alone. -->
     <truthBiasScale>0.0</truthBiasScale>
@@ -154,6 +154,13 @@
              The codebook remains the only learned object in the
              C-S loop. -->
         <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
           <percepts>
             <rule>P = sigma(P)</rule>
           </percepts>

@@ -1,0 +1,519 @@
+........................................F.....................FFFF...... [ 42%]
+....F..................................................................s [ 85%]
+................F........                                                [100%]
+=================================== FAILURES ===================================
+_ test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14a1b3d40>
+
+    def test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy(monkeypatch):
+        import Language
+        import util
+    
+        source = torch.nn.Linear(4, 4)
+        coordinator = SimpleNamespace(
+            languageLayer=None, muxedSize=4, _grammar_is_default_only=False,
+            _host_layer_registry={("CS", "sum"): source},
+            _resolve_rule_layer=lambda role, name: source)
+        grammar = SimpleNamespace(rules_upward=[], rule_table=[], rules_downward=[])
+        monkeypatch.setattr(Language, "TheGrammar", grammar)
+        monkeypatch.setattr(util.TheXMLConfig, "training", lambda name, default=None: False)
+    
+        def catalog(roles):
+            grammar.rules_downward = [SimpleNamespace(
+                space_role=role, method_name="sum", lhs="X,Y",
+                canonical="X,Y = sum.reverse(Z)", width_min=None, width_max=None)
+                for role in roles]
+            before = torch.get_rng_state().clone()
+            result = Language.LanguageSpace(SimpleNamespace(subspace=coordinator))
+            assert not torch.equal(torch.get_rng_state(), before)  # the new decoder chooser initializes once
+            assert result.resolve_generation_op("CS", "sum") is source
+            assert result.resolve_generation_op("SS", "sum") is source
+            assert {id(p) for p in result.parameters()} == {id(p) for p in result.generate_policy.parameters()}
+            assert set(result.state_dict()) == {'generate_policy.weight','generate_policy.bias'}
+            return result
+    
+>       first = catalog(("CS", "SS"))
+                ^^^^^^^^^^^^^^^^^^^^^
+
+test/test_generation_catalog.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+roles = ('CS', 'SS')
+
+    def catalog(roles):
+        grammar.rules_downward = [SimpleNamespace(
+            space_role=role, method_name="sum", lhs="X,Y",
+            canonical="X,Y = sum.reverse(Z)", width_min=None, width_max=None)
+            for role in roles]
+        before = torch.get_rng_state().clone()
+        result = Language.LanguageSpace(SimpleNamespace(subspace=coordinator))
+        assert not torch.equal(torch.get_rng_state(), before)  # the new decoder chooser initializes once
+        assert result.resolve_generation_op("CS", "sum") is source
+        assert result.resolve_generation_op("SS", "sum") is source
+        assert {id(p) for p in result.parameters()} == {id(p) for p in result.generate_policy.parameters()}
+>       assert set(result.state_dict()) == {'generate_policy.weight','generate_policy.bias'}
+E       AssertionError: assert {'_generate_r...olicy.weight'} == {'generate_po...olicy.weight'}
+E         
+E         Extra items in the left set:
+E         '_generate_rule_keys'
+E         Use -v to get more diff
+
+test/test_generation_catalog.py:112: AssertionError
+_ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1496cc770>
+unadmitted = False, trailing = False
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+                model(model.inputSpace.prepInput(texts))
+            isp = model.inputSpace
+            assert isp._word_active_mask[:, :3].tolist() == [[True, True, True]] * 4
+            assert isp._word_active_mask.sum(-1).tolist() == [4 if trailing else 3] * 4
+            assert model.where_registry.slices['input'][1] == (
+                max(model.inputSpace.data.inputLength,
+                    int(model.perceptualSpace.outputShape[0]) * model.serial_residual_part_capacity))
+            assert torch.equal(isp._ar_embedded[:, 1], isp._ar_embedded_N[:, 1])
+            assert bool(isp._ar_embedded[:, 1].abs().any())
+            assert targets
+            for b in range(4):
+                assert bytes(isp._ar_target_word_bytes[b, 1][isp._ar_target_word_mask[b, 1]].tolist()) == b' '
+                expected=isp._ar_target_word_bytes[b, isp._ar_grammar_leaf_mask[b]]
+                torch.testing.assert_close(targets[-1][b,:len(expected)],expected,rtol=0,atol=0)
+                assert not bool(targets[-1][b,len(expected):].any())
+            assert [p for p, _ in pushes] == list(range(4 if trailing else 3))
+            expected = [[True]*4, [False]*4, [True]*4] + ([[False]*4] if trailing else [])
+            assert [gate.reshape(-1).tolist() for _, gate in pushes] == expected
+            assert len(readings) == 1
+            decoded, unavailable = readings[0]
+>           assert all(len(text.split()) == 2 for text in decoded), decoded
+E           AssertionError: ('hello', 'there', 'loving', 'loving')
+E           assert False
+E            +  where False = all(<generator object test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.<genexpr> at 0x1472660a0>)
+
+test/test_grammar_separator.py:75: AssertionError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1491a79b0>
+unadmitted = True, trailing = False
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+                model(model.inputSpace.prepInput(texts))
+            isp = model.inputSpace
+            assert isp._word_active_mask[:, :3].tolist() == [[True, True, True]] * 4
+            assert isp._word_active_mask.sum(-1).tolist() == [4 if trailing else 3] * 4
+            assert model.where_registry.slices['input'][1] == (
+                max(model.inputSpace.data.inputLength,
+                    int(model.perceptualSpace.outputShape[0]) * model.serial_residual_part_capacity))
+            assert torch.equal(isp._ar_embedded[:, 1], isp._ar_embedded_N[:, 1])
+            assert bool(isp._ar_embedded[:, 1].abs().any())
+            assert targets
+            for b in range(4):
+                assert bytes(isp._ar_target_word_bytes[b, 1][isp._ar_target_word_mask[b, 1]].tolist()) == b' '
+                expected=isp._ar_target_word_bytes[b, isp._ar_grammar_leaf_mask[b]]
+                torch.testing.assert_close(targets[-1][b,:len(expected)],expected,rtol=0,atol=0)
+                assert not bool(targets[-1][b,len(expected):].any())
+            assert [p for p, _ in pushes] == list(range(4 if trailing else 3))
+            expected = [[True]*4, [False]*4, [True]*4] + ([[False]*4] if trailing else [])
+            assert [gate.reshape(-1).tolist() for _, gate in pushes] == expected
+            assert len(readings) == 1
+            decoded, unavailable = readings[0]
+>           assert all(len(text.split()) == 2 for text in decoded), decoded
+E           AssertionError: ('world', 'there', 'world', 'there')
+E           assert False
+E            +  where False = all(<generator object test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.<genexpr> at 0x1484442e0>)
+
+test/test_grammar_separator.py:75: AssertionError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14914b3b0>
+unadmitted = False, trailing = True
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+                model(model.inputSpace.prepInput(texts))
+            isp = model.inputSpace
+            assert isp._word_active_mask[:, :3].tolist() == [[True, True, True]] * 4
+            assert isp._word_active_mask.sum(-1).tolist() == [4 if trailing else 3] * 4
+            assert model.where_registry.slices['input'][1] == (
+                max(model.inputSpace.data.inputLength,
+                    int(model.perceptualSpace.outputShape[0]) * model.serial_residual_part_capacity))
+            assert torch.equal(isp._ar_embedded[:, 1], isp._ar_embedded_N[:, 1])
+            assert bool(isp._ar_embedded[:, 1].abs().any())
+            assert targets
+            for b in range(4):
+                assert bytes(isp._ar_target_word_bytes[b, 1][isp._ar_target_word_mask[b, 1]].tolist()) == b' '
+                expected=isp._ar_target_word_bytes[b, isp._ar_grammar_leaf_mask[b]]
+                torch.testing.assert_close(targets[-1][b,:len(expected)],expected,rtol=0,atol=0)
+                assert not bool(targets[-1][b,len(expected):].any())
+            assert [p for p, _ in pushes] == list(range(4 if trailing else 3))
+            expected = [[True]*4, [False]*4, [True]*4] + ([[False]*4] if trailing else [])
+            assert [gate.reshape(-1).tolist() for _, gate in pushes] == expected
+            assert len(readings) == 1
+            decoded, unavailable = readings[0]
+>           assert all(len(text.split()) == 2 for text in decoded), decoded
+E           AssertionError: ('world', 'there', 'world', 'there')
+E           assert False
+E            +  where False = all(<generator object test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.<genexpr> at 0x1212bb920>)
+
+test/test_grammar_separator.py:75: AssertionError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14893cb90>
+unadmitted = True, trailing = True
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+                model(model.inputSpace.prepInput(texts))
+            isp = model.inputSpace
+            assert isp._word_active_mask[:, :3].tolist() == [[True, True, True]] * 4
+            assert isp._word_active_mask.sum(-1).tolist() == [4 if trailing else 3] * 4
+            assert model.where_registry.slices['input'][1] == (
+                max(model.inputSpace.data.inputLength,
+                    int(model.perceptualSpace.outputShape[0]) * model.serial_residual_part_capacity))
+            assert torch.equal(isp._ar_embedded[:, 1], isp._ar_embedded_N[:, 1])
+            assert bool(isp._ar_embedded[:, 1].abs().any())
+            assert targets
+            for b in range(4):
+                assert bytes(isp._ar_target_word_bytes[b, 1][isp._ar_target_word_mask[b, 1]].tolist()) == b' '
+                expected=isp._ar_target_word_bytes[b, isp._ar_grammar_leaf_mask[b]]
+                torch.testing.assert_close(targets[-1][b,:len(expected)],expected,rtol=0,atol=0)
+                assert not bool(targets[-1][b,len(expected):].any())
+            assert [p for p, _ in pushes] == list(range(4 if trailing else 3))
+            expected = [[True]*4, [False]*4, [True]*4] + ([[False]*4] if trailing else [])
+            assert [gate.reshape(-1).tolist() for _, gate in pushes] == expected
+            assert len(readings) == 1
+            decoded, unavailable = readings[0]
+>           assert all(len(text.split()) == 2 for text in decoded), decoded
+E           AssertionError: ('world', 'there', 'world', 'there')
+E           assert False
+E            +  where False = all(<generator object test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.<genexpr> at 0x14a1bd380>)
+
+test/test_grammar_separator.py:75: AssertionError
+_____ test_input_symbols_keep_their_word_starts_even_when_the_word_repeats _____
+
+model = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...=29, out_features=136, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)
+)
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model):
+        from What import What
+        text = 'cat cat sat'
+        from reading_fixtures import capture_readings
+        with capture_readings(model) as readings, torch.no_grad():
+            model.runBatch(train=False, split='validation', batchSize=1,
+                batch_override=(model.inputSpace.prepInput([text]), torch.empty(1, 0)),
+                questions=(What.present(0, split='validation'),))
+        program, = readings[0]
+        # This grammar retains the two spaces as units too.
+>       assert len(program.rows) == 5
+E       assert 3 == 5
+E        +  where 3 = len(tensor([0, 0, 1]))
+E        +    where tensor([0, 0, 1]) = AnswerProgram(rows=tensor([0, 0, 1]), word_rows=tensor([0, 0, 1]), activations=tensor([0.8092, 0.8092, 0.0798]), leave...orders=tensor([0, 0, 0]), leaf_evidence=tensor([[0.8092, 0.0000],\n        [0.8092, 0.0000],\n        [0.0798, 0.0000]])).rows
+
+test/test_occurrence_coordinates.py:139: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+_________ test_normal_text_reconstruction_updates_the_grammar_chooser __________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1632/test_normal_text_reconstructio0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x145387830>
+eager_reading = None
+
+    def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch, eager_reading):
+        from test_compiled_word_chunk import _tiny_canonical_model
+    
+        torch.manual_seed(613)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.conceptualSpace.intra_loss_weight = 0.0
+        model.inter_loss_weight = 0.0
+        assert model.output_in_loop and model.languageSpace.generate_policy is not None
+        assert model.loss.reconstruction_scale == 1.0
+        chooser = model.languageSpace._tree_layer(2).chooser
+        before = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+        generator = model.languageSpace.generate_policy
+        generate_before = [p.detach().clone() for p in generator.parameters()]
+        optimizer = model.getOptimizer(lr=1e-3)
+        words = ["a b c d e", "f g h i j"]
+        inputs = model.inputSpace.prepInput(words)
+        data = model.inputSpace.data
+        supervised_before = data.has_supervised_outputs
+        data.has_supervised_outputs = False
+        try:
+            from reading_fixtures import capture_readings
+            with capture_readings(model) as readings:
+                result, _ = model.runBatch(
+                    train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+                    batch_override=(inputs, torch.empty(2, 0)))
+            assert result is not None
+            changed = {name for name, value in chooser.named_parameters()
+                       if not torch.equal(before[name], value.detach())}
+            assert "operand_order.weight" in changed
+            assert any(name.startswith("mlp.") for name in changed)
+            enlisted = [p for group in optimizer.param_groups for p in group["params"]]
+            for parameter in chooser.parameters():
+                assert sum(parameter is p for p in enlisted) == 1
+            assert not hasattr(model, "forward_grammar_weight")
+            understanding = model._last_understanding
+            assert len(understanding.sentence_states) == len(words)
+            assert all(program.leaves.shape[0] >= 5 for program in readings[0])
+            assert understanding.input_reconstruction is not None
+            assert bool(torch.isfinite(understanding.input_reconstruction.byte_cost).all())
+            assert not hasattr(model, '_output_policy_cost')
+>           assert model._last_ownership_audit['conflicts'] == 0
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammar_word_learning.py:200: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...es=29, out_features=16, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=16, bias=False)
+)
+name = '_last_ownership_audit'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_last_ownership_audit'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1632/test_normal_supervised_output_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1632/test_normal_supervised_output_1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1632/test_input_event_time_uses_the0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]
+FAILED test/test_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser
+7 failed, 161 passed, 1 skipped, 5 warnings in 28.06s

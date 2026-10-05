@@ -1,0 +1,42 @@
+........................................................................ [ 53%]
+...................ssssss..s....FF.............................          [100%]
+=================================== FAILURES ===================================
+______________ test_real_grammar_role_collapsed_op_roles_recover _______________
+test/test_d1_pos_recovery_gate.py:94: in test_real_grammar_role_collapsed_op_roles_recover
+    g.load_from_grammar_file(_TRANSITIONAL_GRAMMAR)
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1583: in _fill_rule_list
+    raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E   ValueError: exist is retired; query conceptual content with what
+________________ test_participation_drives_recovering_collapse _________________
+test/test_d1_pos_recovery_gate.py:117: in test_participation_drives_recovering_collapse
+    g.load_from_grammar_file(_TRANSITIONAL_GRAMMAR)
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1583: in _fill_rule_list
+    raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E   ValueError: exist is retired; query conceptual content with what
+=============================== warnings summary ===============================
+test/test_coordinate_registry.py::test_model_owns_one_ladder_across_all_spaces
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_cs_sparse_weights.py::test_add_concept_edge_dedup_and_query
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_d1_pos_recovery_gate.py::test_real_grammar_role_collapsed_op_roles_recover
+FAILED test/test_d1_pos_recovery_gate.py::test_participation_drives_recovering_collapse
+2 failed, 126 passed, 7 skipped, 2 warnings in 17.29s

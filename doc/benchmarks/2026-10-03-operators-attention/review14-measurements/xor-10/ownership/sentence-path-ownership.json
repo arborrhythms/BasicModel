@@ -1,0 +1,30 @@
+{
+  "perceptualSpace._owned_bases.what.W": {
+    "backwards": 800,
+    "absent": 0,
+    "zero": 800,
+    "nonzero": 0,
+    "maximum": 0.0
+  },
+  "conceptualSpaces.1.concept_parts_layer.features.values": {
+    "backwards": 800,
+    "absent": 800,
+    "zero": 0,
+    "nonzero": 0,
+    "maximum": 0.0
+  },
+  "wholeSpaces.0._owned_bases.what.W": {
+    "backwards": 800,
+    "absent": 800,
+    "zero": 0,
+    "nonzero": 0,
+    "maximum": 0.0
+  },
+  "wholeSpaces.1._owned_bases.what.W": {
+    "backwards": 800,
+    "absent": 800,
+    "zero": 0,
+    "nonzero": 0,
+    "maximum": 0.0
+  }
+}

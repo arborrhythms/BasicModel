@@ -97,7 +97,7 @@ def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
     assert tuple(cs._concept_allocator._layers[0].constituents(a[1])) == records
 
 
-def test_unary_existence_keeps_full_description_through_an_existing_occurrence():
+def test_unary_query_keeps_full_description_through_an_existing_occurrence():
     cs, registry, a, b, _ = _world()
     store = TernaryTruthStore(8)
     description = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
@@ -106,17 +106,17 @@ def test_unary_existence_keeps_full_description_through_an_existing_occurrence()
     index = store.append_meaning(description, trust=0.75)
     context = _context(cs, store=store)
     reference = store.occurrence_of(index)
-    question = registry.form('exist', reference, context=context)
+    question = registry.form('what', reference, context=context)
     assert question.role_refs[0] == reference
     assert question.role_mask.tolist() == [True, True, False]
     result = registry.execute(question, context)
-    assert result.support_true == pytest.approx(0.75)
-    torch.testing.assert_close(result.evidence['meaning'].roles, description.roles)
-    assert result.evidence['meaning'].scope == description.scope
+    assert result.value[0]['trust'] == pytest.approx(0.75)
+    torch.testing.assert_close(result.value[0]['meaning'].roles, description.roles)
+    assert result.value[0]['meaning'].scope == description.scope
     assert len(store) == 1
     # Pure construction owns the complete child without writing or granting
     # execution authority. Only the completed boundary binds its occurrence.
-    inline = registry.form('exist', description, context=context)
+    inline = registry.form('what', description, context=context)
     assert inline.constituents[0] is description
     assert inline.role_refs[0] == ('constituent', 0)
     assert len(store) == 1
@@ -126,18 +126,18 @@ def test_unary_existence_keeps_full_description_through_an_existing_occurrence()
     assert len(store) == 2
     assert store.row(1)['kind'] == 'unverified' and store.row(1)['trust'] == 0
     result = registry.execute(bound, _context(cs, store=store))
-    assert result.support_true == pytest.approx(0.75)
-    torch.testing.assert_close(result.evidence['meaning'].roles, description.roles)
-    assert result.evidence['meaning'].scope == description.scope
+    assert result.value[0]['trust'] == pytest.approx(0.75)
+    torch.testing.assert_close(result.value[0]['meaning'].roles, description.roles)
+    assert result.value[0]['meaning'].scope == description.scope
 
 
 def test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation():
     cs, registry, a, b, context = _world()
-    question = registry.form('equal', a, b)
+    question = registry.form('quantize', a)
     # Named VPs do not retire through the normal frozen-concept lifecycle.
     # Simulate a missing native record in an incomplete structural restore.
     cs._concept_allocator.drop(question.role_refs[1][1])
     placement = dict(cs._concept_allocator.placement)
     with pytest.raises(ValueError, match='unavailable|retired|VP'):
-        registry.form('equal', a, b)
+        registry.form('quantize', a)
     assert cs._concept_allocator.placement == placement

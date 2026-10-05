@@ -228,8 +228,8 @@ _DEEP_CS_SERIAL_XML = """<?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
-    <symbolicOrder>1</symbolicOrder>
-    <subsymbolicOrder>3</subsymbolicOrder>
+    <conceptLayers>2</conceptLayers>
+    <bindingDepth>3</bindingDepth>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <data>

@@ -10,7 +10,8 @@ def test_complete_grammar_declares_sentence_predicate_generic_and_implication():
     rules = {rule.method_name: rule for rule in grammar.rules_upward}
     assert rules['lift'].clause_form == 'S'
     assert rules['verb'].clause_form == 'VP'
-    assert rules['exist'].clause_form == 'S'
+    assert 'exist' not in rules
+    assert grammar.ws_absolute_starts == frozenset({'S'})
     assert rules['generic'].reference_kinds == (('I1', 'generic'),)
     assert rules['lower'].head_role == 2
     assert rules['implies'].clause_form == 'implies'

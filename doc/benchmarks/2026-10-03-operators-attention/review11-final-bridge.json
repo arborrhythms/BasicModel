@@ -1,0 +1,24 @@
+{
+  "measured_source": "review11-source/source.json",
+  "delivery_source": "review11-final/source.json",
+  "source_differences": [
+    "test/test_echoic_decoder.py",
+    "test/test_output_walk.py"
+  ],
+  "production_and_data_identical": true,
+  "protected_gates_identical": true,
+  "delivery_matches_current_tree": true,
+  "measurement_harness_unchanged": true,
+  "complete_old_new_ports": 163,
+  "runtime_seconds": 776.4543728340068,
+  "maximum_worker_bytes": 677184976,
+  "all_30_exited_normally": true,
+  "all_30_within_unchanged_guards": true,
+  "sha256": {
+    "review11-source/source.zip": "efaf55e9598b8e47590bae556172208f8fd73933afe0c7c4e5d04515d76c29aa",
+    "review11-final/source.zip": "ed3af5cc4eba6f97ecf9be408047a1f99afa17af13db576fd0f998c862f282fa",
+    "review11-final/test-ports.json": "b914813fef71cfb9c24082d3f3a3048d367dd77e76c2497d7aaa0b0a2a21a631",
+    "review11-measurements/summary.json": "fd3ee0db6c2936b44d1da5af1b3d84c05d84b00a0ce7467d8755a74b00602b48",
+    "README.md": "07e3458fd9b908da806395d3983868dd74e8b3f39b99de0594cc4eb34fef7fd4"
+  }
+}

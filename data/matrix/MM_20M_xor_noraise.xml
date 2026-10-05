@@ -14,10 +14,10 @@
          symbolic wave phase is disabled (no snap, no AttentionLayer); the
          head trains on the purely subsymbolic pipeline. The sO>=1 sibling
          is MM_sparse_concept.xml. -->
-    <symbolicOrder>0</symbolicOrder>
-    <serial>false</serial>
+    <conceptLayers>1</conceptLayers>
+
     <symbolTower>true</symbolTower>
-    <subsymbolicOrder>3</subsymbolicOrder>
+    <bindingDepth>3</bindingDepth>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <!-- FLIPPED for this variant: mereologyRaise OFF (parent MM_20M_xor sets

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py",
+    "test/test_sentence_expectation.py",
+    "test/test_expectation_kind.py",
+    "test/test_compiled_expectation_boundary.py"
+  ],
+  "pid": 94683,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 704808976,
+  "elapsed_seconds": 8.537547666986939,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/level-expectation-register/run.log"
+}

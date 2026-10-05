@@ -1,0 +1,292 @@
+...F...................................FF...FFFsFFFF................s... [ 40%]
+......................................................sss.sss........... [ 81%]
+.........ssssss....F...F..F......                                        [100%]
+=================================== FAILURES ===================================
+____ test_concept_quantization_cannot_refresh_the_reconstruction_dictionary ____
+test/test_concept_code_ownership.py:60: in test_concept_quantization_cannot_refresh_the_reconstruction_dictionary
+    model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+_______ test_feature_growth_preserves_frozen_rows_and_optimizer_moments ________
+test/test_concept_memberships.py:182: in test_feature_growth_preserves_frozen_rows_and_optimizer_moments
+    model, _ = grounded_model(tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1520/test_feature_growth_preserves_0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1520/test_feature_growth_preserves_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1520/test_feature_growth_preserves_0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+___________ test_definition_boundary_preserves_gradient_owned_codes ____________
+test/test_concept_memberships.py:209: in test_definition_boundary_preserves_gradient_owned_codes
+    model, x = grounded_model(tmp_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1520/test_definition_boundary_prese0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1520/test_definition_boundary_prese0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1520/test_definition_boundary_prese0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+___ test_reconstruction_without_owned_evidence_cannot_read_the_latest_field ____
+test/test_concept_output.py:44: in test_reconstruction_without_owned_evidence_cannot_read_the_latest_field
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/recon_bench.py:128: in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+_____ test_native_understanding_retains_field_and_native_percept_evidence ______
+test/test_concept_output.py:62: in test_native_understanding_retains_field_and_native_percept_evidence
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/recon_bench.py:128: in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+__________ test_parallel_field_never_dispatches_grammar_lift_or_lower __________
+test/test_concept_output.py:74: in test_parallel_field_never_dispatches_grammar_lift_or_lower
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/recon_bench.py:128: in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+____ test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0] _____
+test/test_concept_output.py:112: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/recon_bench.py:128: in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+____ test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1] _____
+test/test_concept_output.py:112: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/recon_bench.py:128: in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+____ test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2] _____
+test/test_concept_output.py:112: in test_native_cli_curriculum_learns_output_and_keeps_located_inverse
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/recon_bench.py:128: in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+___________ test_contained_ordered_group_reconstructs_at_its_extent ____________
+test/test_concept_output.py:181: in test_contained_ordered_group_reconstructs_at_its_extent
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/recon_bench.py:128: in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+______________ TestDefaultsXml.test_architecture_keeps_model_wide ______________
+test/test_config_scoping.py:78: in test_architecture_keeps_model_wide
+    self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
+E   AssertionError: 'subsymbolicOrder' not found in {'bindingDepth': 1, 'composeTemperature': 0, 'reducePressure': 1.0, 'attentionPromotion': False, 'conceptualPi': False, 'conceptPoolSize': 1, 'conceptUseEWMA': 0.9, 'conceptUseFloor': 0.5, 'conceptMintThreshold': 0.8, 'conceptRecycleThreshold': 0.2, 'conceptMatchCos': 0.8, 'conceptPartFloor': 0.001, 'routerWireSerial': 'both', 'transformChooserHidden': 0, 'transformChooserDepth': 1, 'whatThinkingHidden': 16, 'whatThinkingDepth': 1, 'attentionBudget': 32, 'reconstructFromIdea': False, 'answerSynthesis': False, 'synthesisBindings': 0, 'whatCurriculum': 'none', 'whatCurriculumDistance': 1, 'whatCurriculumRatio': 0.25, 'processSymbols': False, 'meronomy': {'_': 'on', 'dMaxStable': '4.0'}, 'monotonic': False, 'ergodic': False, 'naive': False, 'embeddingPath': '', 'weightsPath': '', 'maxResponseLength': 4096, 'amp': 'off', 'truthBiasScale': 0.1, 'LuminosityWeight': 0.1, 'UniversalityWeight': 0.1, 'allowExcludedMiddle': 1, 'allowContradiction': 0, 'gateL1Lambda': 0.0, 'loadBalanceWeight': 0.0, 'l1Lambda': 0.0, 'discontinuityLambda': 0.0, 'mereologyRefinePatience': 3, 'maxActivePerLayer': 8, 'categoryCodebook': True, 'codebookRetire': False, 'trust': 1.0, 'symbolLearning': {'enabled': False}, 'data': {'dataType': 'numeric', 'dataset': 'xor', 'conceptLessons': '', 'numShards': 1, 'maxDocs': 10000, 'shardDir': '', 'minFrequency': 0.0, 'classificationMin': '', 'classificationMax': ''}, 'training': {'numTrials': 1, 'numEpochs': 3, 'batchSize': 64, 'numWorkers': 0, 'learningRate': 0.001, 'teacherReconstruction': False, 'grammarLessonWeight': 1.0, 'reconstructionScale': 0.5, 'whatScale': 0.7, 'whereScale': 0.2, 'whenScale': 0.1, 'negSamples': 64, 'TruthLoss': 0.0, 'maskRate': 0.15, 'trainEmbedding': 'NONE', 'embeddingScale': 0.25, 'conceptualContextSituationWeight': 0, 'conceptualContextSituationAnchors': 8, 'conceptualContextExpectationWeight': 0, 'autoload': True, 'autosave': False, 'checkpointEveryBatches': 0, 'profile': False, 'certainty': False, 'sentenceExpectation': True, 'sentenceExpectationScope': 'structured', 'sentenceExpectationArmaScale': 0.0, 'expectationGain': 1, 'expectationPolicyWeight': 0, 'expectationQueryBudget': 64, 'intraLossWeight': 0.1, 'sentenceExpectationLossWeight': 0.1, 'sentenceExpectationContrastiveWeight': 0.0, 'interContrastiveTemp': 0.1, 'selectedThoughtPolicyWeight': 0.0}, 'server': {'host': '127.0.0.1', 'port': 8001, 'timeout': 120}} : architecture missing model-wide key 'subsymbolicOrder'
+________________ TestCreateFromConfig.test_reads_space_nOutput _________________
+test/test_config_scoping.py:134: in test_reads_space_nOutput
+    m.create_from_config(xml, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+__________ TestValidateConfig.test_symbol_dim_must_match_concept_dim ___________
+test/test_config_scoping.py:199: in test_symbol_dim_must_match_concept_dim
+    with self.assertRaises(ValueError) as ctx:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: ValueError not raised
+=============================== warnings summary ===============================
+test/test_concept_code_ownership.py::test_promoting_an_identity_does_not_rewrite_its_code
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_code_ownership.py::test_concept_quantization_cannot_refresh_the_reconstruction_dictionary
+FAILED test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments
+FAILED test/test_concept_memberships.py::test_definition_boundary_preserves_gradient_owned_codes
+FAILED test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field
+FAILED test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence
+FAILED test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower
+FAILED test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]
+FAILED test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]
+FAILED test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]
+FAILED test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent
+FAILED test/test_config_scoping.py::TestDefaultsXml::test_architecture_keeps_model_wide
+FAILED test/test_config_scoping.py::TestCreateFromConfig::test_reads_space_nOutput
+FAILED test/test_config_scoping.py::TestValidateConfig::test_symbol_dim_must_match_concept_dim
+13 failed, 150 passed, 14 skipped, 2 warnings in 10.76s

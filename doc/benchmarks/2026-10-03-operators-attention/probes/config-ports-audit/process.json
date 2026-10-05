@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_expectation_defaults.py",
+    "test/test_expectation_review.py",
+    "test/test_joint_objectives.py",
+    "test/test_truth_ideas_routing.py",
+    "test/test_dimensional_governance.py",
+    "test/test_basicmodel.py",
+    "test/test_global_attention.py",
+    "test/test_clause_scope.py",
+    "test/test_operator_catalogue.py",
+    "test/test_operator_effects.py"
+  ],
+  "pid": 98843,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2264599720,
+  "elapsed_seconds": 22.250955249997787,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/config-ports-audit/run.log"
+}

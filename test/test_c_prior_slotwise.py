@@ -60,7 +60,7 @@ def test_staged_expectation_never_enters_conceptual_forward(gain, staged):
         event = ps_sub.materialize()
         base = torch.zeros_like(event)
         if staged:
-            discourse = model.symbolSpace.discourse
+            discourse = model.symbolSpace.expectation
             roles = torch.ones(3, discourse.concept_dim)
             discourse.predict_and_observe_stm_end_state([3], [roles], layout="infix")
             assert discourse.expect_next_meaning() is not None

@@ -37,6 +37,13 @@
     <start name="relative_truth">part_O1</start>
 
     <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
       <rule>interpret_O1 = interpret.forward(interpret_I1)</rule>
       <!-- Subsymbolic tier (C): continuous activations. -->
       <rule>union_O1 = union.forward(union_I1, union_I2)</rule>

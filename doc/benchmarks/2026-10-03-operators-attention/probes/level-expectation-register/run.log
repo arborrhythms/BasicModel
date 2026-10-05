@@ -1,0 +1,131 @@
+..........................FF.....F.s......ssF                            [100%]
+=================================== FAILURES ===================================
+________ test_streaming_and_packed_boundary_use_same_full_roles[False] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1455a98b0>
+consolidated = False
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolidated):
+        from Models import BasicModel as Model
+        from reading_fixtures import finish_reading
+        from test_clause_acceptance import SentenceFixture
+        f = SentenceFixture(monkeypatch)
+        entries = [f.program(('lift', 'cat', ('verb', verb, obj)))
+                   for verb, obj in (('chases', 'mouse'), ('catches', 'bird'))]
+        meanings = [finish_reading(f.language, entry, registry=f.registry).meaning
+                    for entry in entries]
+        torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
+        assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
+        packed = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
+            concept_dim=8, expectation_scope='structured')
+        streaming = copy.deepcopy(packed)
+        packed._ltm_store = f.store if consolidated else None
+        from reading_fixtures import commit_reading
+        costs = []
+        for sid, entry in enumerate(entries):
+            _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
+                                       discourse=packed, sid=sid, document='a')
+            costs.append(cost)
+        for t in range(2):
+            streaming.predict_and_observe_stm_end_state([3], [meanings[t].roles],
+                layout='infix', role_masks=[meanings[t].role_mask],
+                sentence_kinds=['idea'], documents=['a'])
+        assert streaming._inter_loss_count == 1
+>       torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())
+E       AssertionError: Scalars are not close!
+E       
+E       Expected 3.3229336738586426 but got 0.0.
+E       Absolute difference: 3.3229336738586426 (up to 1e-05 allowed)
+E       Relative difference: 1.0 (up to 1.3e-06 allowed)
+
+test/test_sentence_expectation.py:128: AssertionError
+_________ test_streaming_and_packed_boundary_use_same_full_roles[True] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x146562ba0>
+consolidated = True
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolidated):
+        from Models import BasicModel as Model
+        from reading_fixtures import finish_reading
+        from test_clause_acceptance import SentenceFixture
+        f = SentenceFixture(monkeypatch)
+        entries = [f.program(('lift', 'cat', ('verb', verb, obj)))
+                   for verb, obj in (('chases', 'mouse'), ('catches', 'bird'))]
+        meanings = [finish_reading(f.language, entry, registry=f.registry).meaning
+                    for entry in entries]
+        torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
+        assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
+        packed = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
+            concept_dim=8, expectation_scope='structured')
+        streaming = copy.deepcopy(packed)
+        packed._ltm_store = f.store if consolidated else None
+        from reading_fixtures import commit_reading
+        costs = []
+        for sid, entry in enumerate(entries):
+            _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
+                                       discourse=packed, sid=sid, document='a')
+            costs.append(cost)
+        for t in range(2):
+            streaming.predict_and_observe_stm_end_state([3], [meanings[t].roles],
+                layout='infix', role_masks=[meanings[t].role_mask],
+                sentence_kinds=['idea'], documents=['a'])
+        assert streaming._inter_loss_count == 1
+>       torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())
+E       AssertionError: Scalars are not close!
+E       
+E       Expected 3.2387895584106445 but got 0.0.
+E       Absolute difference: 3.2387895584106445 (up to 1e-05 allowed)
+E       Relative difference: 1.0 (up to 1.3e-06 allowed)
+
+test/test_sentence_expectation.py:128: AssertionError
+__________________ test_new_document_is_reset_before_forward ___________________
+
+    def test_new_document_is_reset_before_forward():
+        from Models import BasicModel
+    
+        disc = layer()
+        observe(disc, torch.ones(3, 4), document=("train", 11))
+        host = SimpleNamespace(
+            inputSpace=SimpleNamespace(data=SimpleNamespace(
+                source_addresses={"train": [{"document": 12}]})),
+            symbolSpace=SimpleNamespace(discourse=disc))
+        BasicModel._stage_expectation_documents(host, "train", [[0]], 1)
+>       assert disc.expect_next_meaning() is None
+E       assert MeaningExpectation(roles=tensor([[ 0.1547,  0.0200,  0.1079, -0.2762],\n        [-0.2925, -0.3473,  0.2161, -0.0004],\n ...-0.1532,  0.0280], grad_fn=<SelectBackward0>), bindings=(), scope=(), kind_logit=tensor(0., grad_fn=<SelectBackward0>)) is None
+E        +  where MeaningExpectation(roles=tensor([[ 0.1547,  0.0200,  0.1079, -0.2762],\n        [-0.2925, -0.3473,  0.2161, -0.0004],\n ...-0.1532,  0.0280], grad_fn=<SelectBackward0>), bindings=(), scope=(), kind_logit=tensor(0., grad_fn=<SelectBackward0>)) = expect_next_meaning()
+E        +    where expect_next_meaning = BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=28, out_features=8, bias=True)\n    (1): Tan...features=28, out_features=8, bias=True)\n    (1): Tanh()\n    (2): Linear(in_features=8, out_features=4, bias=True)\n  )\n).expect_next_meaning
+
+test/test_sentence_expectation.py:208: AssertionError
+_____ test_explicit_boundary_retains_factored_roles_and_skips_masked_rows ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1454b3290>
+
+    def test_explicit_boundary_retains_factored_roles_and_skips_masked_rows(monkeypatch):
+        from Layers import BracketExpectation
+        from reading_fixtures import commit_reading, finish_reading
+        from test_clause_acceptance import SentenceFixture
+        fixture = SentenceFixture(monkeypatch)
+        discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
+            concept_dim=8, expectation_scope='structured')
+        entry = fixture.program(('lift', 'cat', ('verb', 'chases', 'mouse')))
+        for active in (True, False):
+            commit_reading(fixture.language, fixture.registry, entry, None,
+                           discourse=discourse, active=active, document='doc')
+>       assert discourse.expectation_metrics()["observations"] == 1
+E       assert 0 == 1
+
+test/test_compiled_expectation_boundary.py:84: AssertionError
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]
+FAILED test/test_sentence_expectation.py::test_new_document_is_reset_before_forward
+FAILED test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows
+4 failed, 38 passed, 3 skipped, 1 warning in 6.80s

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_definition_rows.py",
+    "test/test_word_admission.py",
+    "test/test_category_em_smoke.py",
+    "test/test_learning_readiness.py",
+    "test/test_hierarchical.py",
+    "test/test_what_thinking_episode.py",
+    "test/test_walk_trials.py",
+    "test/test_one_attention.py",
+    "test/test_wholespace_property_migration.py",
+    "test/test_unified_lexicon_codebook.py",
+    "test/test_iterated_symbolic_wave.py"
+  ],
+  "pid": 2477,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1087490448,
+  "elapsed_seconds": 59.78571154101519,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/admission-and-loss-boundary-repair/run.log"
+}

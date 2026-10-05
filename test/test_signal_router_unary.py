@@ -29,13 +29,18 @@ def test_exactly_one_unary_position_changes():
     assert (path != x).any(-1).sum(-1).tolist() == [1]
     assert route['position'].tolist() == [3]
 
-def test_unary_and_stop_anchors_receive_gradient():
+def test_unary_and_stop_anchors_receive_only_score_function_credit():
     step = OperationSelectionLayer(d_model=1, unary_ops=[Negate()])
     with torch.no_grad():
         step.stop_anchor.zero_(); step.apply_anchor.fill_(-1)
     x = torch.tensor([[[1.]]], requires_grad=True)
-    _, path, _ = step(x)
+    _, path, route = step(x)
     path.sum().backward()
     assert x.grad.abs().sum() > 0
+    assert step.stop_anchor.grad is None
+    assert step.apply_anchor.grad is None
+    operand_gradient = x.grad.clone()
+    (-route['probability'].sum()).backward()
     assert step.stop_anchor.grad.abs().sum() > 0
     assert step.apply_anchor.grad.abs().sum() > 0
+    torch.testing.assert_close(x.grad, operand_gradient, atol=0, rtol=0)

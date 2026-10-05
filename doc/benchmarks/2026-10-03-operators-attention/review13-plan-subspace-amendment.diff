@@ -1,0 +1,46 @@
+--- review13-before/doc/plans/2026-09-27-item-6-8-one-attention.md
++++ doc/plans/2026-09-27-item-6-8-one-attention.md
+@@ -935,3 +935,43 @@
+ dated, not tuned around; MM_xor, the control and reconstruction carry the
+ mechanism evidence, and the no-regression rule applies to those three until
+ the class gate is sound again.
++
++**Perceptual space is a subspace of conceptual space (Alec, 2026-10-04).**
++Alec's concern: order-0 concepts mereological, higher orders distributional,
++"a bit at odds". Two forms were considered and set aside: bands filled only at
++order 0 (higher orders have no form; inside a meaning band nothing keeps
++vectors apart) and two scales in one vector, parts as the low-order bits
++("sounds a bit kludgy"). Decided in direction: "two subspaces in a single
++concept vector ... positing that perceptual space is a subspace of conceptual
++space."
++
++A concept vector is [perceptual coordinates | conceptual coordinates]; nothing
++is scaled or weighted.
++
++- **Order 0.** The perceptual coordinates are the evidence-weighted fold of
++  the concept's parts' percept vectors, in percept space itself (item 11b's
++  located fused parts, literally). The conceptual coordinates are the context
++  term: the mean of its occurrence rows' roots restricted to that subspace,
++  detached; zero for a new word.
++- **Identity** lives in the perceptual coordinates, distinct for distinct
++  forms by construction; no exact collapse is possible, so nothing has to
++  learn to keep meaning vectors apart.
++- **Similarity** is read on the conceptual subspace; readers choose the
++  subspace a metric uses.
++- **Higher orders.** Coordinate-wise composition keeps the subspaces
++  separate: a root's perceptual coordinates are the composed forms (identity
++  residue), its conceptual coordinates the composed meanings. Composition
++  fills what a form band could not.
++
++**The fixture.** XOR_grammar's percepts carry two content numbers (6.9
++§3.13: "not the four its comment states"); with form confined to the
++perceptual subspace, the roots of a context-identical corpus differ in two
++coordinates, and four points in a plane are XOR-separable half the time. At
++nDim 14, as the comment intended and MM_grammar has, the percepts carry six
++and the roots are in general position. The stale-fixture correction goes with
++the design. Production has 128 perceptual coordinates.
++
++For Codex, item 1: perceptual space as a coordinate subspace of conceptual
++space; order-0 perceptual coordinates = the fold of the parts (live),
++conceptual coordinates = the occurrence rows' roots on that subspace
++(detached); no free word row; XOR_grammar's nDim 14.

@@ -1,0 +1,20 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_output_pair_costs_complete_paths_and_keeps_greedy_ties __________
+
+    def test_output_pair_costs_complete_paths_and_keeps_greedy_ties():
+>       from WalkTrials import output_pair
+E       ModuleNotFoundError: No module named 'WalkTrials'
+
+test/test_walk_trials.py:6: ModuleNotFoundError
+____________ test_output_without_a_legal_alternative_never_switches ____________
+
+    def test_output_without_a_legal_alternative_never_switches():
+>       from WalkTrials import output_pair
+E       ModuleNotFoundError: No module named 'WalkTrials'
+
+test/test_walk_trials.py:33: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED test/test_walk_trials.py::test_output_pair_costs_complete_paths_and_keeps_greedy_ties
+FAILED test/test_walk_trials.py::test_output_without_a_legal_alternative_never_switches
+2 failed in 1.98s

@@ -1,0 +1,43 @@
+....................................s..sss.............................. [ 50%]
+..............s............F..........................................   [100%]
+=================================== FAILURES ===================================
+_________________ test_reconstruct_buffer_period_assert_holds __________________
+test/test_where_encoding_period.py:105: in test_reconstruct_buffer_period_assert_holds
+    model.runEpoch(batchSize=4, split="test")
+bin/Models.py:15688: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:14973: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:14188: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:14290: in _commit_autobind_from_stash
+    self._maybe_autobind_words(
+bin/Spaces.py:14508: in _maybe_autobind_words
+    return self._autobind_property_concepts(
+bin/Spaces.py:14441: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:62: in lookup_word
+    cs._preflight_concept_row(0)
+bin/Spaces.py:14694: in _preflight_concept_row
+    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E   RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+=============================== warnings summary ===============================
+test/test_what_episode_memory.py::test_default_has_one_memory_and_think_is_single_step
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1629/cfg2/MM_xor_synth_discourse.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+1 failed, 136 passed, 5 skipped, 3 warnings in 8.19s

@@ -9,7 +9,7 @@ import torch.nn as nn
 
 from data import Data
 from Language import MLPTransformChooser
-from Layers import InterSentenceLayer, WhatInteractionMemory
+from Layers import BracketExpectation, WhatInteractionMemory
 from Models import BasicModel
 from Spaces import WhereEncoding
 from What import (LTMSlot, What, WhatAnswer, WhatRelation,

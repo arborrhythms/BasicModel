@@ -73,36 +73,51 @@ def test_manifest_round_trip_and_digest_guard(tmp_path):
         raise AssertionError("tampered manifest should fail validation")
 
 
-def test_last_gated_intra_score_uses_final_active_word_per_row():
-    trace = [
-        {
-            # Whole-slab sentence prelude: deliberately ignored by the
-            # next-word scorer.
-            "prediction": torch.zeros(2, 3, 2),
-            "target": torch.ones(2, 3, 2),
-            "row_gate": None,
-        },
-        {
-            "prediction": torch.tensor([[0.0, 0.0], [2.0, 2.0]]),
-            "target": torch.tensor([[1.0, 1.0], [1.0, 1.0]]),
-            "row_gate": torch.tensor([[True], [False]]),
-        },
-        {
-            "prediction": torch.tensor([[3.0, 3.0], [0.0, 0.0]]),
-            "target": torch.tensor([[1.0, 1.0], [2.0, 2.0]]),
-            "row_gate": torch.tensor([[False], [True]]),
-        },
-        {
-            "prediction": torch.tensor([[4.0, 4.0], [9.0, 9.0]]),
-            "target": torch.tensor([[2.0, 2.0], [0.0, 0.0]]),
-            "row_gate": torch.tensor([[True], [False]]),
-        },
-    ]
-    scores, targets, predictions, counts = gate.last_gated_intra_scores(trace)
-    assert torch.equal(scores, torch.tensor([4.0, 4.0]))
-    assert torch.equal(targets, torch.tensor([[2.0, 2.0], [2.0, 2.0]]))
-    assert torch.equal(predictions, torch.tensor([[4.0, 4.0], [0.0, 0.0]]))
-    assert torch.equal(counts, torch.tensor([2, 1]))
+def test_word_distribution_score_uses_final_active_word_per_row():
+    from Layers import BracketExpectation
+    layer=BracketExpectation(n_symbols=2,max_depth=2,n_dim=2,concept_dim=2,p=1,q=0)
+    layer.word_predictor=torch.nn.Linear(2,2,bias=False)
+    with torch.no_grad():layer.word_predictor.weight.copy_(torch.eye(2))
+    codes=torch.tensor([[[1.,0.],[1.,0.],[0.,0.]],
+                        [[1.,0.],[0.,1.],[0.,0.]],
+                        [[0.,0.],[0.,1.],[1.,0.]],
+                        [[0.,0.],[0.,1.],[0.,1.]]])
+    active=torch.tensor([[True,True,False],[True,True,False],[False,True,True],[False,True,True]])
+    model=SimpleNamespace(symbolSpace=SimpleNamespace(expectation=layer),
+        _word_expectation_input=(codes,None,None,None),
+        _attention_words=SimpleNamespace(accepted=active),
+        inputSpace=SimpleNamespace(_word_active_mask=active))
+    scores,targets,predictions,counts=gate.word_candidate_scores(model,choices=2)
+    expected=-torch.tensor([[1.,0.],[0.,1.]]).log_softmax(-1).reshape(-1)
+    torch.testing.assert_close(scores,expected)
+    torch.testing.assert_close(targets,torch.eye(2).repeat(2,1))
+    assert counts.tolist()==[2,2,2,2]
+    assert torch.equal(predictions[0],predictions[1])
+    assert torch.equal(predictions[2],predictions[3])
+    assert not torch.equal(predictions[0],predictions[2])
+
+
+def test_word_gate_matches_full_forward_without_building_unused_answer(monkeypatch):
+    from test_mm_xor import _fresh_model
+    model, _, data = _fresh_model('data/XOR_grammar.xml')
+    model.eval()
+    model.set_sigma(0)
+    item = dict(prefix='hello ', shuffled_prefix='hello ',
+                candidates=['world', 'there'])
+    texts = [item['prefix'] + candidate for candidate in item['candidates']]
+    with gate.frozen_online_learning(model), torch.no_grad():
+        gate._reset_model(model)
+        with data.runtime_batch(texts):
+            model.forward(model.inputSpace.prepInput(list(data.train_input)))
+        gate._validate_candidate_reached(model, [item], 'intact', 2)
+        reference = gate.word_candidate_scores(model, choices=2)
+        gate._reset_model(model)
+        def unused_answer(*args, **kwargs):
+            raise AssertionError('word evaluation built the unused sentence/answer graph')
+        monkeypatch.setattr(model, 'forward', unused_answer)
+        actual = gate._score_control_batch(model, data, [item], 'intact', 2)
+    for before, after in zip(reference, actual):
+        torch.testing.assert_close(after, before, rtol=0, atol=0)
 
 
 def test_capture_hook_runs_under_no_grad_without_loss_accumulation():
@@ -119,6 +134,24 @@ def test_capture_hook_runs_under_no_grad_without_loss_accumulation():
     assert torch.equal(entries[0]["target"], target)
     assert torch.equal(entries[0]["row_gate"], gate_tensor)
     assert proxy._intra_capture is None
+
+
+def test_frozen_control_scoring_disables_autograd(monkeypatch):
+    from test_mm_xor import _fresh_model
+    model, _, data = _fresh_model('data/XOR_grammar.xml')
+    model.eval()
+    owner = model.symbolSpace.expectation
+    expect = owner.expect
+    calls = []
+    def inference(*args, **kwargs):
+        calls.append(torch.is_grad_enabled())
+        assert not torch.is_grad_enabled(), 'held-out scoring retained a backward graph'
+        return expect(*args, **kwargs)
+    monkeypatch.setattr(owner, 'expect', inference)
+    item = dict(prefix='hello ', candidates=['world', 'there'])
+    with gate.frozen_online_learning(model):
+        gate._score_control_batch(model, data, [item], 'intact', 2)
+    assert calls == [False, False]
 
 
 

@@ -1,4 +1,4 @@
-"""The catalogue's product, mean, min and max each have three live faces."""
+"""The catalogue's product, probabilistic sum, min and max have three faces."""
 import pytest
 import torch
 from Language import ConjunctionLayer, DisjunctionLayer, MinLayer, MaxLayer
@@ -6,7 +6,7 @@ from Language import ConjunctionLayer, DisjunctionLayer, MinLayer, MaxLayer
 
 @pytest.mark.parametrize('layer,kernel', [
     (ConjunctionLayer, lambda a,b: a.norm(dim=-1,keepdim=True)*b.norm(dim=-1,keepdim=True)*torch.nn.functional.normalize(a*b, dim=-1)),
-    (DisjunctionLayer, lambda a,b: (a+b)/2),
+    (DisjunctionLayer, lambda a,b: (a.norm(dim=-1,keepdim=True)+b.norm(dim=-1,keepdim=True)-a.norm(dim=-1,keepdim=True)*b.norm(dim=-1,keepdim=True))*torch.nn.functional.normalize(a+b-a*b,dim=-1)),
     (MinLayer, torch.minimum), (MaxLayer, torch.maximum)])
 def test_three_faces_bind_and_search_the_same_pair(layer, kernel):
     codes = torch.tensor([[.2, -.7, .4], [.8, .3, -.5], [-.6, .2, .9]], requires_grad=True)
@@ -81,7 +81,7 @@ def test_free_discarding_operator_still_searches_both_bank_operands():
 def test_conjunction_keeps_the_repeated_reference_for_the_next_operation():
     from types import SimpleNamespace
     from ClauseScope import ClauseScope
-    scope=ClauseScope([SimpleNamespace(method_name='conjunction')],[])
+    scope=ClauseScope([SimpleNamespace(same_reference_idempotent=True)],[])
     state=torch.tensor([[[0,7],[0,7],[0,7]]])
     choice=SimpleNamespace(kind=torch.tensor([1]),local_op=torch.tensor([0]),position=torch.tensor([0]),applied=torch.tensor([True]))
     once,closing=scope.apply(state,choice,torch.tensor(0))

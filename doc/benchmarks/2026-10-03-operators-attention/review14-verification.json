@@ -1,0 +1,104 @@
+{
+  "source_matched": true,
+  "measurement_harness_matched": true,
+  "trainings": 30,
+  "retries": 0,
+  "shared_xor_trainings": 10,
+  "named_final_xor_sentences": 40,
+  "named_final_sum_sentences": 40,
+  "named_compose_steps_in_audit": 3204,
+  "ownership_conflicts": 0,
+  "guards_unchanged": true,
+  "sum_read_first": true,
+  "per_run_geometry_and_support": true,
+  "reader_epochs_per_run": 400,
+  "sentence_path_native_gradient_maximum": 0.0,
+  "word_perceptual_support": {
+    "start": [
+      {
+        "row": 0,
+        "word": "hello",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 5,
+        "nonzero_fraction": 0.8333333333333334,
+        "minimum_absolute_value": 0.0,
+        "minimum_nonzero_absolute_value": 0.004269043914973736
+      },
+      {
+        "row": 5,
+        "word": "world",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.0045739756897091866,
+        "minimum_nonzero_absolute_value": 0.0045739756897091866
+      },
+      {
+        "row": 12,
+        "word": "there",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.005961654707789421,
+        "minimum_nonzero_absolute_value": 0.005961654707789421
+      },
+      {
+        "row": 14,
+        "word": "loving",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.006501392461359501,
+        "minimum_nonzero_absolute_value": 0.006501392461359501
+      }
+    ],
+    "end": [
+      {
+        "row": 0,
+        "word": "hello",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.007422347087413073,
+        "minimum_nonzero_absolute_value": 0.007422347087413073
+      },
+      {
+        "row": 5,
+        "word": "world",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.008897898718714714,
+        "minimum_nonzero_absolute_value": 0.008897898718714714
+      },
+      {
+        "row": 12,
+        "word": "there",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.007422347087413073,
+        "minimum_nonzero_absolute_value": 0.007422347087413073
+      },
+      {
+        "row": 14,
+        "word": "loving",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.008121894672513008,
+        "minimum_nonzero_absolute_value": 0.008121894672513008
+      }
+    ]
+  },
+  "bootstrap_learning": "deferred to operators update",
+  "antipode_training": false
+}

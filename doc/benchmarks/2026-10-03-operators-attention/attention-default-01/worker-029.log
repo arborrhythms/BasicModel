@@ -1,0 +1,349 @@
+..............................F.................................FF...... [ 42%]
+........................................FFFFFF..FFFFFFFFFF.............. [ 85%]
+...................F...FF                                                [100%]
+=================================== FAILURES ===================================
+________________ test_anchordot_unary_uses_category_role_prior _________________
+test/test_transform_chooser_parity.py:133: in test_anchordot_unary_uses_category_role_prior
+    _hard, _soft, routing = layer(x, cat_ctx=cat_ctx)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7244: in forward
+    binary_scores = binary_scores.masked_fill(needs_cases[None, None], -torch.inf)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: masked_fill_ only supports boolean masks, but got mask with dtype float
+______________ TestSoftRead.test_where_read_grounds_in_real_keys _______________
+test/test_truth_grounded_reasoning.py:258: in test_where_read_grounds_in_real_keys
+    from Spaces import GlobalAttention
+E   ImportError: cannot import name 'GlobalAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+________ TestTrustStamp.test_config_trust_stamps_cs_and_scales_incoming ________
+test/test_truth_ideas_routing.py:57: in test_config_trust_stamps_cs_and_scales_incoming
+    self.assertIn("<symbolicOrder>0</symbolicOrder>", src)
+E   AssertionError: '<symbolicOrder>0</symbolicOrder>' not found in '<?xml version="1.0" ?>\n<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n       xsi:noNamespaceSchemaLocation="model.xsd">\n  <!-- MM_xor_fixture: dedicated test fixture for the META taxonomy /\n       SymbolizeLayer / RadixLayer regression suite. Decoupled from\n       MM_xor.xml so that runtime experiments on MM_xor (e.g. toggling\n       SS <codebook>quantize</codebook> -> <codebook>none</codebook>)\n       don\'t break the tests, which inherently require:\n         - <synthesis>meronomy</synthesis> so PerceptStore is constructed.\n         - <codebook>quantize</codebook> on WholeSpace so\n           ``WholeSpace.subspace.what`` is a Codebook and\n           ``insert_symbol`` can allocate rows.\n       Used by test/test_two_codebook_meta_taxonomy.py,\n       test/test_symbolize_layer.py, test/test_autobind_from_cs.py,\n       test/test_radix_layer_reverse.py. Do not consume this from\n       production code. -->\n  <architecture>\n    <bindingDepth>3</bindingDepth>\n    <data>\n      <dataType>embedding</dataType>\n    </data>\n    <conceptLayers>1</conceptLayers>\n\n    <training>\n      <numEpochs>400</numEpochs>\n      <learningRate>0.005</learningRate>\n      <reconstructionScale>0.1</reconstructionScale>\n      <trainEmbedding>JOINT</trainEmbedding>\n      <embeddingScale>0.05</embeddingScale>\n      <autoload>false</autoload>\n    </training>\n\n  </architecture>\n\n  <InputSpace>\n    <!-- radix chunking consumes pre-lexed word tokens; pin word so it does\n         not inherit the raw default (which targets analyse). -->\n    <nVectors>8</nVectors>\n    <nDim>16</nDim>\n    <nOutput>8</nOutput>\n  </InputSpace>\n\n  <PartSpace>\n    <nInput>8</nInput>\n    <nVectors>256</nVectors>\n    <!-- The fixture begins tiny but several tests intentionally learn more\n         than eight distinct byte/chunk percepts. -->\n    <nDim>16</nDim>\n    <nOutput>8</nOutput>\n    <invertible>true</invertible>\n    <synthesis>meronomy</synthesis>\n    <butterfly>false</butterfly>\n  </PartSpace>\n\n  <ConceptualSpace>\n    <nInput>8</nInput>\n    <nVectors>8</nVectors>\n    <nDim>16</nDim>\n    <nOutput>8</nOutput>\n    <invertible>true</invertible>\n  </ConceptualSpace>\n\n  <WholeSpace>\n    <lexer>word</lexer>\n    <nInput>8</nInput>\n    <!-- Rows 0..7 are reserved; learned wholes and META nodes require\n         additional fixed capacity without replacing the live codebook. -->\n    <nVectors>64</nVectors>\n    <nDim>16</nDim>\n    <nOutput>8</nOutput>\n  </WholeSpace>\n\n  <OutputSpace>\n    <nInput>8</nInput>\n    <nVectors>1</nVectors>\n    <nOutput>1</nOutput>\n  </OutputSpace>\n\n  <SymbolSpace>\n    <language>\n      <start>S</start>\n      <grammar>\n        <S>S = not(S)</S>\n        <S>S = intersection(S, S)</S>\n        <S>S = union(S, S)</S>\n      </grammar>\n    </language>\n  </SymbolSpace>\n\n</model>\n'
+________ TestSymbolicOrderAttribute.test_symbolicOrder_attribute_exists ________
+test/test_two_mode_dispatch.py:140: in test_symbolicOrder_attribute_exists
+    self.assertTrue(
+E   AssertionError: False is not true : BasicModel must expose ``self.symbolicOrder`` after construction (Stage 1.E).
+___________ TestSymbolicOrderAttribute.test_symbolicOrder_is_an_int ____________
+test/test_two_mode_dispatch.py:148: in test_symbolicOrder_is_an_int
+    model.symbolicOrder, int,
+    ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'symbolicOrder'. Did you mean: 'symbol_tower'?
+_____ TestSymbolicOrderAttribute.test_symbolicOrder_value_is_non_negative ______
+test/test_two_mode_dispatch.py:155: in test_symbolicOrder_value_is_non_negative
+    model.symbolicOrder, 0,
+    ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'symbolicOrder'. Did you mean: 'symbol_tower'?
+_____________ TestSymbolicOrderXMLRead.test_order_above_one_sticks _____________
+test/test_two_mode_dispatch.py:179: in test_order_above_one_sticks
+    model = _make_model(
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp1ireld1x.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp1ireld1x.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp1ireld1x.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+____________ TestSymbolicOrderXMLRead.test_parallel_override_sticks ____________
+test/test_two_mode_dispatch.py:172: in test_parallel_override_sticks
+    model = _make_model(_GRAMMAR_CONFIG, override_order=0)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpuk_44n52.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpuk_44n52.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpuk_44n52.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_____________ TestSymbolicOrderXMLRead.test_serial_override_sticks _____________
+test/test_two_mode_dispatch.py:165: in test_serial_override_sticks
+    model = _make_model(_GRAMMAR_CONFIG, override_order=1)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxfgzi53u.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxfgzi53u.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxfgzi53u.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______________ TestSerialAttribute.test_serial_attribute_exists _______________
+test/test_two_mode_dispatch.py:210: in test_serial_attribute_exists
+    self.assertTrue(
+E   AssertionError: False is not true : BasicModel must expose ``self.serial`` after construction.
+______________ TestSerialAttribute.test_serial_attribute_is_bool _______________
+test/test_two_mode_dispatch.py:217: in test_serial_attribute_is_bool
+    model.serial, bool,
+    ^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'serial'
+_ TestForwardBodyDispatchesOnSerial.test_explicit_serial_false_skips_per_word_body _
+test/test_two_mode_dispatch.py:246: in test_explicit_serial_false_skips_per_word_body
+    model = _make_model(
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmps4r1jrt6.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmps4r1jrt6.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmps4r1jrt6.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_ TestForwardBodyDispatchesOnSerial.test_explicit_serial_true_dispatches_to_per_word_body _
+test/test_two_mode_dispatch.py:226: in test_explicit_serial_true_dispatches_to_per_word_body
+    model = _make_model(
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpu35f0ov_.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpu35f0ov_.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpu35f0ov_.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_ TestPerWordEnabledBackrefFromSerial.test_parallel_mode_implies_per_word_enabled_false _
+test/test_two_mode_dispatch.py:280: in test_parallel_mode_implies_per_word_enabled_false
+    model = _make_model(
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpevf0gsy0.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpevf0gsy0.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpevf0gsy0.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_ TestPerWordEnabledBackrefFromSerial.test_serial_mode_implies_per_word_enabled_true _
+test/test_two_mode_dispatch.py:271: in test_serial_mode_implies_per_word_enabled_true
+    model = _make_model(
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0f9rvzae.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0f9rvzae.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0f9rvzae.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________ TestLegacySerialDerivation.test_order_one_defaults_serial ___________
+test/test_two_mode_dispatch.py:294: in test_order_one_defaults_serial
+    model = _make_model(_GRAMMAR_CONFIG, override_order=1)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpo6v8a4ax.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpo6v8a4ax.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpo6v8a4ax.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_ TestLegacySerialDerivation.test_order_two_defaults_serial_for_legacy_configs _
+test/test_two_mode_dispatch.py:311: in test_order_two_defaults_serial_for_legacy_configs
+    model = _make_model(_GRAMMAR_CONFIG, override_order=2)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpmy_ecgzs.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpmy_ecgzs.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpmy_ecgzs.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_________ TestLegacySerialDerivation.test_order_zero_defaults_parallel _________
+test/test_two_mode_dispatch.py:304: in test_order_zero_defaults_parallel
+    model = _make_model(_GRAMMAR_CONFIG, override_order=0)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_two_mode_dispatch.py:110: in _make_model
+    init_config(path=config_path, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpfdwenl41.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpfdwenl41.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpfdwenl41.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+___ TestConfigsHaveExplicitOrder.test_grammar_config_default_derives_serial ____
+test/test_two_mode_dispatch.py:327: in test_grammar_config_default_derives_serial
+    model.serial,
+    ^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'serial'
+__________ test_derived_cut_byte_identical_across_a_spread_of_inputs ___________
+test/test_type_run_spans.py:283: in test_derived_cut_byte_identical_across_a_spread_of_inputs
+    assert [span for span in live[4].tolist() if span[1] > span[0]] == [[0, 1], [1, 4]]
+E   assert [[0, 12]] == [[0, 1], [1, 4]]
+E     
+E     At index 0 diff: [0, 12] != [0, 1]
+E     Right contains one more item: [1, 4]
+E     Use -v to get more diff
+_________________________ test_stage_digit_wholes_knob _________________________
+test/test_type_run_spans.py:337: in test_stage_digit_wholes_knob
+    assert WholeSpace.stage_analysis_spans(fake, _bytes("14 plus 1"))[0].tolist() == \
+E   assert [[0, 2], [3, 7], [8, 9]] == [[0, 1], [1, ...3, 7], [8, 9]]
+E     
+E     At index 0 diff: [0, 2] != [0, 1]
+E     Right contains one more item: [8, 9]
+E     Use -v to get more diff
+__________________ test_digit_wholes_property_basis_signature __________________
+test/test_type_run_spans.py:350: in test_digit_wholes_property_basis_signature
+    ws = _small_property_model(tmp_path).wholeSpace
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1543/test_digit_wholes_property_bas0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1543/test_digit_wholes_property_bas0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1543/test_digit_wholes_property_bas0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+=============================== warnings summary ===============================
+test/test_training_diagnostic_contracts.py::test_diagnostic_failure_does_not_abort_real_training
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [2] contradicts existing truth [1] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows
+test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild
+test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary
+test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys
+test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut
+test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut
+test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_transform_chooser_parity.py::test_anchordot_unary_uses_category_role_prior
+FAILED test/test_truth_grounded_reasoning.py::TestSoftRead::test_where_read_grounds_in_real_keys
+FAILED test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming
+FAILED test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_attribute_exists
+FAILED test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_is_an_int
+FAILED test/test_two_mode_dispatch.py::TestSymbolicOrderAttribute::test_symbolicOrder_value_is_non_negative
+FAILED test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_order_above_one_sticks
+FAILED test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_parallel_override_sticks
+FAILED test/test_two_mode_dispatch.py::TestSymbolicOrderXMLRead::test_serial_override_sticks
+FAILED test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_exists
+FAILED test/test_two_mode_dispatch.py::TestSerialAttribute::test_serial_attribute_is_bool
+FAILED test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_false_skips_per_word_body
+FAILED test/test_two_mode_dispatch.py::TestForwardBodyDispatchesOnSerial::test_explicit_serial_true_dispatches_to_per_word_body
+FAILED test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_parallel_mode_implies_per_word_enabled_false
+FAILED test/test_two_mode_dispatch.py::TestPerWordEnabledBackrefFromSerial::test_serial_mode_implies_per_word_enabled_true
+FAILED test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_one_defaults_serial
+FAILED test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_two_defaults_serial_for_legacy_configs
+FAILED test/test_two_mode_dispatch.py::TestLegacySerialDerivation::test_order_zero_defaults_parallel
+FAILED test/test_two_mode_dispatch.py::TestConfigsHaveExplicitOrder::test_grammar_config_default_derives_serial
+FAILED test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+FAILED test/test_type_run_spans.py::test_stage_digit_wholes_knob - assert [[0...
+FAILED test/test_type_run_spans.py::test_digit_wholes_property_basis_signature
+22 failed, 147 passed, 12 warnings in 20.15s

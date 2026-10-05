@@ -12,7 +12,7 @@
   <architecture>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <symbolicOrder>1</symbolicOrder>
+    <conceptLayers>2</conceptLayers>
 
     <writeSyntax>true</writeSyntax>
     <syntaxOutPath>output/syntax_pos_smoke.xml</syntaxOutPath>
@@ -62,6 +62,13 @@
              (writes_enabled=False) and the V-sizing bug is fixed
              via <mereologicalTreeSize>. -->
         <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
           <symbols>
             <!-- Sentence -->
             <rule>S = NP</rule>

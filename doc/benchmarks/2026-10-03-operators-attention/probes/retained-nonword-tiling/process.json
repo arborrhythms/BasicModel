@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_meronomy_ladder.py",
+    "test/test_type_run_spans.py",
+    "test/test_within_whole_division.py",
+    "test/test_predicate_storage.py",
+    "test/test_primitive_properties.py",
+    "test/test_word_loop_buckets_and_orders.py",
+    "test/test_thought_answer_adapters.py",
+    "test/test_query_phase_permissions.py",
+    "test/test_what_thinking_episode.py",
+    "test/test_learning_readiness.py",
+    "test/test_recorded_compose_dispatch.py",
+    "test/test_one_attention.py"
+  ],
+  "pid": 2716,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1469450520,
+  "elapsed_seconds": 21.22376858300413,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/retained-nonword-tiling/run.log"
+}

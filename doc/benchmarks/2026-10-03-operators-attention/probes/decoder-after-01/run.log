@@ -1,0 +1,496 @@
+.F.............F....                                                     [100%]
+=================================== FAILURES ===================================
+______ test_single_departure_replays_prefix_and_is_greedy_after_it[True] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10974b860>
+compiled = True
+
+    @pytest.mark.parametrize('compiled', [False, True])
+    def test_single_departure_replays_prefix_and_is_greedy_after_it(monkeypatch, compiled):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, policy = decoder()
+        event = torch.tensor([[[1., 2.], [3., 4.], [0., 0.]],
+                              [[1., 2.], [3., 4.], [0., 0.]]], requires_grad=True)
+        def pair(event):
+            greedy = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, return_candidates=True)
+            explore = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, exploit_actions=greedy[4], departure=torch.tensor([0, 1]))
+            return greedy, explore
+        fn = torch.compile(pair, backend='inductor', fullgraph=True) if compiled else pair
+>       greedy, explore = fn(event)
+                          ^^^^^^^^^
+
+test/test_decoder_exploration.py:42: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1261: in compile_wrapper
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2649: in __call__
+    result = self._torchdynamo_orig_backend(
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:778: in __call__
+    result = _compile(
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:2116: in _compile
+    guarded_code, tracer_output = compile_inner(code, one_graph, hooks)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_utils_internal.py:114: in wrapper_function
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:1701: in compile_inner
+    result = _compile_inner(code, one_graph, hooks)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:1761: in _compile_inner
+    dynamo_output = compile_frame(
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:1598: in compile_frame
+    bytecode, tracer_output = transform_code_object(code, transform)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/bytecode_transformation.py:1843: in transform_code_object
+    tracer_output = transformations(instructions, code_options)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:1569: in transform
+    tracer_output = trace_frame(
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:369: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:968: in trace_frame
+    run_tracer()
+.venv/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py:949: in run_tracer
+    tracer.run()
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:2094: in run
+    while self.step():
+          ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1747: in step
+    self.dispatch_table[inst.opcode](self, inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1105: in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4750: in CALL
+    self._call(inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4741: in _call
+    self.call_function(fn, args, kwargs)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1637: in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/user_defined.py:3165: in call_function
+    return func_var.call_function(tx, [obj_var] + args, kwargs)  # type: ignore[arg-type]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:971: in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:577: in call_function
+    return tx.inline_user_function_return(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1665: in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:5996: in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:6231: in inline_call_
+    self.run()
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:2094: in run
+    while self.step():
+          ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1747: in step
+    self.dispatch_table[inst.opcode](self, inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1105: in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4750: in CALL
+    self._call(inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4741: in _call
+    self.call_function(fn, args, kwargs)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1637: in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:971: in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:577: in call_function
+    return tx.inline_user_function_return(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1665: in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:5996: in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:6231: in inline_call_
+    self.run()
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:2094: in run
+    while self.step():
+          ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1747: in step
+    self.dispatch_table[inst.opcode](self, inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1105: in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4750: in CALL
+    self._call(inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4741: in _call
+    self.call_function(fn, args, kwargs)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1637: in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:971: in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:577: in call_function
+    return tx.inline_user_function_return(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1665: in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:5996: in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:6231: in inline_call_
+    self.run()
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:2094: in run
+    while self.step():
+          ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1747: in step
+    self.dispatch_table[inst.opcode](self, inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1105: in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4750: in CALL
+    self._call(inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4741: in _call
+    self.call_function(fn, args, kwargs)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1637: in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py:2236: in wrapped_call_function
+    return original_call_function(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py:2325: in call_function
+    return dispatch_torch_function(tx, self, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/torch_function.py:560: in dispatch_torch_function
+    res = tx.symbolic_torch_function_state.call_torch_function_mode(
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/torch_function.py:326: in call_torch_function_mode
+    return cur_mode.call_torch_function(tx, fn, types, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/torch_function.py:188: in call_torch_function
+    return call_torch_function(
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/torch_function.py:514: in call_torch_function
+    return torch_function_var.call_function(tx, tf_args, {})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:1842: in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:971: in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:577: in call_function
+    return tx.inline_user_function_return(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1665: in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:5996: in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:6231: in inline_call_
+    self.run()
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:2094: in run
+    while self.step():
+          ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1747: in step
+    self.dispatch_table[inst.opcode](self, inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1105: in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:3286: in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1637: in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py:2236: in wrapped_call_function
+    return original_call_function(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py:2327: in call_function
+    return self._call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py:2914: in _call_function
+    return _call_while_loop(
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py:937: in _call_while_loop
+    ) = speculate_subgraph(
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py:2072: in speculate_subgraph
+    output = trace_hop_function(
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/higher_order_ops.py:1556: in trace_hop_function
+    output = f.call_function(tx, args, sub_kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:577: in call_function
+    return tx.inline_user_function_return(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1665: in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:5996: in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:6231: in inline_call_
+    self.run()
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:2094: in run
+    while self.step():
+          ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1747: in step
+    self.dispatch_table[inst.opcode](self, inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1105: in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:3286: in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1637: in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:577: in call_function
+    return tx.inline_user_function_return(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1665: in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:5996: in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:6231: in inline_call_
+    self.run()
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:2094: in run
+    while self.step():
+          ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1747: in step
+    self.dispatch_table[inst.opcode](self, inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1105: in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4750: in CALL
+    self._call(inst)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:4741: in _call
+    self.call_function(fn, args, kwargs)
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:1637: in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py:1667: in call_function
+    return self.obj.call_method(tx, self.name, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/tensor.py:1066: in call_method
+    proxy = tx.output.create_proxy(
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:1390: in create_proxy
+    return self.current_tracer.create_proxy(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:3982: in create_proxy
+    return self._create_proxy(
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:4037: in _create_proxy
+    maybe_new_arg = self.maybe_lift_tracked_freevar_to_input(arg)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:4453: in maybe_lift_tracked_freevar_to_input
+    return self.lift_tracked_freevar_to_input(arg)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:4427: in lift_tracked_freevar_to_input
+    new_proxy = self.create_graph_input(proxy.node.name, type_expr, example_value)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:4353: in create_graph_input
+    self._lift_basic_symbols(example_value, source)
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:4694: in _lift_basic_symbols
+    _lift_symbols_in_symint(
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:4615: in _lift_symbols_in_symint
+    self.parent._lift_basic_symbols(s, source)
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:4720: in _lift_basic_symbols
+    _lift_symbols_in_symint(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+s = 16*u0 - 16, source = None, before = False
+
+    def _lift_symbols_in_symint(
+        s: int | torch.SymInt,
+        source: Source | None,
+        before: bool = False,
+    ) -> None:
+        if not is_symbolic(s):
+            return
+    
+        if not isinstance(s, torch.SymInt):
+            raise AssertionError(f"s must be a SymInt, got {type(s)}")
+        self_to_be_bound = self.lookup_unbound_symbols(s)
+        if len(self_to_be_bound) == 0:
+            return
+    
+        # For subgraph
+        if self.parent is not None:
+            # Recursively lift symbols in symint until top-level.
+            self.parent._lift_basic_symbols(s, source)
+            for s0 in self_to_be_bound:
+                parent_proxy = self.parent.bound_symbols[s0]
+                example_val = parent_proxy.node.meta["example_value"]  # type: ignore[union-attr]
+                if not isinstance(example_val, torch.SymInt):
+                    raise AssertionError(
+                        f"example_val must be a SymInt, got {type(example_val)}"
+                    )
+                ph = self.create_graph_input(
+                    str(s0),
+                    type(example_val),
+                    example_val,
+                    before=before,
+                    source=source,
+                )
+                log.debug(
+                    "_lift_symbols_in_symint %s from %s at debug_level %s",
+                    s0,
+                    source.name if source is not None else "subgraph inputs",
+                    self.debug_level,
+                )
+                self.lifted_freevars[parent_proxy] = ph  # type: ignore[index]
+        # For root_tracer:
+        else:
+            if len(self_to_be_bound) != 1:
+                raise AssertionError(
+                    f"For root tracer, we only expect to bind basic symbols (compound symbols "
+                    f"should be cached before) but got unbound symbols {self_to_be_bound} in {s}"
+                )
+            if source is None:
+>               raise AssertionError(
+                    f"Source of '{s}' is None when lifting it to input of top-level. If it's an unbacked symbol, "
+                    "this could be because it's not tracked with lazy_bind_unbacked_symbols. "
+                    f"Otherwise, should provide a source when create_graph_input for `{s}` at root tracer."
+                )
+E               AssertionError: Source of '16*u0 - 16' is None when lifting it to input of top-level. If it's an unbacked symbol, this could be because it's not tracked with lazy_bind_unbacked_symbols. Otherwise, should provide a source when create_graph_input for `16*u0 - 16` at root tracer.
+E               
+E               from user code:
+E                  File "/Users/arogers/github/WikiOracle/basicmodel/test/test_decoder_exploration.py", line 38, in pair
+E                   explore = model._output_generate_walk(event, 8, return_trace=True,
+E                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12892, in _output_generate_walk
+E                   _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 379, in _reconstruction_while_loop
+E                   return torch.while_loop(condition, body, values)
+E                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E                   return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+E                   return func(*args, **kwargs)
+E                          ^^^^^^^^^^^^^^^^^^^^^
+E                 File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E                   return body_fn(*carried, *additional)
+E                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12857, in body
+E                   prior = exploit_actions.gather(1, t.reshape(1, 1).expand(B, 1)).reshape(B)
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               
+E               Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/output_graph.py:4645: AssertionError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_____ test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14a8634d0>
+
+    def test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term(monkeypatch):
+        from pathlib import Path
+        import Models, util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+        original = model._reconstruct_sentences
+        calls=[]
+        def observe(*args, **kw):
+            record = kw['understanding']
+            assert record.primed.codes.requires_grad
+            from dataclasses import replace, fields
+            assert 'witness_offsets' not in {f.name for f in fields(record)}
+            # The original leaves are targets, never inverse operands. Changing
+            # them cannot change the recovered leaves or the byte objective.
+            returned = original(*args, **kw)
+            result = returned[0] if kw.get('return_decoded') else returned
+            changed = replace(record, word_values=record.word_values + 19)
+            altered = original(args[0], changed.word_values, *args[2:],
+                               **(kw | {'understanding': changed}))
+            if kw.get('return_decoded'):
+                altered = altered[0]
+            torch.testing.assert_close(result[0], altered[0])
+            torch.testing.assert_close(result[2], altered[2])
+            calls.append('free')
+            return returned
+        monkeypatch.setattr(model, '_reconstruct_sentences', observe)
+        optimizer=model.getOptimizer(lr=.01)
+        try:
+            raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
+            model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
+                batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+>           assert calls == ['free', 'free']
+E           AssertionError: assert ['free', 'fre...free', 'free'] == ['free', 'free']
+E             
+E             Left contains 2 more items, first extra item: 'free'
+E             Use -v to get more diff
+
+test/test_free_reconstruction.py:60: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[True]
+FAILED test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term
+2 failed, 18 passed, 1 warning in 14.23s

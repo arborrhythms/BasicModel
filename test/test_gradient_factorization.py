@@ -140,12 +140,14 @@ def test_normal_batch_logs_owned_optimizer_gradients(tmp_path, monkeypatch, caps
         assert report['active'] > 0
         assert all(row['writers'] in ([], [row['owner']]) for row in report['parameters'])
         assert any(row['writers'] == ['reconstruction'] for row in report['parameters'])
-        assert any(row['writers'] == ['output'] for row in report['parameters'])
+        assert not any(row['writers'] == ['output'] for row in report['parameters'])  # this is an unlabelled reconstruction lesson
         dictionary = model.conceptualSpace.similarity_codebook.W
-        assert isinstance(dictionary, torch.nn.Parameter) and dictionary.requires_grad
-        assert any(p is dictionary for group in optimizer.param_groups for p in group['params'])
-        dictionary_name = next(name for name, parameter in model.named_parameters() if parameter is dictionary)
-        owned = [row for row in report['parameters'] if row['parameter'] == dictionary_name]
+        assert not isinstance(dictionary, torch.nn.Parameter) and not dictionary.requires_grad
+        assert all(p is not dictionary for group in optimizer.param_groups for p in group['params'])
+        prototypes = model.perceptualSpace.subspace.what.W
+        assert any(p is prototypes for group in optimizer.param_groups for p in group['params'])
+        prototype_name = next(name for name, parameter in model.named_parameters() if parameter is prototypes)
+        owned = [row for row in report['parameters'] if row['parameter'] == prototype_name]
         assert owned and all(row['owner'] == 'reconstruction' for row in owned)
         assert all(row['writers'] in ([], ['reconstruction']) for row in owned)
         assert "[objective-ownership]" in capsys.readouterr().out

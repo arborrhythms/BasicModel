@@ -1,0 +1,1246 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+    "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+    "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+    "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+    "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+    "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+    "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+    "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+    "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables",
+    "test/test_wide_concept_codebook.py::test_codebook_forward_topk_prunes_activation",
+    "test/test_wide_concept_codebook.py::test_codebook_forward_topk_zero_preserves_legacy_activation",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_snap_forward_is_q_and_zero_grad_to_e",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_ste_passes_gradient_through_to_e",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_rotation_scales_norm_and_rotates",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_invalid_mode_raises",
+    "test/test_wide_concept_codebook.py::test_codebook_commit_loss_basic",
+    "test/test_wide_concept_codebook.py::test_codebook_commit_loss_zero_on_empty_inputs",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_stable_entry_gets_frozen",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_noisy_entry_not_frozen",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_zeros_gradient_of_frozen_entries",
+    "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+    "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+    "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+    "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+    "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+    "test/test_within_whole_division.py::test_live_no_store_is_inert",
+    "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole",
+    "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[True]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
+    "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it",
+    "test/test_word_buffer_flush.py::test_buffer_starts_empty",
+    "test/test_word_buffer_flush.py::test_scalar_and_vector_overloads_agree",
+    "test/test_word_buffer_flush.py::test_flush_resets_count_for_next_tick",
+    "test/test_word_buffer_flush.py::test_buffer_lazy_resize",
+    "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+    "test/test_word_grain_attention.py::test_attention_off_is_plain_reverse",
+    "test/test_word_grain_attention.py::test_real_lift_reverse_completes_under_priming",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+    "test/test_word_loop_buckets_and_orders.py::test_smallest_fixed_word_bucket_is_selected",
+    "test/test_word_loop_buckets_and_orders.py::test_overlong_sentence_is_rejected_not_clipped",
+    "test/test_word_loop_buckets_and_orders.py::test_single_dynamic_capacity_accepts_short_and_long_complete_sentences",
+    "test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories",
+    "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities",
+    "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+    "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids",
+    "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+    "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+    "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+    "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+    "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+    "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+    "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+    "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+    "test/test_word_store.py::test_union_snap_needs_no_priming",
+    "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+    "test/test_word_store.py::test_word_side_snap_minimal_residual",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+    "test/test_word_store.py::test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes",
+    "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association",
+    "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint",
+    "test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_tuple_output_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_nondivisible_matches_torch",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar"
+  ],
+  "completed": [
+    "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+    "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+    "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+    "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+    "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+    "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+    "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+    "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+    "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables",
+    "test/test_wide_concept_codebook.py::test_codebook_forward_topk_prunes_activation",
+    "test/test_wide_concept_codebook.py::test_codebook_forward_topk_zero_preserves_legacy_activation",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_snap_forward_is_q_and_zero_grad_to_e",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_ste_passes_gradient_through_to_e",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_rotation_scales_norm_and_rotates",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_invalid_mode_raises",
+    "test/test_wide_concept_codebook.py::test_codebook_commit_loss_basic",
+    "test/test_wide_concept_codebook.py::test_codebook_commit_loss_zero_on_empty_inputs",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_stable_entry_gets_frozen",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_noisy_entry_not_frozen",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_zeros_gradient_of_frozen_entries",
+    "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+    "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+    "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+    "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+    "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+    "test/test_within_whole_division.py::test_live_no_store_is_inert",
+    "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole",
+    "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[True]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
+    "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it",
+    "test/test_word_buffer_flush.py::test_buffer_starts_empty",
+    "test/test_word_buffer_flush.py::test_scalar_and_vector_overloads_agree",
+    "test/test_word_buffer_flush.py::test_flush_resets_count_for_next_tick",
+    "test/test_word_buffer_flush.py::test_buffer_lazy_resize",
+    "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+    "test/test_word_grain_attention.py::test_attention_off_is_plain_reverse",
+    "test/test_word_grain_attention.py::test_real_lift_reverse_completes_under_priming",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+    "test/test_word_loop_buckets_and_orders.py::test_smallest_fixed_word_bucket_is_selected",
+    "test/test_word_loop_buckets_and_orders.py::test_overlong_sentence_is_rejected_not_clipped",
+    "test/test_word_loop_buckets_and_orders.py::test_single_dynamic_capacity_accepts_short_and_long_complete_sentences",
+    "test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories",
+    "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities",
+    "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+    "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids",
+    "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+    "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+    "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+    "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+    "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+    "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+    "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+    "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+    "test/test_word_store.py::test_union_snap_needs_no_priming",
+    "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+    "test/test_word_store.py::test_word_side_snap_minimal_residual",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+    "test/test_word_store.py::test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes",
+    "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association",
+    "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint",
+    "test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_tuple_output_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_nondivisible_matches_torch",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar"
+  ],
+  "slow_selected": [
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003545829968061298,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.016160041996045038,
+      "message": "test/test_wholespace_property_migration.py:106: in test_aligned_model_accepts_unequal_inventory_capacities\n    model = _small_property_model(tmp_path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_wholespace_property_migration.py:80: in _small_property_model\n    init_config(path=str(path), defaults_path=str(ROOT / \"data\" / \"model.xml\"))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_aligned_model_accepts_une0/unequal_property_inventory.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_aligned_model_accepts_une0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_aligned_model_accepts_une0/unequal_property_inventory.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.012878750014351681,
+      "message": "test/test_wholespace_property_migration.py:117: in test_aligned_property_folds_share_one_physical_concept_dictionary\n    model = _small_property_model(tmp_path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_wholespace_property_migration.py:80: in _small_property_model\n    init_config(path=str(path), defaults_path=str(ROOT / \"data\" / \"model.xml\"))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_aligned_property_folds_sh0/unequal_property_inventory.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_aligned_property_folds_sh0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_aligned_property_folds_sh0/unequal_property_inventory.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.012945250025950372,
+      "message": "test/test_wholespace_property_migration.py:150: in test_wholespace_owns_one_property_codebook_and_no_concept_store\n    model = _small_property_model(tmp_path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_wholespace_property_migration.py:80: in _small_property_model\n    init_config(path=str(path), defaults_path=str(ROOT / \"data\" / \"model.xml\"))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_wholespace_owns_one_prope0/unequal_property_inventory.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_wholespace_owns_one_prope0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_wholespace_owns_one_prope0/unequal_property_inventory.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.011385708989109844,
+      "message": "test/test_wholespace_property_migration.py:201: in test_property_model_stm_grammar_resolves_from_symbolspace\n    model = _small_property_model(tmp_path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_wholespace_property_migration.py:80: in _small_property_model\n    init_config(path=str(path), defaults_path=str(ROOT / \"data\" / \"model.xml\"))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_property_model_stm_gramma0/unequal_property_inventory.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_property_model_stm_gramma0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_property_model_stm_gramma0/unequal_property_inventory.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.011323917016852647,
+      "message": "test/test_wholespace_property_migration.py:221: in test_symbolspace_and_grammar_use_conceptual_not_property_width\n    model = _small_property_model(\ntest/test_wholespace_property_migration.py:80: in _small_property_model\n    init_config(path=str(path), defaults_path=str(ROOT / \"data\" / \"model.xml\"))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_symbolspace_and_grammar_u0/unequal_property_inventory.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_symbolspace_and_grammar_u0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_symbolspace_and_grammar_u0/unequal_property_inventory.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.011879374971613288,
+      "message": "test/test_wholespace_property_migration.py:278: in test_property_model_category_vq_and_parser_context_are_cs_owned\n    model = _small_property_model(tmp_path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_wholespace_property_migration.py:80: in _small_property_model\n    init_config(path=str(path), defaults_path=str(ROOT / \"data\" / \"model.xml\"))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_property_model_category_v0/unequal_property_inventory.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_property_model_category_v0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_property_model_category_v0/unequal_property_inventory.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.011298666999209672,
+      "message": "test/test_wholespace_property_migration.py:318: in test_property_sidecar_cannot_recreate_lbg_or_downstream_state\n    model = _small_property_model(tmp_path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_wholespace_property_migration.py:80: in _small_property_model\n    init_config(path=str(path), defaults_path=str(ROOT / \"data\" / \"model.xml\"))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_property_sidecar_cannot_r0/unequal_property_inventory.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_property_sidecar_cannot_r0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_property_sidecar_cannot_r0/unequal_property_inventory.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013802500034216791,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021825000294484198,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_forward_topk_prunes_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008002090035006404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_forward_topk_zero_preserves_legacy_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004465829988475889,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_gradient_estimator_snap_forward_is_q_and_zero_grad_to_e",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013541601947508752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_gradient_estimator_ste_passes_gradient_through_to_e",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002980410063173622,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_gradient_estimator_rotation_scales_norm_and_rotates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033412501215934753,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_gradient_estimator_invalid_mode_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010054200538434088,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_commit_loss_basic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002962079888675362,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_commit_loss_zero_on_empty_inputs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002079170080833137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_freezing_stable_entry_gets_frozen",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007222089916467667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_freezing_noisy_entry_not_frozen",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005580410070251673,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_freezing_zeros_gradient_of_frozen_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005010410095565021,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.007336457987548783,
+      "message": "test/test_within_whole_division.py:102: in test_live_default_on_divides_punct_run\n    assert _live_spans(ws, \"a). b\") == [(0, 1), (1, 2), (2, 3), (4, 5)]\nE   assert [(0, 1), (1, 3), (4, 5)] == [(0, 1), (1, ...2, 3), (4, 5)]\nE     \nE     At index 1 diff: (1, 3) != (1, 2)\nE     Right contains one more item: (4, 5)\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.013179834000766277,
+      "message": "test/test_within_whole_division.py:118: in test_live_attested_whole_stays_one_concept\n    assert _live_spans(ws2, \"a ...\") == [(0, 1), (2, 3), (3, 4), (4, 5)]\nE   assert [(0, 1), (2, 5)] == [(0, 1), (2, ...3, 4), (4, 5)]\nE     \nE     At index 1 diff: (2, 5) != (2, 3)\nE     Right contains 2 more items, first extra item: (3, 4)\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012187540996819735,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006090583017794415,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005343167023966089,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_store_is_inert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004581749992212281,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00023033400066196918,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_within_whole_division.py', 170, 'Skipped: lxml not installed')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.013116459012962878,
+      "message": "test/test_word_admission.py:21: in test_23_fuse_parts_before_word_admission\n    model, _ = grounded_model(tmp_path, 8)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_grounded_xor.py:57: in grounded_model\n    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_23_fuse_parts_before_word0/grounded.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_23_fuse_parts_before_word0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_23_fuse_parts_before_word0/grounded.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003421166999032721,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028277500241529197,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01509979201364331,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.13294395798584446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1785932079947088,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0007395829888992012,
+      "message": "test/test_word_admission.py:81: in test_29_each_reading_publishes_only_its_words\n    model, _, data = _fresh_model(str(Path(_PROJECT) / 'data' / configuration))\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_mm_xor.py:35: in _fresh_model\n    init_config(\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    tree = ET.parse(path)\n           ^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse\n    tree.parse(source, parser)\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse\n    self._root = parser._parse_whole(source)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023432909802068025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.014006290992256254,
+      "message": "test/test_word_admission.py:155: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/test/test_word_admission.py:test33:2: in learn_grounded_xor\n    ???\ntest/test_grounded_xor.py:57: in grounded_model\n    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word0/grounded.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word0/grounded.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.013260083011118695,
+      "message": "test/test_word_admission.py:155: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/test/test_word_admission.py:test33:2: in learn_grounded_xor\n    ???\ntest/test_grounded_xor.py:57: in grounded_model\n    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word1/grounded.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word1/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word1/grounded.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.014216875017154962,
+      "message": "test/test_word_admission.py:155: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/test/test_word_admission.py:test33:2: in learn_grounded_xor\n    ???\ntest/test_grounded_xor.py:57: in grounded_model\n    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word2/grounded.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word2/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word2/grounded.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01324850000673905,
+      "message": "test/test_word_admission.py:155: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/test/test_word_admission.py:test33:2: in learn_grounded_xor\n    ???\ntest/test_grounded_xor.py:57: in grounded_model\n    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word3/grounded.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word3/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word3/grounded.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01350587498745881,
+      "message": "test/test_word_admission.py:155: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/test/test_word_admission.py:test33:2: in learn_grounded_xor\n    ???\ntest/test_grounded_xor.py:57: in grounded_model\n    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word4/grounded.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word4/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word4/grounded.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.013953000016044825,
+      "message": "test/test_word_admission.py:155: in test_33_grounded_xor_with_word_boundary\n    namespace['learn_grounded_xor'](tmp_path, pool)\n/Users/arogers/github/WikiOracle/basicmodel/test/test_word_admission.py:test33:2: in learn_grounded_xor\n    ???\ntest/test_grounded_xor.py:57: in grounded_model\n    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word5/grounded.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word5/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1546/test_33_grounded_xor_with_word5/grounded.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006661659863311797,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000449583021691069,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025558401830494404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002498330140952021,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005636670102830976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004114579933229834,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005785830144304782,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038254199898801744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004943329840898514,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_buffer_flush.py::test_buffer_starts_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027091915981145576,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_buffer_flush.py::test_scalar_and_vector_overloads_agree",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02960254199570045,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_buffer_flush.py::test_flush_resets_count_for_next_tick",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02871120799682103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_buffer_flush.py::test_buffer_lazy_resize",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027913832978811115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013503750087693334,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_attention_off_is_plain_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006807919999118894,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_real_lift_reverse_completes_under_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001404375012498349,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11334229199565016,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0007190840260591358,
+      "message": "test/test_word_interpretation.py:21: in test_every_read_word_has_a_concept_and_symbol\n    model, _, _ = _fresh_model(str(Path(__file__).resolve().parents[1] / 'data' / configuration))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_mm_xor.py:35: in _fresh_model\n    init_config(\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    tree = ET.parse(path)\n           ^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse\n    tree.parse(source, parser)\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse\n    self._root = parser._parse_whole(source)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.19120924998424016,
+      "message": "test/test_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol\n    assert all(owner.word_concepts(word) for word in words), {\nE   AssertionError: {'go': (), 'hi': (4, 5, 4611686018427387906, 4611686018427387907), 'no': (), 'we': (6, 7, 4611686018427387908, 4611686018427387909)}\nE   assert False\nE    +  where False = all(<generator object test_every_read_word_has_a_concept_and_symbol.<locals>.<genexpr> at 0x11f455b60>)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003528329834807664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027564589981921017,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00237404098152183,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0036254590086173266,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030328750144690275,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002234999992651865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023891669989097863,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.4115109160193242,
+      "message": "test/test_word_interpretation.py:202: in test_every_serial_word_runs_interpret_before_composition\n    assert (ids[active] != objects[active]).all()\nE   assert tensor(False)\nE    +  where tensor(False) = <built-in method all of Tensor object at 0x142556c60>()\nE    +    where <built-in method all of Tensor object at 0x142556c60> = tensor([ 1, -1,  3, -1]) != tensor([ 2, -1,  4, -1]).all",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011882749997312203,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014658582978881896,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_smallest_fixed_word_bucket_is_selected",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00022991601144894958,
+      "message": "test/test_word_loop_buckets_and_orders.py:40: in test_smallest_fixed_word_bucket_is_selected\n    assert inp._serial_word_count_host == n\nE   assert 2 == 1\nE    +  where 2 = namespace(_active_word_bucket=16, _serial_word_capacity=16, _serial_word_count_host=2)._serial_word_count_host",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_overlong_sentence_is_rejected_not_clipped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032304201158694923,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_single_dynamic_capacity_accepts_short_and_long_complete_sentences",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0001660000125411898,
+      "message": "test/test_word_loop_buckets_and_orders.py:57: in test_single_dynamic_capacity_accepts_short_and_long_complete_sentences\n    assert inp._serial_word_count_host == n\nE   assert 2 == 1\nE    +  where 2 = namespace(_active_word_bucket=256, _serial_word_capacity=256, _serial_word_count_host=2)._serial_word_count_host",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034891601535491645,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03317062498535961,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043758301762863994,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010299999848939478,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004935830074828118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002824170223902911,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002806670090649277,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000286666996544227,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031629198929294944,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026470801094546914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047483298112638295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010212500055786222,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007409999961964786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008946250018198043,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003642499796114862,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003259590012021363,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_reading_promotes_the_batch_words",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010095798643305898,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 154, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012104198685847223,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 187, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.479199070483446e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 259, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.070898522622883e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 290, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008453749760519713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005180840089451522,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004953329917043447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005752909928560257,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_union_snap_needs_no_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006872910016681999,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000234208011534065,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_side_snap_minimal_residual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000469833001261577,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.629198418930173e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 505, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.420800440944731e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 522, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.291698759421706e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 559, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001602080010343343,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 590, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001626670127734542,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 605, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001110419980250299,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 650, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3947624580177944,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.38820025001768954,
+      "message": "test/test_word_store.py:785: in test_surface_bytes_belong_to_words_and_objects_follow_their_association\n    owner.interpret.define(other_word, obj)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:145: in define\n    raise ValueError('DEF requires distinct, live native identities')\nE   ValueError: DEF requires distinct, live native identities",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.39000920901889913,
+      "message": "test/test_word_store.py:815: in test_word_surface_and_reassociated_object_survive_strict_checkpoint\n    owner.interpret.define(other_word, obj)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:145: in define\n    raise ValueError('DEF requires distinct, live native identities')\nE   ValueError: DEF requires distinct, live native identities",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3900392919895239,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034220897941850126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_workarounds.py::test_adaptive_avg_pool1d_tuple_output_matches_torch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002417089999653399,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_workarounds.py::test_adaptive_avg_pool1d_nondivisible_matches_torch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032229101634584367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+      "phase": "setup",
+      "outcome": "failed",
+      "duration": 0.00038499999209307134,
+      "message": "test/test_xor_grammar.py:78: in setUpClass\n    cls.cfg = Models.BaseModel.load_config(_CONFIG)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1674: in load_config\n    return XMLConfig._parse_xml(config_path)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    tree = ET.parse(path)\n           ^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse\n    tree.parse(source, parser)\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse\n    self._root = parser._parse_whole(source)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+      "phase": "setup",
+      "outcome": "failed",
+      "duration": 0.00016474997391924262,
+      "message": "test/test_xor_grammar.py:78: in setUpClass\n    cls.cfg = Models.BaseModel.load_config(_CONFIG)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1674: in load_config\n    return XMLConfig._parse_xml(config_path)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    tree = ET.parse(path)\n           ^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse\n    tree.parse(source, parser)\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse\n    self._root = parser._parse_whole(source)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+      "phase": "setup",
+      "outcome": "failed",
+      "duration": 0.0014115420053713024,
+      "message": "test/test_xor_grammar.py:108: in setUpClass\n    init_config(xml_path)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    tree = ET.parse(path)\n           ^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse\n    tree.parse(source, parser)\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse\n    self._root = parser._parse_whole(source)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+      "phase": "setup",
+      "outcome": "failed",
+      "duration": 0.00014829199062660336,
+      "message": "test/test_xor_grammar.py:108: in setUpClass\n    init_config(xml_path)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    tree = ET.parse(path)\n           ^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse\n    tree.parse(source, parser)\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse\n    self._root = parser._parse_whole(source)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+      "phase": "setup",
+      "outcome": "failed",
+      "duration": 0.00015066700871102512,
+      "message": "test/test_xor_grammar.py:108: in setUpClass\n    init_config(xml_path)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1876: in _parse_xml\n    tree = ET.parse(path)\n           ^^^^^^^^^^^^^^\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse\n    tree.parse(source, parser)\n/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse\n    self._root = parser._parse_whole(source)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0028990829887334257,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/unittest.py', 523, 'Skipped: XOR_grammar model build failed: ParseError: not well-formed (invalid token): line 16, column 10')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013499998021870852,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/unittest.py', 523, 'Skipped: XOR_grammar model build failed: ParseError: not well-formed (invalid token): line 16, column 10')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012020798749290407,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/unittest.py', 523, 'Skipped: XOR_grammar model build failed: ParseError: not well-formed (invalid token): line 16, column 10')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

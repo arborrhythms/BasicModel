@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import torch
 
 
-def test_wrong_winner_keeps_target_and_competitor_gradients_below_old_probability_floor():
+def test_wrong_winner_keeps_leaf_gradient_with_detached_competitor_codes():
     from Models import BasicModel
     from SentenceUnderstanding import readback_scores
     leaf = torch.tensor([[.2, 1.]], requires_grad=True)
@@ -22,6 +22,6 @@ def test_wrong_winner_keeps_target_and_competitor_gradients_below_old_probabilit
         surfaces, torch.ones_like(surfaces, dtype=torch.bool), target,
         torch.ones_like(target, dtype=torch.bool), True, priming=priming)
     torch.testing.assert_close(actual, expected)
-    d_leaf, d_codes = torch.autograd.grad(actual.sum(), (leaf, codes))
+    d_leaf, d_codes = torch.autograd.grad(actual.sum(), (leaf, codes), allow_unused=True)
     assert torch.isfinite(d_leaf).all() and d_leaf.norm() > 0
-    assert torch.isfinite(d_codes).all() and (d_codes.norm(dim=-1) > 0).all()
+    assert d_codes is None

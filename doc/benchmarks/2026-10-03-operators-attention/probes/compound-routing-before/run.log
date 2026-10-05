@@ -1,0 +1,32 @@
+.....FF                                                                  [100%]
+=================================== FAILURES ===================================
+_________ test_compound_structural_face_reads_only_the_selected_cases __________
+
+    def test_compound_structural_face_reads_only_the_selected_cases():
+>       from Language import CompoundLayer, invoke_structural_face
+E       ImportError: cannot import name 'CompoundLayer' from 'Language' (/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py)
+
+test/test_compound_cases.py:88: ImportError
+______ test_compound_candidate_is_masked_when_no_native_case_is_available ______
+
+    def test_compound_candidate_is_masked_when_no_native_case_is_available():
+        from ReferenceContext import ReferenceBank, prepare_operands
+        from Language import Grammar
+        bank=_bank()
+        language=Grammar();rules=[]
+        language._fill_rule_list(rules,{'rule':'compound_O1 = compound.forward(compound_I1, compound_I2)'})
+>       refs=ReferenceBank(torch.full((2,1),-1),torch.zeros(2,1,2),torch.zeros(2,1,dtype=torch.bool),
+            torch.zeros(2,1,dtype=torch.bool),torch.zeros(2,2),torch.zeros(2,dtype=torch.bool),cases=bank)
+E       TypeError: ReferenceBank.__new__() got an unexpected keyword argument 'cases'
+
+test/test_compound_cases.py:107: TypeError
+=============================== warnings summary ===============================
+test/test_compound_cases.py::test_native_case_staging_uses_existing_sigma_and_allocates_nothing
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_compound_cases.py::test_compound_structural_face_reads_only_the_selected_cases
+FAILED test/test_compound_cases.py::test_compound_candidate_is_masked_when_no_native_case_is_available
+2 failed, 5 passed, 1 warning in 2.28s

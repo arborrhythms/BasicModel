@@ -1,0 +1,768 @@
+.......FFF....FFFFFF.....FFFFFFFFFFFF....                                [100%]
+=================================== FAILURES ===================================
+______ test_declared_generation_catalog_shares_one_optimizer_owner[False] ______
+test/test_generation_catalog.py:24: in test_declared_generation_catalog_shares_one_optimizer_owner
+    assert bool(language.generate_policy is not None) is output_loop
+E   assert True is False
+E    +  where True = bool(Linear(in_features=136, out_features=23, bias=True) is not None)
+E    +    where Linear(in_features=136, out_features=23, bias=True) = LanguageSpace(\n  (clause_scope): ClauseScope()\n  (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n).generate_policy
+_ test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state _
+test/test_generation_catalog.py:115: in test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state
+    first = catalog(("CS", "SS"))
+            ^^^^^^^^^^^^^^^^^^^^^
+test/test_generation_catalog.py:108: in catalog
+    assert torch.equal(torch.get_rng_state(), before)
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10a3a53a0>(tensor([0, 0, 0,  ..., 0, 0, 0], dtype=torch.uint8), tensor([0, 0, 0,  ..., 0, 0, 0], dtype=torch.uint8))
+E    +    where <built-in method equal of type object at 0x10a3a53a0> = torch.equal
+E    +    and   tensor([0, 0, 0,  ..., 0, 0, 0], dtype=torch.uint8) = <function get_rng_state at 0x1080259e0>()
+E    +      where <function get_rng_state at 0x1080259e0> = torch.get_rng_state
+_______________ test_normal_batch_logs_owned_optimizer_gradients _______________
+test/test_gradient_factorization.py:143: in test_normal_batch_logs_owned_optimizer_gradients
+    assert any(row['writers'] == ['output'] for row in report['parameters'])
+E   assert False
+E    +  where False = any(<generator object test_normal_batch_logs_owned_optimizer_gradients.<locals>.<genexpr> at 0x1392d6260>)
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+  [objective-ownership] {"active": 29, "conflicts": 0, "inactive": 116, "parameters": [{"elements": 12, "owner": "reconstruction", "parameter": "conceptualSpaces.0.concept_parts_layer.features.values", "writers": []}, {"elements": 512, "owner": "reconstruction", "parameter": "perceptualSpace._owned_bases.what.W", "writers": ["reconstruction"]}, {"elements": 2048, "owner": "reconstruction", "parameter": "perceptualSpace._percept_store.byte_fallback.byte_codebook", "writers": []}, {"elements": 9, "owner": "reconstruction", "parameter": "conceptualSpaces.0.layers.5.sigma.layer.W", "writers": []}, {"elements": 1, "owner": "reconstruction", "parameter": "conceptualSpaces.0.layers.5.sigma.layer.biasWeight", "writers": []}, {"elements": 9, "owner": "reconstruction", "parameter": "conceptualSpaces.1.layers.5.sigma.layer.W", "writers": []}, {"elements": 1, "owner": "reconstruction", "parameter": "conceptualSpaces.1.layers.5.sigma.layer.biasWeight", "writers": []}, {"elements": 9, "owner": "reconstruction", "parameter": "conceptualSpaces.2.layers.5.sigma.layer.W", "writers": []}, {"elements": 1, "owner": "reconstruction", "parameter": "conceptualSpaces.2.layers.5.sigma.layer.biasWeight", "writers": []}, {"elements": 9, "owner": "reconstruction", "parameter": "conceptualSpaces.3.layers.5.sigma.layer.W", "writers": []}, {"elements": 1, "owner": "reconstruction", "parameter": "conceptualSpaces.3.layers.5.sigma.layer.biasWeight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.0.begins_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.0.ends_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.0.atom_level", "writers": []}, {"elements": 64, "owner": "reconstruction", "parameter": "wholeSpaces.0._owned_bases.what.W", "writers": []}, {"elements": 2048, "owner": "reconstruction", "parameter": "wholeSpaces.0._owned_bases.what.primitive_properties.members", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.1.begins_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.1.ends_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.1.atom_level", "writers": []}, {"elements": 64, "owner": "reconstruction", "parameter": "wholeSpaces.1._owned_bases.what.W", "writers": []}, {"elements": 2048, "owner": "reconstruction", "parameter": "wholeSpaces.1._owned_bases.what.primitive_properties.members", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.2.begins_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.2.ends_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.2.atom_level", "writers": []}, {"elements": 64, "owner": "reconstruction", "parameter": "wholeSpaces.2._owned_bases.what.W", "writers": []}, {"elements": 2048, "owner": "reconstruction", "parameter": "wholeSpaces.2._owned_bases.what.primitive_properties.members", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.3.begins_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.3.ends_weight", "writers": []}, {"elements": 264, "owner": "reconstruction", "parameter": "wholeSpaces.3.atom_level", "writers": []}, {"elements": 64, "owner": "reconstruction", "parameter": "wholeSpaces.3._owned_bases.what.W", "writers": ["reconstruction"]}, {"elements": 2048, "owner": "reconstruction", "parameter": "wholeSpaces.3._owned_bases.what.primitive_properties.members", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.d", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_U", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.biasWeight", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._lex_gate.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._lex_gate.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.d", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._lex_gate.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._lex_gate.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.weight", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.bias", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.d", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._lex_gate.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._lex_gate.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._adv_edit.weight", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._adv_edit.bias", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_L", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.d", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_U", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.biasWeight", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._lex_gate.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._lex_gate.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_map.weight", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_map.bias", "writers": ["reconstruction"]}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_prior.0.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_prior.0.bias", "writers": []}, {"elements": 256, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_prior.2.weight", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "conceptualSpaces.3.syntacticLayer.layers.24.marker_prior.2.bias", "writers": []}, {"elements": 16, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.stop_anchor", "writers": []}, {"elements": 288, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor", "writers": []}, {"elements": 160, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.apply_anchor", "writers": []}, {"elements": 232, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.tool_embedding", "writers": ["reconstruction"]}, {"elements": 1984, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.weight", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.bias", "writers": ["reconstruction"]}, {"elements": 16, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.weight", "writers": ["reconstruction"]}, {"elements": 1, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.bias", "writers": ["reconstruction"]}, {"elements": 1472, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.operand_order.weight", "writers": ["reconstruction"]}, {"elements": 1472, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.copy_order.weight", "writers": ["reconstruction"]}, {"elements": 841, "owner": "reconstruction", "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.what_projection.weight", "writers": ["reconstruction"]}, {"elements": 304, "owner": "reconstruction", "parameter": "symbolSpace.subspace.category_embedding.weight", "writers": []}, {"elements": 1024, "owner": "reconstruction", "parameter": "symbolSpace.subspace.rule_predictor.0.weight", "writers": []}, {"elements": 32, "owner": "reconstruction", "parameter": "symbolSpace.subspace.rule_predictor.0.bias", "writers": []}, {"elements": 1856, "owner": "reconstruction", "parameter": "symbolSpace.subspace.rule_predictor.2.weight", "writers": []}, {"elements": 58, "owner": "reconstruction", "parameter": "symbolSpace.subspace.rule_predictor.2.bias", "writers": []}, {"elements": 448, "owner": "reconstruction", "parameter": "symbolSpace.languageSpace.generate_policy.weight", "writers": ["reconstruction"]}, {"elements": 28, "owner": "reconstruction", "parameter": "symbolSpace.languageSpace.generate_policy.bias", "writers": ["reconstruction"]}, {"elements": 1024, "owner": "reconstruction", "parameter": "conceptualSpaces.0.layers.3.W", "writers": ["reconstruction"]}, {"elements": 576, "owner": "reconstruction", "parameter": "conceptualSpaces.0.layers.4.coefficients", "writers": ["reconstruction"]}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.pi.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.pi.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.sigma.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.sigma.layer.biasWeight", "writers": []}, {"elements": 928, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.routing_proj.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.0.layers.0.routing_proj.bias", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.pi.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.pi.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.sigma.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.sigma.layer.biasWeight", "writers": []}, {"elements": 928, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.routing_proj.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.1.layers.0.routing_proj.bias", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.pi.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.pi.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.pi.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.pi.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.sigma.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.sigma.layer.biasWeight", "writers": []}, {"elements": 928, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.routing_proj.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.2.layers.0.routing_proj.bias", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.pi.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.pi.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.pi.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.pi.layer.biasWeight", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.sigma.layer.raw_L", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.sigma.layer.d", "writers": []}, {"elements": 256, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.sigma.layer.raw_U", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.sigma.layer.biasWeight", "writers": []}, {"elements": 928, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.routing_proj.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "conceptualSpaces.3.layers.0.routing_proj.bias", "writers": []}, {"elements": 3584, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2.predictor.0.weight", "writers": []}, {"elements": 32, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2.predictor.0.bias", "writers": []}, {"elements": 512, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2.predictor.2.weight", "writers": []}, {"elements": 16, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2.predictor.2.bias", "writers": []}, {"elements": 102, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_weight", "writers": []}, {"elements": 1, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_bias", "writers": []}, {"elements": 41616, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight", "writers": []}, {"elements": 102, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias", "writers": []}, {"elements": 5202, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight", "writers": []}, {"elements": 51, "owner": "expectation", "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace._readout_bias", "writers": []}, {"elements": 128, "owner": "output", "parameter": "inputSpace.outputSpace.layers.0.W", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace.layers.0.biasWeight", "writers": []}, {"elements": 128, "owner": "output", "parameter": "inputSpace.outputSpace.layers.1.W", "writers": []}, {"elements": 128, "owner": "output", "parameter": "inputSpace.outputSpace.layers.1.biasWeight", "writers": []}, {"elements": 464, "owner": "output", "parameter": "question_conditioners.16.weight", "writers": []}, {"elements": 256, "owner": "output", "parameter": "inputSpace.outputSpace.percept_adapter.raw_L", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace.percept_adapter.d", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace.percept_adapter.raw_U", "writers": []}, {"elements": 1, "owner": "output", "parameter": "inputSpace.outputSpace.percept_adapter.biasWeight", "writers": []}]}
+_ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False] __
+test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)
+E   assert ([tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]])] and False)
+E    +  where False = <built-in method equal of type object at 0x10a3a53a0>(tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]))
+E    +    where <built-in method equal of type object at 0x10a3a53a0> = torch.equal
+E    +    and   tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._ar_target_word_bytes
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True] __
+test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)
+E   assert ([tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]])] and False)
+E    +  where False = <built-in method equal of type object at 0x10a3a53a0>(tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]))
+E    +    where <built-in method equal of type object at 0x10a3a53a0> = torch.equal
+E    +    and   tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._ar_target_word_bytes
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False] __
+test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)
+E   assert ([tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]])] and False)
+E    +  where False = <built-in method equal of type object at 0x10a3a53a0>(tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]))
+E    +    where <built-in method equal of type object at 0x10a3a53a0> = torch.equal
+E    +    and   tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._ar_target_word_bytes
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True] ___
+test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)
+E   assert ([tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]])] and False)
+E    +  where False = <built-in method equal of type object at 0x10a3a53a0>(tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]))
+E    +    where <built-in method equal of type object at 0x10a3a53a0> = torch.equal
+E    +    and   tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._ar_target_word_bytes
+_________ test_normal_text_reconstruction_updates_the_grammar_chooser __________
+test/test_grammar_word_learning.py:167: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    assert model.output_in_loop and model.output_policy_weight > 0
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'output_policy_weight'
+_____ test_answer_path_operators_are_independently_owned_and_keep_learning _____
+test/test_joint_objectives.py:306: in test_answer_path_operators_are_independently_owned_and_keep_learning
+    assert not shared & {p.data_ptr() for p in answer_only}  # answer path exempt
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert not ({532366671872, 532366707712, 532371488768, 532371490048, 532371491328, 532371492608, ...} & {532371710464, 532374526976, 532685485312, 532688847360, 532688847616, 532688848064, ...})
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+___ test_native_checkpoint_restores_active_answer_widths[False-development] ____
+test/test_output_path_supervised.py:500: in test_native_checkpoint_restores_active_answer_widths
+    m.conceptualSpace.synthesis_layer.raw_L[1, 0] = 0.17
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'synthesis_layer'. Did you mean: 'synthesis_operator'?
+____ test_native_checkpoint_restores_active_answer_widths[True-development] ____
+test/test_output_path_supervised.py:500: in test_native_checkpoint_restores_active_answer_widths
+    m.conceptualSpace.synthesis_layer.raw_L[1, 0] = 0.17
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'synthesis_layer'. Did you mean: 'synthesis_operator'?
+______ test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents _______
+test/test_output_walk.py:71: in test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents
+    assert n_emitted.tolist() == [live + 1]
+E   assert [2] == [3]
+E     
+E     At index 0 diff: 2 != 3
+E     Use -v to get more diff
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+______________ test_walk_reports_truncation_when_work_is_pending _______________
+test/test_output_walk.py:99: in test_walk_reports_truncation_when_work_is_pending
+    assert bool(truncated.all()) and n_emitted.tolist() == [0]
+E   assert (False)
+E    +  where False = bool(tensor(False))
+E    +    where tensor(False) = <built-in method all of Tensor object at 0x145a46080>()
+E    +      where <built-in method all of Tensor object at 0x145a46080> = tensor([False]).all
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:5625 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+________________ test_walk_handles_mixed_output_lengths_per_row ________________
+test/test_output_walk.py:130: in test_walk_handles_mixed_output_lengths_per_row
+    assert n_emitted.tolist() == [live + 1, live]
+E   assert [2, 2] == [3, 2]
+E     
+E     At index 0 diff: 2 != 3
+E     Use -v to get more diff
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:5625 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_____ test_generate_policy_returns_sampled_action_credit_without_imitation _____
+test/test_output_walk.py:166: in test_generate_policy_returns_sampled_action_credit_without_imitation
+    assert cost.shape == (1,) and float(cost.detach()) > 0
+E   assert (torch.Size([1]) == (1,)
+E     
+E     Use -v to get more diff and 0.0 > 0)
+E    +  where 0.0 = float(tensor([0.]))
+E    +    where tensor([0.]) = <built-in method detach of Tensor object at 0x1477c9b30>()
+E    +      where <built-in method detach of Tensor object at 0x1477c9b30> = tensor([0.]).detach
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:5625 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+______ test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0] ______
+test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight
+    got = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13492: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13665: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14032: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8790: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10230: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8487: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8298: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23117: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21583: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21142: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20302: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:156: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20300: in train_trial
+    self._sentence_train_step(loss)
+bin/Models.py:19671: in _sentence_train_step
+    self._backward_training_loss(loss, self._sentence_amp_scaler)
+test/test_output_walk.py:281: in backward_probe
+    assert m._output_policy_cost is None
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'
+______ test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0] ______
+test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight
+    got = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13492: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13665: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14032: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8790: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10230: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8487: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8298: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23117: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21583: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21142: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20302: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:156: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20300: in train_trial
+    self._sentence_train_step(loss)
+bin/Models.py:19671: in _sentence_train_step
+    self._backward_training_loss(loss, self._sentence_amp_scaler)
+test/test_output_walk.py:281: in backward_probe
+    assert m._output_policy_cost is None
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'
+____ test_runbatch_does_not_train_generate_policy_without_supplied_answers _____
+test/test_output_walk.py:369: in test_runbatch_does_not_train_generate_policy_without_supplied_answers
+    learned = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13492: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13665: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14032: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8790: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10230: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8487: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8298: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23117: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21583: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21142: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20302: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:156: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20300: in train_trial
+    self._sentence_train_step(loss)
+bin/Models.py:19671: in _sentence_train_step
+    self._backward_training_loss(loss, self._sentence_amp_scaler)
+test/test_output_walk.py:281: in backward_probe
+    assert m._output_policy_cost is None
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'
+______ test_runbatch_generate_policy_masks_rows_without_supplied_answers _______
+test/test_output_walk.py:407: in test_runbatch_generate_policy_masks_rows_without_supplied_answers
+    got = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13492: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13665: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14032: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8790: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10230: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8487: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:154: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8298: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23117: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17224: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21583: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21142: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20302: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:156: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20300: in train_trial
+    self._sentence_train_step(loss)
+bin/Models.py:19671: in _sentence_train_step
+    self._backward_training_loss(loss, self._sentence_amp_scaler)
+test/test_output_walk.py:281: in backward_probe
+    assert m._output_policy_cost is None
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'
+___ test_output_rule_inventory_comes_from_generate_even_without_compose_rule ___
+test/test_output_walk.py:641: in test_output_rule_inventory_comes_from_generate_even_without_compose_rule
+    assert count.tolist() == [live + 1]
+E   assert [2] == [3]
+E     
+E     At index 0 diff: 2 != 3
+E     Use -v to get more diff
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:5625 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_____________ test_generate_walk_with_no_declared_rules_only_emits _____________
+test/test_output_walk.py:728: in test_generate_walk_with_no_declared_rules_only_emits
+    assert language.generate_policy.out_features == 1
+E   assert 23 == 1
+E    +  where 23 = Linear(in_features=136, out_features=23, bias=True).out_features
+E    +    where Linear(in_features=136, out_features=23, bias=True) = LanguageSpace(\n  (clause_scope): ClauseScope()\n  (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n).generate_policy
+=============================== warnings summary ===============================
+test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]
+FAILED test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state
+FAILED test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser
+FAILED test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-development]
+FAILED test/test_output_walk.py::test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents
+FAILED test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending
+FAILED test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row
+FAILED test/test_output_walk.py::test_generate_policy_returns_sampled_action_credit_without_imitation
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]
+FAILED test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers
+FAILED test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers
+FAILED test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule
+FAILED test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits
+21 failed, 20 passed, 1 warning in 19.19s

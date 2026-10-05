@@ -8,7 +8,7 @@ tails; isEqual/isPart/part/query; contextual bind), the ``unreduce``
 identity-stub sanction (revoked), and ``SyntacticLayer.reverse``'s
 silent non-invertible skip. Rules with REAL inverses are untouched
 (tense, lower's recommender/balanced split, union/difference's
-∅-decomposition, exist's identity -- whose forward IS the identity, so
+∅-decomposition, generic's identity -- whose forward IS the identity, so
 ``invertible`` flips True as the trivially-satisfied WRITE verdict).
 """
 
@@ -46,7 +46,7 @@ def test_non_invertible_rule_reverse_raises_with_inventory_row():
 
 def test_all_converted_stubs_raise():
     """The full converted set fails loud (no fabricated splits left)."""
-    from Language import (IsPartLayer, PartLayer, QueryPartLayer,
+    from Language import (IsPartLayer, PartLayer,
                           ContextualBindLayer, UnionLayer,
                           IntersectionLayer, ConjunctionLayer,
                           DisjunctionLayer)
@@ -81,7 +81,7 @@ def test_recommender_path_still_runs_with_basis():
 
 def test_real_inverses_untouched():
     """(b): rules with faithful reverses keep working."""
-    from Language import TenseLayer, ChunkLayer, ExistLayer
+    from Language import TenseLayer, ChunkLayer, GenericLayer
     from Spaces import event_when_encoding
     enc = event_when_encoding(4)
     head = torch.randn(1, 1, 4)
@@ -92,17 +92,17 @@ def test_real_inverses_untouched():
     p = torch.randn(2, 3, 8)
     left, right = fu.reverse(p)
     assert torch.equal(fu.compose(left, right), p)
-    ex = ExistLayer()
+    ex = GenericLayer()
     assert ex.invertible is True
     assert torch.equal(ex.reverse(p), p)      # identity forward -> exact
 
 
-def test_exist_identity_is_faithful():
-    """The exist wrapper's forward is the identity, so its identity
+def test_generic_identity_is_faithful():
+    """The generic marker's forward is the identity, so its identity
     reverse is EXACT -- the flag records it (the trivially-satisfied
     WRITE verdict of the Gate-S1 inventory)."""
-    from Language import ExistLayer
-    ex = ExistLayer()
+    from Language import GenericLayer
+    ex = GenericLayer()
     x = torch.randn(3, 4)
     assert torch.equal(ex.forward(x), x)
     assert torch.equal(ex.reverse(ex.forward(x)), x)

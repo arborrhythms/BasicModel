@@ -1,0 +1,17 @@
+{
+  "doc/benchmarks/2026-10-03-operators-attention/freeze_delivery.py": "cef75385355963364a488e388f87d37702ce3e17b6a39b7bb97e778cea655e57",
+  "doc/benchmarks/2026-10-03-operators-attention/review15_preference_probe.py": "fa99f23a749ff1f707f59bdb8d381d1d1fcc3aae38b100aec8f31ef1604e398d",
+  "doc/benchmarks/2026-10-03-operators-attention/review16-chooser-port-proposed.py": "dd31a379fd5ddb883cb2b79ab6375ab93419515162cb80eee1ab96805f7caa73",
+  "doc/benchmarks/2026-10-03-operators-attention/review16_campaign.py": "ebe6098a0939f9ee233e1104bacd8285eb56ca47844d604f10a1295a0371d6d2",
+  "doc/benchmarks/2026-10-03-operators-attention/review16_contracts.py": "9ac9f36ab7954023836f3010ae6c0057c37d4df89b209fb1c7248110712078ca",
+  "doc/benchmarks/2026-10-03-operators-attention/review16_gate_observer.py": "b2b36ae110cdf8fcb0cd9cfd1413e8fbc3585d431f3060c4762e97fbc55bda6a",
+  "doc/benchmarks/2026-10-03-operators-attention/review16_observer_probe.py": "f62574497a17d9bd9719f9a5a76586adce08205c25b685afa449591005c13658",
+  "doc/benchmarks/2026-10-03-operators-attention/review16_reader_plot.py": "2164bbd03352f4239af9f5c3f58ed1e1b4624e29410d687cf03ac94152e3b00e",
+  "doc/benchmarks/2026-10-03-operators-attention/review16_run_audit.py": "d2ec0d4c467af730a46d2858117178a037a9d1a7b60b21b229af6e738f136a4e",
+  "doc/benchmarks/2026-10-03-operators-attention/review16_score_probe.py": "10e6ad9bc80f6c047fc5bbb5637c4ff919ea73dd6f112de6e33b8d494a81ef3e",
+  "doc/benchmarks/2026-10-03-operators-attention/review16_summarize.py": "bb2a662e3285df4bf2b2ac415be33db4fe7d6f1d2f8a5b1a98c4b94f18d9e083",
+  "doc/benchmarks/2026-10-03-operators-attention/review16_test_observer.py": "693e0bded4a2077766e660217e2d205410f77622c2ab31e0b0e2b191df9dd72a",
+  "test/decoder_margin_probe.py": "98d360f5c623315717195a6775f7597ec4032fb907c6a365893bbc3d550e4f71",
+  "test/derivation_probe.py": "b8587086863ba2cae34df08aad06dfb1e5f0812c2def2bbe025893eeed582161",
+  "test/objective_conflicts_probe.py": "cb0c18ce3cdd70d5c059cddd1eda080ae22945e9368ad61f1ef88d950c41ee24"
+}

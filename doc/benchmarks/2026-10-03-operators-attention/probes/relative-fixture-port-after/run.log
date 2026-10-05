@@ -1,0 +1,51 @@
+F..............................................                          [100%]
+=================================== FAILURES ===================================
+______________________ test_grammar_marks_relative_rules _______________________
+
+    def test_grammar_marks_relative_rules():
+        """``is_relative_rule`` flags REL_T / part / isEqual rules and not
+        the absolute / structural ones."""
+        _reload_config()
+        g = Language.TheGrammar
+        g._ensure_configured()
+    
+        rel_id = _forward_relative_rule_id()
+        abs_id = _forward_absolute_rule_id()
+    
+        assert g.is_relative_rule(rel_id), (
+            f"forward REL_T rule {rel_id} "
+            f"({g.rules[rel_id].canonical!r}) not flagged relative")
+        assert not g.is_relative_rule(abs_id), (
+            f"absolute rule {abs_id} ({g.rules[abs_id].canonical!r}) "
+            f"wrongly flagged relative")
+    
+        # Grammar-driven primary signal: a relative start category exists. In
+        # complete.grammar that is {'REL_T'}; the role-collapsed default heads its
+        # relative rules with operator output roles (isEqual_O1 / isPart_O1).
+        rel_starts = g._relative_start_categories()
+        assert rel_starts, "expected a non-empty relative start-category set"
+        rel_set = g._relative_rule_id_set()
+        assert rel_set, "expected a non-empty relative rule set"
+        # Every relative-set rule carries a relative signal: it either heads a
+        # relative start category (REL_T in complete.grammar; isEqual_O1 / isPart_O1
+        # in the role-collapsed default, including the bare output projections) or
+        # is itself a relative operator.
+        for rid in rel_set:
+            r = g.rules[rid]
+            assert (r.lhs in rel_starts
+>                   or r.method_name in g._RELATIVE_OP_NAMES), (
+                                        ^^^^^^^^^^^^^^^^^^^^
+                f"rule {rid} in relative set without a relative signal: "
+                f"{r.canonical!r}")
+E           AttributeError: 'Grammar' object has no attribute '_RELATIVE_OP_NAMES'
+
+test/test_stm_relative_sentence_end_state.py:180: AttributeError
+=============================== warnings summary ===============================
+test/test_stm_relative_sentence_end_state.py::test_relative_mask_per_row_and_shared_shapes
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_stm_relative_sentence_end_state.py::test_grammar_marks_relative_rules
+1 failed, 46 passed, 1 warning in 2.94s

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_compound_cases.py"
+  ],
+  "pid": 92214,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 426181928,
+  "elapsed_seconds": 3.6048577499750536,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/compound-before/run.log"
+}

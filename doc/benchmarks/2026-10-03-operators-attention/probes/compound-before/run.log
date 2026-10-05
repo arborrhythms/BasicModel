@@ -1,0 +1,44 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+______ test_modifier_selects_the_heads_cases_and_refolds_only_those_cases ______
+
+    def test_modifier_selects_the_heads_cases_and_refolds_only_those_cases():
+>       from CaseSelection import select_cases, fold_cases
+E       ModuleNotFoundError: No module named 'CaseSelection'
+
+test/test_compound_cases.py:22: ModuleNotFoundError
+______ test_case_selection_preserves_negative_evidence_and_silent_absence ______
+
+    def test_case_selection_preserves_negative_evidence_and_silent_absence():
+>       from CaseSelection import select_cases, fold_cases
+E       ModuleNotFoundError: No module named 'CaseSelection'
+
+test/test_compound_cases.py:34: ModuleNotFoundError
+_________ test_case_fold_keeps_existing_code_and_membership_gradients __________
+
+    def test_case_fold_keeps_existing_code_and_membership_gradients():
+>       from CaseSelection import select_cases, fold_cases
+E       ModuleNotFoundError: No module named 'CaseSelection'
+
+test/test_compound_cases.py:44: ModuleNotFoundError
+____________ test_case_selector_and_fold_compile_as_one_tensor_body ____________
+
+    def test_case_selector_and_fold_compile_as_one_tensor_body():
+>       from CaseSelection import select_cases, fold_cases
+E       ModuleNotFoundError: No module named 'CaseSelection'
+
+test/test_compound_cases.py:55: ModuleNotFoundError
+______ test_native_case_staging_uses_existing_sigma_and_allocates_nothing ______
+
+    def test_native_case_staging_uses_existing_sigma_and_allocates_nothing():
+>       from CaseSelection import stage_case_bank, select_cases, fold_cases
+E       ModuleNotFoundError: No module named 'CaseSelection'
+
+test/test_compound_cases.py:67: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED test/test_compound_cases.py::test_modifier_selects_the_heads_cases_and_refolds_only_those_cases
+FAILED test/test_compound_cases.py::test_case_selection_preserves_negative_evidence_and_silent_absence
+FAILED test/test_compound_cases.py::test_case_fold_keeps_existing_code_and_membership_gradients
+FAILED test/test_compound_cases.py::test_case_selector_and_fold_compile_as_one_tensor_body
+FAILED test/test_compound_cases.py::test_native_case_staging_uses_existing_sigma_and_allocates_nothing
+5 failed in 1.99s

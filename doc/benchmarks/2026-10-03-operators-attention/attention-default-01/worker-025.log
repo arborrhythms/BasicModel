@@ -1,0 +1,204 @@
+.........F.F....F.............ss..ss.ss................................. [ 54%]
+......................................FFFFFFx..............              [100%]
+=================================== FAILURES ===================================
+__________ test_symbolic_space_reads_discontinuity_lambda_from_config __________
+test/test_smoothing_regularizer.py:109: in test_symbolic_space_reads_discontinuity_lambda_from_config
+    init_config(path=path)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmph2ul88nr.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmph2ul88nr.xml:4: element subsymbolicOrder: Schemas validity error : Element 'subsymbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmph2ul88nr.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+________ test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners ________
+test/test_space_carrier_bridge.py:145: in test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+    original, *_ = recon_bench._build_model(config)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/recon_bench.py:128: in _build_model
+    model, _ = BaseModel.from_config(config_path, data=TheData)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+_ test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-True-True] _
+test/test_sparse_compile_boundary.py:195: in test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook
+    assert len(compile_calls) == 2
+E   assert 0 == 2
+E    +  where 0 = len([])
+__________________ test_forward_produces_single_S_and_targets __________________
+test/test_stm_recon_from_cleared_cache.py:184: in test_forward_produces_single_S_and_targets
+    model = _make_serial_model()
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpsp8p5lys.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpsp8p5lys.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpsp8p5lys.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+___________ test_cache_clears_and_chart_generate_rederives_from_stm ____________
+test/test_stm_recon_from_cleared_cache.py:200: in test_cache_clears_and_chart_generate_rederives_from_stm
+    model = _make_serial_model()
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpbbecrpym.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpbbecrpym.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpbbecrpym.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________ test_reverse_from_cleared_cache_is_drivable_and_decodable ___________
+test/test_stm_recon_from_cleared_cache.py:237: in test_reverse_from_cleared_cache_is_drivable_and_decodable
+    model = _make_serial_model()
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpc5cwm8vc.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpc5cwm8vc.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpc5cwm8vc.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+____________ test_reverse_body_preserves_finiteness_on_finite_seed _____________
+test/test_stm_recon_from_cleared_cache.py:256: in test_reverse_body_preserves_finiteness_on_finite_seed
+    model = _make_serial_model()
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpqteihbjy.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpqteihbjy.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpqteihbjy.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______________________ test_forward_stm_idea_is_finite ________________________
+test/test_stm_recon_from_cleared_cache.py:288: in test_forward_stm_idea_is_finite
+    model = _make_serial_model()
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpa6f7dbm0.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpa6f7dbm0.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpa6f7dbm0.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_________ test_reverse_perceptual_preserves_finiteness_on_finite_seed __________
+test/test_stm_recon_from_cleared_cache.py:323: in test_reverse_perceptual_preserves_finiteness_on_finite_seed
+    model = _make_serial_model()
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpie8op6_3.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpie8op6_3.xml:8: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpie8op6_3.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+=============================== warnings summary ===============================
+test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:15877: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 4 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:15877: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_sparse_layer.py::test_spmm_kernel_parity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/SparseCsrTensorImpl.cpp:51.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_smoothing_regularizer.py::test_symbolic_space_reads_discontinuity_lambda_from_config
+FAILED test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+FAILED test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-True-True]
+FAILED test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets
+FAILED test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm
+FAILED test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable
+FAILED test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed
+FAILED test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite
+FAILED test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed
+9 failed, 115 passed, 6 skipped, 1 xfailed, 5 warnings in 40.93s

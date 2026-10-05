@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py"
+  ],
+  "pid": 94952,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 659425248,
+  "elapsed_seconds": 8.014984292007284,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/normal-attention-before/run.log"
+}

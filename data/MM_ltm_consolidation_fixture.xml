@@ -9,11 +9,11 @@
        XML->LTM append mechanism is exercised at load (provision_ltm). Do not
        consume from production code. -->
   <architecture>
-    <subsymbolicOrder>3</subsymbolicOrder>
+    <bindingDepth>3</bindingDepth>
     <data>
       <dataType>embedding</dataType>
     </data>
-    <symbolicOrder>0</symbolicOrder>
+    <conceptLayers>1</conceptLayers>
     <ltmConsolidation>true</ltmConsolidation>
     <truthSet>
       <truth text="cat" trust="0.9"/>
@@ -77,10 +77,17 @@
     <language>
       <start>S</start>
       <grammar>
-        <S>S = not(S)</S>
-        <S>S = intersection(S, S)</S>
-        <S>S = union(S, S)</S>
-      </grammar>
+      <compose>
+        <rule operands="field">F = divide.forward(F)</rule>
+        <rule operands="field">F = descend.forward(F)</rule>
+        <rule operands="field">F = gloss.forward(F)</rule>
+        <rule operands="field">F = and.forward(F)</rule>
+        <rule operands="field">F = or.forward(F)</rule>
+        <rule>S = not(S)</rule>
+        <rule>S = intersection(S, S)</rule>
+        <rule>S = union(S, S)</rule>
+      </compose>
+    </grammar>
     </language>
   </SymbolSpace>
 

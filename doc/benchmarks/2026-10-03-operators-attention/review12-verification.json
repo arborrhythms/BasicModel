@@ -1,0 +1,13 @@
+{
+  "source_matched": true,
+  "measurement_harness_matched": true,
+  "trainings": 30,
+  "retries": 0,
+  "shared_xor_trainings": 10,
+  "named_final_xor_sentences": 40,
+  "named_final_sum_sentences": 40,
+  "named_compose_steps_in_audit": 3204,
+  "ownership_conflicts": 0,
+  "guards_unchanged": true,
+  "sum_read_first": true
+}

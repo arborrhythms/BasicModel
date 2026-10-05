@@ -1,0 +1,338 @@
+........................................................................ [ 33%]
+...................................sss.s.sssssssFs.sFsFs................ [ 67%]
+.................F.F.F.F.F.FFFF....F.F...F...s.sss..................     [100%]
+=================================== FAILURES ===================================
+___ test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row ____
+test/test_output_path_supervised.py:378: in test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+    assert got["changed"][got["active_index"]]
+E   assert False
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+___ test_native_checkpoint_restores_active_answer_widths[False-development] ____
+test/test_output_path_supervised.py:500: in test_native_checkpoint_restores_active_answer_widths
+    m.conceptualSpace.synthesis_layer.raw_L[1, 0] = 0.17
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'synthesis_layer'. Did you mean: 'synthesis_operator'?
+____ test_native_checkpoint_restores_active_answer_widths[True-development] ____
+test/test_output_path_supervised.py:500: in test_native_checkpoint_restores_active_answer_widths
+    m.conceptualSpace.synthesis_layer.raw_L[1, 0] = 0.17
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute 'synthesis_layer'. Did you mean: 'synthesis_operator'?
+______ test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents _______
+test/test_output_walk.py:71: in test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents
+    assert n_emitted.tolist() == [live + 1]
+E   assert [2] == [3]
+E     
+E     At index 0 diff: 2 != 3
+E     Use -v to get more diff
+______________ test_walk_reports_truncation_when_work_is_pending _______________
+test/test_output_walk.py:99: in test_walk_reports_truncation_when_work_is_pending
+    assert bool(truncated.all()) and n_emitted.tolist() == [0]
+E   assert (False)
+E    +  where False = bool(tensor(False))
+E    +    where tensor(False) = <built-in method all of Tensor object at 0x143c2f0c0>()
+E    +      where <built-in method all of Tensor object at 0x143c2f0c0> = tensor([False]).all
+________________ test_walk_handles_mixed_output_lengths_per_row ________________
+test/test_output_walk.py:130: in test_walk_handles_mixed_output_lengths_per_row
+    assert n_emitted.tolist() == [live + 1, live]
+E   assert [2, 2] == [3, 2]
+E     
+E     At index 0 diff: 2 != 3
+E     Use -v to get more diff
+_____ test_generate_policy_returns_sampled_action_credit_without_imitation _____
+test/test_output_walk.py:166: in test_generate_policy_returns_sampled_action_credit_without_imitation
+    assert cost.shape == (1,) and float(cost.detach()) > 0
+E   assert (torch.Size([1]) == (1,)
+E     
+E     Use -v to get more diff and 0.0 > 0)
+E    +  where 0.0 = float(tensor([0.]))
+E    +    where tensor([0.]) = <built-in method detach of Tensor object at 0x144e7d4a0>()
+E    +      where <built-in method detach of Tensor object at 0x144e7d4a0> = tensor([0.]).detach
+_ test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk _
+test/test_output_walk.py:225: in test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk
+    assert torch.allclose(idea, end)                        # zero-initialised conditioning
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert False
+E    +  where False = <built-in method allclose of type object at 0x10a2a53a0>(tensor([[[ 0.0000e+00,  0.0000e+00, -1.4438e-01,  0.0000e+00, -1.2760e-01,\n           1.5534e-01, -1.0203e-01, -1.2767...e-02, -5.6830e-02,\n           1.9022e-02,  1.1620e-02, -1.5104e-02, -4.1964e-03,  6.4967e-02,\n          -9.7936e-02]]]), tensor([[[ 0.0000e+00,  0.0000e+00, -1.4438e-01,  0.0000e+00, -1.2760e-01,\n           1.5534e-01, -1.0203e-01, -1.2767...e-01,  1.2695e-01,\n           2.1939e-02, -4.9517e-02,  1.6937e-01,  1.0494e-02, -1.5826e-01,\n          -5.4191e-02]]]))
+E    +    where <built-in method allclose of type object at 0x10a2a53a0> = torch.allclose
+______ test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0] ______
+test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight
+    got = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13585: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13712: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14079: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8776: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10258: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8461: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8272: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22976: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17186: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21525: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21084: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20227: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:156: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20225: in train_trial
+    self._sentence_train_step(loss)
+bin/Models.py:19551: in _sentence_train_step
+    self._backward_training_loss(loss, self._sentence_amp_scaler)
+test/test_output_walk.py:281: in backward_probe
+    assert m._output_policy_cost is None
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'
+______ test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0] ______
+test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight
+    got = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13585: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13712: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14079: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8776: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10258: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8461: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8272: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22976: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17186: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21525: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21084: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20227: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:156: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20225: in train_trial
+    self._sentence_train_step(loss)
+bin/Models.py:19551: in _sentence_train_step
+    self._backward_training_loss(loss, self._sentence_amp_scaler)
+test/test_output_walk.py:281: in backward_probe
+    assert m._output_policy_cost is None
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'
+____ test_runbatch_does_not_train_generate_policy_without_supplied_answers _____
+test/test_output_walk.py:369: in test_runbatch_does_not_train_generate_policy_without_supplied_answers
+    learned = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13585: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13712: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14079: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8776: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10258: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8461: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8272: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22976: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17186: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21525: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21084: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20227: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:156: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20225: in train_trial
+    self._sentence_train_step(loss)
+bin/Models.py:19551: in _sentence_train_step
+    self._backward_training_loss(loss, self._sentence_amp_scaler)
+test/test_output_walk.py:281: in backward_probe
+    assert m._output_policy_cost is None
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'
+______ test_runbatch_generate_policy_masks_rows_without_supplied_answers _______
+test/test_output_walk.py:407: in test_runbatch_generate_policy_masks_rows_without_supplied_answers
+    got = _policy_training_probe(
+test/test_output_walk.py:312: in _policy_training_probe
+    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
+bin/Models.py:13585: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13712: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14079: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8776: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10258: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8461: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8272: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22976: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17186: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21525: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21084: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20227: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:156: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20225: in train_trial
+    self._sentence_train_step(loss)
+bin/Models.py:19551: in _sentence_train_step
+    self._backward_training_loss(loss, self._sentence_amp_scaler)
+test/test_output_walk.py:281: in backward_probe
+    assert m._output_policy_cost is None
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'
+________________ test_materialised_idea_follows_the_symbol_rows ________________
+test/test_output_walk.py:551: in test_materialised_idea_follows_the_symbol_rows
+    assert torch.allclose(idea0, end, atol=1e-4), float((idea0 - end).abs().max())
+E   AssertionError: 0.2753147780895233
+E   assert False
+E    +  where False = <built-in method allclose of type object at 0x10a2a53a0>(tensor([[[ 0.0000e+00,  0.0000e+00, -1.4438e-01,  0.0000e+00, -1.2760e-01,\n           1.5534e-01, -1.0203e-01, -1.2767...e-02, -5.6830e-02,\n           1.9022e-02,  1.1620e-02, -1.5104e-02, -4.1964e-03,  6.4967e-02,\n          -9.7936e-02]]]), tensor([[[ 0.0000e+00,  0.0000e+00, -1.4438e-01,  0.0000e+00, -1.2760e-01,\n           1.5534e-01, -1.0203e-01, -1.2767...e-01,  1.2695e-01,\n           2.1939e-02, -4.9517e-02,  1.6937e-01,  1.0494e-02, -1.5826e-01,\n          -5.4191e-02]]]), atol=0.0001)
+E    +    where <built-in method allclose of type object at 0x10a2a53a0> = torch.allclose
+___ test_output_rule_inventory_comes_from_generate_even_without_compose_rule ___
+test/test_output_walk.py:641: in test_output_rule_inventory_comes_from_generate_even_without_compose_rule
+    assert count.tolist() == [live + 1]
+E   assert [2] == [3]
+E     
+E     At index 0 diff: 2 != 3
+E     Use -v to get more diff
+_____________ test_generate_walk_with_no_declared_rules_only_emits _____________
+test/test_output_walk.py:728: in test_generate_walk_with_no_declared_rules_only_emits
+    assert language.generate_policy.out_features == 1
+E   assert 22 == 1
+E    +  where 22 = Linear(in_features=136, out_features=22, bias=True).out_features
+E    +    where Linear(in_features=136, out_features=22, bias=True) = LanguageSpace(\n  (clause_scope): ClauseScope()\n  (generate_policy): Linear(in_features=136, out_features=22, bias=True)\n).generate_policy
+=============================== warnings summary ===============================
+test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7130: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpqs1bdgt0/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7130: RuntimeWarning: reconstruction_identity [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1581/cfg0/MM_xor_synth.xml]: input reconstruction is an exact unmasked identity: zero cost carries no learning signal (mask or degrade the input to create one)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7130: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpukqy1zju/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-development]
+FAILED test/test_output_walk.py::test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents
+FAILED test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending
+FAILED test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row
+FAILED test/test_output_walk.py::test_generate_policy_returns_sampled_action_credit_without_imitation
+FAILED test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]
+FAILED test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers
+FAILED test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers
+FAILED test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows
+FAILED test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule
+FAILED test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits
+15 failed, 178 passed, 19 skipped, 5 warnings in 55.62s

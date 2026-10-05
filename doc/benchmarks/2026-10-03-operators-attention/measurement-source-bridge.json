@@ -1,0 +1,7 @@
+{
+  "changed_files_since_measurement": [
+    "test/test_stm_relative_sentence_end_state.py",
+    "test/test_thought_operation_catalog.py"
+  ],
+  "production_and_gate_sources_unchanged": true
+}

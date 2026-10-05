@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/native_config_probe.py"
+  ],
+  "pid": 10784,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 4285435984,
+  "elapsed_seconds": 11.385258291003993,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/native-global-review/run.log"
+}

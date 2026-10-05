@@ -1,0 +1,134 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+__ test_departure_can_choose_below_second_rank_and_preserves_credit[compose] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x120da2a20>
+kind = 'compose'
+
+    @pytest.mark.parametrize('kind', ['compose', 'input'])
+    def test_departure_can_choose_below_second_rank_and_preserves_credit(monkeypatch, kind):
+        from Language import OperationSelectionLayer
+        chooser = OperationSelectionLayer(d_model=2)
+        logits = torch.tensor([[3., 2., 1., -torch.inf], [3., 2., 1., -torch.inf]], requires_grad=True)
+        monkeypatch.setattr(torch, 'rand', high_draw)
+        action, probability, legal = chooser.select_logits(logits, structural=None,
+            masked_action=torch.tensor([0, -1]), replay_action=torch.tensor([-1, -1]))
+>       assert action.tolist() == [2, 0]
+E       assert [1, 0] == [2, 0]
+E         
+E         At index 0 diff: 1 != 2
+E         Use -v to get more diff
+
+test/test_review10_contracts.py:23: AssertionError
+___ test_departure_can_choose_below_second_rank_and_preserves_credit[input] ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x120fceae0>
+kind = 'input'
+
+    @pytest.mark.parametrize('kind', ['compose', 'input'])
+    def test_departure_can_choose_below_second_rank_and_preserves_credit(monkeypatch, kind):
+        from Language import OperationSelectionLayer
+        chooser = OperationSelectionLayer(d_model=2)
+        logits = torch.tensor([[3., 2., 1., -torch.inf], [3., 2., 1., -torch.inf]], requires_grad=True)
+        monkeypatch.setattr(torch, 'rand', high_draw)
+        action, probability, legal = chooser.select_logits(logits, structural=None,
+            masked_action=torch.tensor([0, -1]), replay_action=torch.tensor([-1, -1]))
+>       assert action.tolist() == [2, 0]
+E       assert [1, 0] == [2, 0]
+E         
+E         At index 0 diff: 1 != 2
+E         Use -v to get more diff
+
+test/test_review10_contracts.py:23: AssertionError
+__ test_thought_departure_samples_remaining_actions_and_replay_wins[thought] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x120fcfb30>
+kind = 'thought'
+
+    @pytest.mark.parametrize('kind', ['thought', 'anticipation'])
+    def test_thought_departure_samples_remaining_actions_and_replay_wins(monkeypatch, kind):
+        from Language import SelectedThoughtChooser
+        chooser = SelectedThoughtChooser(context_dim=2)
+        logits = torch.tensor([3., 2., 1., -torch.inf], requires_grad=True)
+        monkeypatch.setattr(chooser, 'logits', lambda *a: logits)
+        monkeypatch.setattr(torch, 'rand', high_draw)
+        selected, credit = chooser.choose(torch.ones(4, 2), torch.zeros(4), excluded=0)
+>       assert selected == 2
+E       assert 1 == 2
+
+test/test_review10_contracts.py:38: AssertionError
+_ test_thought_departure_samples_remaining_actions_and_replay_wins[anticipation] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x120fcf890>
+kind = 'anticipation'
+
+    @pytest.mark.parametrize('kind', ['thought', 'anticipation'])
+    def test_thought_departure_samples_remaining_actions_and_replay_wins(monkeypatch, kind):
+        from Language import SelectedThoughtChooser
+        chooser = SelectedThoughtChooser(context_dim=2)
+        logits = torch.tensor([3., 2., 1., -torch.inf], requires_grad=True)
+        monkeypatch.setattr(chooser, 'logits', lambda *a: logits)
+        monkeypatch.setattr(torch, 'rand', high_draw)
+        selected, credit = chooser.choose(torch.ones(4, 2), torch.zeros(4), excluded=0)
+>       assert selected == 2
+E       assert 1 == 2
+
+test/test_review10_contracts.py:38: AssertionError
+______ test_decoder_departure_samples_lower_rank_and_keeps_greedy_suffix _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x121015d00>
+
+    def test_decoder_departure_samples_lower_rank_and_keeps_greedy_suffix(monkeypatch):
+        from test_decoder_exploration import decoder
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _ = decoder()
+        monkeypatch.setattr(torch, 'rand', high_draw)
+        event = torch.tensor([[[1., 2.], [0., 0.], [0., 0.]]])
+        greedy = model._output_generate_walk(event, 4, basis=event, return_candidates=True)
+        explored = model._output_generate_walk(event, 4, basis=event,
+            exploit_actions=greedy[4], departure=torch.tensor([0]), return_trace=True)
+        assert greedy[4].tolist() == [[2, -1, -1, -1]]
+>       assert explored[4].tolist() == [[1, 2, -1, -1]]
+E       assert [[0, 2, 2, -1]] == [[1, 2, -1, -1]]
+E         
+E         At index 0 diff: [0, 2, 2, -1] != [1, 2, -1, -1]
+E         Use -v to get more diff
+
+test/test_review10_contracts.py:55: AssertionError
+_____ test_frozen_interpretation_reads_known_without_learning_or_reserving _____
+
+    def test_frozen_interpretation_reads_known_without_learning_or_reserving():
+        from test_word_interpretation import _operator
+        from Spaces import _concept_alloc_of
+        from eval_nanochat_grammar import frozen_online_learning
+        cs, interpret = _operator()
+        word = interpret.lookup_word([7], [1], form='known')
+        obj = interpret.forward(word)
+        pending = interpret.lookup_word([8], [], form='pending')
+        before = deepcopy(cs.definitions.description(word))
+        identities = dict(_concept_alloc_of(cs).placement)
+        definitions = len(cs.definitions._store())
+        reservations = deepcopy(interpret._pending)
+        model = SimpleNamespace(conceptualSpaces=[cs])
+        with frozen_online_learning(model):
+>           assert interpret.lookup_word([9], [], form='novel') is None
+E           AssertionError: assert 4 is None
+E            +  where 4 = lookup_word([9], [], form='novel')
+E            +    where lookup_word = InterpretLayer().lookup_word
+
+test/test_review10_contracts.py:72: AssertionError
+=============================== warnings summary ===============================
+test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[compose]
+FAILED test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[input]
+FAILED test/test_review10_contracts.py::test_thought_departure_samples_remaining_actions_and_replay_wins[thought]
+FAILED test/test_review10_contracts.py::test_thought_departure_samples_remaining_actions_and_replay_wins[anticipation]
+FAILED test/test_review10_contracts.py::test_decoder_departure_samples_lower_rank_and_keeps_greedy_suffix
+FAILED test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving
+6 failed, 1 warning in 2.02s

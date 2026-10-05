@@ -1,0 +1,361 @@
+......FFFFFF.F.........                                                  [100%]
+=================================== FAILURES ===================================
+_____ test_code_is_signed_sum_of_lookup_locations_without_a_word_parameter _____
+
+    def test_code_is_signed_sum_of_lookup_locations_without_a_word_parameter():
+>       cs, cb, alloc = fixture()
+                        ^^^^^^^^^
+
+test/test_derived_concept_codes.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_derived_concept_codes.py:15: in fixture
+    cb.enable_derived_codes(cs, basis_capacity=16)
+bin/Spaces.py:2456: in enable_derived_codes
+    self.mereology = MereologicalCodes(owner, initial, basis_capacity,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes()
+owner = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+initial = tensor([[0.0000, 0.0100, 0.0200],
+        [0.0300, 0.0400, 0.0500],
+        [0.0600, 0.0700, 0.0800],
+        [0.0900,...0.8500, 0.8600],
+        [0.8700, 0.8800, 0.8900],
+        [0.9000, 0.9100, 0.9200],
+        [0.9300, 0.9400, 0.9500]])
+basis_capacity = 16, percept_width = 8, percept_event_width = 16
+
+    def __init__(self, owner, initial, basis_capacity, *, percept_width,
+                 percept_event_width):
+        super().__init__()
+        object.__setattr__(self, 'owner', owner)
+        capacity = min(int(basis_capacity), len(initial))
+        self.percept_width = int(percept_width)
+        self.percept_event_width = int(percept_event_width)
+        self.code_width = int(initial.shape[-1])
+        if not 0 < self.percept_width <= self.percept_event_width <= self.code_width:
+>           raise ValueError('conceptual code must contain the native perceptual space')
+E           ValueError: conceptual code must contain the native perceptual space
+
+bin/MereologicalCodes.py:22: ValueError
+_ test_shared_percept_is_one_lookup_and_group_members_are_independent_locations _
+
+    def test_shared_percept_is_one_lookup_and_group_members_are_independent_locations():
+>       cs, cb, _ = fixture()
+                    ^^^^^^^^^
+
+test/test_derived_concept_codes.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_derived_concept_codes.py:15: in fixture
+    cb.enable_derived_codes(cs, basis_capacity=16)
+bin/Spaces.py:2456: in enable_derived_codes
+    self.mereology = MereologicalCodes(owner, initial, basis_capacity,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes()
+owner = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+initial = tensor([[0.0000, 0.0100, 0.0200],
+        [0.0300, 0.0400, 0.0500],
+        [0.0600, 0.0700, 0.0800],
+        [0.0900,...0.8500, 0.8600],
+        [0.8700, 0.8800, 0.8900],
+        [0.9000, 0.9100, 0.9200],
+        [0.9300, 0.9400, 0.9500]])
+basis_capacity = 16, percept_width = 8, percept_event_width = 16
+
+    def __init__(self, owner, initial, basis_capacity, *, percept_width,
+                 percept_event_width):
+        super().__init__()
+        object.__setattr__(self, 'owner', owner)
+        capacity = min(int(basis_capacity), len(initial))
+        self.percept_width = int(percept_width)
+        self.percept_event_width = int(percept_event_width)
+        self.code_width = int(initial.shape[-1])
+        if not 0 < self.percept_width <= self.percept_event_width <= self.code_width:
+>           raise ValueError('conceptual code must contain the native perceptual space')
+E           ValueError: conceptual code must contain the native perceptual space
+
+bin/MereologicalCodes.py:22: ValueError
+__ test_occurrence_context_uses_recency_mean_and_evidence_against_form_prior ___
+
+    def test_occurrence_context_uses_recency_mean_and_evidence_against_form_prior():
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+>       cs, cb, _ = fixture()
+                    ^^^^^^^^^
+
+test/test_derived_concept_codes.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_derived_concept_codes.py:15: in fixture
+    cb.enable_derived_codes(cs, basis_capacity=16)
+bin/Spaces.py:2456: in enable_derived_codes
+    self.mereology = MereologicalCodes(owner, initial, basis_capacity,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes()
+owner = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+initial = tensor([[0.0000, 0.0100, 0.0200],
+        [0.0300, 0.0400, 0.0500],
+        [0.0600, 0.0700, 0.0800],
+        [0.0900,...0.8500, 0.8600],
+        [0.8700, 0.8800, 0.8900],
+        [0.9000, 0.9100, 0.9200],
+        [0.9300, 0.9400, 0.9500]])
+basis_capacity = 16, percept_width = 8, percept_event_width = 16
+
+    def __init__(self, owner, initial, basis_capacity, *, percept_width,
+                 percept_event_width):
+        super().__init__()
+        object.__setattr__(self, 'owner', owner)
+        capacity = min(int(basis_capacity), len(initial))
+        self.percept_width = int(percept_width)
+        self.percept_event_width = int(percept_event_width)
+        self.code_width = int(initial.shape[-1])
+        if not 0 < self.percept_width <= self.percept_event_width <= self.code_width:
+>           raise ValueError('conceptual code must contain the native perceptual space')
+E           ValueError: conceptual code must contain the native perceptual space
+
+bin/MereologicalCodes.py:22: ValueError
+_______ test_rows_conduct_to_other_words_without_crossing_batch_streams ________
+
+    def test_rows_conduct_to_other_words_without_crossing_batch_streams():
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+>       cs, cb, _ = fixture()
+                    ^^^^^^^^^
+
+test/test_derived_concept_codes.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_derived_concept_codes.py:15: in fixture
+    cb.enable_derived_codes(cs, basis_capacity=16)
+bin/Spaces.py:2456: in enable_derived_codes
+    self.mereology = MereologicalCodes(owner, initial, basis_capacity,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes()
+owner = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+initial = tensor([[0.0000, 0.0100, 0.0200],
+        [0.0300, 0.0400, 0.0500],
+        [0.0600, 0.0700, 0.0800],
+        [0.0900,...0.8500, 0.8600],
+        [0.8700, 0.8800, 0.8900],
+        [0.9000, 0.9100, 0.9200],
+        [0.9300, 0.9400, 0.9500]])
+basis_capacity = 16, percept_width = 8, percept_event_width = 16
+
+    def __init__(self, owner, initial, basis_capacity, *, percept_width,
+                 percept_event_width):
+        super().__init__()
+        object.__setattr__(self, 'owner', owner)
+        capacity = min(int(basis_capacity), len(initial))
+        self.percept_width = int(percept_width)
+        self.percept_event_width = int(percept_event_width)
+        self.code_width = int(initial.shape[-1])
+        if not 0 < self.percept_width <= self.percept_event_width <= self.code_width:
+>           raise ValueError('conceptual code must contain the native perceptual space')
+E           ValueError: conceptual code must contain the native perceptual space
+
+bin/MereologicalCodes.py:22: ValueError
+_______________ test_frozen_lookup_does_not_admit_basis_concepts _______________
+
+    def test_frozen_lookup_does_not_admit_basis_concepts():
+>       cs, cb, alloc = fixture()
+                        ^^^^^^^^^
+
+test/test_derived_concept_codes.py:105: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_derived_concept_codes.py:15: in fixture
+    cb.enable_derived_codes(cs, basis_capacity=16)
+bin/Spaces.py:2456: in enable_derived_codes
+    self.mereology = MereologicalCodes(owner, initial, basis_capacity,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes()
+owner = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+initial = tensor([[0.0000, 0.0100, 0.0200],
+        [0.0300, 0.0400, 0.0500],
+        [0.0600, 0.0700, 0.0800],
+        [0.0900,...0.8500, 0.8600],
+        [0.8700, 0.8800, 0.8900],
+        [0.9000, 0.9100, 0.9200],
+        [0.9300, 0.9400, 0.9500]])
+basis_capacity = 16, percept_width = 8, percept_event_width = 16
+
+    def __init__(self, owner, initial, basis_capacity, *, percept_width,
+                 percept_event_width):
+        super().__init__()
+        object.__setattr__(self, 'owner', owner)
+        capacity = min(int(basis_capacity), len(initial))
+        self.percept_width = int(percept_width)
+        self.percept_event_width = int(percept_event_width)
+        self.code_width = int(initial.shape[-1])
+        if not 0 < self.percept_width <= self.percept_event_width <= self.code_width:
+>           raise ValueError('conceptual code must contain the native perceptual space')
+E           ValueError: conceptual code must contain the native perceptual space
+
+bin/MereologicalCodes.py:22: ValueError
+_ test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis __
+
+    def test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis():
+        from test_mm_xor import _fresh_model
+        model, _, _ = _fresh_model('data/XOR_grammar.xml')
+        model.train()
+        model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
+        owner = model._concept_owner()
+        cb = owner.similarity_codebook
+        assert not isinstance(cb.W, nn.Parameter)
+        assert cb.mereology.entries()
+        rows = model.inputSpace._ar_grammar_object_rows
+        atoms = model.inputSpace._ar_grammar_object_atoms
+        torch.testing.assert_close(atoms[rows>=0], cb.lookup_rows(rows[rows>=0]))
+        opt = model.getOptimizer(lr=.01)
+        groups = model.objective_parameter_groups(opt)
+>       assert any(p is cb.mereology.locations for p in groups['reconstruction'])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_derived_concept_codes.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_derived_concept_codes.py:127: in <genexpr>
+    assert any(p is cb.mereology.locations for p in groups['reconstruction'])
+                    ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes(), name = 'locations'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'MereologicalCodes' object has no attribute 'locations'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ test_percept_lookup_checkpoint_has_no_independent_word_state _________
+
+    def test_percept_lookup_checkpoint_has_no_independent_word_state():
+>       cs, cb, _ = fixture()
+                    ^^^^^^^^^
+
+test/test_derived_concept_codes.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_derived_concept_codes.py:15: in fixture
+    cb.enable_derived_codes(cs, basis_capacity=16)
+bin/Spaces.py:2456: in enable_derived_codes
+    self.mereology = MereologicalCodes(owner, initial, basis_capacity,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes()
+owner = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+initial = tensor([[0.0000, 0.0100, 0.0200],
+        [0.0300, 0.0400, 0.0500],
+        [0.0600, 0.0700, 0.0800],
+        [0.0900,...0.8500, 0.8600],
+        [0.8700, 0.8800, 0.8900],
+        [0.9000, 0.9100, 0.9200],
+        [0.9300, 0.9400, 0.9500]])
+basis_capacity = 16, percept_width = 8, percept_event_width = 16
+
+    def __init__(self, owner, initial, basis_capacity, *, percept_width,
+                 percept_event_width):
+        super().__init__()
+        object.__setattr__(self, 'owner', owner)
+        capacity = min(int(basis_capacity), len(initial))
+        self.percept_width = int(percept_width)
+        self.percept_event_width = int(percept_event_width)
+        self.code_width = int(initial.shape[-1])
+        if not 0 < self.percept_width <= self.percept_event_width <= self.code_width:
+>           raise ValueError('conceptual code must contain the native perceptual space')
+E           ValueError: conceptual code must contain the native perceptual space
+
+bin/MereologicalCodes.py:22: ValueError
+=============================== warnings summary ===============================
+test/test_review13_subspaces.py::test_native_percept_rows_and_signed_evidence_are_the_only_live_code_sources
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_derived_concept_codes.py::test_code_is_signed_sum_of_lookup_locations_without_a_word_parameter
+FAILED test/test_derived_concept_codes.py::test_shared_percept_is_one_lookup_and_group_members_are_independent_locations
+FAILED test/test_derived_concept_codes.py::test_occurrence_context_uses_recency_mean_and_evidence_against_form_prior
+FAILED test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams
+FAILED test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_basis_concepts
+FAILED test/test_derived_concept_codes.py::test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis
+FAILED test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state
+7 failed, 16 passed, 2 warnings in 9.03s

@@ -73,7 +73,7 @@ class TestDefaultsXml(unittest.TestCase):
         arch = self.cfg["architecture"]
         # ``reconstruct`` was retired (A1); reconstruction is now
         # unconditionally concepts-seeded.
-        for key in ["subsymbolicOrder",
+        for key in ["bindingDepth",
                     "ergodic", "processSymbols"]:
             self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
         trn = arch.get("training", {})

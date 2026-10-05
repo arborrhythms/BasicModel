@@ -1,0 +1,186 @@
+[
+  {
+    "batch_row": 0,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      1
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.9275,
+    "distinct_derivations": 2,
+    "modal_derivation": [
+      {
+        "arity": 2,
+        "rule_id": 1,
+        "rule_name": "conjunction",
+        "surface_name": "conjunction",
+        "position": 1
+      }
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          {
+            "arity": 2,
+            "rule_id": 2,
+            "rule_name": "disjunction",
+            "surface_name": "disjunction",
+            "position": 1
+          }
+        ],
+        "epochs": 29
+      },
+      {
+        "sequence": [
+          {
+            "arity": 2,
+            "rule_id": 1,
+            "rule_name": "conjunction",
+            "surface_name": "conjunction",
+            "position": 1
+          }
+        ],
+        "epochs": 371
+      }
+    ]
+  },
+  {
+    "batch_row": 1,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      2
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.9375,
+    "distinct_derivations": 2,
+    "modal_derivation": [
+      {
+        "arity": 2,
+        "rule_id": 1,
+        "rule_name": "conjunction",
+        "surface_name": "conjunction",
+        "position": 1
+      }
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          {
+            "arity": 2,
+            "rule_id": 2,
+            "rule_name": "disjunction",
+            "surface_name": "disjunction",
+            "position": 1
+          }
+        ],
+        "epochs": 25
+      },
+      {
+        "sequence": [
+          {
+            "arity": 2,
+            "rule_id": 1,
+            "rule_name": "conjunction",
+            "surface_name": "conjunction",
+            "position": 1
+          }
+        ],
+        "epochs": 375
+      }
+    ]
+  },
+  {
+    "batch_row": 2,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      1
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.965,
+    "distinct_derivations": 2,
+    "modal_derivation": [
+      {
+        "arity": 2,
+        "rule_id": 1,
+        "rule_name": "conjunction",
+        "surface_name": "conjunction",
+        "position": 1
+      }
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          {
+            "arity": 2,
+            "rule_id": 2,
+            "rule_name": "disjunction",
+            "surface_name": "disjunction",
+            "position": 1
+          }
+        ],
+        "epochs": 14
+      },
+      {
+        "sequence": [
+          {
+            "arity": 2,
+            "rule_id": 1,
+            "rule_name": "conjunction",
+            "surface_name": "conjunction",
+            "position": 1
+          }
+        ],
+        "epochs": 386
+      }
+    ]
+  },
+  {
+    "batch_row": 3,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      2
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.975,
+    "distinct_derivations": 2,
+    "modal_derivation": [
+      {
+        "arity": 2,
+        "rule_id": 1,
+        "rule_name": "conjunction",
+        "surface_name": "conjunction",
+        "position": 1
+      }
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          {
+            "arity": 2,
+            "rule_id": 2,
+            "rule_name": "disjunction",
+            "surface_name": "disjunction",
+            "position": 1
+          }
+        ],
+        "epochs": 10
+      },
+      {
+        "sequence": [
+          {
+            "arity": 2,
+            "rule_id": 1,
+            "rule_name": "conjunction",
+            "surface_name": "conjunction",
+            "position": 1
+          }
+        ],
+        "epochs": 390
+      }
+    ]
+  }
+]

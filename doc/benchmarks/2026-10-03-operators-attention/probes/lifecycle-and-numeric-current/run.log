@@ -1,0 +1,400 @@
+.............ssssssss..........F.F....F..............F.................. [ 68%]
+.................................                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_one_native_read_retains_shared_owner[True] ________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1562/test_one_native_read_retains_s1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109f03ad0>
+training = True, eager_reading = None
+
+    @pytest.mark.parametrize('training',[False,True])
+    def test_one_native_read_retains_shared_owner(tmp_path,monkeypatch,training,eager_reading):
+        import ModelAttention
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from What import What
+        model=_tiny_canonical_model(tmp_path,monkeypatch,word_buckets='8',
+            concept_rows=128,input_width=16,batch_size=1,chooser_depth=1,
+            training_overrides={'reconstructionPlacement':'eager'},
+            architecture_overrides={'answerSynthesis':False})
+        model._tensor_peer_while_eager=True
+        model._chart_compose_per_word=lambda:None
+        model.checkpoint_every_batches=0
+        owner=model._concept_owner();parameter=owner.similarity_codebook.getW()
+        opt=model.getOptimizer(lr=1e-3) if training else None
+        opens=[];original=ModelAttention.read_code_field
+        def read(*args,**kwargs):
+            assert not torch.is_grad_enabled();opens.append(True);return original(*args,**kwargs)
+        monkeypatch.setattr(ModelAttention,'read_code_field',read)
+        texts=('a b','a c')
+        for step,text in enumerate(texts*(2 if training else 1)):
+            raw=model.inputSpace.prepInput([text])
+>           model.runBatch(train=training,optimizer=opt,batchNum=step,batchSize=1,
+                split='validation',batch_override=(raw,torch.empty(1,0)),
+                questions=(What.present(0,split='validation'),))
+
+test/test_interleave_schedule.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13577: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13704: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14071: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8770: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10250: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8455: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8266: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22953: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17177: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21502: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21061: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20214: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:156: in sentence_pair
+    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+bin/Models.py:20212: in train_trial
+    self._sentence_train_step(loss)
+bin/Models.py:19556: in _sentence_train_step
+    preflight_finite_gradients(optimizer, self.named_parameters(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+optimizer = <Optimizer.MultiOptimizer object at 0x14600ba40>
+named_parameters = <generator object Module.named_parameters at 0x13f47e940>
+cache_for_step = True
+
+    def preflight_finite_gradients(optimizer, named_parameters=None, *,
+                                   cache_for_step=False):
+        """Validate every optimizer-owned gradient before any parameter update.
+    
+        Dense gradients are checked directly. Sparse COO gradients are coalesced
+        first (so duplicate finite entries whose sum overflows are also caught),
+        written back to ``param.grad``, and represented only by their stored
+        values. Consequently a million-row sparse codebook costs O(touched rows),
+        not O(codebook capacity), to inspect.
+    
+        Tensors are grouped by device and dtype and scanned with AMP's fused
+        foreach non-finite primitive using an identity unscale. This incurs one
+        scalar host read per populated group. A slow per-parameter name/count pass
+        runs only after the fused scan reports a failure.
+    
+        ``cache_for_step`` records a metadata fingerprint for the optimizer
+        wrappers. ``BaseModel.runBatch`` uses it to pass the successful preflight
+        to ``Optimizer.step`` without performing the fused scan twice; any
+        intervening in-place gradient mutation invalidates the fingerprint.
+        """
+        if not finite_gradient_guard_enabled(optimizer):
+            if hasattr(optimizer, "_finite_grad_preflight_fingerprint"):
+                optimizer._finite_grad_preflight_fingerprint = None
+            return False
+    
+        names = _parameter_name_map(named_parameters)
+        if names:
+            optimizer._finite_grad_parameter_names = names
+        else:
+            names = getattr(optimizer, "_finite_grad_parameter_names", {})
+    
+        # (parameter, logical gradient values, tensor actually scanned, label)
+        #
+        # The AMP foreach primitive does not accept complex tensors.  Present
+        # complex gradients through view_as_real instead of casting: both real
+        # and imaginary components are then checked without allocation or loss of
+        # information.  resolve_conj() makes the view valid for conjugate grads
+        # while remaining a no-op for ordinary tensors.
+        records = []
+        groups = {}
+        for ordinal, param in enumerate(_optimizer_parameters(optimizer)):
+            grad = getattr(param, "grad", None)
+            if grad is None:
+                continue
+            if grad.layout == torch.sparse_coo:
+                # Coalescing is part of the safety check: duplicate coordinates
+                # can each be finite yet overflow while being summed.
+                grad = grad.coalesce()
+                param.grad = grad
+                checked = grad.values()
+            elif grad.layout == torch.strided:
+                checked = grad
+            else:
+                raise RuntimeError(
+                    "finite-gradient preflight supports dense and sparse COO "
+                    f"gradients; got layout={grad.layout} for optimizer "
+                    f"parameter {ordinal}")
+            if checked.numel() == 0:
+                continue
+            scanned = (torch.view_as_real(checked.resolve_conj())
+                       if checked.is_complex() else checked)
+            label = names.get(id(param), f"optimizer parameter {ordinal}")
+            record = (param, checked, scanned, label)
+            records.append(record)
+            key = (scanned.device.type, scanned.device.index, scanned.dtype)
+            groups.setdefault(key, []).append(record)
+    
+        failed_keys = []
+        for key, group_records in groups.items():
+            device = group_records[0][2].device
+            found_inf = torch.zeros((), dtype=torch.float32, device=device)
+            inv_scale = torch.ones((), dtype=torch.float32, device=device)
+            torch._amp_foreach_non_finite_check_and_unscale_(
+                [record[2] for record in group_records], found_inf, inv_scale)
+            # This is the sole normal-path host synchronization for the group.
+            if bool(found_inf.detach().cpu().item()):
+                failed_keys.append(key)
+    
+        if failed_keys:
+            failed = set(failed_keys)
+            for _param, checked, scanned, label in records:
+                key = (scanned.device.type, scanned.device.index, scanned.dtype)
+                if key not in failed:
+                    continue
+                nonfinite = ~torch.isfinite(checked)
+                count = int(nonfinite.sum().detach().cpu().item())
+                if count:
+>                   raise FloatingPointError(
+                        f"Non-finite gradient for {label!r} before optimizer.step: "
+                        f"{count}/{checked.numel()} stored entries are nan/inf "
+                        f"(layout={getattr(_param.grad, 'layout', None)}, "
+                        f"device={checked.device}, dtype={checked.dtype}).")
+E                   FloatingPointError: Non-finite gradient for 'symbolSpace.subspace.layers.0.operation_layer.space_prior' before optimizer.step: 1/6 stored entries are nan/inf (layout=torch.strided, device=cpu, dtype=torch.float32).
+
+bin/Optimizer.py:247: FloatingPointError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+________________ test_open_read_covers_exact_native_input[True] ________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1562/test_open_read_covers_exact_na1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x146067c80>
+packed = True, eager_reading = None
+
+    @pytest.mark.parametrize('packed',[False,True])
+    def test_open_read_covers_exact_native_input(tmp_path,monkeypatch,packed,eager_reading):
+        import ModelAttention
+        from test_packed_reconstruction_parity import build_model
+        model=build_model(tmp_path,word_capacity=16 if packed else 8)
+        texts=['the wug sat','the wug flew'];seen=[]
+        original=ModelAttention.read_code_field
+        def read(codes,valid):
+            assert not torch.is_grad_enabled()
+            seen.append((codes.shape,valid.sum().item()))
+            return original(codes,valid)
+        monkeypatch.setattr(ModelAttention,'read_code_field',read)
+        raw=model.inputSpace.prepPackedInput([texts]) if packed else model.inputSpace.prepInput(texts)
+>       with torch.no_grad():model(raw)
+                             ^^^^^^^^^^
+
+test/test_interleave_lifecycle.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8266: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22936: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13130: in _lex_embed_stem
+    self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+bin/Spaces.py:9873: in finalize_stem
+    return self._finalize_serial_word_stem(sub, ps)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9772: in _finalize_serial_word_stem
+    self._finalize_sentence_word_layout(active)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = InputSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+    (whe...yers): ModuleList(
+      (0-1): 2 x LinearLayer()
+    )
+    (linear1): LinearLayer()
+    (linear2): LinearLayer()
+  )
+)
+active = tensor([[ True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True, False, False, False, False, False]])
+
+    def _finalize_sentence_word_layout(self, active):
+        """Validate/install the fixed sentence-boundary tensor layout."""
+        B, W = int(active.shape[0]), int(active.shape[1])
+        dev = active.device
+        if self._sentence_pack_enabled:
+            required = (
+                self._packed_sentence_start_mask,
+                self._packed_sentence_end_mask,
+                self._packed_sentence_intermediate_end_mask,
+                self._packed_sentence_ids,
+                self._packed_sentence_word_positions,
+                self._packed_sentence_end_for_word,
+            )
+            if (not all(torch.is_tensor(value) for value in required)
+                    or any(tuple(value.shape) != (B, W)
+                           for value in required)):
+                raise RuntimeError(
+                    "packed sentence metadata is missing or shape-misaligned "
+                    f"with staged words {(B, W)}")
+            expected_active = self._packed_sentence_ids >= 0
+            if not torch.equal(
+                    expected_active.detach().to("cpu"),
+                    active.detach().to("cpu")):
+>               raise RuntimeError(
+                    "packed surface word layout differs from the staged "
+                    "sentence boundaries; refusing to train misaligned roots")
+E               RuntimeError: packed surface word layout differs from the staged sentence boundaries; refusing to train misaligned roots
+
+bin/Spaces.py:9811: RuntimeError
+________ test_input_encoder_bytes_and_packed_sentence_boundaries[True] _________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1562/test_input_encoder_bytes_and_p1')
+packed = True, eager_reading = None
+
+    @pytest.mark.parametrize('packed',[False,True])
+    def test_input_encoder_bytes_and_packed_sentence_boundaries(tmp_path,packed,eager_reading):
+        from test_packed_reconstruction_parity import build_model
+        model=build_model(tmp_path,word_capacity=16)
+        texts=['abc1 cat','dog 01']
+        raw=model.inputSpace.prepPackedInput([texts]) if packed else model.inputSpace.prepInput(texts)
+>       with torch.no_grad():model(raw)
+                             ^^^^^^^^^^
+
+test/test_interleave_lifecycle.py:81: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8266: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22936: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13130: in _lex_embed_stem
+    self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+bin/Spaces.py:9873: in finalize_stem
+    return self._finalize_serial_word_stem(sub, ps)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9772: in _finalize_serial_word_stem
+    self._finalize_sentence_word_layout(active)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = InputSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+    (whe...yers): ModuleList(
+      (0-1): 2 x LinearLayer()
+    )
+    (linear1): LinearLayer()
+    (linear2): LinearLayer()
+  )
+)
+active = tensor([[ True,  True,  True,  True,  True,  True,  True,  True, False, False,
+         False, False, False, False, False, False]])
+
+    def _finalize_sentence_word_layout(self, active):
+        """Validate/install the fixed sentence-boundary tensor layout."""
+        B, W = int(active.shape[0]), int(active.shape[1])
+        dev = active.device
+        if self._sentence_pack_enabled:
+            required = (
+                self._packed_sentence_start_mask,
+                self._packed_sentence_end_mask,
+                self._packed_sentence_intermediate_end_mask,
+                self._packed_sentence_ids,
+                self._packed_sentence_word_positions,
+                self._packed_sentence_end_for_word,
+            )
+            if (not all(torch.is_tensor(value) for value in required)
+                    or any(tuple(value.shape) != (B, W)
+                           for value in required)):
+                raise RuntimeError(
+                    "packed sentence metadata is missing or shape-misaligned "
+                    f"with staged words {(B, W)}")
+            expected_active = self._packed_sentence_ids >= 0
+            if not torch.equal(
+                    expected_active.detach().to("cpu"),
+                    active.detach().to("cpu")):
+>               raise RuntimeError(
+                    "packed surface word layout differs from the staged "
+                    "sentence boundaries; refusing to train misaligned roots")
+E               RuntimeError: packed surface word layout differs from the staged sentence boundaries; refusing to train misaligned roots
+
+bin/Spaces.py:9811: RuntimeError
+____________ test_selected_typed_scope_changes_the_attentive_extent ____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1562/test_selected_typed_scope_chan0')
+
+    def test_selected_typed_scope_changes_the_attentive_extent(tmp_path):
+        from test_grounded_xor import grounded_model
+        model,inputs=grounded_model(tmp_path)
+        cs,ws=model.conceptualSpaces[0],model.wholeSpaces[0]
+        prior=ws.subspace.what.primitive_properties
+        prior.teach(9,[48,49],[0.,1.]);prior.teach(10,[48,49],[1.,0.])
+        cs._csw_concept_row(0,10001);cs.add_concept_feature(0,'ws',9,1.);cs.add_concept_feature(0,'ws',10,-1.)
+        model.forward(inputs[2:3]);model.conceptualSpace._passback_scope_where=torch.tensor([[0.,1.]])
+        model._read_subsymbolic_field(None,None,1)
+>       torch.testing.assert_close(cs._cs_last_a0[0,0,0],torch.tensor([1.,1.]))
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 2 / 2 (100.0%)
+E       Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)
+
+test/test_subsymbolic_loop.py:35: AssertionError
+=============================== warnings summary ===============================
+test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7124: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 16, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[True]
+FAILED test/test_interleave_lifecycle.py::test_open_read_covers_exact_native_input[True]
+FAILED test/test_interleave_lifecycle.py::test_input_encoder_bytes_and_packed_sentence_boundaries[True]
+FAILED test/test_subsymbolic_loop.py::test_selected_typed_scope_changes_the_attentive_extent
+4 failed, 93 passed, 8 skipped, 3 warnings in 61.63s (0:01:01)

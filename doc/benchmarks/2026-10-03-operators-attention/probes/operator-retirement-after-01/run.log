@@ -1,0 +1,527 @@
+...............F........................F.....F.FF..F.....F.F..F........ [ 56%]
+..................FF....FF........................FFFF..                 [100%]
+=================================== FAILURES ===================================
+_______ test_exist_executor_keeps_all_roles_and_conflicting_fact_sources _______
+
+    def test_exist_executor_keeps_all_roles_and_conflicting_fact_sources():
+        cs = _cs()
+        refs = tuple(('sym', cs.new_concept()) for _ in range(3))
+        for ref in refs:
+            cs._csw_concept_row(0, ref[1])
+        store = TernaryTruthStore(8)
+        from index_fixtures import one_hot_unfold
+        store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref), unfold=one_hot_unfold)
+        idea = replace(_meaning(), role_refs=refs)
+        first = store.append_meaning(idea, kind="fact", trust=0.6)
+        second = store.append_meaning(idea, kind="fact", trust=-0.4)
+        store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher")
+        store.set_origin(second, store.ORIGIN_USER, text="witness")
+>       result = _signature('exist', 'I1').invoke(_context(cs, store=store), idea)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_executors.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'exist', roles = ('I1',)
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'exist'
+
+test/test_query_vp_boundaries.py:62: KeyError
+__ test_tiny_concept_inventory_keeps_thought_families_structural_not_partial ___
+
+    def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
+        """Inventory VP setup stays all-or-nothing beside the row-free part VP."""
+        from Queries import GrammaticalThoughtRegistry
+    
+        space = _cs()
+        # IDs start at one, so equal and lookup do not fit a two-row inventory.
+        # Part is a grammar predicate and requires no inventory row.
+        # The underlying fixture basis stays intact; this owns only the allocator's
+        # physical-capacity boundary used by setup preflight.
+        space.nVectors = 2
+        grammar = Grammar()
+>       grammar.configure({"compose": {"rule": [
+            "part_O1 = part.forward(part_I1, part_I2)",
+            "equal_O1 = equal.forward(equal_I1, equal_I2)",
+            "lookup_O1 = lookup.forward(lookup_I1, lookup_I2)",
+        ]}, "thought": {"rule": [
+            "part_O1 = part.thought(part_I1, part_I2)",
+            "equal_O1 = equal.thought(equal_I1, equal_I2)",
+            "lookup_O1 = lookup.thought(lookup_I1, lookup_I2)",
+        ]}})
+
+test/test_thought_operation_catalog.py:214: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:1217: in configure
+    self._fill_section(self.rules_upward, up)
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x109ef0b90>
+target = [RuleDef(space_role='SS', canonical='part_O1 -> part.forward(part_I1, part_I2)', arity=2, method_name='part', lhs='par...ation_kind='equal', scope_transparent=False, polarity_effect=None, meaning_mode=None, same_reference_idempotent=False)]
+rules_dict = {'rule': ['part_O1 = part.forward(part_I1, part_I2)', 'equal_O1 = equal.forward(equal_I1, equal_I2)', 'lookup_O1 = lookup.forward(lookup_I1, lookup_I2)']}
+space_role = 'SS', face = None
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+    
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                if implementation in ('exist', 'true', 'lookup'):
+>                   raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E                   ValueError: lookup is retired; query conceptual content with what
+
+bin/Language.py:1583: ValueError
+_ test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0] _
+
+filename = 'complete.grammar', required = {'equal', 'exist', 'part'}
+
+    @pytest.mark.parametrize(
+        ("filename", "required"),
+        [
+            ("complete.grammar", {"part", "equal", "exist"}),
+            ("default.grammar", {"part", "equal"}),
+            ("ladder.grammar", {"part", "equal", "exist"}),
+        ],
+    )
+    def test_production_grammars_load_from_structural_thought_faces(filename, required):
+        grammar = Grammar()
+        grammar.load_from_grammar_file(filename)
+>       assert required.issubset({item.semantic_id for item in grammar.thought_operations})
+E       AssertionError: assert False
+E        +  where False = <built-in method issubset of set object at 0x12119ce40>({'arma', 'equal', 'part', 'quantize', 'what'})
+E        +    where <built-in method issubset of set object at 0x12119ce40> = {'equal', 'exist', 'part'}.issubset
+
+test/test_thought_operation_catalog.py:440: AssertionError
+_ test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2] _
+
+filename = 'ladder.grammar', required = {'equal', 'exist', 'part'}
+
+    @pytest.mark.parametrize(
+        ("filename", "required"),
+        [
+            ("complete.grammar", {"part", "equal", "exist"}),
+            ("default.grammar", {"part", "equal"}),
+            ("ladder.grammar", {"part", "equal", "exist"}),
+        ],
+    )
+    def test_production_grammars_load_from_structural_thought_faces(filename, required):
+        grammar = Grammar()
+        grammar.load_from_grammar_file(filename)
+>       assert required.issubset({item.semantic_id for item in grammar.thought_operations})
+E       AssertionError: assert False
+E        +  where False = <built-in method issubset of set object at 0x12119dd20>({'equal', 'part'})
+E        +    where <built-in method issubset of set object at 0x12119dd20> = {'equal', 'exist', 'part'}.issubset
+
+test/test_thought_operation_catalog.py:440: AssertionError
+_________ test_thought_only_structural_faces_are_pure_contextual_noops _________
+
+    def test_thought_only_structural_faces_are_pure_contextual_noops():
+        """Boundary capabilities are never performed by composition itself."""
+        import torch
+        from Language import GRAMMAR_LAYER_CLASSES
+    
+        value = torch.randn(2, 8)
+        other = torch.randn(2, 8)
+        for name in ("quantize", "arma", "what"):
+>           layer = GRAMMAR_LAYER_CLASSES[name]()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'quantize'
+
+test/test_thought_operation_catalog.py:457: KeyError
+___ test_complete_grammar_exposes_its_declared_canonical_thought_operations ____
+
+    def test_complete_grammar_exposes_its_declared_canonical_thought_operations():
+        from Queries import GrammaticalThoughtRegistry
+    
+        grammar = Grammar()
+        grammar.load_from_grammar_file("complete.grammar")
+        registry = GrammaticalThoughtRegistry.install(_cs(), grammar)
+>       assert {"exist", "part", "equal", "lookup", "quantize", "arma", "what"}.issubset(
+            registry.executable_operation_ids)
+E       AssertionError: assert False
+E        +  where False = <built-in method issubset of set object at 0x109f84d60>(('part', 'equal', 'quantize', 'arma', 'what'))
+E        +    where <built-in method issubset of set object at 0x109f84d60> = {'arma', 'equal', 'exist', 'lookup', 'part', 'quantize', ...}.issubset
+E        +    and   ('part', 'equal', 'quantize', 'arma', 'what') = <Queries.GrammaticalThoughtRegistry object at 0x121399760>.executable_operation_ids
+
+test/test_thought_operation_catalog.py:547: AssertionError
+____ test_canonical_thought_executors_use_only_their_named_capability_views ____
+
+    def test_canonical_thought_executors_use_only_their_named_capability_views():
+        """New thought faces cannot recover a legacy generic reasoner/model."""
+        import torch
+        from Meaning import ConceptualMeaning
+        from Queries import THOUGHT_EXECUTORS, ThoughtGrammarContext
+        from QueryWork import QueryWorkBudget
+    
+        class ConceptualRead:
+            width = 4
+    
+            def equal(self, left, right):
+                return 1.0 if torch.equal(left, right) else 0.0
+    
+            def quantize(self, value, **limits):
+                return {"value": value + 1.0, "reference": ("sym", 7),
+                        "nodes_scanned": 1, "incomplete": ()}
+    
+        class LTMRead:
+            def retrieve(self, *_args, **_kwargs):
+                return {'frames': (), 'value': (), 'records_scanned': 0, 'incomplete': ()}
+            def existence_evidence(self, meaning, **limits):
+                return {"support_true": 1.0, "support_false": 0.0,
+                        "candidates": (), "incomplete": ()}
+    
+            def lookup(self, left, right, **limits):
+                return {"value": ((left, right),), "records_scanned": 1,
+                        "incomplete": ()}
+    
+            def expectation(self, row, **limits):
+                return torch.full((3, 4), float(row + 1))
+    
+        class TaxonomyRead:
+            def evidence(self, left, right, **limits):
+                return {"support_true": 0.5, "support_false": 0.0,
+                        "candidates": (), "incomplete": ()}
+    
+        meaning = ConceptualMeaning(
+            torch.zeros(3, 4), torch.tensor([True, True, True]),
+            mode="interrogative")
+        context = ThoughtGrammarContext(
+            word_stream=("owned",), conceptual_space=ConceptualRead(),
+            primed_symbols=(), ltm=LTMRead(), taxonomy=TaxonomyRead(),
+            work=QueryWorkBudget(32), continuation=lambda child: {"child": child},
+            boundary=lambda _row: None, row=2)
+        value = torch.ones(4)
+    
+>       assert THOUGHT_EXECUTORS["exist"].executor(context, {"I1": meaning})[
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "support_true"] == 1.0
+E       KeyError: 'exist'
+
+test/test_thought_operation_catalog.py:840: KeyError
+_____ test_description_thought_preparation_uses_only_its_declared_ltm_view _____
+
+    def test_description_thought_preparation_uses_only_its_declared_ltm_view():
+        """A description operand has no reasoner fallback before an exist call."""
+        import torch
+        from Meaning import ConceptualMeaning
+        from Queries import GrammaticalThoughtRegistry, ThoughtGrammarContext
+        from QueryWork import QueryWorkBudget
+    
+        grammar = Grammar()
+>       grammar.configure({
+            "compose": {"rule": ["exist_O1 = exist.forward(exist_I1)"]},
+            "thought": {"rule": ["exist_O1 = exist.thought(exist_I1)"]},
+        })
+
+test/test_thought_operation_catalog.py:907: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:1217: in configure
+    self._fill_section(self.rules_upward, up)
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x10991cad0>, target = []
+rules_dict = {'rule': ['exist_O1 = exist.forward(exist_I1)']}, space_role = 'SS'
+face = None
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+    
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                if implementation in ('exist', 'true', 'lookup'):
+>                   raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E                   ValueError: exist is retired; query conceptual content with what
+
+bin/Language.py:1583: ValueError
+_ test_normal_boundary_execution_uses_the_thought_registry_and_common_context __
+
+    def test_normal_boundary_execution_uses_the_thought_registry_and_common_context():
+        """The production controller cannot retain the legacy QueryContext bridge."""
+        from types import SimpleNamespace
+        from Layers import WhatInteractionMemory
+        from Models import BasicModel
+        from Queries import GrammaticalThoughtRegistry
+    
+        grammar = Grammar()
+        grammar.configure({
+            "compose": {"rule": ["part_O1 = part.forward(part_I1, part_I2)"]},
+            "thought": {"rule": ["part_O1 = part.thought(part_I1, part_I2)"]},
+        })
+        space = _cs()
+        registry = GrammaticalThoughtRegistry.install(space, grammar)
+        part, whole = (("sym", space.new_concept()), ("sym", space.new_concept()))
+        for reference in (part, whole):
+            space._csw_concept_row(0, reference[1])
+        space.add_whole(part[1], whole)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", space)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            what_memory=memory, taxonomy=None, discourse=None,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+    
+        request = registry.form("part", part, whole)
+        with model._query_boundary_scope((0,)):
+            result = model.run_selected_thought(
+                request, row=0, work_budget=8, registry=registry)
+    
+>       assert result.evidence["support_true"] == 1.0
+E       assert 0.0 == 1.0
+
+test/test_thought_operation_catalog.py:1056: AssertionError
+_____ test_declared_true_executes_over_end_clause_and_preserves_both_poles _____
+
+    def test_declared_true_executes_over_end_clause_and_preserves_both_poles():
+        from test_query_vp_boundaries import _world, _context
+        cs, _grammar, registry, _a, _b, _ = _world()
+        store = TernaryTruthStore(8, capacity=8)
+        store.configure_clause_index(allocate=lambda _point: cs.new_concept(), concept_point=lambda _cid: None)
+        point = torch.arange(8.).float() / 8
+        meaning = ConceptualMeaning.from_description(point)
+        row = store.write_clause(Clause(meaning, point=point), kind='fact', evidence=(.8, .7))
+        context = _context(cs, store=store)
+>       question = registry.form('true', store.occurrence_of(row), context=context)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_clause_storage.py:310: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Queries.py:1780: in form
+    operation, form = self._operation_form(semantic_id)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x144df7980>
+structural_id = 'true'
+
+    def _operation_form(self, structural_id):
+        pair = self._forms_by_id.get(structural_id)
+        if pair is None:
+            if structural_id in self._operations_by_id:
+                # A canonical family always has its own structural form, but
+                # retain a precise diagnosis for malformed external metadata.
+                raise ValueError(
+                    f'thought operation {structural_id!r} has no structural form')
+>           raise ValueError(
+                f'thought operation {structural_id!r} is not registered by this grammar')
+E           ValueError: thought operation 'true' is not registered by this grammar
+
+bin/Queries.py:1712: ValueError
+__ test_complete_grammar_declares_sentence_predicate_generic_and_implication ___
+
+    def test_complete_grammar_declares_sentence_predicate_generic_and_implication():
+        grammar = Grammar()
+        grammar.load_from_grammar_file('complete.grammar')
+        rules = {rule.method_name: rule for rule in grammar.rules_upward}
+        assert rules['lift'].clause_form == 'S'
+        assert rules['verb'].clause_form == 'VP'
+>       assert rules['exist'].clause_form == 'S'
+               ^^^^^^^^^^^^^^
+E       KeyError: 'exist'
+
+test/test_clause_grammar.py:13: KeyError
+_________________________ test_real_inverses_untouched _________________________
+
+    def test_real_inverses_untouched():
+        """(b): rules with faithful reverses keep working."""
+>       from Language import TenseLayer, ChunkLayer, ExistLayer
+E       ImportError: cannot import name 'ExistLayer' from 'Language' (/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py). Did you mean: 'LiftLayer'?
+
+test/test_serial_reverse_errors.py:84: ImportError
+_______________________ test_exist_identity_is_faithful ________________________
+
+    def test_exist_identity_is_faithful():
+        """The exist wrapper's forward is the identity, so its identity
+        reverse is EXACT -- the flag records it (the trivially-satisfied
+        WRITE verdict of the Gate-S1 inventory)."""
+>       from Language import ExistLayer
+E       ImportError: cannot import name 'ExistLayer' from 'Language' (/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py). Did you mean: 'LiftLayer'?
+
+test/test_serial_reverse_errors.py:104: ImportError
+______ test_declared_identity_unary_is_available_on_opaque_concepts[null] ______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1405/test_declared_identity_unary_i0')
+name = 'null'
+
+    @pytest.mark.parametrize("name", ["null", "exist", "tense", "morphology"])
+    def test_declared_identity_unary_is_available_on_opaque_concepts(tmp_path, name):
+>       from Language import NullLayer, ExistLayer, TenseLayer, MorphologyLayer
+E       ImportError: cannot import name 'ExistLayer' from 'Language' (/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py). Did you mean: 'LiftLayer'?
+
+test/test_tied_operator_reconstruction.py:395: ImportError
+_____ test_declared_identity_unary_is_available_on_opaque_concepts[exist] ______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1405/test_declared_identity_unary_i1')
+name = 'exist'
+
+    @pytest.mark.parametrize("name", ["null", "exist", "tense", "morphology"])
+    def test_declared_identity_unary_is_available_on_opaque_concepts(tmp_path, name):
+>       from Language import NullLayer, ExistLayer, TenseLayer, MorphologyLayer
+E       ImportError: cannot import name 'ExistLayer' from 'Language' (/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py). Did you mean: 'LiftLayer'?
+
+test/test_tied_operator_reconstruction.py:395: ImportError
+_____ test_declared_identity_unary_is_available_on_opaque_concepts[tense] ______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1405/test_declared_identity_unary_i2')
+name = 'tense'
+
+    @pytest.mark.parametrize("name", ["null", "exist", "tense", "morphology"])
+    def test_declared_identity_unary_is_available_on_opaque_concepts(tmp_path, name):
+>       from Language import NullLayer, ExistLayer, TenseLayer, MorphologyLayer
+E       ImportError: cannot import name 'ExistLayer' from 'Language' (/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py). Did you mean: 'LiftLayer'?
+
+test/test_tied_operator_reconstruction.py:395: ImportError
+___ test_declared_identity_unary_is_available_on_opaque_concepts[morphology] ___
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1405/test_declared_identity_unary_i3')
+name = 'morphology'
+
+    @pytest.mark.parametrize("name", ["null", "exist", "tense", "morphology"])
+    def test_declared_identity_unary_is_available_on_opaque_concepts(tmp_path, name):
+>       from Language import NullLayer, ExistLayer, TenseLayer, MorphologyLayer
+E       ImportError: cannot import name 'ExistLayer' from 'Language' (/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py). Did you mean: 'LiftLayer'?
+
+test/test_tied_operator_reconstruction.py:395: ImportError
+=============================== warnings summary ===============================
+test/test_query_executors.py::test_exist_executor_keeps_all_roles_and_conflicting_fact_sources
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_query_executors.py::test_exist_executor_keeps_all_roles_and_conflicting_fact_sources
+FAILED test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial
+FAILED test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]
+FAILED test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[ladder.grammar-required2]
+FAILED test/test_thought_operation_catalog.py::test_thought_only_structural_faces_are_pure_contextual_noops
+FAILED test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations
+FAILED test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views
+FAILED test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view
+FAILED test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context
+FAILED test/test_clause_storage.py::test_declared_true_executes_over_end_clause_and_preserves_both_poles
+FAILED test/test_clause_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication
+FAILED test/test_serial_reverse_errors.py::test_real_inverses_untouched - Imp...
+FAILED test/test_serial_reverse_errors.py::test_exist_identity_is_faithful - ...
+FAILED test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[null]
+FAILED test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[exist]
+FAILED test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[tense]
+FAILED test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[morphology]
+17 failed, 111 passed, 1 warning in 18.91s

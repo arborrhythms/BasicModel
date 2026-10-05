@@ -1475,6 +1475,64 @@ the other.
 The engineering statement, with the literature, is in
 [the accessible-mind specification §2.0.1](specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention).
 
+## The Sign in Two Spaces: Genera Are Not Located (2026-10-04)
+
+> I want to consider that concepts exist in conceptual space, and their
+> symbols exist in perceptual space. So they have a separate mereological
+> subspace and conceptual subspace in virtue of having both percepts and
+> concepts. (Alec, 2026-10-04)
+
+This is Saussure's sign: the signifier in perceptual space, the signified in
+conceptual space, the pairing by the shared index. It answers a worry Alec
+raised the same day, that a mereological subspace inside a concept's code
+"feels like the philosophical position that genera are located in space and
+time, but we have removed their particularity in virtue of abstracting over
+space and time." The answer is that the address is not in the code. A
+percept has content (which letters, in what arrangement) and an address
+(`.where`, `.when`: this occurrence); a word's form is the join of its parts'
+content with the address coordinates zero, and that zeroing *is* the
+abstraction over space and time. What remains is repeatable, a type; what was
+removed is what made the token a particular, and the particular lives in the
+occurrence row ("identity is its occurrences"). The structure a genus keeps is
+its structure, not a place: cats have paws, "dog" has d-o-g in that order, a
+kind has typed parts in an arrangement without being anywhere. These are
+Armstrong's structural universals. Lewis's objection to them (methane has
+hydrogen as a part four times over, and a universal cannot have the same part
+four times) is met by the design as it stands: the join counts a part once
+(the idempotence rule, the Hawaiian point), and what keeps "hello" from being
+"helo" is not multiplicity but arrangement, the located fold, which is the
+relation Armstrong and Bigelow–Pargetter add. Aristotle's phrasing fits: the
+universal is *in* every instance (its form is the join of what they share)
+and *at* none of them (no address).
+
+**Meaning is from above; the arbitrariness of the sign.** An order-0 concept's
+position in conceptual space is its contexts, entirely: the rows it occurs
+in and the conceptual wholes it belongs to. Nothing enters from below, since
+below an order-0 concept there is only perception: the meaning of "cat" is
+not composed from c, a, t. Concepts with the same contexts coincide, and that
+is correct ("a concept is its contexts"); what may never coincide is their
+symbols. At higher orders meaning gains a second source, the composition of
+constituent meanings, while identity keeps one, the fold of forms. Identity
+from below, meaning from above, at every rung: order is a stamp on the row,
+not a space of its own.
+
+**Negation and the four corners.** With zero as uncertainty the logic over
+codes is Kleene's strong three-valued logic (Łukasiewicz shares its ∧, ∨,
+¬): conjunction the meet, disjunction the join, negation the reflection
+through the origin, which on the symbol is the exchange of its two poles. The
+code is never negated: percepts have no negation, and a concept is denied, not
+moved. Belnap's four values (1977) are the catuṣkoṭi, *is*, *is not*, *both*,
+*neither*, with what Nāgārjuna does not supply, the algebra by which compounds
+take their corner: a bilattice whose truth order gives the connectives and
+whose knowledge order gives the gathering of evidence. Where the two part is
+the use of the four. Nāgārjuna negates all four, the prasajya negation that
+affirms nothing in their place; in the design that is `non`, the withdrawal
+of the expressed pole, a step down the knowledge order toward *neither*,
+without inverse, as against `not`, which affirms the opposite and is its own
+inverse. Tetralemma for the corners, Belnap for the connectives, Nāgārjuna for
+`non`. A Boolean reading was tried the same day and withdrawn: it reads the
+unknown as a probability of one half, and Boole has no unknown.
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |

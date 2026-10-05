@@ -1,0 +1,74 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_______ test_intersection_is_idempotent_symmetric_and_silence_preserving _______
+
+    def test_intersection_is_idempotent_symmetric_and_silence_preserving():
+        from Language import IntersectionLayer
+        op = IntersectionLayer()
+        noun = torch.tensor([[.7, -.6, .4, 0., -.5]], requires_grad=True)
+        adjective = torch.tensor([[.5, -.8, 0., -.3, .4]], requires_grad=True)
+        expected = torch.tensor([[.5, -.6, .4, -.3, 0.]])
+        value = op.compose(noun, adjective)
+>       torch.testing.assert_close(value, expected, rtol=0, atol=0)
+E       AssertionError: Tensor-likes are not equal!
+E       
+E       Mismatched elements: 4 / 5 (80.0%)
+E       Greatest absolute difference: 0.4000000059604645 at index (0, 2)
+E       Greatest relative difference: 1.0 at index (0, 2)
+
+test/test_operator_catalogue.py:13: AssertionError
+__________ test_non_excludes_without_affirming_or_claiming_an_inverse __________
+
+    def test_non_excludes_without_affirming_or_claiming_an_inverse():
+        from Language import NonLayer
+        poles = torch.tensor([[.7, .2, 19.], [0., .8, 3.]])
+>       op = NonLayer(representation='poles')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: NonLayer.__init__() got an unexpected keyword argument 'representation'
+
+test/test_operator_catalogue.py:25: TypeError
+_______________ test_sum_is_a_mean_and_witness_inverse_is_exact ________________
+
+    def test_sum_is_a_mean_and_witness_inverse_is_exact():
+        from Language import SumLayer, LanguageSpace
+        from types import SimpleNamespace, MethodType
+        op = SumLayer()
+        left, right = torch.tensor([[.2, -.8]]), torch.tensor([[.6, .4]])
+        parent = op.compose(left, right)
+>       torch.testing.assert_close(parent, (left+right)/2)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 2 / 2 (100.0%)
+E       Greatest absolute difference: 0.4000000059604645 at index (0, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (0, 0) (up to 1.3e-06 allowed)
+
+test/test_operator_catalogue.py:40: AssertionError
+________ test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse ________
+
+    def test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse():
+        from Language import AdverbLayer
+        op = AdverbLayer(nInput=4, nOutput=4)
+        with torch.no_grad():
+            op._adv_edit.weight.copy_(torch.eye(4)*.5)
+            op._adv_edit.bias.zero_()
+        verb = torch.tensor([[.2, -.3, 0., .4]], requires_grad=True)
+        modifier = torch.ones(1,4)
+        once = op.compose(verb,modifier)
+        twice = op.compose(once,modifier)
+        # Gains compose multiplicatively in the verb's existing chart.
+        gain = torch.atanh(once)/torch.where(verb==0, 1., torch.atanh(verb))
+        expected = torch.tanh(torch.atanh(verb)*gain.square())
+>       torch.testing.assert_close(twice, expected)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 3 / 4 (75.0%)
+E       Greatest absolute difference: 0.10273045301437378 at index (0, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 2.711421012878418 at index (0, 1) (up to 1.3e-06 allowed)
+
+test/test_operator_catalogue.py:64: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_intersection_is_idempotent_symmetric_and_silence_preserving
+FAILED test/test_operator_catalogue.py::test_non_excludes_without_affirming_or_claiming_an_inverse
+FAILED test/test_operator_catalogue.py::test_sum_is_a_mean_and_witness_inverse_is_exact
+FAILED test/test_operator_catalogue.py::test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse
+4 failed in 1.99s

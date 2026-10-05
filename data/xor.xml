@@ -7,7 +7,7 @@
     </data>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <symbolicOrder>0</symbolicOrder>
+    <conceptLayers>1</conceptLayers>
     <weightsPath>xor_weights.ckpt</weightsPath>
 
     <training>
@@ -41,7 +41,7 @@
 
   <WholeSpace>
     <nOutput>4</nOutput>
-    <nVectors>3</nVectors>
+    <nVectors>9</nVectors>
   </WholeSpace>
 
   <OutputSpace>

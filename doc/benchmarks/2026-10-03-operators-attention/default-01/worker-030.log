@@ -1,0 +1,44 @@
+.................s......................F..F......................... [ 47%]
+...........................................ss........................... [ 97%]
+...                                                                      [100%]
+=================================== FAILURES ===================================
+___________________ test_chunk_and_sum_compose_are_additive ____________________
+test/test_union_difference_ops.py:55: in test_chunk_and_sum_compose_are_additive
+    assert torch.equal(SumLayer().compose(a, b), a + b)
+E   AssertionError: assert False
+E    +  where False = <built-in method equal of type object at 0x10a20d3a0>(tensor([[[-8.9946e-01, -1.3976e-01,  4.0239e-01, -1.2802e-01,  3.0919e-01,\n           1.5013e-01,  1.1364e-01, -1.2552...  [-1.7416e-01,  1.5475e+00, -1.0857e+00,  1.3902e-03, -2.6106e-01,\n           6.7285e-01, -7.1768e-01, -4.3830e-01]]]), (tensor([[[-1.1258, -1.1524, -0.2506, -0.4339,  0.8487,  0.6920, -0.3160,\n          -2.1152],\n         [ 0.3223, -1.263...408,\n           0.4412],\n         [-0.1023,  0.7924, -0.2897,  0.0525,  0.5229,  2.3022, -1.4689,\n          -1.5867]]]) + tensor([[[-6.7309e-01,  8.7283e-01,  1.0554e+00,  1.7784e-01, -2.3034e-01,\n          -3.9175e-01,  5.4329e-01, -3.9516...  [-2.4600e-01,  2.3025e+00, -1.8817e+00, -4.9727e-02, -1.0450e+00,\n          -9.5650e-01,  3.3532e-02,  7.1009e-01]]])))
+E    +    where <built-in method equal of type object at 0x10a20d3a0> = torch.equal
+E    +    and   tensor([[[-8.9946e-01, -1.3976e-01,  4.0239e-01, -1.2802e-01,  3.0919e-01,\n           1.5013e-01,  1.1364e-01, -1.2552...  [-1.7416e-01,  1.5475e+00, -1.0857e+00,  1.3902e-03, -2.6106e-01,\n           6.7285e-01, -7.1768e-01, -4.3830e-01]]]) = compose(tensor([[[-1.1258, -1.1524, -0.2506, -0.4339,  0.8487,  0.6920, -0.3160,\n          -2.1152],\n         [ 0.3223, -1.263...408,\n           0.4412],\n         [-0.1023,  0.7924, -0.2897,  0.0525,  0.5229,  2.3022, -1.4689,\n          -1.5867]]]), tensor([[[-6.7309e-01,  8.7283e-01,  1.0554e+00,  1.7784e-01, -2.3034e-01,\n          -3.9175e-01,  5.4329e-01, -3.9516...  [-2.4600e-01,  2.3025e+00, -1.8817e+00, -4.9727e-02, -1.0450e+00,\n          -9.5650e-01,  3.3532e-02,  7.1009e-01]]]))
+E    +      where compose = SumLayer().compose
+E    +        where SumLayer() = <class 'Language.SumLayer'>()
+___________________ test_bare_reverse_is_null_decomposition ____________________
+test/test_union_difference_ops.py:92: in test_bare_reverse_is_null_decomposition
+    assert torch.equal(right, torch.zeros_like(parent))
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10a20d3a0>(tensor([[[-1.5239,  0.2314,  2.8327,  0.6372,  0.2209,  0.3502, -1.4627,\n          -1.4155,  0.0512, -0.3083,  0.8001,...0.4207,  0.0220, -0.6807, -1.3306,  0.1667, -1.4055,  1.5895,\n           1.0838, -0.9077, -0.8060, -1.2603, -1.7245]]]), tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n...         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]))
+E    +    where <built-in method equal of type object at 0x10a20d3a0> = torch.equal
+E    +    and   tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n...         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]) = <built-in method zeros_like of type object at 0x10a20d3a0>(tensor([[[-1.5239,  0.2314,  2.8327,  0.6372,  0.2209,  0.3502, -1.4627,\n          -1.4155,  0.0512, -0.3083,  0.8001,...0.4207,  0.0220, -0.6807, -1.3306,  0.1667, -1.4055,  1.5895,\n           1.0838, -0.9077, -0.8060, -1.2603, -1.7245]]]))
+E    +      where <built-in method zeros_like of type object at 0x10a20d3a0> = torch.zeros_like
+=============================== warnings summary ===============================
+test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpm54j2dqj/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_verb_adverb_grammar_ops.py::test_verb_layer_forces_spectrum_and_inverts_given_verb
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_union_difference_ops.py::test_chunk_and_sum_compose_are_additive
+FAILED test/test_union_difference_ops.py::test_bare_reverse_is_null_decomposition
+2 failed, 139 passed, 3 skipped, 4 warnings, 3 subtests passed in 7.93s

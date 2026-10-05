@@ -1,0 +1,52 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_word_gate_matches_full_forward_without_building_unused_answer ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x122af7110>
+
+    def test_word_gate_matches_full_forward_without_building_unused_answer(monkeypatch):
+        from test_mm_xor import _fresh_model
+        model, _, data = _fresh_model('data/XOR_grammar.xml')
+        model.eval()
+        model.set_sigma(0)
+        item = dict(prefix='hello ', shuffled_prefix='hello ',
+                    candidates=['world', 'there'])
+        texts = [item['prefix'] + candidate for candidate in item['candidates']]
+        with gate.frozen_online_learning(model), torch.no_grad():
+            gate._reset_model(model)
+            with data.runtime_batch(texts):
+                model.forward(model.inputSpace.prepInput(list(data.train_input)))
+            gate._validate_candidate_reached(model, [item], 'intact', 2)
+            reference = gate.word_candidate_scores(model, choices=2)
+            gate._reset_model(model)
+            def unused_answer(*args, **kwargs):
+                raise AssertionError('word evaluation built the unused sentence/answer graph')
+            monkeypatch.setattr(model, 'forward', unused_answer)
+>           actual = gate._score_control_batch(model, data, [item], 'intact', 2)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_nanochat_grammar_eval.py:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/eval_nanochat_grammar.py:615: in _score_control_batch
+    model.forward(input_tensor)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[[104, 101, 108,  ...,   0,   0,   0]],
+
+        [[104, 101, 108,  ...,   0,   0,   0]]], dtype=torch.int8),)
+kwargs = {}
+
+    def unused_answer(*args, **kwargs):
+>       raise AssertionError('word evaluation built the unused sentence/answer graph')
+E       AssertionError: word evaluation built the unused sentence/answer graph
+
+test/test_nanochat_grammar_eval.py:116: AssertionError
+=============================== warnings summary ===============================
+test/test_nanochat_grammar_eval.py::test_word_gate_matches_full_forward_without_building_unused_answer
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_nanochat_grammar_eval.py::test_word_gate_matches_full_forward_without_building_unused_answer
+1 failed, 1 warning in 2.11s

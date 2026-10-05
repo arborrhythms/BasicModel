@@ -57,16 +57,21 @@ def test_stop_is_eligible_only_when_each_row_fits():
     assert route['depth'].tolist() == [2, 2]
 
 
-def test_hard_selected_candidate_keeps_probability_gradient():
+def test_hard_candidate_and_score_function_have_separate_gradients():
     step = layer()
     x = torch.tensor([[[1.], [2.], [3.]]], requires_grad=True)
     _, path, route = step(x, slots=1)
     path.sum().backward()
+    assert step.reduce_anchor.grad is None
+    assert step.apply_anchor.grad is None
+    operand_gradient = x.grad.clone()
+    (-route['probability'].sum()).backward()
     assert step.reduce_anchor.grad is not None
     assert step.reduce_anchor.grad.abs().sum() > 0
     assert step.apply_anchor.grad is not None
     assert step.apply_anchor.grad.abs().sum() > 0
     assert torch.isfinite(x.grad).all()
+    torch.testing.assert_close(x.grad, operand_gradient, atol=0, rtol=0)
 
 
 def test_explore_differs_and_static_budget_can_stop_early():

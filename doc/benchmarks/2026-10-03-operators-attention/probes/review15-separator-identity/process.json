@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_grammar_separator.py"
+  ],
+  "pid": 57993,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 572376528,
+  "elapsed_seconds": 4.379382458049804,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review15-separator-identity/run.log"
+}

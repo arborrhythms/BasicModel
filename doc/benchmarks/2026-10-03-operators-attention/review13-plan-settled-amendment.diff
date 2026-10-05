@@ -1,0 +1,144 @@
+--- review13-before/doc/plans/2026-09-27-item-6-8-one-attention.md
++++ doc/plans/2026-09-27-item-6-8-one-attention.md
+@@ -935,3 +935,141 @@
+ dated, not tuned around; MM_xor, the control and reconstruction carry the
+ mechanism evidence, and the no-regression rule applies to those three until
+ the class gate is sound again.
++
++**Perceptual space is a subspace of conceptual space (Alec, 2026-10-04).**
++Alec's concern: order-0 concepts mereological, higher orders distributional,
++"a bit at odds". Two forms were considered and set aside: bands filled only at
++order 0 (higher orders have no form; inside a meaning band nothing keeps
++vectors apart) and two scales in one vector, parts as the low-order bits
++("sounds a bit kludgy"). Decided in direction: "two subspaces in a single
++concept vector ... positing that perceptual space is a subspace of conceptual
++space."
++
++A concept vector is [perceptual coordinates | conceptual coordinates]; nothing
++is scaled or weighted.
++
++- **Order 0.** The perceptual coordinates are the evidence-weighted fold of
++  the concept's parts' percept vectors, in percept space itself (item 11b's
++  located fused parts, literally). The conceptual coordinates are the context
++  term: the mean of its occurrence rows' roots restricted to that subspace,
++  detached; zero for a new word.
++- **Identity** has its room in the perceptual coordinates. *Corrected
++  2026-10-04 on Codex's qualification ("the separate coordinates provide
++  room for identity; the composition rule must actually preserve it"):* what
++  the derived code guarantees is the removal of the writer that merged, the
++  free row of §13.2; order-0 collapse would require merging letter rows other
++  words share, so it is resisted, not impossible; at higher orders the
++  normalized product preserves two partners' difference only on the shared
++  operand's support (unit(x∘y) = unit(x∘y′) iff y′ ∝ y wherever x ≠ 0), so
++  root distinctness is generic, not structural, and is measured (root
++  geometry, code support) rather than assumed. The structural guarantee, the
++  form band composed by the fold and the connectives on the conceptual
++  coordinates, is the operators update's; it requires the gate configs to
++  carry a nonempty complement, since with the fold on the form band and an
++  empty complement the operators would not reach the root.
++- **Similarity** is read on the conceptual subspace; readers choose the
++  subspace a metric uses.
++- **Higher orders.** Coordinate-wise composition keeps the subspaces
++  separate: a root's perceptual coordinates are the composed forms (identity
++  residue), its conceptual coordinates the composed meanings. Composition
++  fills what a form band could not.
++
++**The fixture.** XOR_grammar's percepts carry two content numbers (6.9
++§3.13: "not the four its comment states"); with form confined to the
++perceptual subspace, the roots of a context-identical corpus differ in two
++coordinates, and four points in a plane are XOR-separable half the time. At
++nDim 14, as the comment intended and MM_grammar has, the percepts carry six
++and the roots are in general position. The stale-fixture correction goes with
++the design. Production has 128 perceptual coordinates.
++
++For Codex, item 1: perceptual space as a coordinate subspace of conceptual
++space; order-0 perceptual coordinates = the fold of the parts (live),
++conceptual coordinates = the occurrence rows' roots on that subspace
++(detached); no free word row; XOR_grammar's nDim 14.
++
++**Confirmed (Alec, 2026-10-04), with the bootstrap.** Concepts with
++identical contexts are differentiated in the full vector by their perceptual
++coordinates, identical on the conceptual subspace (the permissible collapse).
++Higher-order concepts keep perceptual coordinates, the composed forms:
++meaningless as a form, but the identity residue that keeps distinct
++compositions distinct and what the free read-back inverts. The complement is
++determined by context and wholes, and the wholes are load-bearing: context
++alone cannot start, since a new word's conceptual coordinates are the mean
++of its occurrence roots' conceptual coordinates, compositions of its
++neighbours' conceptual coordinates, which begin at zero, and zero composed
++with zero stays zero under product and the probabilistic sum. The seed is the
++wholes: the conceptual locations of a word's properties and of its situation
++(type, document, group), the complement's learned parameters. Words inherit
++them, contexts average them. Those locations are trained by co-activation,
++the catalogue's distributional item; reconstruction trains the perceptual
++subspace and never touches them. In XOR_grammar every word shares every
++whole, so the complement is identical across words and identity rides on the
++six perceptual coordinates at nDim 14.
++
++**Sphere, origin, bivalence (Alec's question, 2026-10-04; revised twice the
++same day, see the two findings below).**
++
++- *Lookup.* Cosine over the stored codes, one matmul, scale-free; the reader
++  picks the subspace: identity on the perceptual coordinates (the
++  read-back), similarity on the conceptual (priming), both for a whole match.
++  Codes are not normalized to a sphere: the perceptual coordinates are the
++  percept cube [0, 1] (nothing the origin, everything the all-ones corner, an
++  absent letter a known absence), the conceptual coordinates bipolar
++  [−1, 1] with zero as unknown. Certainty lives in the activation and the
++  poles, not in a vector's norm; the 6.9 catalogue row "unit-sphere codes,
++  magnitude = certainty" is retired rather than reinstated.
++- *Uncertainty.* Zero, and it stays zero: a new word's conceptual
++  coordinates, an absent leaf, the field's neither. It is the fixed point of
++  `not` and of conjunction and disjunction with itself under the Kleene
++  algebra below; false absorbs conjunction, true disjunction.
++- *Bivalence.* The pair (c⁺, c⁻) is Belnap's FOUR over the Kleene algebra
++  (Belnap 1977: the catuṣkoṭi's four corners, is / is not / both / neither,
++  with the algebra of how compounds take their corner; a bilattice whose
++  truth order gives ∧, ∨, `not` and whose knowledge order gives the
++  gathering of evidence; Nāgārjuna's negation of all four corners is the
++  spec's `non`, a step down the knowledge order toward neither, hence
++  without inverse):
++  ∧ = (min c⁺, max c⁻), ∨ = (max c⁺, min c⁻), `not` the swap; d = c⁺ − c⁻
++  projects FOUR onto K3 with both landing on unknown, the division of labour
++  already decided (m for attention, d for expectation). `not` on a location
++  is −d, reflection through the origin, which at the symbol level is the
++  exchange of the concept's two symbols. Unrelated concepts are far in
++  cosine, not antipodal; the antipode term leaves reconstruction (identity
++  needs no repulsion once it is in the perceptual coordinates by
++  construction).
++
++**The product kernel pools negation (Alec, 2026-10-04: "If 'the composed
++location cannot say which constituent was negated', then we have done it
++wrong").** He is right. `Ops._conjunction_kernel` is the normalized Hadamard
++product of signed carriers: a bipolar Hadamard product is VSA binding (MAP),
++self-inverse, its sign a phase and not a truth value, so (−x)∘(−y) = x∘y
++("not hot and not wet" composes to "hot and wet") and (−x)∘y = x∘(−y) =
++−(x∘y). Any bilinear binding does this; it is the "over symbols" pair of
++catalogue §3.8, not a connective over codes, and it cannot host negation.
++Two remedies were tried and withdrawn the same day: carrying the valence on
++the slot reference (true only of the bilinear product), and Boole's product
++in the presence chart p = (1 + d)/2 (a category error: it reads the unknown
++as a probability ½, and Boole has no unknown, so 0 ∧ 0 went to −½).
++
++**Zero as uncertainty makes the logic Kleene's (Alec, 2026-10-04: "If zero
++is conceptual [un]certainty, we are using a fuzzy Kleene or Church ternary
++logic").** Kleene's strong three-valued logic (Łukasiewicz shares its ∧, ∨,
++¬), fuzzified: ∧ = min, ∨ = max, ¬ = −d on [−1, 1]. Unknown is the fixed
++point of all three with itself; false absorbs ∧ and true absorbs ∨; De Morgan
++is exact (−min(−x, −y) = max(x, y)); no pooling (min(−x, y) ≠ min(x, −y)), so
++the location says which constituent was negated and double negation across a
++conjunction does not cancel; negation stays reflection through the origin,
++unchanged. Not an import: componentwise min and max are the meet and join of
++the towers' poset (the cube under the componentwise order is a lattice,
++nothing its bottom, everything its top; with −d as order-reversing involution
++it is a Kleene algebra). `Ops.intersection` is already `torch.minimum` with a
++silent coordinate as no restriction (the restrictor reading), `union` the
++lattice join. For the operators update: §22's choice of product and
++probabilistic sum as the grammar's conjunction and disjunction, made for
++invertibility, is revisited; the inverses are codebook searches anyway, and
++min inverts the same way (x = r where r < y, x ≥ y elsewhere, the search
++deciding). When the connectives become the lattice pair, the identity
++residue on the perceptual coordinates composes by the fold, as a word's form
++does from its letters (a meet of two forms is their shared letters), and the
++connectives act on the conceptual coordinates; the binding kernel does both
++at once today, which is fine for this round, which has no `not`.

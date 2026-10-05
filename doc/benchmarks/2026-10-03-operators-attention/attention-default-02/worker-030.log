@@ -1,0 +1,83 @@
+............................FFFFFFs................................F. [ 50%]
+............................................................ss.......    [100%]
+=================================== FAILURES ===================================
+_ TestFlatSlabInvariant.test_aligned_parallel_does_not_receive_sparse_boundary_relaxation _
+test/test_unified_lexicon_codebook.py:873: in test_aligned_parallel_does_not_receive_sparse_boundary_relaxation
+    cfg = self._build_config_dict(
+test/test_unified_lexicon_codebook.py:777: in _build_config_dict
+    ws_dim = ps_dim if aligned_serial else cs_dim
+                       ^^^^^^^^^^^^^^
+E   NameError: name 'aligned_serial' is not defined
+_ TestFlatSlabInvariant.test_aligned_serial_allows_compact_ps_into_high_dim_cs _
+test/test_unified_lexicon_codebook.py:852: in test_aligned_serial_allows_compact_ps_into_high_dim_cs
+    cfg = self._build_config_dict(
+test/test_unified_lexicon_codebook.py:777: in _build_config_dict
+    ws_dim = ps_dim if aligned_serial else cs_dim
+                       ^^^^^^^^^^^^^^
+E   NameError: name 'aligned_serial' is not defined
+_ TestFlatSlabInvariant.test_aligned_serial_requires_predecoded_cs_input_boundary _
+test/test_unified_lexicon_codebook.py:862: in test_aligned_serial_requires_predecoded_cs_input_boundary
+    cfg = self._build_config_dict(
+test/test_unified_lexicon_codebook.py:777: in _build_config_dict
+    ws_dim = ps_dim if aligned_serial else cs_dim
+                       ^^^^^^^^^^^^^^
+E   NameError: name 'aligned_serial' is not defined
+______ TestFlatSlabInvariant.test_validator_passes_when_flat_slab_matches ______
+test/test_unified_lexicon_codebook.py:827: in test_validator_passes_when_flat_slab_matches
+    cfg = self._build_config_dict(
+test/test_unified_lexicon_codebook.py:777: in _build_config_dict
+    ws_dim = ps_dim if aligned_serial else cs_dim
+                       ^^^^^^^^^^^^^^
+E   NameError: name 'aligned_serial' is not defined
+__________ TestFlatSlabInvariant.test_validator_raises_on_cs_mismatch __________
+test/test_unified_lexicon_codebook.py:844: in test_validator_raises_on_cs_mismatch
+    cfg = self._build_config_dict(
+test/test_unified_lexicon_codebook.py:777: in _build_config_dict
+    ws_dim = ps_dim if aligned_serial else cs_dim
+                       ^^^^^^^^^^^^^^
+E   NameError: name 'aligned_serial' is not defined
+________ TestFlatSlabInvariant.test_validator_raises_on_is_ps_mismatch _________
+test/test_unified_lexicon_codebook.py:834: in test_validator_raises_on_is_ps_mismatch
+    cfg = self._build_config_dict(
+test/test_unified_lexicon_codebook.py:777: in _build_config_dict
+    ws_dim = ps_dim if aligned_serial else cs_dim
+                       ^^^^^^^^^^^^^^
+E   NameError: name 'aligned_serial' is not defined
+___________________ test_grammar_config_declares_sum_product ___________________
+test/test_union_difference_ops.py:226: in test_grammar_config_declares_sum_product
+    assert {r.method_name for r in rules} == {"sum", "product"}, (
+E   AssertionError: [RuleDef(space_role='SS', canonical='F -> divide.forward(F)', arity=1, method_name='divide', lhs='F', rhs_symbols=('F'...pt', 'knowing', 'symbolic', 'serial', 'priming', 'budget'), field_eligible=True, order_delta=0, case_head_role=0), ...]
+E   assert set() == {'product', 'sum'}
+E     
+E     Extra items in the right set:
+E     'sum'
+E     'product'
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_typed_definition.py::test_covers_walks_sym_whole_links
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_typed_definition.py::test_typed_definition_head_modifiers_exclusions
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7130: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7130: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9cs8l_uh/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_parallel_does_not_receive_sparse_boundary_relaxation
+FAILED test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_serial_allows_compact_ps_into_high_dim_cs
+FAILED test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_serial_requires_predecoded_cs_input_boundary
+FAILED test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_passes_when_flat_slab_matches
+FAILED test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_cs_mismatch
+FAILED test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_is_ps_mismatch
+FAILED test/test_union_difference_ops.py::test_grammar_config_declares_sum_product
+7 failed, 128 passed, 3 skipped, 4 warnings, 3 subtests passed in 8.02s

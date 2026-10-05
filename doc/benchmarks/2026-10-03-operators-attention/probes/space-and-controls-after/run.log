@@ -1,0 +1,1381 @@
+.......................................ssssss.....sssssssFFFFFF......... [ 25%]
+.s.....s......................FF...........................FF...FFF..... [ 51%]
+.................F.......................s.....FFFF......F.............. [ 76%]
+.......................................................FF........        [100%]
+=================================== FAILURES ===================================
+________________________ test_native_unseeded_xor[0-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_0_4_0')
+pool = 4, trial = 0
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_0_4_0')
+pool = 4
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+>           loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: 'NoneType' object is not subscriptable
+
+test/test_grounded_xor.py:96: TypeError
+________________________ test_native_unseeded_xor[0-8] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_0_8_0')
+pool = 8, trial = 0
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_0_8_0')
+pool = 8
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+>           loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: 'NoneType' object is not subscriptable
+
+test/test_grounded_xor.py:96: TypeError
+________________________ test_native_unseeded_xor[1-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_1_4_0')
+pool = 4, trial = 1
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_1_4_0')
+pool = 4
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+>           loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: 'NoneType' object is not subscriptable
+
+test/test_grounded_xor.py:96: TypeError
+________________________ test_native_unseeded_xor[1-8] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_1_8_0')
+pool = 8, trial = 1
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_1_8_0')
+pool = 8
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+>           loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: 'NoneType' object is not subscriptable
+
+test/test_grounded_xor.py:96: TypeError
+________________________ test_native_unseeded_xor[2-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_2_4_0')
+pool = 4, trial = 2
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_2_4_0')
+pool = 4
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+>           loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: 'NoneType' object is not subscriptable
+
+test/test_grounded_xor.py:96: TypeError
+________________________ test_native_unseeded_xor[2-8] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_2_8_0')
+pool = 8, trial = 2
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1560/test_native_unseeded_xor_2_8_0')
+pool = 8
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+>           loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: 'NoneType' object is not subscriptable
+
+test/test_grounded_xor.py:96: TypeError
+______________ TestSimpleModelCreation.test_simple_model_ergodic _______________
+
+self = <test_basicmodel.TestSimpleModelCreation testMethod=test_simple_model_ergodic>
+
+    def test_simple_model_ergodic(self):
+        """BasicModel (simple path) with ergodic=True uses SigmaLayer path."""
+        N = 16
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, certainty=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:457: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________ TestSimpleModelCreation.test_simple_model_traditional _____________
+
+self = <test_basicmodel.TestSimpleModelCreation testMethod=test_simple_model_traditional>
+
+    def test_simple_model_traditional(self):
+        """BasicModel (simple path) with ergodic=False produces valid output.
+    
+        Stage 1.C+ architecture: the CS forward is STM bookkeeping
+        (no atomic ``sigma_percept`` lift), so the per-space_role N counts
+        must match: nInput == nPercepts == nConcepts == nSymbols.
+        The OutputSpace performs the final aggregation to nOutput.
+        """
+        N = 16
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:443: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______________ TestSimpleModel.test_simple_model_ergodic_shapes _______________
+
+self = <test_basicmodel.TestSimpleModel testMethod=test_simple_model_ergodic_shapes>
+
+    def test_simple_model_ergodic_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:799: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____________ TestSimpleModel.test_simple_model_traditional_shapes _____________
+
+self = <test_basicmodel.TestSimpleModel testMethod=test_simple_model_traditional_shapes>
+
+    def test_simple_model_traditional_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:814: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______________ TestModelEndToEnd.test_simple_model_ergodic_shapes ______________
+
+self = <test_basicmodel.TestModelEndToEnd testMethod=test_simple_model_ergodic_shapes>
+
+    def test_simple_model_ergodic_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:867: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________________ TestModelEndToEnd.test_simple_model_loss_runs _________________
+
+self = <test_basicmodel.TestModelEndToEnd testMethod=test_simple_model_loss_runs>
+
+    def test_simple_model_loss_runs(self):
+        """Verify forward + loss + backward doesn't crash."""
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, certainty=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+        target = torch.randn(2, 4).to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:901: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________ TestModelEndToEnd.test_simple_model_traditional_shapes ____________
+
+self = <test_basicmodel.TestModelEndToEnd testMethod=test_simple_model_traditional_shapes>
+
+    def test_simple_model_traditional_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:882: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________ TestBaseModelFactory.test_factory_creates_basic_model _____________
+
+self = <test_basicmodel.TestBaseModelFactory testMethod=test_factory_creates_basic_model>
+
+        def test_factory_creates_basic_model(self):
+            # nSymbols must equal nConcepts (WholeSpace 1:1 mapping constraint),
+            # and nPercepts must be 2*nConcepts (PiLayer invertibility).
+            # symbol_dim must equal concept_dim (WholeSpace owns no
+            # SigmaLayer/PiLayer post 2026-05 ownership rule).
+            xml = """<model>
+      <architecture>
+        <bindingDepth>2</bindingDepth>    <training><autoload>false</autoload></training>
+      </architecture>
+      <InputSpace><nOutput>32</nOutput><nDim>10</nDim></InputSpace>
+      <PartSpace><nOutput>4</nOutput><nDim>10</nDim><nVectors>4</nVectors></PartSpace>
+      <ConceptualSpace><nOutput>2</nOutput><nDim>10</nDim><nVectors>2</nVectors></ConceptualSpace>
+      <WholeSpace><nOutput>2</nOutput></WholeSpace>
+      <OutputSpace><nOutput>2</nOutput><nDim>4</nDim></OutputSpace>
+    </model>"""
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+                f.write(xml)
+                path = f.name
+            try:
+>               model, cfg = Models.BaseModel.from_config(path)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1224: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6560: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16769: in _create_per_stage
+    TheXMLConfig.validate()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <util.XMLConfig object at 0x110ae0530>
+
+    def validate(self):
+        """Run all registered requirements.  Raises ``ValueError`` on
+        the first failure, then clears the list so a subsequent
+        ``create()`` starts fresh.
+        """
+        try:
+            for check, desc in self._requirements:
+                try:
+                    if check(self) is False:
+>                       raise ValueError(
+                            f"Config requirement failed: {desc}")
+E                           ValueError: Config requirement failed: ConceptualSpace: ConceptualSpace requires nVectors (2) >= nActive (4) (inventory decoupled post-P3)
+
+bin/util.py:1591: ValueError
+______________ TestModelTypeVariants.test_concept_with_attention _______________
+
+self = <test_basicmodel.TestModelTypeVariants testMethod=test_concept_with_attention>
+
+    def test_concept_with_attention(self):
+        """conceptHasAttention=True -- forward only."""
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            conceptHasAttention=True,
+            perceptPassThrough=True, symbolPassThrough=True,
+            flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh()
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1822: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________________ TestModelTypeVariants.test_conceptual_order_1 _________________
+
+self = <test_basicmodel.TestModelTypeVariants testMethod=test_conceptual_order_1>
+
+    def test_conceptual_order_1(self):
+        """bindingDepth=1 with non-passthrough symbolic -- forward only.
+    
+        After the 2026-05-05 BasicModel/BasicModel merger, the
+        per-stage path is the only construction path and
+        ``bindingDepth`` literally drives the per-stage iteration.
+        """
+        # symbolDim is the SS EVENT nDim (not band-adjusted by the fixture);
+        # under the uniform (4,4) band SS content = symbolDim - 8, which must
+        # be >= 0 AND match CS.nWhat (conceptDim=1 -> CS content 1). So
+        # symbolDim=9 -> SS content 1 == CS.nWhat. (2026-07-04 encoding pass
+        # widened (2,2)->(2,4), symbolDim 5 -> 7; 2026-07-09 multi-rung pass
+        # widened (2,4)->(4,4), symbolDim 7 -> 9.)
+        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=9,
+                              wordDim=1, outputDim=1,
+                              nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                              perceptPassThrough=True, symbolPassThrough=False,
+                              flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                     bindingDepth=1)
+        x = torch.randn(2, 8, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______________ TestModelTypeVariants.test_percept_no_attention ________________
+
+self = <test_basicmodel.TestModelTypeVariants testMethod=test_percept_no_attention>
+
+    def test_percept_no_attention(self):
+        """perceptHasAttention=False, perceptPassThrough=False -- forward only."""
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptHasAttention=False,
+            perceptPassThrough=False, symbolPassThrough=True,
+            flatten=True, naive=True)
+        model = Models.BasicModel()
+        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
+        x = torch.randn(2, 8, 1)
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1806: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________ TestReconstructionSymbols.test_forward_output_shape_unchanged _________
+
+self = <test_basicmodel.TestReconstructionSymbols testMethod=test_forward_output_shape_unchanged>
+
+    def test_forward_output_shape_unchanged(self):
+        """Forward pass output shape is [batch, nOutput] regardless of nSymbols.
+    
+        The flat-slab invariant (post Stage 1.C) requires IS.nOutput
+        == PS.nOutput == CS.nOutput == SS.nOutput. This fixture sets all
+        peers to eight slots before varying the output geometry.
+        """
+        m = self._create_xor_model(nSymbols=8, nOutput=1)
+        m.train(False)
+        test_input, _ = m.inputSpace.getTestData()
+        x = m.inputSpace.prepInput(test_input[:2])
+        with torch.no_grad():
+>           forwardInput, symbols, outputPred, _ = m.forward(x)
+                                                   ^^^^^^^^^^^^
+
+test/test_basicmodel.py:1932: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22962: in _forward_per_stage
+    if sentence_state is not None else self._forward_head(body_sub))
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:17034: in _forward_head
+    result = self.outputSpace(sub)
+             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21205: in forward
+    return self.read_concepts(subspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = OutputSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+    (wh...): EventEncoding()
+    (whatEncoding): WhatEncoding()
+    (wordEncoding): WordEncoding()
+  )
+  (layers): ModuleList()
+)
+subspace = SubSpace(
+  (activeEncoding): ActiveEncoding()
+  (objectEncoding): EventEncoding()
+  (whatEncoding): WhatEncoding()
+  ...WordEncoding()
+  (activation): Tensor()
+  (event): Tensor()
+  (what): Tensor()
+  (where): Tensor()
+  (when): Tensor()
+)
+
+    def read_concepts(self, subspace):
+        """Read named positive poles, resolving this turn's field by concept id.
+    
+        The extent union is already represented by the concept's evidence.
+        Selecting an identity adds no projection, bias, or Boolean corner.
+        """
+        evidence = getattr(subspace, '_concept_activations', None)
+        ids = getattr(subspace, '_concept_ids', None)
+        if not torch.is_tensor(evidence) or not torch.is_tensor(ids):
+>           raise ValueError('concept output requires a bound native conceptual field')
+E           ValueError: concept output requires a bound native conceptual field
+
+bin/Spaces.py:21266: ValueError
+______ TestTrainingUpdatesWeights.test_xor_weights_change_after_one_epoch ______
+
+self = <test_basicmodel.TestTrainingUpdatesWeights testMethod=test_xor_weights_change_after_one_epoch>
+
+    def test_xor_weights_change_after_one_epoch(self):
+        """XOR model weights must differ after 1 epoch of training."""
+    
+        # XOR_exact.xml has autoload=false, autosave=false
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        Models.init_config(path=xml_path, defaults_path=os.path.join(os.path.dirname(_BIN), "data", "model.xml"))
+        Models.TheData.load("inline", dat=Models.TheXMLConfig.get("architecture.data"))
+    
+        m = Models.BasicModel()
+        m.create_from_config(xml_path, data=Models.TheData)
+    
+        weights_before = {k: v.clone() for k, v in m.state_dict().items()}
+    
+>       m.runTrial(numEpochs=1, batchSize=10, lr=0.01)
+
+test/test_basicmodel.py:2126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:10526: in runTrial
+    teach_concept_lessons(self)
+bin/ConceptLessons.py:68: in teach_concept_lessons
+    model.forward(native)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22962: in _forward_per_stage
+    if sentence_state is not None else self._forward_head(body_sub))
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:17034: in _forward_head
+    result = self.outputSpace(sub)
+             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:21205: in forward
+    return self.read_concepts(subspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = OutputSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+    (wh...): EventEncoding()
+    (whatEncoding): WhatEncoding()
+    (wordEncoding): WordEncoding()
+  )
+  (layers): ModuleList()
+)
+subspace = SubSpace(
+  (activeEncoding): ActiveEncoding()
+  (objectEncoding): EventEncoding()
+  (whatEncoding): WhatEncoding()
+  ...WordEncoding()
+  (activation): Tensor()
+  (event): Tensor()
+  (what): Tensor()
+  (where): Tensor()
+  (when): Tensor()
+)
+
+    def read_concepts(self, subspace):
+        """Read named positive poles, resolving this turn's field by concept id.
+    
+        The extent union is already represented by the concept's evidence.
+        Selecting an identity adds no projection, bias, or Boolean corner.
+        """
+        evidence = getattr(subspace, '_concept_activations', None)
+        ids = getattr(subspace, '_concept_ids', None)
+        if not torch.is_tensor(evidence) or not torch.is_tensor(ids):
+>           raise ValueError('concept output requires a bound native conceptual field')
+E           ValueError: concept output requires a bound native conceptual field
+
+bin/Spaces.py:21266: ValueError
+_____ TestSubspaceActivationPipeline.test_simple_model_subspace_activation _____
+
+self = <test_basicmodel.TestSubspaceActivationPipeline testMethod=test_simple_model_subspace_activation>
+
+    def test_simple_model_subspace_activation(self):
+        """BasicModel with useSubspaceActivation=True produces valid output shapes."""
+        N = 16
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:2907: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________ TestSubspaceActivationPipeline.test_subspace_activation_stored ________
+
+self = <test_basicmodel.TestSubspaceActivationPipeline testMethod=test_subspace_activation_stored>
+
+    def test_subspace_activation_stored(self):
+        """After forward with useSubspaceActivation, spaces have activations."""
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        # SigmaLayer.nonlinear=True applies atanh; input must be in [-1, 1]
+        # or atanh produces NaN. Matches the companion test above.
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       model.forward(x)
+
+test/test_basicmodel.py:2923: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8261: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22931: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13138: in _lex_embed_stem
+    stage_expectation(self)
+bin/ModelAttention.py:117: in stage_expectation
+    teacher_forcing=bool(model.training),gain=model.word_expectation_gain,active=accepted)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'word_expectation_gain'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'word_expectation_gain'. Did you mean: 'expectation_gain'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_global_consume.py::test_consume_width_mismatch_slices_to_common
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16617: RuntimeWarning: concept pool order 0 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-4] - TypeError: ...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-8] - TypeError: ...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-4] - TypeError: ...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-8] - TypeError: ...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-4] - TypeError: ...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-8] - TypeError: ...
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_basic_model
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_concept_with_attention
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention
+FAILED test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+FAILED test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored
+21 failed, 244 passed, 16 skipped, 9 warnings in 23.77s

@@ -1,0 +1,508 @@
+FFFFFFF................................................................. [ 37%]
+............................s...............F........................... [ 75%]
+................................................                         [100%]
+=================================== FAILURES ===================================
+____________ test_small_grammar_model_has_the_same_fixed_word_whole ____________
+
+    def test_small_grammar_model_has_the_same_fixed_word_whole():
+        from test_mm_xor import _fresh_model, _PROJECT
+        from pathlib import Path
+        model,_,_=_fresh_model(str(Path(_PROJECT)/'data/XOR_grammar.xml'))
+        whole=model.wholeSpace.subspace.what.primitive_properties
+>       assert len(whole.fixed_rows)>8 and bool(whole.fixed_rows[8])
+E       assert (6 > 8)
+E        +  where 6 = len(tensor([False, False, False, False, False, False]))
+E        +    where tensor([False, False, False, False, False, False]) = PrimitiveProperties().fixed_rows
+
+test/test_one_attention.py:289: AssertionError
+________________________ test_native_unseeded_xor[0-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_0_4_0')
+pool = 4, trial = 0
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_0_4_0')
+pool = 4
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+            loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            model.End()
+        model.forward(x)
+        expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
+>       torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 6 / 8 (75.0%)
+E       Greatest absolute difference: 1.0 at index (0, 1) (up to 1e-06 allowed)
+E       Greatest relative difference: 1.0 at index (0, 1) (up to 0 allowed)
+
+test/test_grounded_xor.py:103: AssertionError
+________________________ test_native_unseeded_xor[0-8] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_0_8_0')
+pool = 8, trial = 0
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_0_8_0')
+pool = 8
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+            loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            model.End()
+        model.forward(x)
+        expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
+>       torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 6 / 8 (75.0%)
+E       Greatest absolute difference: 1.0 at index (0, 1) (up to 1e-06 allowed)
+E       Greatest relative difference: 1.0 at index (0, 1) (up to 0 allowed)
+
+test/test_grounded_xor.py:103: AssertionError
+________________________ test_native_unseeded_xor[1-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_1_4_0')
+pool = 4, trial = 1
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_1_4_0')
+pool = 4
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+            loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            model.End()
+        model.forward(x)
+        expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
+>       torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 6 / 8 (75.0%)
+E       Greatest absolute difference: 1.0 at index (0, 1) (up to 1e-06 allowed)
+E       Greatest relative difference: 1.0 at index (0, 1) (up to 0 allowed)
+
+test/test_grounded_xor.py:103: AssertionError
+________________________ test_native_unseeded_xor[1-8] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_1_8_0')
+pool = 8, trial = 1
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_1_8_0')
+pool = 8
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+            loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            model.End()
+        model.forward(x)
+        expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
+>       torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 6 / 8 (75.0%)
+E       Greatest absolute difference: 1.0 at index (0, 1) (up to 1e-06 allowed)
+E       Greatest relative difference: 1.0 at index (0, 1) (up to 0 allowed)
+
+test/test_grounded_xor.py:103: AssertionError
+________________________ test_native_unseeded_xor[2-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_2_4_0')
+pool = 4, trial = 2
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_2_4_0')
+pool = 4
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+            loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            model.End()
+        model.forward(x)
+        expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
+>       torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 6 / 8 (75.0%)
+E       Greatest absolute difference: 1.0 at index (0, 1) (up to 1e-06 allowed)
+E       Greatest relative difference: 1.0 at index (0, 1) (up to 0 allowed)
+
+test/test_grounded_xor.py:103: AssertionError
+________________________ test_native_unseeded_xor[2-8] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_2_8_0')
+pool = 8, trial = 2
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1561/test_native_unseeded_xor_2_8_0')
+pool = 8
+
+    def learn_grounded_xor(tmp_path, pool):
+        model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        prior = ws.subspace.what.primitive_properties
+        # Teach primitive memberships, then the name's feature definition.
+        # No conceptual truth table is installed as an activation.
+        for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
+            before, after = prior.teach(row, [48, 49], targets)
+            assert before > .1 and after < 1e-12
+        assert cs._csw_concept_row(0, 10001) == 0
+        cs.add_concept_feature(0, 'ws', 9, 1.)
+        for negative in (False, True):
+            cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
+        native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
+        native[:, 0, 0] = torch.tensor([48, 49, 65])
+        store = Spaces._concept_alloc_of(cs).layer()
+        optimizer = torch.optim.Adam([store.features.values], lr=.03)
+        # Name single primitive occurrences. The two-position truth table must
+        # subsequently arise from extent readout, never from these targets.
+        named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
+        for _ in range(32):
+            optimizer.zero_grad()
+            model.forward(native)
+            loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+            loss.backward()
+            optimizer.step()
+            store.project_parts()
+            model.End()
+        model.forward(x)
+        expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
+>       torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 6 / 8 (75.0%)
+E       Greatest absolute difference: 1.0 at index (0, 1) (up to 1e-06 allowed)
+E       Greatest relative difference: 1.0 at index (0, 1) (up to 0 allowed)
+
+test/test_grounded_xor.py:103: AssertionError
+______ TestTrainingUpdatesWeights.test_xor_weights_change_after_one_epoch ______
+
+self = <test_basicmodel.TestTrainingUpdatesWeights testMethod=test_xor_weights_change_after_one_epoch>
+
+    def test_xor_weights_change_after_one_epoch(self):
+        """XOR model weights must differ after 1 epoch of training."""
+    
+        # XOR_exact.xml has autoload=false, autosave=false
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        Models.init_config(path=xml_path, defaults_path=os.path.join(os.path.dirname(_BIN), "data", "model.xml"))
+        Models.TheData.load("inline", dat=Models.TheXMLConfig.get("architecture.data"))
+    
+        m = Models.BasicModel()
+        m.create_from_config(xml_path, data=Models.TheData)
+    
+        weights_before = {k: v.clone() for k, v in m.state_dict().items()}
+    
+>       m.runTrial(numEpochs=1, batchSize=10, lr=0.01)
+
+test/test_basicmodel.py:2126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:10531: in runTrial
+    teach_concept_lessons(self)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+
+    def teach_concept_lessons(model):
+        filename = TheXMLConfig.get('architecture.data.conceptLessons', default='')
+        if not filename or getattr(model, '_concept_lessons_taught', False):
+            return
+        path = Path(filename)
+        if not path.is_absolute():
+            path = Path(ProjectPaths.DATA_DIR) / path
+        lesson = json.loads(path.read_text())
+        cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+        if not (cs._sparse_active() and cs.conceptual_pi and cs._promotion_enabled):
+            raise ValueError('concept lessons require symbolic order, conceptual pi and promotion')
+        primitive = ws.subspace.what.primitive_properties
+        for item in lesson['properties']:
+            primitive.teach(item['row'], item['bytes'], item['memberships'])
+        for item in lesson['names']:
+            row = cs._csw_concept_row(0, int(item['concept']))
+            for feature in item['features']:
+                cs.add_concept_feature(row, feature['tower'], feature['row'],
+                                       feature['weight'], negated=feature.get('negative', False))
+        for concept in model.outputSpace.concept_ids:
+            cs._csw_concept_row(1, concept)
+        store = cs._concept_allocator.layer(0)
+        device = primitive.members.device
+        width = int(model.inputSpace.outputShape[0])
+    
+        def encode(texts):
+            data = torch.zeros(len(texts), 1, width, device=device, dtype=torch.long)
+            for b, text in enumerate(texts):
+                raw = text.encode('utf8')
+                if len(raw) > width:
+                    raise ValueError('concept lesson exceeds input width')
+                data[b, 0, :len(raw)] = torch.tensor(list(raw), device=device)
+            return data
+    
+        def read_name(concept):
+            carrier = model._combine_last_cs_sub
+            ids, evidence = carrier._concept_ids, carrier._concept_activations
+            if ids.ndim == 1:
+                ids = ids[:, None].expand(-1, evidence.shape[1])
+            return (evidence.amax(2) * (ids == concept)[..., None]).amax(0)
+    
+        was_training = model.training
+        model.eval()
+        model.set_sigma(0.)
+        # Name targets never enter forward; optimize the existing feature weights.
+        optimizer = torch.optim.Adam([store.features.values], lr=float(lesson['learning_rate']))
+        history = []
+        for item in lesson['names']:
+            examples = item['examples']
+            native = encode([e['text'] for e in examples])
+            target = torch.tensor([e['evidence'] for e in examples], device=device)
+            for _ in range(int(lesson['updates'])):
+                optimizer.zero_grad()
+                model.forward(native)
+                loss = (read_name(item['concept']) - target).square().mean()
+                loss.backward()
+                optimizer.step()
+                store.project_parts()
+                model.End()
+            history.append(float(loss.detach()))
+    
+        # The cases are unlabelled training inputs. Observe their located field,
+        # then let raw use (never the optimizer) earn pool participation.
+        inputs = model.inputSpace.data.train_input
+        with torch.no_grad():
+            for _ in range(int(lesson['witness_updates'])):
+                for start in range(0, len(inputs), 64):
+                    texts = [x if isinstance(x, str) else
+                             bytes(x.reshape(-1).tolist()).rstrip(b'\0').decode('utf8')
+                             for x in inputs[start:start + 64]]
+                    model.forward(encode(texts))
+                    cs.promotion_observe()
+                    cs.promotion_pass()
+                    model.End()
+        cases = sorted({r for r, col in store.features._index
+                        if (col // 2) % 2 == 0 and cs._order0_inventory_row(r) and not bool(store.provisional[r])})
+        # Exclude directly taught names; cases are the recurrent native parts.
+        cases = [r for r in cases if any(target == r and (col // 2) % 2 == 0
+                                       for target, col in store.features._index)]
+        if not cases:
+>           raise ValueError('concept lessons did not witness any located field conjunctions')
+E           ValueError: concept lessons did not witness any located field conjunctions
+
+bin/ConceptLessons.py:95: ValueError
+=============================== warnings summary ===============================
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16617: RuntimeWarning: concept pool order 0 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_small_grammar_model_has_the_same_fixed_word_whole
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-4] - AssertionEr...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-8] - AssertionEr...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-4] - AssertionEr...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-8] - AssertionEr...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-4] - AssertionEr...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-8] - AssertionEr...
+FAILED test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+8 failed, 183 passed, 1 skipped, 9 warnings in 21.35s

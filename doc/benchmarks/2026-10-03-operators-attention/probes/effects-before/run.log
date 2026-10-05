@@ -1,0 +1,71 @@
+FFF.F.FF                                                                 [100%]
+=================================== FAILURES ===================================
+_______ test_every_shipped_rule_has_exhaustive_effects_and_operand_kinds _______
+
+    def test_every_shipped_rule_has_exhaustive_effects_and_operand_kinds():
+        from Language import Grammar
+>       from AccessibleMind import OperatorEffects
+E       ImportError: cannot import name 'OperatorEffects' from 'AccessibleMind' (/Users/arogers/github/WikiOracle/basicmodel/bin/AccessibleMind.py)
+
+test/test_operator_effects.py:7: ImportError
+_____________ test_aliases_and_faces_inherit_one_complete_contract _____________
+
+    def test_aliases_and_faces_inherit_one_complete_contract():
+        from Language import Grammar
+>       from AccessibleMind import OperatorEffects, Subsystem as S
+E       ImportError: cannot import name 'OperatorEffects' from 'AccessibleMind' (/Users/arogers/github/WikiOracle/basicmodel/bin/AccessibleMind.py)
+
+test/test_operator_effects.py:19: ImportError
+____ test_an_explicit_write_list_cannot_omit_add_or_repeat_effects[serial] _____
+
+writes = 'serial'
+
+    @pytest.mark.parametrize('writes', ['serial', 'serial,percept,budget,ltm', 'serial,serial'])
+    def test_an_explicit_write_list_cannot_omit_add_or_repeat_effects(writes):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='writes'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_operator_effects.py:34: Failed
+_ test_an_explicit_write_list_cannot_omit_add_or_repeat_effects[serial,serial] _
+
+writes = 'serial,serial'
+
+    @pytest.mark.parametrize('writes', ['serial', 'serial,percept,budget,ltm', 'serial,serial'])
+    def test_an_explicit_write_list_cannot_omit_add_or_repeat_effects(writes):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='writes'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_operator_effects.py:34: Failed
+______ test_round_rejects_undeclared_and_second_writes_before_committing _______
+
+    def test_round_rejects_undeclared_and_second_writes_before_committing():
+>       from AccessibleMind import OperatorEffects, EffectRound, Subsystem as S
+E       ImportError: cannot import name 'OperatorEffects' from 'AccessibleMind' (/Users/arogers/github/WikiOracle/basicmodel/bin/AccessibleMind.py)
+
+test/test_operator_effects.py:54: ImportError
+_____________ test_order_change_is_declared_and_survives_an_alias ______________
+
+    def test_order_change_is_declared_and_survives_an_alias():
+        from Language import Grammar
+        grammar=Grammar();rules=[]
+        grammar._fill_rule_list(rules, {'rule': {'_':'S2 = renamed.forward(N1, V1)', 'implementation':'lift'}})
+        rule=rules[0]._replace(method_name='no_semantic_spelling')
+>       assert grammar._rule_order_signature(rule).order_delta == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = RuleOrderSignature(lhs_category='S', lhs_order_expr=OrderExpr(kind='constant', delta=2), rhs_categories=('N', 'V'), rh...derExpr(kind='constant', delta=1), OrderExpr(kind='constant', delta=1)), op_name='no_semantic_spelling', order_delta=0).order_delta
+E        +    where RuleOrderSignature(lhs_category='S', lhs_order_expr=OrderExpr(kind='constant', delta=2), rhs_categories=('N', 'V'), rh...derExpr(kind='constant', delta=1), OrderExpr(kind='constant', delta=1)), op_name='no_semantic_spelling', order_delta=0) = _rule_order_signature(RuleDef(space_role='SS', canonical='S2 -> renamed.forward(N1, V1)', arity=2, method_name='no_semantic_spelling', lhs='... relation_kind=None, scope_transparent=False, polarity_effect=None, meaning_mode=None, same_reference_idempotent=False))
+E        +      where _rule_order_signature = <Language.Grammar object at 0x12a1e6870>._rule_order_signature
+
+test/test_operator_effects.py:68: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_operator_effects.py::test_every_shipped_rule_has_exhaustive_effects_and_operand_kinds
+FAILED test/test_operator_effects.py::test_aliases_and_faces_inherit_one_complete_contract
+FAILED test/test_operator_effects.py::test_an_explicit_write_list_cannot_omit_add_or_repeat_effects[serial]
+FAILED test/test_operator_effects.py::test_an_explicit_write_list_cannot_omit_add_or_repeat_effects[serial,serial]
+FAILED test/test_operator_effects.py::test_round_rejects_undeclared_and_second_writes_before_committing
+FAILED test/test_operator_effects.py::test_order_change_is_declared_and_survives_an_alias
+6 failed, 2 passed in 1.99s

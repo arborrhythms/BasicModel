@@ -1,0 +1,469 @@
+......FFFFFF.......................F.......FFFFFF...............FFFF.... [ 63%]
+................................FF.....Fs                                [100%]
+=================================== FAILURES ===================================
+__ test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False] ___
+test/test_grammar_sentence_scope.py:18: in test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence
+    model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+___ test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[True] ___
+test/test_grammar_sentence_scope.py:18: in test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence
+    model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+_ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False] __
+test/test_grammar_separator.py:22: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True] __
+test/test_grammar_separator.py:22: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False] __
+test/test_grammar_separator.py:22: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True] ___
+test/test_grammar_separator.py:22: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+_________ test_normal_text_reconstruction_updates_the_grammar_chooser __________
+test/test_grammar_word_learning.py:167: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    assert model.output_in_loop and model.output_policy_weight > 0
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'output_policy_weight'
+________________________ test_native_unseeded_xor[0-4] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_0_4_0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_0_4_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_0_4_0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+________________________ test_native_unseeded_xor[0-8] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_0_8_0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_0_8_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_0_8_0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+________________________ test_native_unseeded_xor[1-4] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_1_4_0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_1_4_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_1_4_0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+________________________ test_native_unseeded_xor[1-8] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_1_8_0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_1_8_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_1_8_0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+________________________ test_native_unseeded_xor[2-4] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_2_4_0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_2_4_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_2_4_0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+________________________ test_native_unseeded_xor[2-8] _________________________
+test/test_grounded_xor.py:208: in test_native_unseeded_xor
+    learn_grounded_xor(tmp_path, pool)
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_2_8_0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_2_8_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1523/test_native_unseeded_xor_2_8_0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+______ TestBackwardCompat.test_mentalmodel_compaction_overflow_regression ______
+test/test_hierarchical.py:149: in test_mentalmodel_compaction_overflow_regression
+    result = self._mentalmodel_forward()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_hierarchical.py:121: in _mentalmodel_forward
+    return model.forward(x)
+           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22869: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17110: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21433: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20992: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20152: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:141: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20097: in compose
+    self.languageSpace._reference_bank = self._sentence_reference_bank(
+bin/Models.py:20034: in _sentence_reference_bank
+    cases = stage_case_bank(self._concept_owner(), required, limit=self.reconstruction_basis_limit)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/CaseSelection.py:67: in stage_case_bank
+    roots = sorted(set(int(v) for v in required_ids.detach().reshape(-1).cpu().tolist() if int(v) > 0))
+                                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'detach'
+________________ TestBackwardCompat.test_mentalmodel_unchanged _________________
+test/test_hierarchical.py:131: in test_mentalmodel_unchanged
+    result = self._mentalmodel_forward()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_hierarchical.py:121: in _mentalmodel_forward
+    return model.forward(x)
+           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22869: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17110: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21433: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20992: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20152: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:141: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20097: in compose
+    self.languageSpace._reference_bank = self._sentence_reference_bank(
+bin/Models.py:20034: in _sentence_reference_bank
+    cases = stage_case_bank(self._concept_owner(), required, limit=self.reconstruction_basis_limit)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/CaseSelection.py:67: in stage_case_bank
+    roots = sorted(set(int(v) for v in required_ids.detach().reshape(-1).cpu().tolist() if int(v) > 0))
+                                       ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'detach'
+__________ TestBackwardCompat.test_symbolicspace_per_stage_instances ___________
+test/test_hierarchical.py:160: in test_symbolicspace_per_stage_instances
+    self.assertEqual(len(model.wholeSpaces), model.subsymbolicOrder)
+                                             ^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'subsymbolicOrder'
+_ TestNativePasses.test_ramsified_passes_have_native_reads_and_no_perceptual_folds _
+test/test_hierarchical.py:166: in test_ramsified_passes_have_native_reads_and_no_perceptual_folds
+    model = _make_model('RamsifiedModel.xml')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_hierarchical.py:34: in _make_model
+    model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, config))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13913: in __init__
+    self.subspace = SymbolSubSpace(
+bin/Language.py:9224: in __init__
+    TheGrammar._ensure_configured()
+bin/Language.py:2308: in _ensure_configured
+    self.configure(cfg)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+____ test_promoted_percepts_keep_their_original_byte_addresses[idempotent] _____
+test/test_input_byte_addresses.py:17: in test_promoted_percepts_keep_their_original_byte_addresses
+    model,_=Models.BaseModel.from_config(path,data=TheData)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+___ test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke] ____
+test/test_input_byte_addresses.py:17: in test_promoted_percepts_keep_their_original_byte_addresses
+    model,_=Models.BaseModel.from_config(path,data=TheData)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+----------------------------- Captured stdout call -----------------------------
+Loading text: 1 shard(s), max 10000 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb
+Loaded 10000 docs -> 467796 sentences (376814 train, 47208 val, 43774 test)
+_________ test_nongrammar_config_disables_cursor_and_next_word_is_none _________
+test/test_input_word_cursor.py:215: in test_nongrammar_config_disables_cursor_and_next_word_is_none
+    m = _build_nongrammar_model()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_input_word_cursor.py:73: in _build_nongrammar_model
+    m, _ = BaseModel.from_config(cfg, data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+=========================== short test summary info ============================
+FAILED test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False]
+FAILED test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[True]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-4] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-8] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-4] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-8] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-4] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-8] - ValueError:...
+FAILED test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression
+FAILED test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged
+FAILED test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances
+FAILED test/test_hierarchical.py::TestNativePasses::test_ramsified_passes_have_native_reads_and_no_perceptual_folds
+FAILED test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[idempotent]
+FAILED test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke]
+FAILED test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none
+20 failed, 92 passed, 1 skipped in 19.65s

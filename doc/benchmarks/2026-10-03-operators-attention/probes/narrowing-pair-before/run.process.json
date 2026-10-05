@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-operators-attention/narrowing_pair_probe.py"
+  ],
+  "pid": 6668,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 438633744,
+  "elapsed_seconds": 3.613154083985137,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/narrowing-pair-before/run.log"
+}

@@ -1,0 +1,13 @@
+{
+  "head": "802abb1acc95e1bddc8cb237b13230a336681c49",
+  "source_matches_final_focused_probe": true,
+  "source_files": 711,
+  "complete_old_new_test_ports": 170,
+  "seed_differences": [],
+  "receipt_links_verified": 32,
+  "supplement_files": 25,
+  "archives_verified": true,
+  "source_zip_sha256": "1cadb87af35d323461cc9203db668c4e5323aa5783b73c22292b9023e8cf6a28",
+  "supplement_zip_sha256": "4033f097b507798143157719ba63049acc06870dc710abd5c47ff87f7f766d72",
+  "note": "Addendum restores 6/8 symbol-concept capacities and removes letter rows. Focused before/after probes only. Original \u00a714 gate and full-sweep measurements remain in their original receipt paths and archived delivery, without rerun. Nothing committed."
+}

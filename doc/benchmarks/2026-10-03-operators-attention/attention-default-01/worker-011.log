@@ -1,0 +1,201 @@
+.......s............................................FFFFFFFFFFFFFFFFFFFF [ 28%]
+FFFFF................................................................... [ 57%]
+........................................................................ [ 85%]
+............Fs...........ss.........                                     [100%]
+=================================== FAILURES ===================================
+________________ test_context_pass_cannot_backpropagate_or_step ________________
+test/test_interleave_lifecycle.py:9: in test_context_pass_cannot_backpropagate_or_step
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+______ test_interleave_reads_native_context_before_any_serial_word[False] ______
+test/test_interleave_lifecycle.py:42: in test_interleave_reads_native_context_before_any_serial_word
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+______ test_interleave_reads_native_context_before_any_serial_word[True] _______
+test/test_interleave_lifecycle.py:42: in test_interleave_reads_native_context_before_any_serial_word
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+____ test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets _____
+test/test_interleave_lifecycle.py:77: in test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets
+    from ModeSchedule import InterleaveCursor
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+_____________ test_interleave_epoch_reads_a_short_final_group_once _____________
+test/test_interleave_lifecycle.py:95: in test_interleave_epoch_reads_a_short_final_group_once
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+___________ test_interleave_checkpoint_resumes_unread_serial_prefix ____________
+test/test_interleave_lifecycle.py:126: in test_interleave_checkpoint_resumes_unread_serial_prefix
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+________ test_legacy_pending_schedule_cannot_replay_the_wrong_direction ________
+test/test_interleave_lifecycle.py:163: in test_legacy_pending_schedule_cannot_replay_the_wrong_direction
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+___ test_interleave_resume_rejects_a_different_grouping_even_between_groups ____
+test/test_interleave_lifecycle.py:171: in test_interleave_resume_rejects_a_different_grouping_even_between_groups
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+_____________ test_interleave_cursor_preserves_document_boundaries _____________
+test/test_interleave_lifecycle.py:182: in test_interleave_cursor_preserves_document_boundaries
+    from ModeSchedule import InterleaveCursor
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+__________ test_failed_context_restores_serial_mode_input_and_teacher __________
+test/test_interleave_lifecycle.py:190: in test_failed_context_restores_serial_mode_input_and_teacher
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+_________ test_evaluation_epoch_preserves_an_unfinished_training_group _________
+test/test_interleave_lifecycle.py:214: in test_evaluation_epoch_preserves_an_unfinished_training_group
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+____________ test_epoch_queue_lifetime_on_success_and_error[True-0] ____________
+test/test_interleave_lifecycle.py:226: in test_epoch_queue_lifetime_on_success_and_error
+    from ModeSchedule import ModeSchedule, scheduled_epoch
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+____________ test_epoch_queue_lifetime_on_success_and_error[True-2] ____________
+test/test_interleave_lifecycle.py:226: in test_epoch_queue_lifetime_on_success_and_error
+    from ModeSchedule import ModeSchedule, scheduled_epoch
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+___________ test_epoch_queue_lifetime_on_success_and_error[False-0] ____________
+test/test_interleave_lifecycle.py:226: in test_epoch_queue_lifetime_on_success_and_error
+    from ModeSchedule import ModeSchedule, scheduled_epoch
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+___________ test_epoch_queue_lifetime_on_success_and_error[False-2] ____________
+test/test_interleave_lifecycle.py:226: in test_epoch_queue_lifetime_on_success_and_error
+    from ModeSchedule import ModeSchedule, scheduled_epoch
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+____________ test_interleave_capacity_uses_the_input_encoders_bytes ____________
+test/test_interleave_lifecycle.py:247: in test_interleave_capacity_uses_the_input_encoders_bytes
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+____________________ test_schedule_rejects_invalid_values[] ____________________
+test/test_interleave_schedule.py:8: in test_schedule_rejects_invalid_values
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+______________ test_schedule_rejects_invalid_values[interleave:0] ______________
+test/test_interleave_schedule.py:8: in test_schedule_rejects_invalid_values
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+_____________ test_schedule_rejects_invalid_values[interleave:-1] ______________
+test/test_interleave_schedule.py:8: in test_schedule_rejects_invalid_values
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+_____________ test_schedule_rejects_invalid_values[interleave:1.5] _____________
+test/test_interleave_schedule.py:8: in test_schedule_rejects_invalid_values
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+_________________ test_schedule_rejects_invalid_values[mixed] __________________
+test/test_interleave_schedule.py:8: in test_schedule_rejects_invalid_values
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+___________ test_schedule_keeps_unread_sentence_prefix_and_remainder ___________
+test/test_interleave_schedule.py:14: in test_schedule_keeps_unread_sentence_prefix_and_remainder
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+_ test_native_interleave_supplies_context_then_reads_the_same_sentences[False] _
+test/test_interleave_schedule.py:25: in test_native_interleave_supplies_context_then_reads_the_same_sentences
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+_ test_native_interleave_supplies_context_then_reads_the_same_sentences[True] __
+test/test_interleave_schedule.py:25: in test_native_interleave_supplies_context_then_reads_the_same_sentences
+    from ModeSchedule import ModeSchedule
+E   ModuleNotFoundError: No module named 'ModeSchedule'
+__ TestSoftRuleProbsGradReachesRouter.test_default_only_fallback_is_detached ___
+test/test_intra_routing_grad_to_router.py:246: in test_default_only_fallback_is_detached
+    model = _build_model(_DEFAULT_CONFIG)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_intra_routing_grad_to_router.py:68: in _build_model
+    model, _ = Models.BasicModel.from_config(config_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+_______________ test_idempotent_forward_compiles_fullgraph_eager _______________
+test/test_ir_fullgraph_compile.py:53: in test_idempotent_forward_compiles_fullgraph_eager
+    assert rc == 0, f"rc={rc}\n{tail}"
+E   AssertionError: rc=1
+E     Traceback (most recent call last):
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 24257, in <module>
+E         results = ModelFactory.run(xml)
+E                   ^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 24039, in run
+E         return ModelFactory._run_hydrated(config_path, arch, dat, trn)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 24097, in _run_hydrated
+E         m, _ = BaseModel.from_config(config_path, data=TheData)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1809, in from_config
+E         cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6531, in create_from_config
+E         return super().create_from_config(config_path, model_type=model_type, data=data)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 1909, in create_from_config
+E         self.create(
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6551, in create
+E         return self._create_per_stage(
+E                ^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 16456, in _create_per_stage
+E         self.symbolSpace = SymbolSpace(
+E                            ^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13929, in __init__
+E         self.languageSpace = LanguageSpace(self)
+E                              ^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 12472, in __init__
+E         raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E     ValueError: unresolved generate rule: P -> sigma.reverse(P)
+E     
+E   assert 1 == 0
+=============================== warnings summary ===============================
+test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_and_binary_anchors_bare_router
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7125: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_interleave_lifecycle.py::test_context_pass_cannot_backpropagate_or_step
+FAILED test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[False]
+FAILED test/test_interleave_lifecycle.py::test_interleave_reads_native_context_before_any_serial_word[True]
+FAILED test/test_interleave_lifecycle.py::test_interleave_cursor_stages_exact_groups_and_keeps_tail_and_targets
+FAILED test/test_interleave_lifecycle.py::test_interleave_epoch_reads_a_short_final_group_once
+FAILED test/test_interleave_lifecycle.py::test_interleave_checkpoint_resumes_unread_serial_prefix
+FAILED test/test_interleave_lifecycle.py::test_legacy_pending_schedule_cannot_replay_the_wrong_direction
+FAILED test/test_interleave_lifecycle.py::test_interleave_resume_rejects_a_different_grouping_even_between_groups
+FAILED test/test_interleave_lifecycle.py::test_interleave_cursor_preserves_document_boundaries
+FAILED test/test_interleave_lifecycle.py::test_failed_context_restores_serial_mode_input_and_teacher
+FAILED test/test_interleave_lifecycle.py::test_evaluation_epoch_preserves_an_unfinished_training_group
+FAILED test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[True-0]
+FAILED test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[True-2]
+FAILED test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[False-0]
+FAILED test/test_interleave_lifecycle.py::test_epoch_queue_lifetime_on_success_and_error[False-2]
+FAILED test/test_interleave_lifecycle.py::test_interleave_capacity_uses_the_input_encoders_bytes
+FAILED test/test_interleave_schedule.py::test_schedule_rejects_invalid_values[]
+FAILED test/test_interleave_schedule.py::test_schedule_rejects_invalid_values[interleave:0]
+FAILED test/test_interleave_schedule.py::test_schedule_rejects_invalid_values[interleave:-1]
+FAILED test/test_interleave_schedule.py::test_schedule_rejects_invalid_values[interleave:1.5]
+FAILED test/test_interleave_schedule.py::test_schedule_rejects_invalid_values[mixed]
+FAILED test/test_interleave_schedule.py::test_schedule_keeps_unread_sentence_prefix_and_remainder
+FAILED test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[False]
+FAILED test/test_interleave_schedule.py::test_native_interleave_supplies_context_then_reads_the_same_sentences[True]
+FAILED test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_default_only_fallback_is_detached
+FAILED test/test_ir_fullgraph_compile.py::test_idempotent_forward_compiles_fullgraph_eager
+26 failed, 222 passed, 4 skipped, 2 warnings in 15.87s

@@ -3,8 +3,8 @@ import torch
 
 
 def test_sentence_prediction_trials_backpropagate_independently():
-    from Layers import InterSentenceLayer
-    layer = InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=4,
+    from Layers import BracketExpectation
+    layer = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
         concept_dim=4, batch=1, expectation_scope='structured')
     layer.set_inter_loss_weight(1.)
     payloads = [torch.ones(3, 4)]

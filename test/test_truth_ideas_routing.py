@@ -54,10 +54,10 @@ class TestTrustStamp(unittest.TestCase):
     def test_config_trust_stamps_cs_and_scales_incoming(self):
         with open(_CONFIG, "r", encoding="utf-8") as fh:
             src = fh.read()
-        self.assertIn("<symbolicOrder>0</symbolicOrder>", src)
+        self.assertIn("<conceptLayers>1</conceptLayers>", src)
         on = src.replace(
-            "<symbolicOrder>0</symbolicOrder>",
-            "<symbolicOrder>0</symbolicOrder>\n    "
+            "<conceptLayers>1</conceptLayers>",
+            "<conceptLayers>1</conceptLayers>\n    "
             "<trust>0.25</trust>")
         # Scratch configurations must not enter the source snapshot.
         with tempfile.NamedTemporaryFile(mode="w", suffix=".xml",
@@ -116,8 +116,8 @@ class TestStmLtmTrust(unittest.TestCase):
         self.assertAlmostEqual(out[1], 0.5, places=6)
 
     def test_ltm_slot_persists_scalar_trust(self):
-        from Layers import InterSentenceLayer
-        disc = InterSentenceLayer(4, 3, 4, concept_dim=4, batch=1)
+        from Layers import BracketExpectation
+        disc = BracketExpectation(4, 3, 4, concept_dim=4, batch=1)
         payload = torch.randn(3, 4)
         disc.observe_stm_end_state([3], [payload], tetralemmas=[0.7])
         chain = disc.get_stm_chain(b=0)
@@ -127,8 +127,8 @@ class TestStmLtmTrust(unittest.TestCase):
         self.assertEqual(tet, 0.7, "the scalar trust persists in the LTM slot")
 
     def test_ltm_slot_none_when_no_trust(self):
-        from Layers import InterSentenceLayer
-        disc = InterSentenceLayer(4, 3, 4, concept_dim=4, batch=1)
+        from Layers import BracketExpectation
+        disc = BracketExpectation(4, 3, 4, concept_dim=4, batch=1)
         disc.observe_stm_end_state([1], [torch.randn(1, 4)], tetralemmas=None)
         _, _, tet = disc.get_stm_chain(b=0)[0]
         self.assertIsNone(tet, "no trust -> slot stays None (byte-identical)")

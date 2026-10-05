@@ -1,0 +1,22 @@
+--- incoming/bin/ObjectiveOwnership.py
++++ bin/ObjectiveOwnership.py
+@@ -15,9 +15,7 @@
+             continue
+         category = term['category']
+         objective = term.get('objective', category)
+-        if objective == 'compose_preference':
+-            owners = ('compose_preference',)
+-        elif category == 'grammar':
++        if category == 'grammar':
+             owners = ('generate_lesson' if 'generate.' in name else 'compose_lesson',)
+         elif category == 'reg':
+             # A regularizer writes only the owned parameters it actually uses.
+@@ -63,7 +61,7 @@
+         parameters = tuple(owners.get(key, ()))
+         if not parameters:
+             continue
+-        objective = ('reconstruction' if key in ('compose_lesson', 'generate_lesson', 'compose_preference') else key)
++        objective = ('reconstruction' if key in ('compose_lesson', 'generate_lesson') else key)
+         value = cost * scale
+         gradients = (pullback.gradients(value, parameters)
+                      if pullback is not None and objective == 'reconstruction'

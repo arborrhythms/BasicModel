@@ -1,0 +1,52 @@
+......................................FF.....ss....sssss.............F.. [ 28%]
+........................................................................ [ 56%]
+........................................................................ [ 84%]
+........................................                                 [100%]
+=================================== FAILURES ===================================
+______________ test_referenced_phrase_admission_is_atomic[width] _______________
+test/test_definition_taxonomy.py:143: in test_referenced_phrase_admission_is_atomic
+    assert clause.refs[2] == ('clause', 0)
+E   AssertionError: assert 7 == ('clause', 0)
+_____________ test_referenced_phrase_admission_is_atomic[capacity] _____________
+test/test_definition_taxonomy.py:143: in test_referenced_phrase_admission_is_atomic
+    assert clause.refs[2] == ('clause', 0)
+E   AssertionError: assert 7 == ('clause', 0)
+_ TestModelIntegration.test_discourse_layer_absent_when_sentenceExpectation_false _
+test/test_discourse_space.py:250: in test_discourse_layer_absent_when_sentenceExpectation_false
+    self.assertIsNone(model.symbolSpace.expectation)
+E   AssertionError: BracketExpectation(
+E     (predictor): Sequential(
+E       (0): Linear(in_features=98, out_features=28, bias=True)
+E       (1): Tanh()
+E       (2): Linear(in_features=28, out_features=14, bias=True)
+E     )
+E     (_inter_predictor): SentenceExpectation(
+E       (network): Sequential(
+E         (0): Linear(in_features=360, out_features=90, bias=True)
+E         (1): Tanh()
+E         (2): Linear(in_features=90, out_features=45, bias=True)
+E       )
+E     )
+E     (word_predictor): Sequential(
+E       (0): Linear(in_features=98, out_features=28, bias=True)
+E       (1): Tanh()
+E       (2): Linear(in_features=28, out_features=14, bias=True)
+E     )
+E     (_ltm_store): TernaryTruthStore()
+E   ) is not None
+=============================== warnings summary ===============================
+test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]
+FAILED test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]
+FAILED test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false
+3 failed, 246 passed, 7 skipped, 2 warnings in 10.59s

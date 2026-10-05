@@ -66,7 +66,7 @@ def install_where_registry(model):
     # neither vocabulary promotion nor a batch may resize this address space.
     input_extent = max(int(model.inputSpace.outputShape[0]),
                        int(getattr(model.inputSpace.data, 'inputLength', 0) or 0))
-    if model.serial and not bool(TheXMLConfig.get('architecture.serialObjectMeta', default=False)):
+    if model.word_brackets and not bool(TheXMLConfig.get('architecture.serialObjectMeta', default=False)):
         # A mixing serial InputSpace declares word slots, whereas occurrence
         # coordinates are byte starts. Convert the existing unit/atom bounds
         # to byte addresses; do not compare a byte offset with a word count.

@@ -18,7 +18,7 @@ _DATA = _ROOT / "data"
 if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
-from Layers import InterSentenceLayer, WhatInteractionMemory  # noqa: E402
+from Layers import BracketExpectation, WhatInteractionMemory  # noqa: E402
 from What import LTMSlot, What, WhatSlotOperation  # noqa: E402
 
 
@@ -131,7 +131,7 @@ def plain_config(tmp_path_factory):
 
 def test_default_has_one_memory_and_think_is_single_step(plain_config):
     m = _build(plain_config)
-    assert m.symbolSpace.discourse is not None
+    assert m.symbolSpace.expectation is not None
     assert isinstance(m.symbolSpace.what_memory, WhatInteractionMemory)
     assert m._what_memory() is m.symbolSpace.what_memory
     assert m.what_thinking_detach == "slot"
@@ -144,7 +144,8 @@ def test_default_has_one_memory_and_think_is_single_step(plain_config):
 
 def test_standalone_memory_serves_think_without_sentence_prediction(memory_config):
     m = _build(memory_config)
-    assert m.symbolSpace.discourse is None
+    assert not m.symbolSpace.expectation.expectation_enabled
+    assert 'word' in m.symbolSpace.expectation.enabled_levels
     memory = m._what_memory()
     assert isinstance(memory, WhatInteractionMemory)
     assert memory.detach_mode == "episode"          # applied from the config

@@ -1,0 +1,93 @@
+........................................................................ [ 35%]
+............................FFFF........................................ [ 70%]
+.............................................................            [100%]
+=================================== FAILURES ===================================
+_____________ test_syntactic_order_defaults_zero_and_reads_config ______________
+test/test_syntactic_order.py:52: in test_syntactic_order_defaults_zero_and_reads_config
+    m = _build("XOR_grammar.xml")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_syntactic_order.py:27: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+_______________ test_syntactic_order_zero_collapses_to_single_s ________________
+test/test_syntactic_order.py:78: in test_syntactic_order_zero_collapses_to_single_s
+    m = _build("XOR_grammar.xml")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_syntactic_order.py:27: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+__________________ test_syntactic_order_caps_parse_tree_depth __________________
+test/test_syntactic_order.py:100: in test_syntactic_order_caps_parse_tree_depth
+    m = _build("XOR_grammar.xml")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_syntactic_order.py:27: in _build
+    init_config(path=p, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+____________________ test_syntactic_order_negative_rejected ____________________
+test/test_syntactic_order.py:135: in test_syntactic_order_negative_rejected
+    init_config(path=tmp.name, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+=============================== warnings summary ===============================
+test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_syntactic_order.py::test_syntactic_order_defaults_zero_and_reads_config
+FAILED test/test_syntactic_order.py::test_syntactic_order_zero_collapses_to_single_s
+FAILED test/test_syntactic_order.py::test_syntactic_order_caps_parse_tree_depth
+FAILED test/test_syntactic_order.py::test_syntactic_order_negative_rejected
+4 failed, 201 passed, 1 warning in 5.66s

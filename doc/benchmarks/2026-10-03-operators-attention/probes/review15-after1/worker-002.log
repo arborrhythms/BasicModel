@@ -1,0 +1,986 @@
+..........F........................................F...........F........ [ 44%]
+..................s...........................x...................F.F... [ 88%]
+....FFFF...........                                                      [100%]
+=================================== FAILURES ===================================
+_______ test_native_packed_unary_preference_still_records_every_sentence _______
+test/test_reduction_pressure.py:161: in test_native_packed_unary_preference_still_records_every_sentence
+    assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) - before == 2
+E   assert (3 - 0) == 2
+E    +  where 3 = int(tensor(3))
+E    +    where tensor(3) = <built-in method sum of Tensor object at 0x124c6fc00>()
+E    +      where <built-in method sum of Tensor object at 0x124c6fc00> = tensor([4, 4, 4, 4, 4, 1, 3, 0]) != 4.sum
+E    +        where 4 = TernaryTruthStore().REL_DEF
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_____________ test_native_part_evidence_does_not_allocate_concepts _____________
+test/test_review14_addendum.py:13: in test_native_part_evidence_does_not_allocate_concepts
+    torch.testing.assert_close(cb.lookup_rows(row)[:3], .5*ps.W[[4, 7]].amax(0))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 3 / 3 (100.0%)
+E   Greatest absolute difference: 0.4000000059604645 at index (0,) (up to 1e-05 allowed)
+E   Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)
+____________ test_review14_measurement_wiring_on_one_ordinary_batch ____________
+test/test_review14_contracts.py:156: in test_review14_measurement_wiring_on_one_ordinary_batch
+    assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+E   AssertionError: F                                                                        [100%]
+E     =================================== FAILURES ===================================
+E     ___________ test_margin_and_ownership_observe_the_same_actual_steps ____________
+E     
+E         def test_margin_and_ownership_observe_the_same_actual_steps():
+E             from test_mm_xor import _fresh_model
+E             import review14_gate_observer
+E             model, _, data = _fresh_model('data/XOR_grammar.xml')
+E             optimizer = model.getOptimizer(lr=.01)
+E             raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+E             batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+E             from review14_run_audit import observe_run, json_value
+E             with observe_run() as run_audit:
+E                 model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+E                 model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
+E             assert len(run_audit['reader_weights']) == 1
+E             assert len(run_audit['before_learning_readback']['texts']) == 4
+E             assert all(row['nonzero']==0 for row in run_audit['sentence_gradients'].values())
+E             assert all(phase in run_audit for phase in ('start','end'))
+E             assert all(phase in run_audit['room'] for phase in ('start','end'))
+E             (Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])/'run-audit.json').write_text(json.dumps(run_audit,default=json_value,indent=2))
+E             review14_gate_observer.save_ownership(model)
+E             folder = Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])
+E             events = [json.loads(line) for line in (folder/'events.jsonl').read_text().splitlines()]
+E             first = [event for event in events if event['kind'] == 'decoder_first_logits']
+E             steps = [event for event in events if event['kind'] == 'decoder_margin_step']
+E     >       assert len(first) == 4
+E     E       assert 0 == 4
+E     E        +  where 0 = len([])
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py:29: AssertionError
+E     ----------------------------- Captured stdout call -----------------------------
+E     [AMP] off (fp32, MODEL_AMP unset or =off)
+E     batch = 0 (warm-up, 100.00%)
+E     Training throughput: 1 batches in 14.065s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+E     batch = 0 (Δ=3.286s)
+E     ------------------------------ Captured log call -------------------------------
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:convert_frame.py:304 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5971 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:output_graph.py:2942 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:graph_compile.py:1820 
+E     DEBUG    torch.__trace:graph_compile.py:1841 
+E     DEBUG    torch.__trace:graph_compile.py:1891 
+E     DEBUG    torch.__trace:graph_compile.py:1909 
+E     DEBUG    torch.__trace:graph_compile.py:1913 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:guards.py:4769 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2022 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:guards.py:5625 
+E     DEBUG    torch.__trace:convert_frame.py:304 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5971 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:output_graph.py:2942 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:8465 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5521 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:graph_compile.py:1820 
+E     DEBUG    torch.__trace:graph_compile.py:1841 
+E     DEBUG    torch.__trace:graph_compile.py:1891 
+E     DEBUG    torch.__trace:graph_compile.py:1909 
+E     DEBUG    torch.__trace:graph_compile.py:1913 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:guards.py:4769 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2022 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2022 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2022 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:guards.py:5625 
+E     DEBUG    torch.__trace:convert_frame.py:304 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5971 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:output_graph.py:2942 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:graph_capture.py:428 
+E     DEBUG    torch.__trace:graph_capture.py:446 
+E     DEBUG    torch.__trace:graph_compile.py:382 
+E     DEBUG    torch.__trace:codegen.py:200 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:guards.py:4769 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2022 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:convert_frame.py:304 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:structured.py:28 
+E     DEBUG    torch.__trace:symbolic_shapes.py:5971 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:meta_utils.py:298 
+E     DEBUG    torch.__trace:meta_utils.py:537 
+E     DEBUG    torch.__trace:meta_utils.py:2385 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:output_graph.py:2942 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:guards.py:4769 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2363 
+E     DEBUG    torch.__trace:utils.py:2022 
+E     DEBUG    torch.__trace:utils.py:2363
+E     =============================== warnings summary ===============================
+E     doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+E         return func(*args, **kwargs)
+E     
+E     -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+E     =========================== short test summary info ============================
+E     FAILED doc/benchmarks/2026-10-03-operators-attention/review14_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E     1 failed, 4 warnings in 17.63s
+E     
+E   assert 1 == 0
+_____ test_noninvertible_compose_transform_uses_the_bounded_candidate_path _____
+test/test_tied_operator_reconstruction.py:327: in test_noninvertible_compose_transform_uses_the_bounded_candidate_path
+    gradients = torch.autograd.grad((left + right).sum(), (parent, *parameters))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad
+    result_tuple = handle_torch_function(
+.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:594: in grad
+    result = _engine_run_backward(
+.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+E   RuntimeError: The differentiated Tensor at index 1 appears to not have been used in the graph. Set allow_unused=True if this is the desired behavior.
+__________ test_masked_candidate_values_do_not_poison_parent_gradient __________
+test/test_tied_operator_reconstruction.py:375: in test_masked_candidate_values_do_not_poison_parent_gradient
+    assert gradient.isfinite().all() and gradient.abs().sum() > 0
+E   assert (tensor(True) and tensor(0.) > 0)
+E    +  where tensor(True) = <built-in method all of Tensor object at 0x15ee57250>()
+E    +    where <built-in method all of Tensor object at 0x15ee57250> = tensor([[True, True]]).all
+E    +      where tensor([[True, True]]) = <built-in method isfinite of Tensor object at 0x133d44550>()
+E    +        where <built-in method isfinite of Tensor object at 0x133d44550> = tensor([[0., 0.]]).isfinite
+E    +  and   tensor(0.) = <built-in method sum of Tensor object at 0x138694f00>()
+E    +    where <built-in method sum of Tensor object at 0x138694f00> = tensor([[0., 0.]]).sum
+E    +      where tensor([[0., 0.]]) = <built-in method abs of Tensor object at 0x133d44550>()
+E    +        where <built-in method abs of Tensor object at 0x133d44550> = tensor([[0., 0.]]).abs
+_ test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-exploit] _
+test/test_trial_policy_ownership.py:50: in test_trial_and_batch_answer_leave_the_decoder_to_reconstruction
+    assert any(p.grad is not None and p.grad.norm() > 0 for p in owners['output'])
+E   assert False
+E    +  where False = any(<generator object test_trial_and_batch_answer_leave_the_decoder_to_reconstruction.<locals>.<genexpr> at 0x163cccd40>)
+_ test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-explore] _
+test/test_trial_policy_ownership.py:50: in test_trial_and_batch_answer_leave_the_decoder_to_reconstruction
+    assert any(p.grad is not None and p.grad.norm() > 0 for p in owners['output'])
+E   assert False
+E    +  where False = any(<generator object test_trial_and_batch_answer_leave_the_decoder_to_reconstruction.<locals>.<genexpr> at 0x15e158a00>)
+_ test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[True-exploit] _
+test/test_trial_policy_ownership.py:50: in test_trial_and_batch_answer_leave_the_decoder_to_reconstruction
+    assert any(p.grad is not None and p.grad.norm() > 0 for p in owners['output'])
+E   assert False
+E    +  where False = any(<generator object test_trial_and_batch_answer_leave_the_decoder_to_reconstruction.<locals>.<genexpr> at 0x13a14fc60>)
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521
+_ test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[True-explore] _
+test/test_trial_policy_ownership.py:50: in test_trial_and_batch_answer_leave_the_decoder_to_reconstruction
+    assert any(p.grad is not None and p.grad.norm() > 0 for p in owners['output'])
+E   assert False
+E    +  where False = any(<generator object test_trial_and_batch_answer_leave_the_decoder_to_reconstruction.<locals>.<genexpr> at 0x15d59f2a0>)
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521
+=============================== warnings summary ===============================
+test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence
+FAILED test/test_review14_addendum.py::test_native_part_evidence_does_not_allocate_concepts
+FAILED test/test_review14_contracts.py::test_review14_measurement_wiring_on_one_ordinary_batch
+FAILED test/test_tied_operator_reconstruction.py::test_noninvertible_compose_transform_uses_the_bounded_candidate_path
+FAILED test/test_tied_operator_reconstruction.py::test_masked_candidate_values_do_not_poison_parent_gradient
+FAILED test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-exploit]
+FAILED test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[False-explore]
+FAILED test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[True-exploit]
+FAILED test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[True-explore]
+9 failed, 152 passed, 1 skipped, 1 xfailed, 3 warnings in 566.43s (0:09:26)

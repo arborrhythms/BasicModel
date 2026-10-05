@@ -1,0 +1,29 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+Scored 1/500 items
+Scored 2/500 items
+Scored 3/500 items
+Scored 4/500 items
+Scored 5/500 items
+Scored 6/500 items
+Scored 7/500 items
+Scored 8/500 items
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 829, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 823, in main
+    return run_score(args) if args.command == "score" else run_trace(args)
+           ^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 726, in run_score
+    result = score_manifest(
+             ^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 672, in score_manifest
+    shuffled = _score_control_batch(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 621, in _score_control_batch
+    result = word_candidate_scores(model, choices=choices)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 370, in word_candidate_scores
+    raise RuntimeError('candidate word was not accepted within attentionBudget')
+RuntimeError: candidate word was not accepted within attentionBudget

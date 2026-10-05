@@ -1,0 +1,110 @@
+...............FFF.sssss................................Fs..ssssssssssss [ 54%]
+..F.....FFF.............................ss..................             [100%]
+=================================== FAILURES ===================================
+_______________ test_relative_start_categories_from_named_starts _______________
+test/test_relative_rule_detection_collapsed.py:69: in test_relative_start_categories_from_named_starts
+    g = _load(_COLLAPSED_GRAMMAR, monkeypatch, tmp_path)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_relative_rule_detection_collapsed.py:56: in _load
+    g.load_from_grammar_file("probe.grammar")
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1583: in _fill_rule_list
+    raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E   ValueError: exist is retired; query conceptual content with what
+________________ test_equal_and_part_forward_rules_are_relative ________________
+test/test_relative_rule_detection_collapsed.py:76: in test_equal_and_part_forward_rules_are_relative
+    g = _load(_COLLAPSED_GRAMMAR, monkeypatch, tmp_path)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_relative_rule_detection_collapsed.py:56: in _load
+    g.load_from_grammar_file("probe.grammar")
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1583: in _fill_rule_list
+    raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E   ValueError: exist is retired; query conceptual content with what
+______________________ test_part_rule_relative_by_op_name ______________________
+test/test_relative_rule_detection_collapsed.py:86: in test_part_rule_relative_by_op_name
+    g = _load(_COLLAPSED_GRAMMAR, monkeypatch, tmp_path)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_relative_rule_detection_collapsed.py:56: in _load
+    g.load_from_grammar_file("probe.grammar")
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1583: in _fill_rule_list
+    raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E   ValueError: exist is retired; query conceptual content with what
+_______________________ test_retired_names_remain_absent _______________________
+test/test_retired_names.py:196: in test_retired_names_remain_absent
+    grammar.load_from_grammar_file(str(path))
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1583: in _fill_rule_list
+    raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E   ValueError: exist is retired; query conceptual content with what
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh
+______________________ test_symbolicspace_owns_its_starts ______________________
+test/test_role_collapsed_grammar.py:89: in test_symbolicspace_owns_its_starts
+    assert "exist_O1" in ws_syms, ws_syms
+E   AssertionError: {'S', 'equal_O1', 'implies_O1', 'operator_O1', 'part_O1', 'whole_O1'}
+E   assert 'exist_O1' in {'S', 'equal_O1', 'implies_O1', 'operator_O1', 'part_O1', 'whole_O1'}
+____________________________ test_operator_coverage ____________________________
+test/test_role_collapsed_grammar.py:148: in test_operator_coverage
+    assert not missing, f"{_GRAMMAR_NAME} missing ops: {missing}"
+E   AssertionError: complete.grammar missing ops: {'arma', 'lookup', 'exist', 'quantize'}
+E   assert not {'arma', 'exist', 'lookup', 'quantize'}
+_________________________ test_forward_reverse_pairing _________________________
+test/test_role_collapsed_grammar.py:156: in test_forward_reverse_pairing
+    assert _REQUIRED_OPS <= up
+E   AssertionError: assert {'adverb', 'a... 'equal', ...} <= {'adverb', 'b...generic', ...}
+E     
+E     Extra items in the left set:
+E     'arma'
+E     'lookup'
+E     'exist'
+E     'quantize'
+____ test_transitional_baseline_uses_the_same_structural_relation_contract _____
+test/test_role_collapsed_grammar.py:169: in test_transitional_baseline_uses_the_same_structural_relation_contract
+    g.load_from_grammar_file(fixture)
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1583: in _fill_rule_list
+    raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E   ValueError: exist is retired; query conceptual content with what
+=============================== warnings summary ===============================
+test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts
+FAILED test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative
+FAILED test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_op_name
+FAILED test/test_retired_names.py::test_retired_names_remain_absent - ValueEr...
+FAILED test/test_role_collapsed_grammar.py::test_symbolicspace_owns_its_starts
+FAILED test/test_role_collapsed_grammar.py::test_operator_coverage - Assertio...
+FAILED test/test_role_collapsed_grammar.py::test_forward_reverse_pairing - As...
+FAILED test/test_role_collapsed_grammar.py::test_transitional_baseline_uses_the_same_structural_relation_contract
+8 failed, 104 passed, 20 skipped, 1 warning in 22.15s

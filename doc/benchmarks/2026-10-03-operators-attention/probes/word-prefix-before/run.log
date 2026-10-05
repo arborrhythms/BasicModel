@@ -1,0 +1,91 @@
+...................FF..................................................  [100%]
+=================================== FAILURES ===================================
+___ test_word_forecast_conditions_on_observed_prefix_without_reading_future ____
+
+    def test_word_forecast_conditions_on_observed_prefix_without_reading_future():
+        from Layers import BracketExpectation
+        layer=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4,p=2,q=1)
+        bank=torch.eye(4)[None];valid=torch.ones(1,4,dtype=torch.bool)
+        prefix=torch.tensor([[True,True,False]])
+        def predict(sequence):
+            return layer.expect('word',bank[:,sequence],bank,valid,torch.tensor([sequence]),
+                                teacher_forcing=False,observed_prefix=prefix)
+>       a=predict([0,1,2]);b=predict([0,1,3]);c=predict([1,0,2])
+          ^^^^^^^^^^^^^^^^
+
+test/test_one_attention.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_one_attention.py:155: in predict
+    return layer.expect('word',bank[:,sequence],bank,valid,torch.tensor([sequence]),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=12, out_features=8, bias=True)
+    (1): Tan...features=12, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+level = 'word'
+args = (tensor([[[1., 0., 0., 0.],
+         [0., 1., 0., 0.],
+         [0., 0., 1., 0.]]]), tensor([[[1., 0., 0., 0.],
+      ... 0.],
+         [0., 0., 1., 0.],
+         [0., 0., 0., 1.]]]), tensor([[True, True, True, True]]), tensor([[0, 1, 2]]))
+kwargs = {'teacher_forcing': False, 'observed_prefix': tensor([[ True,  True, False]])}
+
+    def expect(self,level,*args,**kwargs):
+        """Expectation is indexed by its bracket level, with one owner."""
+        if level not in self.levels:raise ValueError('unknown expectation level')
+        if level not in self.enabled_levels:raise ValueError(f'{level} expectation is declared but disabled')
+        if level == 'word':
+            from WordExpectation import word_distribution
+>           return word_distribution(self,*args,**kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: word_distribution() got an unexpected keyword argument 'observed_prefix'
+
+bin/Layers.py:10621: TypeError
+___________________ test_empty_word_bracket_is_a_masked_noop ___________________
+
+    def test_empty_word_bracket_is_a_masked_noop():
+        from Attention import narrow_words
+        from Language import OperationSelectionLayer
+>       result=narrow_words(OperationSelectionLayer(d_model=4),torch.empty(2,0,4),
+            torch.empty(2,0,2,dtype=torch.long),torch.empty(2,0,dtype=torch.bool),budget=8)
+
+test/test_one_attention.py:165: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Attention.py:161: in narrow_words
+    lengths=spans[...,1].amax(1)
+            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x11139dc10>
+func = <method 'amax' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([], size=(2, 0), dtype=torch.int64), 1), kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: amax(): Expected reduction dim 1 to have non-zero size.
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: IndexError
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7154: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpybbtjon8/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_word_forecast_conditions_on_observed_prefix_without_reading_future
+FAILED test/test_one_attention.py::test_empty_word_bracket_is_a_masked_noop
+2 failed, 69 passed, 2 warnings in 10.98s

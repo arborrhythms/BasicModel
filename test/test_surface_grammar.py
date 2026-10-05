@@ -65,7 +65,7 @@ def test_selected_surface_preserves_complete_content_meaning(monkeypatch):
     original = owner.program_meaning(entry, registry)
     surface = len(owner._compose_binary_rules)
     object.__setattr__(owner, "_compose_binary_rules", owner._compose_binary_rules + (
-        SimpleNamespace(method_name="surface"),))
+        SimpleNamespace(method_name="surface", head_role=2),))
     actions = torch.cat((torch.tensor([[0, -1, 2]]), entry.actions,
                          torch.tensor([[1, surface, -1]])))
     attached = replace(entry, rows=torch.cat((entry.rows, entry.rows[:1])),

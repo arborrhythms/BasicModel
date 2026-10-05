@@ -14,20 +14,20 @@
        subject forms a part relation; chaining is a learning result.
        See doc/SelectedMeaning.md. -->
   <architecture>
-    <symbolicOrder>0</symbolicOrder>
+    <conceptLayers>1</conceptLayers>
     <!-- Provisioning and runtime inference share the sentence driver. -->
-    <serial>true</serial>
-    <subsymbolicOrder>3</subsymbolicOrder>
+
+    <bindingDepth>3</bindingDepth>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <mereologyRaise>true</mereologyRaise>
     <radialStmReduce>true</radialStmReduce>
-    <readingAttention>true</readingAttention>
+
     <conceptIndexRead>true</conceptIndexRead>
     <!-- (B) free attention over the typed truth-space; parks the soft read. -->
-    <globalAttention>true</globalAttention>
+
     <!-- The normal answer objective can train attention through its consume residual. -->
-    <globalAttentionConsume>true</globalAttentionConsume>
+
     <!-- the LTM "book": the TruthSet (the syllogism) parsed into ltm_store. -->
     <ltmConsolidation>true</ltmConsolidation>
 

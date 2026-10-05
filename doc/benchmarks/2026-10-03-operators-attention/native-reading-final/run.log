@@ -1,0 +1,13 @@
+E
+==================================== ERRORS ====================================
+________________ ERROR at setup of test_native_reference_reader ________________
+file /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/native_config_probe.py, line 6
+  def test_native_reference_reader(eager_reading):
+E       fixture 'eager_reading' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, hydra_restore_singletons, hydra_sweep_runner, hydra_task_runner, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, spy_agency, subtests, testrun_uid, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, worker_id
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/native_config_probe.py:6
+=========================== short test summary info ============================
+ERROR doc/benchmarks/2026-10-03-operators-attention/native_config_probe.py::test_native_reference_reader
+1 error in 0.43s

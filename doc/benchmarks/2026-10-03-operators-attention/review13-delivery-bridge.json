@@ -1,0 +1,14 @@
+{
+  "head": "802abb1acc95e1bddc8cb237b13230a336681c49",
+  "measurement_source_matches_delivery": true,
+  "source_files": 690,
+  "complete_old_new_test_ports": 168,
+  "seed_changes": [],
+  "receipt_and_reporting_files": 40,
+  "measurement_files": 1376,
+  "receipt_links_valid": true,
+  "no_retries": true,
+  "no_commit": true,
+  "worktrees": "worktree /Users/arogers/github/WikiOracle/.git/modules/basicmodel\nHEAD 802abb1acc95e1bddc8cb237b13230a336681c49\nbranch refs/heads/main\n\nworktree /private/tmp/basicmodel-aa5e018-reconstruction-baseline\nHEAD aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/basicmodel-preexpect-c391\nHEAD c3918a2929bfee34668300dfa3e7ae8f11febf2a\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/full-spec-history-checkout\nHEAD 4f30ac22f77d5f801d126df567ff5b78d982777d\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/full-spec-nested-checkout\nHEAD 4f30ac22f77d5f801d126df567ff5b78d982777d\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/full-spec-phase-checkout\nHEAD 4f30ac22f77d5f801d126df567ff5b78d982777d\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/wikioracle-item1c\nHEAD 2c2063aae5432a9d2a7ac2022ea41c9c62e8b8d1\ndetached\nprunable gitdir file points to non-existent location\n\n",
+  "bootstrap_learning": "deferred by explicit user reply"
+}

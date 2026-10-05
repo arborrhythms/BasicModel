@@ -1,8 +1,8 @@
 """Task 7 (plan §8): LTM as a chain of STM end-states on the
-InterSentenceLayer.
+BracketExpectation.
 
 The long-term-memory (LTM) chain is the AR sequence the inter-sentence
-predictor consumes. It lives on the existing ``InterSentenceLayer`` as a
+predictor consumes. It lives on the existing ``BracketExpectation`` as a
 bounded per-row ``collections.deque`` of time-ordered tuples
 ``(depth:int, payload:[depth,D] tensor, tetralemma:tuple|None)``.
 
@@ -54,7 +54,7 @@ class TestLtmChainGrows(_LtmTestBase):
     def setUp(self):
         self.D = 3
         # B=1 / row 0 (the plan's stated test shape).
-        self.layer = Layers.InterSentenceLayer(
+        self.layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=8, n_dim=self.D,
             p=5, q=2, batch=1,
         )
@@ -141,7 +141,7 @@ class TestLtmBounded(_LtmTestBase):
     """The chain is bounded at ``ltm_capacity`` (deque maxlen)."""
 
     def test_chain_evicts_oldest_at_capacity(self):
-        layer = Layers.InterSentenceLayer(
+        layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=8, n_dim=2,
             p=5, q=2, batch=1, ltm_capacity=3,
         )
@@ -160,7 +160,7 @@ class TestLtmFailLoud(_LtmTestBase):
     (user memory: fail loud on numerical divergence)."""
 
     def setUp(self):
-        self.layer = Layers.InterSentenceLayer(
+        self.layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=8, n_dim=3, p=5, q=2, batch=1,
         )
 
@@ -183,7 +183,7 @@ class TestLtmPerRow(_LtmTestBase):
     """Per-row (parallel document streams) chains stay independent."""
 
     def setUp(self):
-        self.layer = Layers.InterSentenceLayer(
+        self.layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=8, n_dim=2, p=5, q=2, batch=2,
         )
 
@@ -212,7 +212,7 @@ class TestLtmResetAndArmaUntouched(_LtmTestBase):
     perturbed by the LTM additions."""
 
     def setUp(self):
-        self.layer = Layers.InterSentenceLayer(
+        self.layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=8, n_dim=3, p=5, q=2, batch=2,
         )
 
@@ -265,7 +265,7 @@ class TestLtmCapacityKnob(_LtmTestBase):
     """``ltmCapacity`` knob: default + explicit pass-through."""
 
     def test_default_capacity_is_1024(self):
-        layer = Layers.InterSentenceLayer(
+        layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=8, n_dim=3, p=5, q=2, batch=1,
         )
         self.layer = layer
@@ -273,7 +273,7 @@ class TestLtmCapacityKnob(_LtmTestBase):
         self.assertEqual(layer._stm_end_states[0].maxlen, 1024)
 
     def test_explicit_capacity_is_honored(self):
-        layer = Layers.InterSentenceLayer(
+        layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=8, n_dim=3, p=5, q=2,
             batch=1, ltm_capacity=42,
         )

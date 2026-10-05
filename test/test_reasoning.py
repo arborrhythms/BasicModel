@@ -84,7 +84,7 @@ class TestOrderPartitions(unittest.TestCase):
         self.assertGreater(sizes[1], sizes[2])
 
     def test_single_order(self):
-        """With subsymbolicOrder=1, one partition covers everything."""
+        """With bindingDepth=1, one partition covers everything."""
         parts = Models.BasicModel._order_partitions(64, 1)
         self.assertEqual(parts, [(0, 64)])
 

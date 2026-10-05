@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_review11_contracts.py",
+    "test/test_output_walk.py",
+    "test/test_decoder_exploration.py",
+    "test/test_review10_contracts.py",
+    "test/test_global_consume.py",
+    "-m",
+    "not slow"
+  ],
+  "pid": 18409,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 3037302120,
+  "elapsed_seconds": 46.57275937497616,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review11-first-repair/run.log"
+}

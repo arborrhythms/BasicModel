@@ -29,7 +29,7 @@ def _context(cs, *, store=None, model=None, continuation=None, row=0,
     if memory is None:
         memory = getattr(symbol_space, 'what_memory', None)
     if discourse is None:
-        discourse = getattr(symbol_space, 'discourse', None)
+        discourse = getattr(symbol_space, 'expectation', None)
     reasoner = TruthGroundedReasoner(model=model, store=store)
     return ThoughtGrammarContext(
         word_stream=(),
@@ -139,13 +139,13 @@ def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
     second = store.append_meaning(description)
     context = _context(cs, store=store, max_records=1)
     # A direct occurrence address costs one read regardless of row age.
-    question = registry.form('exist', store.occurrence_of(second), context=context)
+    question = registry.form('what', store.occurrence_of(second), context=context)
     assert question.role_refs[0] == store.occurrence_of(second)
     with pytest.raises(ValueError, match='limit|unavailable'):
-        registry.form('exist', store.occurrence_of(second), context=replace(context, max_records=0))
+        registry.form('what', store.occurrence_of(second), context=replace(context, max_records=0))
     foreign = ('ltm', 'foreign-namespace', store.occurrence_of(first)[2])
     with pytest.raises(ValueError, match='namespace'):
-        registry.form('exist', foreign, context=context)
+        registry.form('what', foreign, context=context)
     assert len(store) == 2
 
 

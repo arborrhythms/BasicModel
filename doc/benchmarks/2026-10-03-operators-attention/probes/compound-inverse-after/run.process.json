@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_compound_cases.py",
+    "test/test_operator_catalogue.py",
+    "test/test_echoic_decoder.py",
+    "test/test_decoder_exploration.py",
+    "test/test_sentence_references.py"
+  ],
+  "pid": 92526,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 693061648,
+  "elapsed_seconds": 15.250513749982929,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/compound-inverse-after/run.log"
+}

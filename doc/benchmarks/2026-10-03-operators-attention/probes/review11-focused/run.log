@@ -1,0 +1,208 @@
+....................................................FF.F................ [ 55%]
+..........................................................               [100%]
+=================================== FAILURES ===================================
+______________________ test_zero_gate_matches_consume_off ______________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x147a25100>
+
+    @pytest.mark.slow
+    def test_zero_gate_matches_consume_off(monkeypatch):
+        # Compare the actual zero gate with a head whose consume function is the
+        # identity. No retired flag can stand in for bypassing the read.
+        m = _build("MM_qa.xml")
+        x = _batch(m)
+        from configuration_fixtures import freeze_admission
+        freeze_admission(m, x, monkeypatch)
+        m.eval()
+        consume = m.answer_attention.consume
+        with torch.no_grad():
+            monkeypatch.setattr(m.answer_attention, 'consume', lambda symbols, content: symbols)
+>           out_off_flag = _generation_forward(m, x)[2].clone()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_global_consume.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_global_consume.py:103: in _generation_forward
+    idea = m._combine_last_cs_sub.materialize().detach()
+           ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...    (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+  (answer_record_reader): SentenceRecordReader()
+)
+name = '_combine_last_cs_sub'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_combine_last_cs_sub'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___________________ test_gate_feeds_the_read_into_the_answer ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14d90fe90>
+
+    @pytest.mark.slow
+    def test_gate_feeds_the_read_into_the_answer(monkeypatch):
+        m = _build("MM_qa.xml")
+        x = _batch(m)
+        from configuration_fixtures import freeze_admission
+        freeze_admission(m, x, monkeypatch)
+        m.eval()
+        with torch.no_grad():
+            m.answer_attention.consume_gate.zero_()
+>           base = _generation_forward(m, x)[2].clone()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_global_consume.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_global_consume.py:103: in _generation_forward
+    idea = m._combine_last_cs_sub.materialize().detach()
+           ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...    (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+  (answer_record_reader): SentenceRecordReader()
+)
+name = '_combine_last_cs_sub'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_combine_last_cs_sub'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______________________ test_answer_loss_trains_retrieval _______________________
+
+    @pytest.mark.slow
+    def test_answer_loss_trains_retrieval():
+        # The output loss backprops through the read into the scorer + the consume
+        # gate -- retrieval that helps the answer is rewarded.
+        m = _build("MM_qa.xml")
+        x = _batch(m)
+        m.answer_attention.consume_gate.data.fill_(0.3)   # active so grad flows
+        m.train()
+        m.zero_grad(set_to_none=True)
+>       out = _generation_forward(m, x)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_global_consume.py:195: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_global_consume.py:103: in _generation_forward
+    idea = m._combine_last_cs_sub.materialize().detach()
+           ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...    (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+  (answer_record_reader): SentenceRecordReader()
+)
+name = '_combine_last_cs_sub'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_combine_last_cs_sub'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[XOR_grammar.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmplcqa716f/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpjmir4lum/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpvmkdc8tc/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp25jwn2f6/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_global_consume.py::test_consume_gate_is_zero_by_default_on_global_config
+test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm
+test/test_global_consume.py::test_zero_gate_matches_consume_off
+test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer
+test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse
+test/test_global_consume.py::test_answer_loss_trains_retrieval
+test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_global_consume.py::test_zero_gate_matches_consume_off - Attr...
+FAILED test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer
+FAILED test/test_global_consume.py::test_answer_loss_trains_retrieval - Attri...
+3 failed, 127 passed, 1 deselected, 13 warnings in 66.35s (0:01:06)

@@ -1,0 +1,90 @@
+...............................FF....................................... [ 53%]
+...............................................................          [100%]
+=================================== FAILURES ===================================
+_____________ test_codebook_enables_and_em_populates_on_real_model _____________
+test/test_category_em_smoke.py:134: in test_codebook_enables_and_em_populates_on_real_model
+    fired = _run_forwards(model)
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_category_em_smoke.py:112: in _run_forwards
+    model.forward(ipt)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8272: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22959: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13148: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:71: in stage_input
+    reading=narrow_words(chooser,keys,spans,known,budget=model.attention_budget,
+bin/Attention.py:205: in narrow_words
+    action,credit,alternate=chooser.attend(pooled,legal,table.space,prior=local_prior,
+bin/Language.py:7176: in attend
+    _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+test/reading_fixtures.py:153: in unary_scores
+    return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
+                                    ^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: ~ (operator.invert) is only implemented on integer and Boolean-type tensors
+___________________ test_mlp_chooser_sized_and_context_built ___________________
+test/test_category_em_smoke.py:174: in test_mlp_chooser_sized_and_context_built
+    _run_forwards(model)
+test/test_category_em_smoke.py:112: in _run_forwards
+    model.forward(ipt)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8272: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22959: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13148: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:71: in stage_input
+    reading=narrow_words(chooser,keys,spans,known,budget=model.attention_budget,
+bin/Attention.py:205: in narrow_words
+    action,credit,alternate=chooser.attend(pooled,legal,table.space,prior=local_prior,
+bin/Language.py:7176: in attend
+    _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+test/reading_fixtures.py:153: in unary_scores
+    return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
+                                    ^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: ~ (operator.invert) is only implemented on integer and Boolean-type tensors
+=============================== warnings summary ===============================
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+FAILED test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+2 failed, 133 passed, 13 warnings in 6.77s

@@ -1,0 +1,34 @@
+{
+  "data/BasicModel.xml": {
+    "answer": "generation retrieval",
+    "sha256": "4aa7ef1d300951be00c0f1750d4585106c4739e8e645128b8d413612cb8058eb"
+  },
+  "data/BasicModel_answers_tied_benchmark.xml": {
+    "answer": "generation retrieval",
+    "sha256": "231aca99e2d255d90e1468e77a8cd72c2663cfe15d3180262222c75e7b5085b3"
+  },
+  "data/MM_add.xml": {
+    "answer": "generation retrieval",
+    "sha256": "7e17212ac065e4daad92975e966d23b91db9ff3b35f5306a6cc54d57e85e7698"
+  },
+  "data/MM_add_verb.xml": {
+    "answer": "generation retrieval",
+    "sha256": "e30e854a0fa371059aff4e11a9c611cf05802e0931ae6bb6fb674762c780ee09"
+  },
+  "data/MM_grammar_wording.xml": {
+    "answer": "generation retrieval",
+    "sha256": "6104526275c42fd5a0c9d8aad66de67d4a4b758a0c2dda6bbc3f7fccc706dd0e"
+  },
+  "data/MM_ladder.xml": {
+    "answer": "generation retrieval",
+    "sha256": "21451e21e912b1e2db0b2db6708b694a29c90fa051f2ffbdeec5745e46f5e737"
+  },
+  "data/MM_ladder_idiom.xml": {
+    "answer": "generation retrieval",
+    "sha256": "2422fc8e7cfc946e5202867b221182a18af67d38448081f2884518e4fe9863fc"
+  },
+  "data/MM_math.xml": {
+    "answer": "generation retrieval",
+    "sha256": "4379b62e23a7c412ccc569ef1868a7ea18827ceecb778cbbe8a972c1c5e09b58"
+  }
+}

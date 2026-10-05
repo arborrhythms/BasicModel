@@ -1,0 +1,63 @@
+.......FFF                                                               [100%]
+=================================== FAILURES ===================================
+____ test_compound_inverse_search_is_bounded_by_the_supplied_primed_symbols ____
+
+    def test_compound_inverse_search_is_bounded_by_the_supplied_primed_symbols():
+>       from CaseSelection import search_cases
+E       ImportError: cannot import name 'search_cases' from 'CaseSelection' (/Users/arogers/github/WikiOracle/basicmodel/bin/CaseSelection.py). Did you mean: 'select_cases'?
+
+test/test_compound_cases.py:121: ImportError
+_________ test_free_decoder_uses_case_search_without_a_compose_witness _________
+
+    def test_free_decoder_uses_case_search_without_a_compose_witness():
+        from Language import LanguageSpace,CompoundLayer
+        from types import SimpleNamespace,MethodType
+        from dataclasses import replace
+>       bank=_bank()._replace(eligible=torch.tensor([[True,False,False,True,False]]))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_compound_cases.py:136: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = CaseBank(ids=tensor([10, 20, 30, 40, 50]), codes=tensor([[0.5000, 0.5000],
+        [1.0000, 0.0000],
+        [0.0000, ...
+         [0., 0.]],
+
+        [[0., 0.],
+         [0., 0.],
+         [1., 0.],
+         [0., 0.],
+         [1., 0.]]]))
+kwds = {'eligible': tensor([[ True, False, False,  True, False]])}
+
+    def _replace(self, /, **kwds):
+        result = self._make(_map(kwds.pop, field_names, self))
+        if kwds:
+>           raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
+E           ValueError: Got unexpected field names: ['eligible']
+
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/collections/__init__.py:460: ValueError
+_____ test_shipped_grammar_supplies_subtyping_without_a_predefined_surface _____
+
+    def test_shipped_grammar_supplies_subtyping_without_a_predefined_surface():
+        from Language import Grammar
+        grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
+        forward=[r for r in grammar.rules_upward if r.case_head_role]
+        reverse=[r for r in grammar.rules_downward if r.case_head_role]
+>       assert len(forward) == len(reverse) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+test/test_compound_cases.py:152: AssertionError
+=============================== warnings summary ===============================
+test/test_compound_cases.py::test_native_case_staging_uses_existing_sigma_and_allocates_nothing
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_compound_cases.py::test_compound_inverse_search_is_bounded_by_the_supplied_primed_symbols
+FAILED test/test_compound_cases.py::test_free_decoder_uses_case_search_without_a_compose_witness
+FAILED test/test_compound_cases.py::test_shipped_grammar_supplies_subtyping_without_a_predefined_surface
+3 failed, 7 passed, 1 warning in 2.37s

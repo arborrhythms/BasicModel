@@ -29,7 +29,7 @@ def test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record(monk
 
 def test_referenced_phrase_is_read_from_ltm_without_an_inventory_row(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('part', 'cat', ('verb', 'chases', 'mouse')))
+    clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))
     before = inventory(f.cs)
     row = f.store.write_clause(clause)
     assert row >= 0

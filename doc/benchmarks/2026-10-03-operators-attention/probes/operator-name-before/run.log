@@ -1,0 +1,47 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_inverse_dispatch_uses_declared_computation_not_operator_name _______
+
+    def test_inverse_dispatch_uses_declared_computation_not_operator_name():
+        from Language import SumLayer, LanguageSpace, NotLayer, NonLayer
+        from types import SimpleNamespace, MethodType
+        owner = SimpleNamespace()
+        for method in ('_reverse_of_binary_op', '_finish_binary_inverse',
+                       'reverse_binary_step', 'reverse_unary_step'):
+            setattr(owner, method, MethodType(getattr(LanguageSpace, method), owner))
+        left, right = torch.tensor([[.2, -.8]]), torch.tensor([[.6, .4]])
+        mean = SumLayer()
+        mean.rule_name = 'renamed_mean'
+        a, b, unavailable = owner.reverse_binary_step(
+            mean.compose(left, right), torch.tensor([0]), torch.tensor([True]),
+            right, ops=[mean], inverses=[None], return_status=True)
+>       assert not unavailable.any()
+E       assert not tensor(True)
+E        +  where tensor(True) = <built-in method any of Tensor object at 0x122cdea80>()
+E        +    where <built-in method any of Tensor object at 0x122cdea80> = tensor([True]).any
+
+test/test_operator_catalogue.py:116: AssertionError
+________ test_clause_scope_uses_declared_roles_after_names_are_removed _________
+
+    def test_clause_scope_uses_declared_roles_after_names_are_removed():
+        from Language import Grammar
+        from ClauseScope import ClauseScope
+        grammar = Grammar()
+        grammar.load_from_grammar_file('complete.grammar')
+        binary = [r for r in grammar.rules_upward if r.arity == 2 and r.space_role == 'CS']
+        unary = [r for r in grammar.rules_upward if r.arity == 1]
+        expected = ClauseScope(binary, unary)
+        renamed = ClauseScope([r._replace(method_name='x') for r in binary],
+                              [r._replace(method_name='x') for r in unary])
+>       torch.testing.assert_close(renamed.binary, expected.binary)
+E       AssertionError: Tensor-likes are not equal!
+E       
+E       Mismatched elements: 9 / 96 (9.4%)
+E       Greatest absolute difference: 2 at index (13, 3)
+E       Greatest relative difference: 1.0 at index (0, 0)
+
+test/test_operator_catalogue.py:142: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_inverse_dispatch_uses_declared_computation_not_operator_name
+FAILED test/test_operator_catalogue.py::test_clause_scope_uses_declared_roles_after_names_are_removed
+2 failed in 1.99s

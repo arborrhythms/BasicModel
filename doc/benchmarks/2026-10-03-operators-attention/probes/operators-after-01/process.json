@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_catalogue.py",
+    "test/test_adverb_eig_edit.py",
+    "test/test_tied_operator_reconstruction.py",
+    "test/test_concept_binding_operators.py",
+    "test/test_echoic_decoder.py",
+    "test/test_decoder_exploration.py"
+  ],
+  "pid": 82695,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1380108544,
+  "elapsed_seconds": 31.092631207982777,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/operators-after-01/run.log"
+}

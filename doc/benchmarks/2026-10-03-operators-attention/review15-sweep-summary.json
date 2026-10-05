@@ -1,0 +1,86 @@
+{
+  "counts": {
+    "passed": 4885,
+    "skipped": 286,
+    "xpassed": 1,
+    "failed": 9
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.1823201670194976,
+      "message": "test/test_grammar_separator.py:94: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert all(len(text.split()) == 2 for text in decoded), decoded\nE   AssertionError: ('hello', 'hello', 'world loving', 'there')\nE   assert False\nE    +  where False = all(<generator object test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.<genexpr> at 0x121e31b60>)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.2397662089788355,
+      "message": "test/test_grammar_word_learning.py:188: in test_normal_text_reconstruction_updates_the_grammar_chooser\n    assert \"operand_order.weight\" in changed\nE   AssertionError: assert 'operand_order.weight' in set()",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0015642910148017108,
+      "message": "test/test_reconstruction_roundtrip.py:281: in test_shape_gate_reconciles_singleton_axes\n    assert torch.allclose(\nE   assert False\nE    +  where False = <built-in method allclose of type object at 0x10c3953a0>(tensor([[[-0.0003]],\\n\\n        [[-0.0972]],\\n\\n        [[-0.1269]],\\n\\n        [[ 0.1077]]]), tensor([[[-0.0003]],\\n\\n        [[-0.0972]],\\n\\n        [[-0.1269]],\\n\\n        [[ 0.1077]]]))\nE    +    where <built-in method allclose of type object at 0x10c3953a0> = torch.allclose\nE    +    and   tensor([[[-0.0003]],\\n\\n        [[-0.0972]],\\n\\n        [[-0.1269]],\\n\\n        [[ 0.1077]]]) = <built-in method mean of Tensor object at 0x12ee914a0>(dim=1, keepdim=True)\nE    +      where <built-in method mean of Tensor object at 0x12ee914a0> = tensor([[[-0.1186],\\n         [-0.2650],\\n         [ 0.4667],\\n         [-0.0843]],\\n\\n        [[-0.0901],\\n         [-0.054...     [-0.0340],\\n         [ 0.0106]],\\n\\n        [[-0.5668],\\n         [ 0.1064],\\n         [ 0.2695],\\n         [ 0.6219]]]).mean\nE    +        where tensor([[[-0.1186],\\n         [-0.2650],\\n         [ 0.4667],\\n         [-0.0843]],\\n\\n        [[-0.0901],\\n         [-0.054...     [-0.0340],\\n         [ 0.0106]],\\n\\n        [[-0.5668],\\n         [ 0.1064],\\n         [ 0.2695],\\n         [ 0.6219]]]) = <built-in method mean of Tensor object at 0x12ee92940>(dim=2, keepdim=True)\nE    +          where <built-in method mean of Tensor object at 0x12ee92940> = tensor([[[ 0.5400,  0.2611, -1.0270, -0.2485],\\n         [-0.6578, -0.2922, -0.3119,  0.2021],\\n         [-0.5869,  0.05...512, -1.1768, -1.0336],\\n         [-0.9645,  0.6568, -0.0389,  1.4246],\\n         [-0.4677,  0.9726,  2.1865, -0.2039]]]).mean",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 58.65917287504999,
+      "message": "test/test_output_walk.py:261: in test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk\n    assert targets is None  # generation has no input-reading targets\n    ^^^^^^^^^^^^^^^^^^^^^^\nE   assert tensor([[ True, False, False],\\n        [ True, False, False]]) is None",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 116.78154908301076,
+      "message": "test/test_output_walk.py:541: in test_materialised_idea_follows_the_symbol_rows\n    assert targets1 is targets is None  # neither reading supplies generation actions\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert tensor([[ True,  True,  True],\\n        [ True, False, False]]) is tensor([[True, True, True],\\n        [True, True, True]])",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_closing_discards_operations_without_changing_other_live_rows",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0002715829759836197,
+      "message": "test/test_sentence_end_state.py:130: in test_closing_discards_operations_without_changing_other_live_rows\n    _stm, cleared, _feedback = BasicModel._discard_sentence_record(((), lang, ()),\nbin/Models.py:20000: in _discard_sentence_record\n    value = lang[index]\n            ^^^^^^^^^^^\nE   IndexError: list index out of range",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.009575665986631066,
+      "message": "test/test_thought_answer_adapters.py:152: in test_typed_results_survive_resolve_and_reverse_without_execution\n    result = model.reverseOutput(understanding, derivation)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9663: in reverseOutput\n    idea, idea_resolved, idea_sources, occupied = self._materialize_answer_idea(\nbin/Models.py:12487: in _materialize_answer_idea\n    idea = self._condition_answer_on_question(idea,\nE   TypeError: test_typed_results_survive_resolve_and_reverse_without_execution.<locals>.<lambda>() got an unexpected keyword argument 'occupied'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[code]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.010218959010671824,
+      "message": "test/test_thought_answer_adapters.py:152: in test_typed_results_survive_resolve_and_reverse_without_execution\n    result = model.reverseOutput(understanding, derivation)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9663: in reverseOutput\n    idea, idea_resolved, idea_sources, occupied = self._materialize_answer_idea(\nbin/Models.py:12487: in _materialize_answer_idea\n    idea = self._condition_answer_on_question(idea,\nE   TypeError: test_typed_results_survive_resolve_and_reverse_without_execution.<locals>.<lambda>() got an unexpected keyword argument 'occupied'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.01867008302360773,
+      "message": "test/test_thought_answer_adapters.py:152: in test_typed_results_survive_resolve_and_reverse_without_execution\n    result = model.reverseOutput(understanding, derivation)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9663: in reverseOutput\n    idea, idea_resolved, idea_sources, occupied = self._materialize_answer_idea(\nbin/Models.py:12487: in _materialize_answer_idea\n    idea = self._condition_answer_on_question(idea,\nE   TypeError: test_typed_results_survive_resolve_and_reverse_without_execution.<locals>.<lambda>() got an unexpected keyword argument 'occupied'",
+      "stdout": ""
+    }
+  ],
+  "elapsed_seconds": 704.7946565829916,
+  "selected": 5181,
+  "completed": 5181,
+  "retries": []
+}

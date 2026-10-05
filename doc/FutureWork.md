@@ -1087,3 +1087,57 @@ MM_xor's word-level XOR proof. Surface markers own operand-order recovery.
 The standing XOR rule is no regression against the [closing record](benchmarks/2026-10-03-item6-9-closing/README.md),
 including its explicit red gates; this is not a claim that every gate is green.
 Next: the operators update, then 6.8 (no conference freeze; Alec, 2026-10-03).
+
+## Carried from the 6.8 §13–§15 rounds (2026-10-04)
+
+Decided the same day and recorded in the 6.8 plan
+([§13.4](plans/2026-09-27-item-6-8-one-attention.md#134-perceptual-space-is-the-basis-of-zero-order-conceptual-space-alec-2026-10-04),
+[§14](plans/2026-09-27-item-6-8-one-attention.md#14-review-of-the-13-measurement-claude-2026-10-04),
+[§15](plans/2026-09-27-item-6-8-one-attention.md#15-review-of-the-14-measurement-claude-2026-10-04)),
+[Architecture](Architecture.md#two-spaces-one-index-the-symbol-in-perceptual-space-the-concept-in-conceptual-space-decided-alec-2026-10-04)
+and [Philosophy](Philosophy.md#the-sign-in-two-spaces-genera-are-not-located-2026-10-04).
+Not in the 6.8 rounds; each names its home.
+
+- **Kleene connectives over codes** (operators update): `∧ = min`, `∨ = max`,
+  `not = −d`, replacing the product and probabilistic-sum kernels chosen in
+  6.9 §22 for invertibility; the inverses are codebook searches either way.
+  Catalogue [§3.8](specs/2026-09-29-operator-catalogue.md#38-what-was-decided-earlier-in-the-pass).
+- **The fold composing forms at every order** (operators update): a sentence's
+  form is the located fold of its words' forms, as a word's is of its
+  letters; the binding kernel does this in the interim. With the fold on the
+  form band the gate configurations need a nonempty conceptual complement,
+  since the connectives would otherwise never reach the root. The located
+  fold also separates anagrams, which the unlocated max does not.
+- **The complement's bootstrap** (operators update, the distributional item):
+  the conceptual wholes' locations (sets, situation and document codes,
+  properties as concepts), trained by co-activation, from which a new word's
+  context mean can start; without them order-0 meanings stay at zero.
+- **The `not` items** (operators update): `NonLayer` computes `1 − x`;
+  `ConjunctionLayer` reads `max(c⁺, c⁻)`; the binding kernel pools signs.
+- **The negative image on the concept face** (item 2): expectation cancels
+  meaning, never form (accessible mind §2.6.2, amendment of 2026-10-04).
+- **Sparse percept presences** (perception, when it is trained): dense
+  prototypes' joins saturate toward everything (mean cosine between word
+  forms ≈ .98 at any scale, XOR term of a unit root .03–.05); presences on
+  ~30% of coordinates give ≈ .83 and .25–.35. The gates' receipts report
+  mean cos(L) so the state is known; nothing is set.
+- **Footprints checked at load** (operators update): catalogue §1 rule 10,
+  each operator's reads and writes over form, meaning and poles, checked
+  against rule 2's declared writes.
+- **The inverse's chooser** (operators update, first item; Alec, 2026-10-05:
+  "The inverse should have a chooser also"): a learned score over candidate
+  decompositions (operation to undo, pair or word), features the relative
+  residual under each inverse, the candidates' activation and priming, the
+  end state; trained by cross-entropy toward the true decomposition (the
+  input's words, the compose trial's operation), teacher forcing with free
+  inference; replaces the argmin residual and the fixed `activation × cosine
+  × priming`; separate parameters from the forward chooser (shared weights
+  would let the inverse's cross-entropy reinforce the forward's choices
+  without cost). The walk policy (undo / unary / STOP) trained the same way.
+  (6.8 plan §16.4.) The earlier "one scorer for compose and generate" is
+  withdrawn in its shared-weights form.
+- **A dense chooser signal, if wanted** (later): the straight-through
+  mixture's first-order comparison at every round, entered as a control
+  variate for the score-function estimator (REBAR, Tucker et al. 2017; RELAX,
+  Grathwohl et al. 2018), which keeps the estimator unbiased; a plain sum of
+  the two is biased again (6.8 plan §16.3).

@@ -661,7 +661,7 @@ bottom-up) and WholeSpace (analysis, top-down), including the word stream
 they present. This is perception and visualisation. Located with
 `.where`/`.when`; concepts are not.
 
-### 2.2 Parallel conceptual knowing, zeroth order
+### 2.2 Conceptual knowing within a bracket, zeroth order
 A **field**: the activation of the zeroth-order symbols, one value per
 concept over the whole continuous conceptual codebook. Parallel: all concepts
 are active to some degree at once. Words enter it as (concept row,
@@ -683,15 +683,18 @@ observed complement, pooled over the occurrences inside **one convex
 bracket** in space and **one interval** in time — read through the sparse
 definition matrix into the `(c⁺, c⁻)` pairs above. A field has one where,
 one when and many whats; a concept row has no coordinates; a percept
-event keeps its own. Focused attention (serial mode) leaves sixteen pairs
-nonzero, open attention (parallel mode) all active percepts. Words enter
+event keeps its own. Open awareness reads the whole input; narrowing reads
+a smaller bracket. These are widths of one attention mechanism, not execution
+modes. A typed bracket may cover input, STM, LTM, parts, wholes or symbols.
+All perceptual reads draw on `attentionBudget`; grammatical restriction of
+the domain does not. Words enter
 the field through `interpret` (word-concept to object-concept, §4), not as
 a bare (concept row, activation). *Both* is the field's report that the
 bracket pools heterogeneous occurrences, and the prompt to narrow it or
 to raise order; exact co-location is perception's
 ([Architecture](../Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25)).
 
-### 2.3 Parallel conceptual knowing, higher order
+### 2.3 Conceptual knowing within a symbol bracket, higher order
 A **field** over the higher-order symbols: symbols composed of symbols (the
 discretized symbolic codebook; abstraction order ≥ 1). Shares row indices
 with 2.2 (two symbols per concept: its presence and its negation's). A higher-order symbol is a single point at
@@ -704,7 +707,7 @@ sigma over pi — a union over conjunctions, with negation — is a switch, off
 by default
 ([Architecture](../Architecture.md#decided-in-direction-a-concept-is-sigma-over-pi-alec-2026-09-21)).
 
-### 2.4 Serial thinking
+### 2.4 Thinking across identified brackets
 **Codes and ideas in sequence**: the symbolic state held in STM's slots
 (`[NP1, VP, NP2]`, depth). Words enter as codes, already projected; the
 structural operators take codes and ideas and leave an idea — one
@@ -712,6 +715,12 @@ off-codebook vector (2.0). **Reducible to 2.2 and 2.3 in content**, under the
 assumption that thoughts are processed serially — every idea was built from
 codes and must regenerate them — but distinct in form: operators address it
 by position (push, fold, the completed idea) and by value, not by symbol.
+
+Within each bracket the field offers Boolean reductions. A pure singular
+word reading projects a symbol with `gloss`; `divide` and `descend` select
+finer brackets. Only identified symbols admit the order-dependent grammar.
+6.8-1 pins the stop at words, with descent to retained bytes for an unknown
+word. Thus 2.2–2.4 describe forms read by one attention, not separate loops.
 
 ### 2.5 Priming
 Symbols carry a priming: a spreading activation over the concept store's
@@ -726,6 +735,13 @@ is selection — the `non` kind of negation — and it is where an object of
 observation is set at the readout (2.6.7).
 
 ### 2.6 Expectation
+
+The shared `BracketExpectation` owner is indexed by bracket level. Word and
+sentence levels are live in 6.8-1; byte and row levels are declared and off.
+The word level chooses a distribution over the native candidate bank, uses
+observed words in training and its own choices at inference, and supplies the
+same observation-plus-negative-image surprise column. Sentence expectation
+keeps the structured closing described below.
 
 The expected next idea, held in conceptual space as a **negative image**
 (Alec, 2026-09-20):
@@ -864,6 +880,29 @@ percepts", with no order restriction. Consequences:
    swap — so `not` is invisible to symbolic conjunction and De Morgan cannot
    hold on that path; the docstring's premise, "there's no negative pole to
    manage", predates item 11.
+
+*Amended (2026-10-04, 6.8 plan [§13.4](../plans/2026-09-27-item-6-8-one-attention.md#134-perceptual-space-is-the-basis-of-zero-order-conceptual-space-alec-2026-10-04)).*
+Three things settled this day bear on this section.
+
+1. **The logic is Kleene's.** With the origin as uncertainty (2.0) the
+   connectives over codes are Kleene's strong three-valued logic fuzzified:
+   `∧ = min`, `∨ = max`, `not = −d`, the meet and join of the towers' cube
+   and the pole exchange above, unchanged; De Morgan exact. The serial
+   catalogue's conjunction kernel (normalized Hadamard product of signed
+   carriers) is VSA binding, whose sign is a phase: `(−x)∘(−y) = x∘y`, so it
+   cannot host `not`; logged with the two defects of item 4 for the operators
+   update. A Boolean reading (`not` as `1 − p` with Boole's product) was tried
+   and withdrawn the same day: it reads the unknown as a probability of ½,
+   and Boole has no unknown.
+2. **The code is never negated.** A concept lives in conceptual space, its
+   symbol (form) in perceptual space, and `not` acts on the poles of the
+   symbol's activation; neither subspace's coordinates move. The antipode of a
+   code is not a location any concept occupies; unrelated concepts are far in
+   cosine, not antipodal. Percepts have no negation, as this section says.
+3. **The negative image acts on the concept face.** "Sensation is never
+   subtracted from" (item 1) now reads: expectation's image is applied to the
+   ended idea's meaning, not to its form; the form is the fold of what was
+   said and is never cancelled. For item 2.
 
 #### 2.6.3 Purity
 
@@ -1345,12 +1384,13 @@ held; an episode is approximated by chaining ideas.
 | `<thought>` | — | R W (effects; episodic reinstatement) | R W | cue only | R (the conceived remainder `c`), W by `arma` | R via frames; `what` brings frames | R, charged | R | R |
 | `<generate>` | W (output stream) | R | R (idea), own emitted prefix | — | — | — | walk budget | — | — |
 | `interpret` (mandatory compose) | R | R W | R W | — | — | R (the definitions table), W (definition rows only) | — | — | — |
+| bracket candidates (`divide`, `descend`, `gloss`) | R (retained parts) | R (paired field) | W (accepted symbol) | R (prior) | — | — | R W, charged | R | — |
 | chooser (not an operator) | — | R | R | — | R (`c` per role) | R (attended frames) | R | — | — |
 | the closing (not an operator) | — | — | R (the completed idea `o`) | — | R (the image `n`), W (`c`) | W (the one writer; the estimate / observation pair) | — | — | — |
 
 A subsymbolic operator, when declared, has exactly the `<compose>` /
 `<generate>` row. It sees nothing a structural operator does not.
-`interpret` (item 9b), the default per-word step of serial mode that maps
+`interpret` (item 9b), the default step at an accepted word bracket that maps
 a word-concept to its object-concept, has the `<compose>` row and may
 also **mint** an object row at the grammar-resolved order for an unknown word (W on 2.2 by
 testimony); its `<generate>` face is lexicalization.

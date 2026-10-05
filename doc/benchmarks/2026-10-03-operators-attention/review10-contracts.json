@@ -1,0 +1,29 @@
+{
+  "protected_files_unchanged_from_head": {
+    "test/test_explicit_dimensions.py": true,
+    "test/test_mm_xor.py": true,
+    "test/test_reconstruction_roundtrip.py": true,
+    "test/bounded_tests.py": true,
+    "Makefile": true,
+    "pytest.ini": true,
+    "data/eval/nanochat_grammar_gate.json": true
+  },
+  "review10_changed_existing_source": [
+    "bin/Interpret.py",
+    "bin/Language.py",
+    "bin/Models.py",
+    "test/objective_conflicts_probe.py",
+    "test/test_decoder_exploration.py"
+  ],
+  "existing_test_assertions_unchanged": {
+    "test/objective_conflicts_probe.py": true,
+    "test/test_decoder_exploration.py": true
+  },
+  "production_xml_unchanged_from_review10_start": true,
+  "seed_port_audit": {
+    "changed_seed_calls": []
+  },
+  "worktrees": "worktree /Users/arogers/github/WikiOracle/.git/modules/basicmodel\nHEAD 802abb1acc95e1bddc8cb237b13230a336681c49\nbranch refs/heads/main\n\nworktree /private/tmp/basicmodel-aa5e018-reconstruction-baseline\nHEAD aa5e018b67bf3be946c0b75c5baf33c9cc84ab4b\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/basicmodel-preexpect-c391\nHEAD c3918a2929bfee34668300dfa3e7ae8f11febf2a\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/full-spec-history-checkout\nHEAD 4f30ac22f77d5f801d126df567ff5b78d982777d\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/full-spec-nested-checkout\nHEAD 4f30ac22f77d5f801d126df567ff5b78d982777d\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/full-spec-phase-checkout\nHEAD 4f30ac22f77d5f801d126df567ff5b78d982777d\ndetached\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/wikioracle-item1c\nHEAD 2c2063aae5432a9d2a7ac2022ea41c9c62e8b8d1\ndetached\nprunable gitdir file points to non-existent location\n\n",
+  "source_snapshot": "review10-source/source.json",
+  "review_unchanged": true
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "path": "data/MM_grammar_wording.xml",
+    "old": 8,
+    "new": 9,
+    "reason": "eight learned primitive properties plus fixed word whole"
+  },
+  {
+    "path": "data/MM_shamatha.xml",
+    "old": 8,
+    "new": 9,
+    "reason": "eight learned primitive properties plus fixed word whole"
+  },
+  {
+    "path": "data/mnist.xml",
+    "old": 8,
+    "new": 9,
+    "reason": "eight learned primitive properties plus fixed word whole"
+  },
+  {
+    "path": "data/xor.xml",
+    "old": 3,
+    "new": 9,
+    "reason": "eight learned primitive properties plus fixed word whole"
+  },
+  {
+    "path": "data/BasicModel_answers_tied_benchmark.xml",
+    "old": 8,
+    "new": 9,
+    "reason": "eight learned primitive properties plus fixed word whole"
+  },
+  {
+    "path": "data/MM_grammar.xml",
+    "old": 8,
+    "new": 9,
+    "reason": "eight learned primitive properties plus fixed word whole"
+  },
+  {
+    "path": "data/XOR_grammar.xml",
+    "old": 6,
+    "new": 9,
+    "reason": "eight learned primitive properties plus fixed word whole"
+  },
+  {
+    "path": "data/XOR_pos.xml",
+    "old": 6,
+    "new": 9,
+    "reason": "eight learned primitive properties plus fixed word whole"
+  },
+  {
+    "path": "data/BasicModel.xml",
+    "old": 8,
+    "new": 9,
+    "reason": "eight learned primitive properties plus fixed word whole"
+  }
+]

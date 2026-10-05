@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly",
+    "test/test_operator_catalogue.py::test_equality_returns_conceptual_content_with_its_evidence"
+  ],
+  "pid": 83767,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 435029288,
+  "elapsed_seconds": 3.602823291992536,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/operator-retirement-before/run.log"
+}

@@ -11,14 +11,14 @@
   <architecture>
     <!-- subsymbolicOrder=0 keeps this one-pointed grammar out of higher-order
          P/C/S cycles. Parser dispatch is derived from the grammar block. -->
-    <subsymbolicOrder>0</subsymbolicOrder>
+    <bindingDepth>0</bindingDepth>
     <l1Lambda>0.01</l1Lambda>
     <data>
       <dataType>embedding</dataType>
     </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <symbolicOrder>1</symbolicOrder>
+    <conceptLayers>2</conceptLayers>
     <monotonic>true</monotonic>
 
     <training>
@@ -36,23 +36,23 @@
     <language>
       <start>S</start>
       <grammar>
-        <!-- Contiguous(S) was retired 2026-05-04 (duplicate of
-             disjunction at S-tier). Migrated to disjunction(S, S);
-             the post-codebook scalar-max semantics deliver the
-             same hull-style fold the rule used to provide.
-
-             Per the 2026-05-07 rollback: explicit per-tier natural
-             folds (sigma at P / S, pi at C) listed below. -->
-        <P>sigma(P)</P>
-        <C>pi(C)</C>
-        <S>sigma(S)</S>
-        <S>disjunction(S, S)</S>
-        <S>not(S)</S>
-        <S>union(C, C)</S>
-        <S>C</S>
-        <C>intersection(C, C)</C>
-        <C>P</C>
-      </grammar>
+      <compose>
+        <rule operands="field">F = divide.forward(F)</rule>
+        <rule operands="field">F = descend.forward(F)</rule>
+        <rule operands="field">F = gloss.forward(F)</rule>
+        <rule operands="field">F = and.forward(F)</rule>
+        <rule operands="field">F = or.forward(F)</rule>
+        <rule>P = sigma(P)</rule>
+        <rule>C = pi(C)</rule>
+        <rule>S = sigma(S)</rule>
+        <rule>S = disjunction(S, S)</rule>
+        <rule>S = not(S)</rule>
+        <rule>S = union(C, C)</rule>
+        <rule>S = C</rule>
+        <rule>C = intersection(C, C)</rule>
+        <rule>C = P</rule>
+      </compose>
+    </grammar>
     </language>
   </SymbolSpace>
 
@@ -86,7 +86,7 @@
   <WholeSpace>
     <nDim>16</nDim>
     <nOutput>8</nOutput>
-    <nVectors>8</nVectors>
+    <nVectors>9</nVectors>
     <!-- codebook=quantize is required so the SparsityRegLayer / VQ-VAE
          path is active; the four regularizer knobs below operate on
          the codebook tensor. -->

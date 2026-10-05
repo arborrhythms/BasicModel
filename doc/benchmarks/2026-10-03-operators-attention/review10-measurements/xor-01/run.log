@@ -1,0 +1,36 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_____ TestXorGrammarReconstruction.test_piecewise_overall_at_least_50_pct ______
+
+self = <test_explicit_dimensions.TestXorGrammarReconstruction testMethod=test_piecewise_overall_at_least_50_pct>
+
+    @unittest.skipIf(not _RUN_SLOW, "slow (~65s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
+    def test_piecewise_overall_at_least_50_pct(self):
+        # Keep the historical selector; the decided contract is now all four.
+        from collections import Counter
+        model = self.trained_xor_grammar
+        recon_texts = model._grammar_gate_reconstructions
+        test_input, _ = model.inputSpace.getTestData()
+        self.assertEqual(len(test_input), 4)
+        self.assertEqual(len(recon_texts), 4)
+        self.assertFalse(any(model._grammar_gate_unavailable),
+                         'every sentence must have an available grammar inverse')
+        pairs = [(model._bytes_to_text(original).replace("\x00", " "), recovered)
+                 for original, recovered in zip(test_input, recon_texts)]
+        perfect = sum(recovered is not None and Counter(original.split()) ==
+                      Counter(recovered.replace("\x00", " ").split())
+                      for original, recovered in pairs)
+>       self.assertEqual(perfect, 4,
+            f"XOR_grammar reconstruction: {perfect}/4 word multisets recovered; {pairs}")
+E       AssertionError: 0 != 4 : XOR_grammar reconstruction: 0/4 word multisets recovered; [('hello world', 'hello'), ('hello there', 'hello'), ('loving world', 'loving'), ('loving there', 'loving')]
+
+test/test_explicit_dimensions.py:283: AssertionError
+=============================== warnings summary ===============================
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct
+1 failed, 1 passed, 1 warning in 107.54s (0:01:47)

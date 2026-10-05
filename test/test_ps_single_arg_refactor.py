@@ -5,7 +5,7 @@ Post-Stage-1.A contract:
   * ``PartSpace`` owns ``self.pi: PiLayer`` (single layer
     instance, NOT an ``nn.ModuleList``); the per-order Ramsified
     ``pi_input`` / ``pi_concept`` lists are retired. The
-    ``subsymbolicOrder`` knob's new role is driving PARALLEL-mode
+    ``bindingDepth`` knob's new role is driving PARALLEL-mode
     forward iteration count over the per-stage CS pipeline.
 
 Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-

@@ -58,7 +58,7 @@ def _aligned_model(rows, *, cs=None, css=None, ws=None):
     model = Models.BaseModel()
     model.name = "AlignedCapacityTest"
     model.concept_binding = "aligned"
-    model.serial = True
+    model.word_brackets = True
     model.nConceptCodes = int(rows)
     model.nSymbols = int(rows)
     if cs is not None and css is not None:

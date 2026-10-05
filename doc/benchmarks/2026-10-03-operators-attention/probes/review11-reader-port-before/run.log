@@ -1,0 +1,102 @@
+........FFF.                                                             [100%]
+=================================== FAILURES ===================================
+___________________ test_gate_feeds_the_read_into_the_answer ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x129d02a20>
+
+    @pytest.mark.slow
+    def test_gate_feeds_the_read_into_the_answer(monkeypatch):
+        m = _build("MM_qa.xml")
+        x = _batch(m)
+        from configuration_fixtures import freeze_admission
+        freeze_admission(m, x, monkeypatch)
+        m.eval()
+        with torch.no_grad():
+            m.answer_attention.consume_gate.zero_()
+            base = m.forward(x)[2].clone()
+            m.answer_attention.consume_gate.fill_(0.5)
+            fed = m.forward(x)[2].clone()
+>       assert not torch.equal(base, fed), "a non-zero gate must feed the read back"
+E       AssertionError: a non-zero gate must feed the read back
+E       assert not True
+E        +  where True = <built-in method equal of type object at 0x10e5d53a0>(tensor([[[0.4966]],\n\n        [[0.4963]],\n\n        [[0.5041]],\n\n        [[0.5039]]]), tensor([[[0.4966]],\n\n        [[0.4963]],\n\n        [[0.5041]],\n\n        [[0.5039]]]))
+E        +    where <built-in method equal of type object at 0x10e5d53a0> = torch.equal
+
+test/test_global_consume.py:154: AssertionError
+________________ test_nonzero_gate_does_not_corrupt_the_reverse ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12a155190>
+
+    @pytest.mark.slow
+    def test_nonzero_gate_does_not_corrupt_the_reverse(monkeypatch):
+        # The consume swaps body_sub's event for the head ONLY: body_sub is also
+        # ``_combine_last_cs_sub`` (what the reverse / reconstruction reads), so it
+        # MUST be restored. With a NON-ZERO gate the head output changes but the
+        # carrier the reverse reads stays byte-identical to consume-off. (Regression
+        # for the dead-restore bug: the event lives on body_sub.event.W, not a
+        # ``_event`` attr, so a getattr snapshot would never restore it.)
+        m = _build("MM_global.xml")
+        x = _batch(m)
+        from configuration_fixtures import freeze_admission
+        freeze_admission(m, x, monkeypatch)
+        m.eval()
+        with torch.no_grad():
+            m.answer_attention.consume_gate.zero_()
+            head_off = m.forward(x)[2].clone()
+            carrier_off = m._combine_last_cs_sub.materialize().clone()
+            m.answer_attention.consume_gate.fill_(0.5)
+            head_on = m.forward(x)[2].clone()
+            carrier_on = m._combine_last_cs_sub.materialize().clone()
+>       assert not torch.equal(head_off, head_on), "the gated read must reach the head"
+E       AssertionError: the gated read must reach the head
+E       assert not True
+E        +  where True = <built-in method equal of type object at 0x10e5d53a0>(tensor([[[0.5054]],\n\n        [[0.5054]],\n\n        [[0.5055]],\n\n        [[0.5056]]]), tensor([[[0.5054]],\n\n        [[0.5054]],\n\n        [[0.5055]],\n\n        [[0.5056]]]))
+E        +    where <built-in method equal of type object at 0x10e5d53a0> = torch.equal
+
+test/test_global_consume.py:177: AssertionError
+______________________ test_answer_loss_trains_retrieval _______________________
+
+    @pytest.mark.slow
+    def test_answer_loss_trains_retrieval():
+        # The output loss backprops through the read into the scorer + the consume
+        # gate -- retrieval that helps the answer is rewarded.
+        m = _build("MM_qa.xml")
+        x = _batch(m)
+        m.answer_attention.consume_gate.data.fill_(0.3)   # active so grad flows
+        m.train()
+        m.zero_grad(set_to_none=True)
+        out = m.forward(x)
+        out[2].pow(2).sum().backward()
+        ga = m.answer_attention
+>       assert ga.consume_gate.grad is not None and float(ga.consume_gate.grad.abs().sum()) > 0
+E       assert (None is not None)
+E        +  where None = Parameter containing:\ntensor([0.3000], requires_grad=True).grad
+E        +    where Parameter containing:\ntensor([0.3000], requires_grad=True) = PrimedSymbolReader(\n  (scorer): Sequential(\n    (0): Linear(in_features=4, out_features=16, bias=True)\n    (1): ReLU()\n    (2): Linear(in_features=16, out_features=1, bias=True)\n  )\n).consume_gate
+
+test/test_global_consume.py:194: AssertionError
+=============================== warnings summary ===============================
+test/test_global_consume.py::test_consume_width_mismatch_slices_to_common
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_global_consume.py::test_consume_gate_is_zero_by_default_on_global_config
+test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm
+test/test_global_consume.py::test_zero_gate_matches_consume_off
+test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer
+test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse
+test/test_global_consume.py::test_answer_loss_trains_retrieval
+test/test_global_consume.py::test_ltm_truthset_read_is_fed_to_the_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_global_consume.py::test_gate_feeds_the_read_into_the_answer
+FAILED test/test_global_consume.py::test_nonzero_gate_does_not_corrupt_the_reverse
+FAILED test/test_global_consume.py::test_answer_loss_trains_retrieval - asser...
+3 failed, 9 passed, 9 warnings in 3.61s

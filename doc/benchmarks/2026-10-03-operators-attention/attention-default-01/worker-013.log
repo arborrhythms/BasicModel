@@ -1,0 +1,96 @@
+...............F...............................F........................ [ 38%]
+........F.......Fssssss............sss.................................. [ 77%]
+..............................F............                              [100%]
+=================================== FAILURES ===================================
+____ test_autoload_capacity_preflight_expands_all_readout_aliases_in_place _____
+test/test_live_concepts_from_percepts.py:286: in test_autoload_capacity_preflight_expands_all_readout_aliases_in_place
+    assert model._expand_aligned_codebook_checkpoint_state(saved, live) == len(keys)
+E   AssertionError: assert 0 == 2
+E    +  where 0 = _expand_aligned_codebook_checkpoint_state({'conceptualSpaces.0.concepts_from_percepts.coefficients': tensor([[0.1230, 0.1230, 0.1230, 0.1230, 0.1230, 0.1230, 0....       [ 0.0181],\n        [ 0.0922],\n        [-0.0372],\n        [ 0.0327],\n        [-0.0254],\n        [-0.0049]]), ...}, {'conceptualSpaces.0.concepts_from_percepts.coefficients': tensor([[0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0.5000, 0....       [ 0.0181],\n        [ 0.0922],\n        [-0.0372],\n        [ 0.0327],\n        [-0.0254],\n        [-0.0049]]), ...})
+E    +    where _expand_aligned_codebook_checkpoint_state = BaseModel(\n  (conceptualSpaces): ModuleList(\n    (0): ConceptualSpace(\n      (concepts_from_percepts): IndexedSigmaCon...omPercepts(\n          (sigma): SigmaLayer(\n            (layer): LinearLayer()\n          )\n        )\n      )\n    )\n  )\n)._expand_aligned_codebook_checkpoint_state
+E    +  and   2 = len(['conceptualSpaces.0.concepts_from_percepts.coefficients', 'conceptualSpaces.0.layers.1.coefficients'])
+____ TestProvisioning.test_provision_idempotent_count_via_runepoch_trigger _____
+test/test_ltm_consolidation.py:185: in test_provision_idempotent_count_via_runepoch_trigger
+    m.runEpoch(optimizer=opt, batchSize=1, split="train",
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+____ TestRuntimeUserIngestion.test_user_rows_coexist_with_conversation_rows ____
+test/test_ltm_consolidation.py:762: in test_user_rows_coexist_with_conversation_rows
+    m.runEpoch(optimizer=opt, batchSize=1, split="train",
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+_______ TestSerialForwardAppendsStore.test_forward_grows_store_not_deque _______
+test/test_ltm_consolidation.py:884: in test_forward_grows_store_not_deque
+    m.runEpoch(optimizer=opt, batchSize=1, split="train",
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+_________________________ test_words_drops_separators __________________________
+test/test_meronomy.py:161: in test_words_drops_separators
+    assert words("hi, 42") == ["hi", "42"]            # digits stay (number-word)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert ['hi'] == ['hi', '42']
+E     
+E     Right contains one more item: '42'
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_lift_lower_recommender.py::TestLiftLowerRecommender::test_lift_reverse_uses_recommender_with_basis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words
+test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton
+test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_live_concepts_from_percepts.py::test_autoload_capacity_preflight_expands_all_readout_aliases_in_place
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_provision_idempotent_count_via_runepoch_trigger
+FAILED test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows
+FAILED test/test_ltm_consolidation.py::TestSerialForwardAppendsStore::test_forward_grows_store_not_deque
+FAILED test/test_meronomy.py::test_words_drops_separators - AssertionError: a...
+5 failed, 173 passed, 9 skipped, 5 warnings in 15.74s

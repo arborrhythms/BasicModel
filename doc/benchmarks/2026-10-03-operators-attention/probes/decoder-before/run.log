@@ -1,0 +1,481 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+______ test_single_departure_replays_prefix_and_is_greedy_after_it[False] ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12794a450>
+compiled = False
+
+    @pytest.mark.parametrize('compiled', [False, True])
+    def test_single_departure_replays_prefix_and_is_greedy_after_it(monkeypatch, compiled):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, policy = decoder()
+        event = torch.tensor([[[1., 2.], [3., 4.], [0., 0.]],
+                              [[1., 2.], [3., 4.], [0., 0.]]], requires_grad=True)
+        def pair(event):
+            greedy = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, return_candidates=True)
+            explore = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, exploit_actions=greedy[4], departure=torch.tensor([0, 1]))
+            return greedy, explore
+        fn = torch.compile(pair, backend='inductor', fullgraph=True) if compiled else pair
+>       greedy, explore = fn(event)
+                          ^^^^^^^^^
+
+test/test_decoder_exploration.py:42: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+event = tensor([[[1., 2.],
+         [3., 4.],
+         [0., 0.]],
+
+        [[1., 2.],
+         [3., 4.],
+         [0., 0.]]], requires_grad=True)
+
+    def pair(event):
+>       greedy = model._output_generate_walk(event, 8, return_trace=True,
+            basis=event, return_candidates=True)
+E       TypeError: BasicModel._output_generate_walk() got an unexpected keyword argument 'return_candidates'
+
+test/test_decoder_exploration.py:36: TypeError
+______ test_single_departure_replays_prefix_and_is_greedy_after_it[True] _______
+
+parent = <torch._dynamo.symbolic_convert.InstructionTranslator object at 0x12870fbf0>
+func = UserFunctionVariable()
+args = [LazyVariableTracker(unrealized: <class 'types.SimpleNamespace'>), LazyVariableTracker(unrealized: <class 'torch.Tensor'>), ConstantVariable(int: 8)]
+kwargs = {'return_trace': ConstantVariable(bool: True), 'basis': LazyVariableTracker(unrealized: <class 'torch.Tensor'>), 'return_candidates': ConstantVariable(bool: True)}
+allow_nested_graph_breaks = True
+
+    @staticmethod
+    def build_inline_tracer(
+        parent: Any,
+        func: BaseUserFunctionVariable,
+        args: list[VariableTracker],
+        kwargs: dict[str, VariableTracker],
+        allow_nested_graph_breaks: bool = False,
+    ) -> InliningInstructionTranslator:
+        if not isinstance(
+            func,
+            (
+                UserFunctionVariable,
+                NestedUserFunctionVariable,
+                LocalGeneratorFunctionVariable,
+            ),
+        ):
+            raise AssertionError(
+                "expected isinstance( func, ( UserFunctionVariable, NestedUserFunctionVariable, LocalGeneratorFunctionVariable, ), ) to be true"
+            )
+        code: types.CodeType = func.get_code()
+        result = None
+        tracing_ctx = parent.output.tracing_context
+    
+        # Check if we have already identified this function to be inline-able.
+        # The exception is dont_skip_tracing flag which affects the inline
+        # behavior. If the flag is True, don't rely on previous results.
+        if not config.dont_skip_tracing and tracing_ctx:
+            if previous_result := tracing_ctx.previously_inlined_functions.get(
+                code, None
+            ):
+                result = previous_result
+    
+        if result is None:
+            result = InliningInstructionTranslator.check_inlineable(func)
+            if result.skipped is not False:
+                raise AssertionError("expected result.skipped is False to be true")
+    
+            if not config.dont_skip_tracing and tracing_ctx:
+                tracing_ctx.previously_inlined_functions[code] = result
+    
+        sub_locals = None
+        try:
+>           sub_locals = func.bind_args(parent, args, kwargs)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py:6106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:752: in bind_args
+    result = bind_args_cached(fn, root_tx, source, args, kwargs)  # type: ignore[arg-type]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+func = <function BasicModel._output_generate_walk at 0x127cc9580>
+tx = <torch._dynamo.symbolic_convert.InstructionTranslator object at 0x12870fbf0>
+fn_source = AttrSource(base=AttrSource(base=LocalSource(local_name='model', is_input=False, dynamism=None, is_derefed_cell_contents=True), member='_output_generate_walk'), member='__func__')
+args = [LazyVariableTracker(unrealized: <class 'types.SimpleNamespace'>), LazyVariableTracker(unrealized: <class 'torch.Tensor'>), ConstantVariable(int: 8)]
+kwargs = {'return_trace': ConstantVariable(bool: True), 'basis': LazyVariableTracker(unrealized: <class 'torch.Tensor'>), 'return_candidates': ConstantVariable(bool: True)}
+
+    def bind_args_cached(
+        func: FunctionType,
+        tx: "InstructionTranslatorBase",
+        fn_source: Source | None,
+        args: Sequence[Any],
+        kwargs: dict[str, Any],
+    ) -> dict[str, VariableTracker]:
+        spec = _get_spec(func)
+    
+        # Fast path: simple positional-only, no defaults, no varargs/varkw
+        # This is the common case for small utility functions called repeatedly.
+        if (
+            len(args) == spec.arg_count
+            and not func.__defaults__
+            and not kwargs
+            and not spec.varargs_name
+            and not spec.varkw_name
+            and not spec.kwonly_names
+        ):
+            return {
+                name: wrap_bound_arg(tx, args[i])
+                for i, name in enumerate(spec.all_pos_names)
+            }
+    
+        # Full path with all features
+        spec.update_defaults(func)
+        ba = {}
+        rem_kw = dict(kwargs)
+        guarded_pos_defaults_len = False
+    
+        # 1) Bind all positional (pos-only + pos-or-kw)
+        for i, name in enumerate(spec.all_pos_names):
+            if i < len(args):
+                ba[name] = wrap_bound_arg(tx, args[i])
+            elif name in rem_kw and (
+                # `kwargs` can have the same key as a pos-only arg `name`.
+                # If this case happens, we should not consume the `name` here and
+                # keep it in `kwargs`:
+                #   >>> def fn(a, /, **kwargs): return (a, kwargs)
+                #   >>> fn(1, a=2)
+                #   (1, {'a': 2})
+                name not in spec.posonly_names
+            ):
+                ba[name] = wrap_bound_arg(tx, rem_kw.pop(name))
+            elif name in spec.pos_default_map:
+                idx = spec.pos_default_map[name]
+                if fn_source and not guarded_pos_defaults_len:
+                    # The parameter-to-default mapping depends on __defaults__
+                    # length; guard it without wrapping every default value.
+                    install_guard(
+                        AttrSource(fn_source, "__defaults__").make_guard(
+                            GuardBuilder.SEQUENCE_LENGTH
+                        )
+                    )
+                    guarded_pos_defaults_len = True
+                default_source = None
+                if fn_source and not (
+                    ConstantVariable.is_literal(spec.defaults[idx])
+                    and config.skip_guards_on_constant_func_defaults
+                ):
+                    default_source = DefaultsSource(fn_source, idx)
+                ba[name] = wrap_bound_arg(tx, spec.defaults[idx], default_source)
+            else:
+                raise BindArgsTypeError(f"missing required positional argument: {name}")
+    
+        # 2) *args
+        extra = args[len(spec.all_pos_names) :]
+        if spec.varargs_name:
+            ba[spec.varargs_name] = wrap_bound_arg(tx, tuple(extra))
+        elif extra:
+            raise BindArgsTypeError(
+                f"Too many positional arguments: got {len(args)}, expected {len(spec.all_pos_names)}"
+            )
+    
+        # 3) Keyword-only
+        for name in spec.kwonly_names:
+            if name in rem_kw:
+                ba[name] = wrap_bound_arg(tx, rem_kw.pop(name))
+            elif name in spec.kwdefaults:
+                kwdefault_source = None
+                if fn_source:
+                    kwdefault_source = DefaultsSource(fn_source, name, is_kw=True)
+                ba[name] = wrap_bound_arg(tx, spec.kwdefaults[name], kwdefault_source)
+            else:
+                raise BindArgsTypeError(f"Missing required keyword-only argument: {name}")
+    
+        # 4) **kwargs
+        if spec.varkw_name:
+            ba[spec.varkw_name] = wrap_bound_arg(tx, rem_kw)
+        elif rem_kw:
+>           raise BindArgsTypeError(f"Unexpected keyword arguments: {list(rem_kw)}")
+E           torch._dynamo.variables.functions.BindArgsTypeError: Unexpected keyword arguments: ['return_candidates']
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:291: BindArgsTypeError
+
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 6106, in build_inline_tracer
+    sub_locals = func.bind_args(parent, args, kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 752, in bind_args
+    result = bind_args_cached(fn, root_tx, source, args, kwargs)  # type: ignore[arg-type]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 291, in bind_args_cached
+    raise BindArgsTypeError(f"Unexpected keyword arguments: {list(rem_kw)}")
+torch._dynamo.variables.functions.BindArgsTypeError: Unexpected keyword arguments: ['return_candidates']
+
+During handling of the above exception, another exception occurred:
+
+torch._dynamo.exc.ObservedTypeError: raised exception TypeError("Unexpected keyword arguments: ['return_candidates']")
+
+The above exception was the direct cause of the following exception:
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127cd0f50>
+compiled = True
+
+    @pytest.mark.parametrize('compiled', [False, True])
+    def test_single_departure_replays_prefix_and_is_greedy_after_it(monkeypatch, compiled):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, policy = decoder()
+        event = torch.tensor([[[1., 2.], [3., 4.], [0., 0.]],
+                              [[1., 2.], [3., 4.], [0., 0.]]], requires_grad=True)
+        def pair(event):
+            greedy = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, return_candidates=True)
+            explore = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, exploit_actions=greedy[4], departure=torch.tensor([0, 1]))
+            return greedy, explore
+        fn = torch.compile(pair, backend='inductor', fullgraph=True) if compiled else pair
+>       greedy, explore = fn(event)
+                          ^^^^^^^^^
+
+test/test_decoder_exploration.py:42: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[[1., 2.],
+         [3., 4.],
+         [0., 0.]],
+
+        [[1., 2.],
+         [3., 4.],
+         [0., 0.]]], requires_grad=True),)
+kwargs = {}
+
+    @functools.wraps(fn)
+    def compile_wrapper(*args: Any, **kwargs: Any) -> Any:
+        # NB: function calls here could change global state (e.g. random state)
+        # and that can result in different behavior between eager and compiled!
+        # In particular, we don't have control over internal functions like justknobs_check
+        # called in _maybe_set_eval_frame.
+        # Unlike in eval_frame_cpp.cpp/convert_frame.py, we don't attempt to restore global state
+        # due to additional overhead costs.
+        prior = set_eval_frame(None)
+        prior_error_on_nested_compile: bool | None = None
+        fullgraph_count_enabled = False
+        # Fake propagation and AOT metadata collection execute user
+        # subclass code under active fake/functional modes. Nested compile
+        # must run the original function in those regions.  Still honor
+        # explicit/internal requests to compile during FX tracing: HOP export
+        # depends on its internal compile to preserve HOPs, and some tests
+        # intentionally enable force_compile_during_fx_trace to get nested
+        # subgraphs.
+        if (
+            _is_eager_on_nested_compile()
+            and not config.force_compile_during_fx_trace
+        ):
+            from torch._higher_order_ops.utils import _in_hop_compile
+    
+            if not _in_hop_compile():
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    _maybe_set_eval_frame(prior)
+    
+        if self.fullgraph:
+            prior_error_on_nested_compile = set_fullgraph_error_on_nested_compile(
+                torch._dynamo.config.error_on_dynamo_callback_in_fullgraph_compiled_code
+            )
+            if not self.export:
+                fullgraph_count_enabled = set_fullgraph_compiled_frame_count(0) < 0
+                if fullgraph_count_enabled:
+                    reset_skip_reasons()
+        try:
+            # We shouldn't compile inside kernel invocation.
+            if tracing_context := torch._guards.TracingContext.try_get():
+                if (
+                    tracing_context.fake_mode is not None
+                    and tracing_context.fake_mode.in_kernel_invocation
+                ):
+                    return fn(*args, **kwargs)
+            # Skip nested compile during export (but not HOP internal compile)
+            # Only skip if there's an active TracingContext (nested), not for top-level export
+            if (
+                torch.compiler.is_exporting()
+                and not config.force_compile_during_fx_trace
+            ):
+                from torch._higher_order_ops.utils import _in_hop_compile
+    
+                if not _in_hop_compile():
+                    if torch._guards.TracingContext.try_get() is not None:
+                        return fn(*args, **kwargs)
+            # Skip nested compile - just inline the function
+            if (
+                is_fx_symbolic_tracing()
+                and not config.force_compile_during_fx_trace
+            ):
+                if config.error_on_nested_fx_trace:
+                    raise RuntimeError(
+                        "Detected that you are using FX to symbolically trace "
+                        "a dynamo-optimized function. This is not supported at the moment."
+                    )
+                else:
+                    return fn(*args, **kwargs)
+    
+            if is_jit_tracing():
+                raise RuntimeError(
+                    "Detected that you are using FX to torch.jit.trace "
+                    "a dynamo-optimized function. This is not supported at the moment."
+                )
+    
+            cleanups = [enter() for enter in self.enter_exit_hooks]
+            prior_skip_guard_eval_unsafe = set_skip_guard_eval_unsafe(
+                _is_skip_guard_eval_unsafe_stance()
+            )
+            prior_isolate_recompiles_id = set_eval_frame_isolate_recompiles_id(
+                self._isolate_recompiles_id
+            )
+            prior_error_on_graph_break = None
+            if not self.fullgraph and self.error_on_graph_break is not None:
+                current_error_on_graph_break = _get_error_on_graph_break()
+                if current_error_on_graph_break != self.error_on_graph_break:
+                    prior_error_on_graph_break = current_error_on_graph_break
+                    _set_error_on_graph_break(self.error_on_graph_break)
+    
+            # Ensure that if an assertion occurs after graph pushes
+            # something onto the DynamicLayerStack then we pop it off (the
+            # constructed graph code isn't guarded with try/finally).
+            #
+            # This used to be a context but putting a `with` here is a noticeable
+            # perf regression (#126293)
+            saved_dynamic_layer_stack_depth = (
+                torch._C._functorch.get_dynamic_layer_stack_depth()
+            )
+    
+            _maybe_set_eval_frame(_callback_from_stance(callback))
+    
+            # Snapshot the local dispatch key set onto a C++ thread-local
+            # stack so it can be restored after the compiled call, matching
+            # the old _ForceDispatchKeyGuard behavior. Keeping the snapshot
+            # in C++ avoids constructing pybind11 DispatchKeySet /
+            # context-manager instances on every compiled call. The restore
+            # runs in the outer finally below (after the inner finally, i.e.
+            # after pop_dynamic_layer_stack) so the save/restore stack stays
+            # balanced even if the inner finally itself raises (e.g. the
+            # fullgraph "found no compiled frames" error).
+            torch._C._dynamo_save_local_dispatch_key_set()
+            try:
+                call_succeeded = False
+                try:
+                    result = fn(*args, **kwargs)
+                    call_succeeded = True
+                except (Unsupported, UncapturedHigherOrderOpError, UserError) as e:
+                    if config.verbose:
+                        raise
+                    # strip internal tracebacks from causes
+                    cur_exn: BaseException = e
+                    while cur_exn.__cause__ is not None:
+                        cur_exn.__cause__.with_traceback(None)
+                        cur_exn = cur_exn.__cause__
+    
+>                   raise e.with_traceback(
+                        None
+                    ) from e.__cause__  # User compiler error
+E                   torch._dynamo.exc.Unsupported: Observed exception
+E                     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.
+E                     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance("force_eager")`. 
+E                     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+E                   
+E                     Developer debug context: raised exception TypeError("Unexpected keyword arguments: ['return_candidates']")
+E                   
+E                    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html
+E                   
+E                   from user code:
+E                      File "/Users/arogers/github/WikiOracle/basicmodel/test/test_decoder_exploration.py", line 36, in pair
+E                       greedy = model._output_generate_walk(event, 8, return_trace=True,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: Unsupported
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_____________________ test_no_legal_departure_keeps_greedy _____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12870e8d0>
+
+    def test_no_legal_departure_keeps_greedy(monkeypatch):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _ = decoder()
+        model.languageSpace._generate_unary_ops = ()
+        model.languageSpace.generate_policy_logits = lambda top: top.new_tensor([[3., 2.]]).expand(top.shape[0], -1)
+        event = torch.tensor([[[1., 2.]]])
+>       result = model._output_generate_walk(event, 4, return_trace=True, return_candidates=True)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: BasicModel._output_generate_walk() got an unexpected keyword argument 'return_candidates'
+
+test/test_decoder_exploration.py:61: TypeError
+____ test_trial_selects_strictly_lower_full_reconstruction_before_backward _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12d6615b0>
+
+    def test_trial_selects_strictly_lower_full_reconstruction_before_backward(monkeypatch):
+        from Models import BasicModel
+        parameter = torch.nn.Parameter(torch.tensor(1.))
+        greedy_cost = torch.tensor([4., 2., 1.])
+        explore_cost = torch.tensor([1., 2., 4.])
+        calls = []
+        record = SimpleNamespace(root=torch.ones(3, 2), word_values=torch.ones(3, 2, 2),
+            roots=torch.ones(3, 1, 6), depths=torch.ones(3, 1, dtype=torch.long),
+            end_slots=torch.ones(3, 3, 2), end_depth=torch.ones(3, dtype=torch.long),
+            sentence=torch.tensor(0), primed=None)
+        def reconstruct(*args, **kwargs):
+            assert parameter.item() == 1.
+            assert parameter.grad is None
+            explore = kwargs.get('decoder_exploit') is not None
+            calls.append(explore)
+            cost = (explore_cost if explore else greedy_cost) * parameter
+            value = torch.full((3, 2, 2), float(explore)) * parameter
+            trace = (value, torch.full((3,), 2), torch.zeros(3, dtype=torch.bool),
+                     torch.zeros(3), torch.full((3, 4), int(explore)))
+            if kwargs.get('decoder_candidates'):
+                trace = (*trace, torch.ones(3, 4, dtype=torch.bool))
+            return (value, cost*0, cost, torch.zeros(3, dtype=torch.bool), cost[:, None]), trace
+        model = SimpleNamespace(_sentence_training=True, _compiled_reconstruct=lambda: reconstruct,
+            _decoder_antipode_cost=lambda decoded, bank: parameter.expand(3))
+        result = BasicModel._reconstruct_trial(model, record)
+>       assert calls == [False, True]
+E       assert [False] == [False, True]
+E         
+E         Right contains one more item: True
+E         Use -v to get more diff
+
+test/test_decoder_exploration.py:92: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[False]
+FAILED test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[True]
+FAILED test/test_decoder_exploration.py::test_no_legal_departure_keeps_greedy
+FAILED test/test_decoder_exploration.py::test_trial_selects_strictly_lower_full_reconstruction_before_backward
+4 failed in 2.37s

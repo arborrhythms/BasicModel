@@ -1,0 +1,15 @@
+--- incoming/bin/Spaces.py
++++ bin/Spaces.py
+@@ -13277,9 +13277,9 @@
+             out_grammar = fold(out_grammar, parent_grammar, -1)
+             out_rows = fold(out_rows, torch.full_like(rows[:, 0], -1), -1)
+             out_activations = fold(out_activations, torch.zeros_like(activations[:, 0]), 0)
+-        stop_weighted = choice.probability[:, None, None] * buffer
+-        stop_path = buffer.detach() + (stop_weighted - stop_weighted.detach())
+-        out = torch.where((choice.valid & (choice.kind == 0))[:, None, None], stop_path, out)
++        # STOP preserves the value and its operand gradient. Compose logits
++        # learn only from the sentence's detached paired-cost surrogate.
++        out = torch.where((choice.valid & (choice.kind == 0))[:, None, None], buffer, out)
+         return out, depth - binary.long(), out_orders, out_grammar, out_rows, out_activations
+ 
+ 

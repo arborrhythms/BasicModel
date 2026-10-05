@@ -1693,19 +1693,6 @@ class PretrainModel:
 
 
 
-def conceptual_antipode_loss_codes(leaf, codes, selected, valid, *, beta=10.0):
-    """One selected identity aligns; every other valid identity repels.
-
-    These are binary logistic errors on cosine, exactly SBOW's negative
-    form for the competitors. There is no co-occurrence centroid or norm
-    update. Both operands stay live; reconstruction is their sole writer.
-    The caller registers this mean with the uninformed baseline log(2).
-    """
-    cosine = F.cosine_similarity(leaf[:, None], codes, dim=-1)
-    columns = torch.arange(codes.shape[1], device=codes.device)
-    signs = torch.where(columns[None] == selected[:, None], -1., 1.)
-    terms = F.softplus(beta * signs * cosine)
-    return (terms * valid).sum(-1) / valid.sum(-1).clamp_min(1)
 
 
 def conceptual_sbow_loss_codes(window, pool=None, *, sigma=None, neg_k=None,

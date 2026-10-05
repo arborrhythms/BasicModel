@@ -47,7 +47,7 @@ def _small_property_model(
     """Build aligned live-width-8 towers with CS=16 and WS=8 rows."""
     tree = ET.parse(ROOT / "data" / "MM_xor_fixture.xml")
     root = tree.getroot()
-    _set_text(root, "architecture/serial", True)
+    _set_text(root, "architecture/conceptLayers", 2)
     _set_text(root, "architecture/conceptBinding", "aligned")
     _set_text(root, "architecture/training/autoload", False)
     _set_text(root, "ConceptualSpace/nVectors", 16)
@@ -69,7 +69,7 @@ def _small_property_model(
     if symbolic_lift:
         grammar = root.find("SymbolSpace/language/grammar")
         assert grammar is not None
-        ET.SubElement(grammar, "S").text = "S = lift(S, S)"
+        ET.SubElement(grammar.find("compose"), "S").text = "S = lift(S, S)"
     for section in ("ConceptualSpace", "WholeSpace"):
         active = root.find(f"{section}/activeVectors")
         if active is not None:
@@ -95,7 +95,7 @@ def test_basicmodel_config_separates_concepts_properties_and_live_width():
     assert int(root.findtext("ConceptualSpace/activeVectors")) == 32768
     assert int(root.findtext("PartSpace/nVectors")) == 32768
     assert root.find("PartSpace/maxVectors") is None
-    assert ws_rows == 8
+    assert ws_rows == 9
     assert root.find("WholeSpace/activeVectors") is None
     assert int(root.findtext("ConceptualSpace/nOutput")) == 8
     assert int(root.findtext("WholeSpace/nOutput")) == 8
@@ -143,7 +143,8 @@ def test_aligned_property_folds_share_one_physical_concept_dictionary(tmp_path):
         parameter is cb.W
         for group in optimizer.param_groups
         for parameter in group["params"]
-    ) == 1
+    ) == 0  # the shared dictionary is a derived cache, not an optimizer owner
+    assert not cb.W.requires_grad
 
 
 def test_wholespace_owns_one_property_codebook_and_no_concept_store(tmp_path):

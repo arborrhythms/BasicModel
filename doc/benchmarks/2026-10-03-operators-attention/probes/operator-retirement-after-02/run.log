@@ -1,0 +1,67 @@
+...............................................................F........ [ 56%]
+...................F....................................                 [100%]
+=================================== FAILURES ===================================
+_ test_normal_boundary_execution_uses_the_thought_registry_and_common_context __
+
+    def test_normal_boundary_execution_uses_the_thought_registry_and_common_context():
+        """The production controller cannot retain the legacy QueryContext bridge."""
+        from types import SimpleNamespace
+        from Layers import WhatInteractionMemory
+        from Models import BasicModel
+        from Queries import GrammaticalThoughtRegistry
+    
+        grammar = Grammar()
+        grammar.configure({
+            "compose": {"rule": ["part_O1 = part.forward(part_I1, part_I2)"]},
+            "thought": {"rule": ["part_O1 = part.thought(part_I1, part_I2)"]},
+        })
+        space = _cs()
+        registry = GrammaticalThoughtRegistry.install(space, grammar)
+        part, whole = (("sym", space.new_concept()), ("sym", space.new_concept()))
+        for reference in (part, whole):
+            space._csw_concept_row(0, reference[1])
+        space.add_whole(part[1], whole)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", space)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            what_memory=memory, taxonomy=None, discourse=None,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+    
+        request = registry.form("part", part, whole)
+        with model._query_boundary_scope((0,)):
+            result = model.run_selected_thought(
+                request, row=0, work_budget=8, registry=registry)
+    
+>       assert result.evidence["support_true"] == 1.0
+E       assert 0.0 == 1.0
+
+test/test_thought_operation_catalog.py:1048: AssertionError
+__ test_complete_grammar_declares_sentence_predicate_generic_and_implication ___
+
+    def test_complete_grammar_declares_sentence_predicate_generic_and_implication():
+        grammar = Grammar()
+        grammar.load_from_grammar_file('complete.grammar')
+        rules = {rule.method_name: rule for rule in grammar.rules_upward}
+        assert rules['lift'].clause_form == 'S'
+        assert rules['verb'].clause_form == 'VP'
+        assert 'exist' not in rules
+>       assert grammar.ws_absolute_starts == ('S',)
+E       AssertionError: assert frozenset({'S'}) == ('S',)
+E         
+E         Use -v to get more diff
+
+test/test_clause_grammar.py:14: AssertionError
+=============================== warnings summary ===============================
+test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context
+FAILED test/test_clause_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication
+2 failed, 126 passed, 1 warning in 19.56s

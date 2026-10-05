@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import torch
 
-from Layers import InterSentenceLayer, TernaryTruthStore
+from Layers import BracketExpectation, TernaryTruthStore
 from Meaning import ConceptualMeaning
 from meaning_fixtures import record_observation
 from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
@@ -24,7 +24,7 @@ def _meaning(value, *, scope=()):
 
 def _discourse():
     torch.manual_seed(91)
-    return InterSentenceLayer(
+    return BracketExpectation(
         n_symbols=4, max_depth=4, n_dim=4, concept_dim=4,
         batch=1, expectation_scope="structured")
 
@@ -122,7 +122,7 @@ def test_retained_estimates_do_not_enter_the_generic_ltm_chain():
         source_occurrences=(store.row(source_row)["occurrence"],),
         stream=("external", "chain"), document="chain")
 
-    chain = InterSentenceLayer.get_stm_chain(
+    chain = BracketExpectation.get_stm_chain(
         SimpleNamespace(_ltm_store=store))
     assert estimate_row >= 0
     assert len(chain) == 2

@@ -7,7 +7,7 @@ The 2026-07-05 pass reshaped the additive/lattice family:
   chunk(a, b)    = a + b                 (additive, residual-bearing) — the
                    STRUCTURAL <PartSpace> sum (ex-additive-"union"); may
                    someday replace the radix trie's token chunking.
-  sum(a, b)      = a + b                 (element-wise arithmetic sum over
+  sum(a, b)      = (a + b) / 2                 (element-wise arithmetic sum over
                    CONCEPTS, CS-space_role).
   product(a, b)  = a * b                 (element-wise Hadamard product, the
                    multiplicative dual of sum; lossy).
@@ -45,14 +45,14 @@ class _BasisShim:
         return self._W
 
 
-def test_chunk_and_sum_compose_are_additive():
-    """chunk(a, b) == sum(a, b) == a + b exactly (no tanh/clamp/normalize)."""
+def test_chunk_is_additive_and_sum_is_a_mean():
+    """Chunk adds; sum averages, with no tanh/clamp/normalize."""
     from Language import ChunkLayer, SumLayer
     torch.manual_seed(0)
     a = torch.randn(2, 3, 8)
     b = torch.randn(2, 3, 8)
     assert torch.equal(ChunkLayer().compose(a, b), a + b)
-    assert torch.equal(SumLayer().compose(a, b), a + b)
+    assert torch.equal(SumLayer().compose(a, b), (a + b) * .5)
 
 
 def test_product_compose_is_hadamard():
@@ -80,21 +80,20 @@ def test_chunk_difference_is_exact_residual():
     assert torch.allclose(rec, b, atol=1e-6), (rec - b).abs().max()
 
 
-def test_bare_reverse_is_null_decomposition():
-    """reverse(parent) = (parent, 0) for the additive ops (chunk, sum): the
-    mereologically honest w = w ⊔ ∅ split, recomposing EXACTLY."""
+def test_bare_reverse_recomposes_for_sum_and_chunk():
+    """Chunk splits as (parent, 0); mean as (parent, parent), both exact."""
     from Language import ChunkLayer, SumLayer
     torch.manual_seed(2)
     for layer in (ChunkLayer(), SumLayer()):
         parent = torch.randn(2, 5, 12)
         left, right = layer.reverse(parent)
         assert torch.equal(left, parent)
-        assert torch.equal(right, torch.zeros_like(parent))
+        assert torch.equal(right, parent if isinstance(layer, SumLayer) else torch.zeros_like(parent))
         assert torch.equal(layer.compose(left, right), parent)
         # generate() is the reverse alias (grammar dual contract)
         g_left, g_right = layer.generate(parent)
         assert torch.equal(g_left, parent)
-        assert torch.equal(g_right, torch.zeros_like(parent))
+        assert torch.equal(g_right, parent if isinstance(layer, SumLayer) else torch.zeros_like(parent))
 
 
 def test_basis_reverse_peels_one_part():
@@ -212,9 +211,9 @@ def test_grammar_config_declares_sum_product(tmp_path):
     with open(fixture) as f:
         xml = f.read()
     xml = xml.replace(
-        "</grammar>",
+        "</compose>",
         "        <C>sum(C, C)</C>\n"
-        "        <C>product(C, C)</C>\n      </grammar>", 1)
+        "        <C>product(C, C)</C>\n      </compose>", 1)
     cfg = tmp_path / "arith_grammar.xml"
     cfg.write_text(xml)
     init_config(path=str(cfg),

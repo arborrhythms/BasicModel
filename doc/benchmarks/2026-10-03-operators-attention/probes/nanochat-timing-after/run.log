@@ -1,0 +1,53 @@
+intact 1.006307250005193
+shuffled 1.0951415000017732
+         651885 function calls (613243 primitive calls) in 2.102 seconds
+
+   Ordered by: cumulative time
+   List reduced from 863 to 35 due to restriction <35>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        2    0.000    0.000    2.101    1.051 /Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py:605(_score_control_batch)
+        2    0.001    0.001    2.075    1.038 /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:13030(_lex_embed_stem)
+    77697    0.044    0.000    1.868    0.000 /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:118(__torch_function__)
+        2    0.010    0.005    1.655    0.827 /Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py:130(stage_input)
+        2    0.000    0.000    1.419    0.710 /Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py:218(read)
+        2    0.011    0.005    1.419    0.709 /Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py:153(narrow_words)
+       64    0.002    0.000    1.020    0.016 /Users/arogers/github/WikiOracle/basicmodel/bin/Language.py:7173(attend)
+       64    0.001    0.000    1.008    0.016 /Users/arogers/github/WikiOracle/basicmodel/bin/Language.py:6870(score_unary)
+      128    0.001    0.000    1.004    0.008 /Users/arogers/github/WikiOracle/basicmodel/bin/Language.py:6805(_score)
+  624/156    0.000    0.000    0.912    0.006 /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1779(_wrapped_call_impl)
+  624/156    0.001    0.000    0.912    0.006 /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1787(_call_impl)
+      156    0.000    0.000    0.912    0.006 /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/container.py:254(forward)
+      312    0.000    0.000    0.719    0.002 /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py:130(forward)
+  624/312    0.719    0.001    0.719    0.002 {built-in method torch._C._nn.linear}
+7098/3549    0.354    0.000    0.355    0.000 {built-in method torch.where}
+      128    0.000    0.000    0.190    0.001 /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/activation.py:813(forward)
+  256/128    0.190    0.001    0.190    0.001 {built-in method torch._C._nn.gelu}
+        2    0.005    0.002    0.164    0.082 /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:11224(_stage_serial_concept_rows)
+        2    0.000    0.000    0.126    0.063 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:11680(embed_stem)
+        2    0.001    0.001    0.125    0.063 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:11134(_embed_ladder)
+        2    0.076    0.038    0.124    0.062 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:11142(_embed_ladder_word_major)
+ 1878/939    0.117    0.000    0.117    0.000 {built-in method torch.cat}
+        2    0.000    0.000    0.096    0.048 /Users/arogers/github/WikiOracle/basicmodel/bin/ModelAttention.py:55(native_word_poles)
+        1    0.000    0.000    0.095    0.095 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15277(cs_read_memberships)
+        2    0.000    0.000    0.083    0.041 /Users/arogers/github/WikiOracle/basicmodel/bin/Attention.py:303(_codebook_retrieval_prior)
+      998    0.002    0.000    0.080    0.000 /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/overrides.py:1722(handle_torch_function)
+        4    0.000    0.000    0.075    0.019 /Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py:139(on_counts)
+        4    0.000    0.000    0.070    0.017 {built-in method apply}
+        4    0.000    0.000    0.070    0.017 /Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py:41(forward)
+        1    0.000    0.000    0.064    0.064 /Users/arogers/github/WikiOracle/basicmodel/bin/PerceptField.py:52(read_percepts)
+        1    0.000    0.000    0.060    0.060 /Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py:19(counts_in_spans)
+        2    0.000    0.000    0.056    0.028 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:9552(forward)
+        2    0.000    0.000    0.056    0.028 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:10169(_lex_and_embed)
+2042/1021    0.051    0.000    0.051    0.000 {built-in method torch.zeros}
+        2    0.000    0.000    0.050    0.025 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:9291(_lex_batch)
+
+
+.
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-operators-attention/nanochat_timing_probe.py::test_profile_native_controls
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 5.08s

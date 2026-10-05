@@ -1,0 +1,29 @@
+.......s.............................................................sss [ 63%]
+................F.................ssssssss                               [100%]
+=================================== FAILURES ===================================
+_ test_wrong_winner_keeps_target_and_competitor_gradients_below_old_probability_floor _
+test/test_readback_log_probability.py:25: in test_wrong_winner_keeps_target_and_competitor_gradients_below_old_probability_floor
+    d_leaf, d_codes = torch.autograd.grad(actual.sum(), (leaf, codes))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad
+    result_tuple = handle_torch_function(
+.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:594: in grad
+    result = _engine_run_backward(
+.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+E   RuntimeError: The differentiated Tensor at index 1 appears to not have been used in the graph. Set allow_unused=True if this is the desired behavior.
+=============================== warnings summary ===============================
+test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_readback_log_probability.py::test_wrong_winner_keeps_target_and_competitor_gradients_below_old_probability_floor
+1 failed, 101 passed, 12 skipped, 1 warning in 12.32s

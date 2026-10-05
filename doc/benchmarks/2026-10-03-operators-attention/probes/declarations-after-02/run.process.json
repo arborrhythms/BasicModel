@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_catalogue.py",
+    "test/test_concept_binding_operators.py",
+    "test/test_clause_scope.py",
+    "test/test_clause_grammar.py",
+    "test/test_query_grammar_loader.py",
+    "test/test_grammar_fixtures.py"
+  ],
+  "pid": 83076,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 576292304,
+  "elapsed_seconds": 4.906533000001218,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/declarations-after-02/run.log"
+}

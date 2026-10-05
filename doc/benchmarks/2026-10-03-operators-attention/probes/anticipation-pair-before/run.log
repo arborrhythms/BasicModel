@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_anticipation_holds_both_walks_until_future_return ____________
+
+    def test_anticipation_holds_both_walks_until_future_return():
+        model, owner, meaning = _anticipating_model()
+        model.train()
+        before = tuple(model._what_memory().thought_history())
+        model._stage_expectation_queries(training=True)
+        pending = owner._inter_last_meaning[0]
+>       assert pending.walk is not None, 'prior-only thought has no paired future-return comparison'
+               ^^^^^^^^^^^^
+E       AttributeError: '_PendingMeaningExpectation' object has no attribute 'walk'
+
+doc/benchmarks/2026-10-03-operators-attention/forecast_trial_probe.py:9: AttributeError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-operators-attention/forecast_trial_probe.py::test_anticipation_holds_both_walks_until_future_return
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-03-operators-attention/forecast_trial_probe.py::test_anticipation_holds_both_walks_until_future_return
+1 failed, 1 warning in 1.95s

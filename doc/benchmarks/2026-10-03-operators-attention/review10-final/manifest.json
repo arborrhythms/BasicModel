@@ -1,0 +1,27 @@
+{
+  "head": "802abb1acc95e1bddc8cb237b13230a336681c49",
+  "files": 702,
+  "whole_old_new_test_ports": 161,
+  "changed_seed_calls": 0,
+  "extra_source_files": [
+    "doc/Architecture.md",
+    "doc/GradientFlow.md",
+    "doc/LLMEquivalence.md",
+    "doc/Language.md",
+    "doc/NanoChatGrammarPilot.md",
+    "doc/Params.md",
+    "doc/Testing.md",
+    "doc/diagrams/gen_diagrams.py",
+    "doc/diagrams/grammar_operators.svg",
+    "doc/plans/2026-09-27-item-6-8-one-attention.md",
+    "doc/specs/2026-09-20-accessible-mind-subsystems.md",
+    "doc/specs/2026-09-29-operator-catalogue.md",
+    "doc/specs/2026-09-30-occurrence-tense-aspect.md",
+    "test/fixtures/item7_byte_columns.pt",
+    "test/fixtures/item7_legacy_definition.pt",
+    "test/fixtures/transitional_pos.grammar",
+    "test/fixtures/where_tiling_corpus.jsonl",
+    "test/tools/README.md"
+  ],
+  "note": "Older snapshots omit non-Python test fixtures; this archive supplements them from the actual tree, and old test contents come from published HEAD."
+}

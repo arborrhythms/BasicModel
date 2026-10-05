@@ -1,0 +1,20 @@
+....................................ssssssss...............F............ [ 90%]
+........                                                                 [100%]
+=================================== FAILURES ===================================
+_______ TestShamathaInlineGrammar.test_grammar_block_parses_disjunction ________
+test/test_shamatha_inline_grammar.py:49: in test_grammar_block_parses_disjunction
+    self.assertIn("S", cfg)
+E   AssertionError: 'S' not found in {'compose': {'rule': [{'_': 'F = divide.forward(F)', 'operands': 'field'}, {'_': 'F = descend.forward(F)', 'operands': 'field'}, {'_': 'F = gloss.forward(F)', 'operands': 'field'}, {'_': 'F = and.forward(F)', 'operands': 'field'}, {'_': 'F = or.forward(F)', 'operands': 'field'}, 'P = sigma(P)', 'C = pi(C)', 'S = sigma(S)', 'S = disjunction(S, S)', 'S = not(S)', 'S = union(C, C)', 'S = C', 'C = intersection(C, C)', 'C = P']}}
+=============================== warnings summary ===============================
+test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction
+1 failed, 71 passed, 8 skipped, 2 warnings in 7.33s

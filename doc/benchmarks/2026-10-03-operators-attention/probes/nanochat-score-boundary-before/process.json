@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_nanochat_grammar_eval.py::test_word_gate_matches_full_forward_without_building_unused_answer"
+  ],
+  "pid": 8369,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 469730696,
+  "elapsed_seconds": 3.857921874994645,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/nanochat-score-boundary-before/run.log"
+}

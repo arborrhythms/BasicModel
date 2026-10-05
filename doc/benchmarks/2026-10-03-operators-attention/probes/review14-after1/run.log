@@ -1,0 +1,127 @@
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting test/test_concept_code_ownership.py _____________
+test/test_concept_code_ownership.py:4: in <module>
+    from Spaces import Codebook, ConceptualSpace
+bin/Spaces.py:19: in <module>
+    from Layers import bounded_atanh as _bounded_atanh
+bin/Layers.py:100: in <module>
+    import util
+bin/util.py:2018: in <module>
+    TheXMLConfig = XMLConfig(defaults_path=_defaults_xml if os.path.exists(_defaults_xml) else None)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1441: in __init__
+    self.load(defaults_path)
+bin/util.py:1453: in load
+    self._data = self._parse_xml(path)
+                 ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /Users/arogers/github/WikiOracle/basicmodel/data/model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /Users/arogers/github/WikiOracle/basicmodel/data/model.xml:487: element latticeMargin: Schemas validity error : Element 'latticeMargin': This element is not expected.
+E   /Users/arogers/github/WikiOracle/basicmodel/data/model.xml:545: element unitRootRead: Schemas validity error : Element 'unitRootRead': This element is not expected.
+E   /Users/arogers/github/WikiOracle/basicmodel/data/model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________________ ERROR collecting test/test_output_walk.py ___________________
+test/test_output_walk.py:14: in <module>
+    from test_meronomy_ladder import _build_ladder  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+test/test_meronomy_ladder.py:24: in <module>
+    from Spaces import WholeSpace  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19: in <module>
+    from Layers import bounded_atanh as _bounded_atanh
+bin/Layers.py:100: in <module>
+    import util
+bin/util.py:2018: in <module>
+    TheXMLConfig = XMLConfig(defaults_path=_defaults_xml if os.path.exists(_defaults_xml) else None)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1441: in __init__
+    self.load(defaults_path)
+bin/util.py:1453: in load
+    self._data = self._parse_xml(path)
+                 ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /Users/arogers/github/WikiOracle/basicmodel/data/model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /Users/arogers/github/WikiOracle/basicmodel/data/model.xml:487: element latticeMargin: Schemas validity error : Element 'latticeMargin': This element is not expected.
+E   /Users/arogers/github/WikiOracle/basicmodel/data/model.xml:545: element unitRootRead: Schemas validity error : Element 'unitRootRead': This element is not expected.
+E   /Users/arogers/github/WikiOracle/basicmodel/data/model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________ ERROR collecting test/test_tied_operator_reconstruction.py __________
+test/test_tied_operator_reconstruction.py:5: in <module>
+    from test_tied_reconstruction_migration import _model
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+test/test_tied_reconstruction_migration.py:5: in <module>
+    from test_reverse_traversal import _traversal_model, _run
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+test/test_reverse_traversal.py:15: in <module>
+    from test_meronomy_ladder import _build_ladder_variant  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+test/test_meronomy_ladder.py:24: in <module>
+    from Spaces import WholeSpace  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:19: in <module>
+    from Layers import bounded_atanh as _bounded_atanh
+bin/Layers.py:100: in <module>
+    import util
+bin/util.py:2018: in <module>
+    TheXMLConfig = XMLConfig(defaults_path=_defaults_xml if os.path.exists(_defaults_xml) else None)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1441: in __init__
+    self.load(defaults_path)
+bin/util.py:1453: in load
+    self._data = self._parse_xml(path)
+                 ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /Users/arogers/github/WikiOracle/basicmodel/data/model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /Users/arogers/github/WikiOracle/basicmodel/data/model.xml:487: element latticeMargin: Schemas validity error : Element 'latticeMargin': This element is not expected.
+E   /Users/arogers/github/WikiOracle/basicmodel/data/model.xml:545: element unitRootRead: Schemas validity error : Element 'unitRootRead': This element is not expected.
+E   /Users/arogers/github/WikiOracle/basicmodel/data/model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+=========================== short test summary info ============================
+ERROR test/test_concept_code_ownership.py - ValueError: XML schema validation...
+ERROR test/test_output_walk.py - ValueError: XML schema validation failed for...
+ERROR test/test_tied_operator_reconstruction.py - ValueError: XML schema vali...
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+3 errors in 1.88s

@@ -1,0 +1,70 @@
+NATIVE [['hello', '', 'hello', '', '', '', '', '']] [[False, False, False, False, False, False, False, False]] [[[0, 5], [0, 0], [6, 11], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]] [[[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]]
+INPUT {'indices': [[1, 2, 3, 3, 4, 5, 0, 0, 0, 0, 1, 2, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'word_texts': "[['hello', ' ', 'hello']]", 'part_spans': [[[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [0, 0], [0, 0], [0, 0], [0, 0], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]]}
+DEFS []
+NATIVE [['hello', '', 'hello', '', '', '', '', '']] [[True, False, True, False, False, False, False, False]] [[[0, 5], [0, 0], [6, 11], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]] [[[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]]
+INPUT {'indices': [[1, 2, 3, 3, 4, 5, 0, 0, 0, 0, 1, 2, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'word_texts': "[['hello', ' ', 'hello']]", 'part_spans': [[[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [0, 0], [0, 0], [0, 0], [0, 0], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]]}
+DEFS [(1, {'forms': ('hello',), 'parts': ((1, 2, 3, 3, 4),), 'wholes': (0, 8)}, (2,))]
+FIELD [-1, -1, -1, -1] [[[[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]], [[[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]], [[[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]], [[[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]]]
+F
+=================================== FAILURES ===================================
+_________________________ test_current_native_reading __________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1074cbc50>
+
+    def test_current_native_reading(monkeypatch):
+     import ModelAttention
+     from test_sentence_protocol import test_repeated_word_is_not_reminted
+     original=ModelAttention.native_word_poles
+     def inspect(model,spans,forms,known):
+      result=original(model,spans,forms,known)
+      owner=model._concept_owner()
+      fi=model.perceptualSpace._forward_input
+      print('NATIVE',forms,known.tolist(),spans.tolist(),result.tolist())
+      print('INPUT', {key:(value.tolist() if torch.is_tensor(value) else str(value)) for key,value in fi.items() if key in ('native_indices','indices','native_part_spans','part_spans','word_texts')})
+      print('DEFS', [(cid, owner.definitions.description(cid),owner.definitions.objects(cid)) for cid in owner.definitions.word_ids])
+      if hasattr(owner,'_cs_field_concept_ids'): print('FIELD',owner._cs_field_concept_ids.tolist(),owner._cs_order0_raw.tolist())
+      return result
+     monkeypatch.setattr(ModelAttention,'native_word_poles',inspect)
+>    test_repeated_word_is_not_reminted()
+
+doc/benchmarks/2026-10-03-operators-attention/repeated_native_probe.py:17: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_repeated_word_is_not_reminted():
+        model=_make_model();model.eval()
+        with torch.no_grad():
+            model(model.inputSpace.prepInput(['hello hello']))
+            owner=model._concept_owner();first=owner.definitions.word(form='hello')
+            assert first is not None
+            model.End();model(model.inputSpace.prepInput(['hello hello']))
+        assert owner.definitions.word(form='hello')==first
+>       assert not model._attention_words.descended.any()
+E       assert not tensor(True)
+E        +  where tensor(True) = <built-in method any of Tensor object at 0x125dc2800>()
+E        +    where <built-in method any of Tensor object at 0x125dc2800> = tensor([[ True, False,  True, False, False, False, False, False]]).any
+E        +      where tensor([[ True, False,  True, False, False, False, False, False]]) = NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\n         [ 6, 11],\n         [ 0,  0],\n         [ 0,  0],... False, False,\n         False, False, False, False, False, False, False, False, False, False,\n         False, False]])).descended
+E        +        where NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\n         [ 6, 11],\n         [ 0,  0],\n         [ 0,  0],... False, False,\n         False, False, False, False, False, False, False, False, False, False,\n         False, False]])) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...    (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n  (answer_record_reader): SentenceRecordReader()\n)._attention_words
+
+test/test_sentence_protocol.py:70: AssertionError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-operators-attention/repeated_native_probe.py::test_current_native_reading
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/repeated_native_probe.py::test_current_native_reading
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/repeated_native_probe.py::test_current_native_reading
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/repeated_native_probe.py::test_current_native_reading
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-03-operators-attention/repeated_native_probe.py::test_current_native_reading
+1 failed, 4 warnings in 2.07s

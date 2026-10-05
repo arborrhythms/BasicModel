@@ -1,0 +1,7 @@
+{
+  "path": "doc/plans/2026-09-27-item-6-8-one-attention.md",
+  "sha256": "56a88d56414ed484dee073d8e9a45f34810b0c37b5b57460bb87ab1b9f9720cd",
+  "lines": 1075,
+  "note": "Concurrent Claude/Alec design, read by Codex and implemented following user approval. Codex did not edit the plan. Native PS subspace, detached occurrence complement, XOR event width 14, no free word row, root distinctness measured, start/end perceptual support. Current composition kernels unchanged; form-band fold and logic changes belong to the operators update.",
+  "user_scope_reply": "Defer bootstrap learning to the operators update; report the limitation explicitly."
+}

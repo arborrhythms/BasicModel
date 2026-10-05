@@ -49,13 +49,13 @@ def _build(name):
 
 @pytest.mark.slow
 def test_symbol_tower_parallel_forward_smoke():
-    """XOR_exact.xml is symbolicOrder=0 (serial=False -> PARALLEL) with
+    """XOR_exact.xml is concept_order_limit=0 (word_brackets=False -> PARALLEL) with
     symbolTower on, so the 3-stream bind runs through the new SS leg. The
     forward must run without error."""
     import Models
     from util import TheXMLConfig
     m = _build("XOR_exact.xml")
-    assert m.symbol_tower is True and m.serial is False
+    assert m.symbol_tower is True and m.word_brackets is False
     Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader))

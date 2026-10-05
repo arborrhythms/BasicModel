@@ -1,0 +1,7 @@
+{
+  "kind": "one ordinary four-item batch, plus observation-only evaluation calls",
+  "gate_training": false,
+  "source_probe": "test/test_review14_contracts.py::test_review15_measurement_wiring_on_one_ordinary_batch",
+  "note": "Preserved from the final focused run; inherited complete.json wording names the tenth-gate harness, but this invocation is only its one-batch wiring check.",
+  "original_location": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1855/test_review15_measurement_wiri0/ownership"
+}

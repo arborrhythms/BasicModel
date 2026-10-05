@@ -1,0 +1,262 @@
+.FFF..........................................F....Fs.......F........... [ 66%]
+.............s.....F.................                                    [100%]
+=================================== FAILURES ===================================
+________ TestRuntimeSplitIngestion.test_runepoch_runtime_split_no_raise ________
+test/test_runtime_split_ingestion.py:77: in test_runepoch_runtime_split_no_raise
+    out = m.runEpoch(batchSize=2, split="runtime")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15657: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13585: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13712: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14079: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8776: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10258: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8461: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8272: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22959: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13148: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:71: in stage_input
+    reading=narrow_words(chooser,keys,spans,known,budget=model.attention_budget,
+bin/Attention.py:205: in narrow_words
+    action,credit,alternate=chooser.attend(pooled,legal,table.space,prior=local_prior,
+bin/Language.py:7176: in attend
+    _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+test/reading_fixtures.py:153: in unary_scores
+    return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
+                                    ^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: ~ (operator.invert) is only implemented on integer and Boolean-type tensors
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+___ TestRuntimeSplitIngestion.test_store_truths_idempotent_clear_then_record ___
+test/test_runtime_split_ingestion.py:109: in test_store_truths_idempotent_clear_then_record
+    m.store_truths([{"content": "hello world", "trust": 0.8}])
+bin/Models.py:6863: in store_truths
+    self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6915: in _store_truths_into_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts, origin=store.ORIGIN_USER)
+bin/Models.py:7000: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13585: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13712: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14079: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8776: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10258: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8461: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8272: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22959: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13148: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:71: in stage_input
+    reading=narrow_words(chooser,keys,spans,known,budget=model.attention_budget,
+bin/Attention.py:205: in narrow_words
+    action,credit,alternate=chooser.attend(pooled,legal,table.space,prior=local_prior,
+bin/Language.py:7176: in attend
+    _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+test/reading_fixtures.py:153: in unary_scores
+    return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
+                                    ^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: ~ (operator.invert) is only implemented on integer and Boolean-type tensors
+__________ TestRuntimeSplitIngestion.test_store_truths_records_truths __________
+test/test_runtime_split_ingestion.py:95: in test_store_truths_records_truths
+    m.store_truths([{"content": "hello world", "trust": 0.9},
+bin/Models.py:6863: in store_truths
+    self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6915: in _store_truths_into_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts, origin=store.ORIGIN_USER)
+bin/Models.py:7000: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13585: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13712: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14079: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8776: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10258: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8461: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8272: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22959: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13148: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:71: in stage_input
+    reading=narrow_words(chooser,keys,spans,known,budget=model.attention_budget,
+bin/Attention.py:205: in narrow_words
+    action,credit,alternate=chooser.attend(pooled,legal,table.space,prior=local_prior,
+bin/Language.py:7176: in attend
+    _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+test/reading_fixtures.py:153: in unary_scores
+    return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
+                                    ^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: ~ (operator.invert) is only implemented on integer and Boolean-type tensors
+___________ test_sentence_trials_keep_their_own_perception_pullbacks ___________
+test/test_sentence_comparison.py:58: in test_sentence_trials_keep_their_own_perception_pullbacks
+    model.runBatch(train=True, optimizer=optimizer, batchSize=2, split='runtime',
+bin/Models.py:13585: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13712: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14079: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8776: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10288: in what
+    construction = self.reverseOutput(self._last_understanding, derivation,**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9576: in reverseOutput
+    value,audit=output_pair(realize,score)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WalkTrials.py:35: in output_pair
+    first=score(greedy)
+          ^^^^^^^^^^^^^
+bin/Models.py:10281: in <lambda>
+    else lambda construction:self._output_target_cost(construction,values))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9718: in _output_target_cost
+    if pred is None:raise RuntimeError('output trial and supplied answer do not align')
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: output trial and supplied answer do not align
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+test/test_sentence_compose.py:79: in test_real_packed_ends_train_before_the_next_sentence
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+test/test_compiled_word_chunk.py:402: in _tiny_canonical_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1589/test_real_packed_ends_train_be0/tiny_chunk_model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1589/test_real_packed_ends_train_be0/tiny_chunk_model.xml:93: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1589/test_real_packed_ends_train_be0/tiny_chunk_model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______ test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path ________
+test/test_sentence_end_state.py:87: in test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path
+    compiled = torch.compile(BasicModel._tensor_record_operation_values, backend='eager', fullgraph=True)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_tensor_record_operation_values'. Did you mean: '_tensor_record_operation'?
+_______ test_referenced_phrase_is_read_from_ltm_without_an_inventory_row _______
+test/test_sentence_identity.py:36: in test_referenced_phrase_is_read_from_ltm_without_an_inventory_row
+    assert inventory(f.cs) == before
+E   AssertionError: assert {'next_id': 1...', 7, 1): 10}} == {'next_id': 1...}, 'keys': {}}
+E     
+E     Differing items:
+E     {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}} != {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}}
+E     {'keys': {('singleton', 7): 10, ('part-kind', 7, 1): 10}} != {'keys': {}}
+E     {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 5): 3, ...}} != {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 5): 3, ...}}
+E     {'next_id': 11} != {'next_id': 10}
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7130: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1589/test_sentence_trials_keep_thei0/tiny_chunk_model.xml]: head pred (1, 1, 1) vs labels (1, 1, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7130: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1589/test_first_and_later_words_kee0/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7130: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1589/test_first_and_later_words_kee0/tiny_chunk_model.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_runepoch_runtime_split_no_raise
+FAILED test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record
+FAILED test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths
+FAILED test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+FAILED test/test_sentence_end_state.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path
+FAILED test/test_sentence_identity.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row
+7 failed, 100 passed, 2 skipped, 4 warnings in 28.43s

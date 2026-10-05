@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence"
+  ],
+  "pid": 29333,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 507725192,
+  "elapsed_seconds": 3.870314541971311,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review13-occurrence-before/run.log"
+}

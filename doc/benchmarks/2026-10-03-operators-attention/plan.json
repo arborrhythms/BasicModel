@@ -1,0 +1,19 @@
+{
+  "head": "802abb1acc95e1bddc8cb237b13230a336681c49",
+  "sequence": [
+    "decoder exploration (6.9 \u00a726.3)",
+    "decided operator catalogue",
+    "6.8-1 including \u00a7\u00a77\u20139"
+  ],
+  "baseline": {
+    "class_mse": 0.114748,
+    "reconstruction": "0/4",
+    "ownership_conflicts": 0,
+    "prior_class": "9/10",
+    "prior_reconstruction": "5/10",
+    "MM_xor": "red until 6.8"
+  },
+  "guards": "unchanged",
+  "seeds": "unchanged; gates unseeded",
+  "commit": "stop for Claude review"
+}

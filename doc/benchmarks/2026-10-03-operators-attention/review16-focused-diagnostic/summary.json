@@ -1,0 +1,15 @@
+{
+  "counts": {
+    "passed": 529,
+    "failed": 1,
+    "skipped": 33,
+    "xfailed": 1
+  },
+  "selected": 564,
+  "completed": 564,
+  "elapsed_seconds": 759.1754452919704,
+  "failures": [
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser"
+  ],
+  "source_matched": true
+}

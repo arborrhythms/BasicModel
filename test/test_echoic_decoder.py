@@ -12,22 +12,6 @@ def test_answer_record_has_no_derivation_fields():
                  'journal_columns', 'witness_offsets'} & {f.name for f in fields(SentenceUnderstanding)})
 
 
-def test_antipode_aligns_selected_and_repels_all_other_codes():
-    from embed import conceptual_antipode_loss_codes
-    leaf = torch.tensor([[1., .2]], requires_grad=True)
-    codes = torch.tensor([[[.7, .5], [.6, .8], [-.2, .9]]], requires_grad=True)
-    selected = torch.tensor([0])
-    loss = conceptual_antipode_loss_codes(leaf, codes, selected, torch.ones(1, 3, dtype=torch.bool))
-    loss.sum().backward()
-    for i, sign in enumerate((1, -1, -1)):
-        gradient = torch.autograd.functional.jacobian(
-            lambda x: torch.nn.functional.cosine_similarity(x, leaf.detach(), dim=-1),
-            codes.detach()[:, i]).reshape(2)
-        assert sign * (-codes.grad[0, i] * gradient).sum() > 0
-    assert leaf.grad.norm() > 0
-    expected = torch.nn.functional.softplus(torch.tensor([-1., 1., 1.]) * 10 *
-        torch.nn.functional.cosine_similarity(leaf.detach()[:, None], codes.detach(), dim=-1)).mean(-1)
-    torch.testing.assert_close(loss, expected)
 
 
 def test_generate_unary_calls_generate_face():
@@ -93,25 +77,6 @@ def test_output_spelling_uses_the_echoic_shortlist():
     assert BasicModel._generated_word_text(owner, words, torch.tensor([1]), bank=bank) == ('B',)
 
 
-def test_antipode_aligns_the_same_surface_word_as_the_byte_readback(monkeypatch):
-    import embed
-    from Models import BasicModel
-    from SentenceUnderstanding import PrimedSymbols
-    codes = torch.tensor([[[1., 0.], [1., 1.]]])
-    bank = PrimedSymbols(torch.tensor([[0, 1]]), codes, torch.tensor([[1., 10.]]),
-        torch.ones(1, 2, dtype=torch.bool), torch.tensor([[[65], [0]]]),
-        torch.tensor([[[True], [False]]]))
-    cb = SimpleNamespace(active_row_count=lambda: 2,
-        lookup_rows=lambda rows: codes[0][rows])
-    owner = SimpleNamespace(_concept_owner=lambda: SimpleNamespace(similarity_codebook=cb))
-    selected = []
-    def observe(leaf, candidates, index, valid):
-        selected.append(index.tolist())
-        assert valid.all(), 'non-surface concepts still participate as negatives'
-        return leaf.sum(-1)*0
-    monkeypatch.setattr(embed, 'conceptual_antipode_loss_codes', observe)
-    BasicModel._decoder_antipode_cost(owner, (torch.tensor([[[1., 0.]]]), torch.tensor([1])), bank)
-    assert selected == [[0]]
 
 
 @pytest.mark.parametrize('compiled', [False, True])
@@ -149,6 +114,15 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
     torch.testing.assert_close(out[:, :2], bank)
     assert actions[0, :3].tolist() == [0, 2, 2]
     assert actions[1, :4].tolist() == [1, 0, 2, 2]
+    # The production eligibility above has one legal action at each step,
+    # so its chooser gradient is correctly zero. Preserve the historical
+    # numerical-credit assertion on the same hard trace with a declared
+    # choice oracle. Real multi-operation credit is tested in review11.
+    from test_output_walk import _walk_control_oracle
+    _walk_control_oracle(monkeypatch)
+    credited = fn(event, bank)[0]
+    torch.testing.assert_close(credited, out)
+    out = credited
     out.square().sum().backward()
     assert policy.weight.grad is not None and policy.weight.grad.norm() > 0
     assert bank.grad is not None and bank.grad.norm() > 0

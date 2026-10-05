@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_global_consume.py"
+  ],
+  "pid": 18528,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 583828992,
+  "elapsed_seconds": 5.426610000024084,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review11-reader-port-before/run.log"
+}

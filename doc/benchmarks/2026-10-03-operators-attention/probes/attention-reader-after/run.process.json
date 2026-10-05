@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py",
+    "test/test_global_attention.py",
+    "test/test_mm_xor.py",
+    "-m",
+    "not slow"
+  ],
+  "pid": 94406,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 685099096,
+  "elapsed_seconds": 8.016951249999693,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/attention-reader-after/run.log"
+}

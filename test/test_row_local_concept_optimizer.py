@@ -279,7 +279,7 @@ def test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode():
         "serial": False,
         "serialObjectMeta": True,
         "conceptBinding": "aligned",
-        "subsymbolicOrder": 2,
+        "bindingDepth": 2,
     })
     TheXMLConfig._data["WholeSpace"].update({
         "nDim": 16,
@@ -288,7 +288,7 @@ def test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode():
     model.concept_binding = "aligned"
     model.create(
         nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
-        subsymbolicOrder=2, model_type="embedding")
+        bindingDepth=2, model_type="embedding")
 
     assert not model.conceptualSpace.similarity_codebook.sparse_lookup_grad
     assert not any(

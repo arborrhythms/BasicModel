@@ -1,0 +1,174 @@
+..................................................ss..ss.ss............. [ 61%]
+........................................FFFFF                            [100%]
+=================================== FAILURES ===================================
+_ TestPerStageCachesRetiredAfterForward.test_cs_cache_not_present_after_forward _
+test/test_stage_caches_retired.py:95: in test_cs_cache_not_present_after_forward
+    model.forward(x)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+_ TestPerStageCachesRetiredAfterForward.test_ws_cache_not_present_after_forward _
+test/test_stage_caches_retired.py:83: in test_ws_cache_not_present_after_forward
+    model.forward(x)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+_ TestReverseRoundtripStillCompletes.test_runBatch_reverse_path_does_not_depend_on_cs_cache _
+test/test_stage_caches_retired.py:185: in test_runBatch_reverse_path_does_not_depend_on_cs_cache
+    model.forward(x)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+_ TestReverseRoundtripStillCompletes.test_terminal_stm_snapshot_available_after_forward _
+test/test_stage_caches_retired.py:121: in test_terminal_stm_snapshot_available_after_forward
+    model.forward(x)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+_______ TestReverseRoundtripStillCompletes.testreverse_via_terminal_stm ________
+test/test_stage_caches_retired.py:147: in testreverse_via_terminal_stm
+    model.forward(x)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+=============================== warnings summary ===============================
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:199: UserWarning: Space ownership migration: removed 262 duplicate alias checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:199: UserWarning: Space ownership migration: rewrote 27 legacy Space.subspace Basis/Encoding checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_space_carrier_bridge.py:199: UserWarning: Codebook ownership migration: removed 5 duplicate VQ Parameter checkpoint keys.
+    assert restored.load_weights(checkpoint, strict=True)
+
+test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:5021: UserWarning: Shared ConceptualSpace checkpoint migration: selected the stage-0 similarity dictionary as canonical and replaced 15 divergent stage/alias tensor(s).
+    self._canonicalize_shared_concept_checkpoint_state(state, model_state)
+
+test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15924: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 4 gets records only, no weighted reading (overflow #1)
+    warnings.warn(
+
+test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:15924: RuntimeWarning: CS concept inventory exhausted (8 rows): concept 5 gets records only, no weighted reading (overflow #2)
+    warnings.warn(
+
+test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_sparse_layer.py::test_spmm_kernel_parity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/SparseCsrTensorImpl.cpp:51.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_cs_cache_not_present_after_forward
+FAILED test/test_stage_caches_retired.py::TestPerStageCachesRetiredAfterForward::test_ws_cache_not_present_after_forward
+FAILED test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_runBatch_reverse_path_does_not_depend_on_cs_cache
+FAILED test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::test_terminal_stm_snapshot_available_after_forward
+FAILED test/test_stage_caches_retired.py::TestReverseRoundtripStillCompletes::testreverse_via_terminal_stm
+5 failed, 106 passed, 6 skipped, 9 warnings in 8.51s

@@ -107,10 +107,10 @@ def _release_allocator_cache():
 
 
 def _make_layer(D=4, batch=1, ltm_capacity=1024, concept_dim=None):
-    """An InterSentenceLayer with the inter-level predictor built
+    """An BracketExpectation with the inter-level predictor built
     (``concept_dim`` set, defaulting to D so the predictor width matches
     the end-state payload width)."""
-    return Layers.InterSentenceLayer(
+    return Layers.BracketExpectation(
         n_symbols=4, max_depth=8, n_dim=D,
         p=5, q=2, batch=batch, ltm_capacity=ltm_capacity,
         concept_dim=(D if concept_dim is None else concept_dim),
@@ -217,7 +217,7 @@ class TestInterPredictorParamsExposed(_Base):
         for p in pred_params:
             self.assertTrue(any(p is q for q in layer_params),
                             "every inter-predictor param must be reachable "
-                            "via InterSentenceLayer.parameters()")
+                            "via BracketExpectation.parameters()")
 
     def test_predictor_is_on_layers_for_ergodic_cascade(self):
         self.assertTrue(
@@ -410,7 +410,7 @@ class TestTrainingBoundaryStagesPrediction(_Base):
         # No inter-predictor (concept_dim unset) -> the combined call must
         # degenerate to a bare observe: the chain still grows, no loss, no
         # error (absolute-only / no-discourse no-op safety).
-        layer = Layers.InterSentenceLayer(
+        layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=8, n_dim=self.D,
             p=5, q=2, batch=1, ltm_capacity=1024, concept_dim=None)
         self.layer = layer

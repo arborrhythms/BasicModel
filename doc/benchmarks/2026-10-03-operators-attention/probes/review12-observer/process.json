@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-operators-attention/review12_observer_probe.py"
+  ],
+  "pid": 23305,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 717981160,
+  "elapsed_seconds": 6.200966625008732,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review12-observer/run.log"
+}

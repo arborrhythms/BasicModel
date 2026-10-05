@@ -4,8 +4,8 @@
 The manifest contains document-held-out multiple-choice items.  Every item
 has an intact prefix, a word-order-shuffled control with the same surface
 pieces, and 16 frequency/length-matched candidate words.  BasicModel scores a
-candidate with the MSE between the held ``IntraSentenceLayer`` prediction and
-the whole-word idea perceived at the candidate boundary.
+candidate with the negative log probability from the trained word-level
+expectation, conditioned on the observed prefix and one shared candidate bank.
 
 Examples::
 
@@ -37,7 +37,7 @@ from mps_memory import apply_mps_allocator_env
 PROJECT = Path(__file__).resolve().parent.parent
 BIN = PROJECT / "bin"
 DEFAULT_MANIFEST = PROJECT / "data" / "eval" / "nanochat_grammar_gate.json"
-DEFAULT_MODEL = PROJECT / "data" / "MM_nanochat_grammar_gate.xml"
+DEFAULT_MODEL = PROJECT / "data" / "BasicModel.xml"
 ASCII_WORD_RE = re.compile(r"[A-Za-z]+")
 SCHEMA_VERSION = 1
 
@@ -346,51 +346,38 @@ def generate_manifest(args):
     return 0
 
 
-def last_gated_intra_scores(trace):
-    """Return the last active per-row MSE, target, prediction, and count."""
+def word_candidate_scores(model, *, choices):
+    """Negative log probability of each candidate after the observed prefix.
+
+    Every completion of an item uses the same discrete candidate bank. The
+    candidate itself is never fed into its forecasting context; padding is
+    absent from the ARMA history, and the model's normal word head is used.
+    """
     import torch
-    if not trace:
-        raise RuntimeError("model produced no captured intra-sentence targets")
-    # The sentence prelude may emit a parallel ``[B,N,D]`` prediction before
-    # the serial word loop.  It is useful training telemetry but is not a
-    # candidate-word prediction; score only the word-grain ``[B,D]`` entries.
-    serial_trace = [
-        entry for entry in trace
-        if entry["prediction"].dim() == 2 and entry["target"].dim() == 2
-    ]
-    if not serial_trace:
-        shapes = [tuple(entry["prediction"].shape) for entry in trace]
-        raise RuntimeError(
-            f"model produced no serial [B,D] intra targets; saw {shapes}")
-    first = serial_trace[0]["prediction"]
-    batch, dim = first.shape
-    scores = torch.full(
-        (batch,), float("nan"), device=first.device, dtype=first.dtype)
-    targets = torch.zeros(batch, dim, device=first.device, dtype=first.dtype)
-    predictions = torch.zeros_like(targets)
-    counts = torch.zeros(batch, device=first.device, dtype=torch.long)
-    for entry in serial_trace:
-        prediction = entry["prediction"]
-        target = entry["target"]
-        if prediction.shape != first.shape or target.shape != first.shape:
-            raise RuntimeError("intra capture changed shape within one forward")
-        gate = entry.get("row_gate")
-        if gate is None:
-            active = torch.ones(batch, device=first.device, dtype=torch.bool)
-        else:
-            active = gate.reshape(batch).to(
-                device=first.device, dtype=torch.bool)
-        mse = (prediction - target).square().mean(dim=-1)
-        scores = torch.where(active, mse, scores)
-        targets = torch.where(active.unsqueeze(-1), target, targets)
-        predictions = torch.where(
-            active.unsqueeze(-1), prediction, predictions)
-        counts = counts + active.long()
-    if bool(torch.isnan(scores).any().item()):
-        missing = torch.isnan(scores).nonzero().reshape(-1).tolist()
-        raise RuntimeError(f"no active next-word target for rows {missing}")
-    return (scores.detach().cpu(), targets.detach().cpu(),
-            predictions.detach().cpu(), counts.detach().cpu())
+    staged=getattr(model,'_word_expectation_input',None)
+    owner=getattr(model.symbolSpace,'expectation',None)
+    if staged is None or owner is None:
+        raise RuntimeError('model produced no word-level expectation bank')
+    words=staged[0].detach()
+    active=model.inputSpace._word_active_mask
+    accepted=model._attention_words.accepted
+    B,W,D=words.shape
+    if B%choices:raise ValueError('candidate rows must form complete choice banks')
+    positions=torch.arange(W,device=words.device)[None]
+    last=torch.where(active,positions,-1).amax(-1)
+    rows=torch.arange(B,device=words.device)
+    if bool((last<0).any()) or not bool(accepted[rows,last].all()):
+        raise RuntimeError('candidate word was not accepted within attentionBudget')
+    candidate=words[rows,last]
+    bank=candidate.reshape(B//choices,choices,D).repeat_interleave(choices,0)
+    valid=torch.ones(B,choices,device=words.device,dtype=torch.bool)
+    targets=torch.full((B,W),-1,device=words.device,dtype=torch.long)
+    targets[rows,last]=rows%choices
+    prefix=(positions<last[:,None])&accepted
+    expected=owner.expect('word',words,bank,valid,targets,
+        teacher_forcing=False,observed_prefix=prefix,active=accepted)
+    return (expected.loss[rows,last].detach().cpu(),candidate.cpu(),
+            expected.prediction[rows,last].detach().cpu(),accepted.sum(-1).cpu())
 
 
 def _reset_model(model):
@@ -623,13 +610,15 @@ def _score_control_batch(model, data, items, control, choices):
         prefix = item[prefix_key]
         texts.extend(prefix + candidate for candidate in item["candidates"])
     _reset_model(model)
-    cs = model.conceptualSpace
-    with torch.no_grad(), data.runtime_batch(texts), \
-            cs.capture_intra_predictions() as trace:
+    with torch.no_grad(), data.runtime_batch(texts):
         input_tensor = model.inputSpace.prepInput(list(data.train_input))
-        model.forward(input_tensor)
-    _validate_candidate_reached(model, items, control, choices)
-    result = last_gated_intra_scores(trace)
+        # The ordinary stem stages the complete native word readings and
+        # the word-level expectation bank used below. Sentence composition,
+        # output generation and answer retrieval cannot affect that snapshot;
+        # building them here needlessly multiplies memory by the choice count.
+        model._lex_embed_stem(input_tensor)
+        _validate_candidate_reached(model, items, control, choices)
+        result = word_candidate_scores(model, choices=choices)
     _reset_model(model)
     return result
 
@@ -702,7 +691,7 @@ def score_manifest(model, data, manifest, *, limit=None, item_batch_size=1):
                     "shuffled_scores": scores_s,
                     "intact_rank": rank_i,
                     "shuffled_rank": rank_s,
-                    "intact_true_mse": scores_i[answer],
+                    "intact_true_nll": scores_i[answer],
                     "intact_prediction_steps": int(
                         intact_counts[lo + answer]),
                     "shuffled_prediction_steps": int(
@@ -719,7 +708,7 @@ def score_manifest(model, data, manifest, *, limit=None, item_batch_size=1):
         "intact_mrr": sum(1.0 / row["intact_rank"] for row in rows) / n,
         "shuffled_top1": sum(row["shuffled_rank"] == 1 for row in rows) / n,
         "shuffled_mrr": sum(1.0 / row["shuffled_rank"] for row in rows) / n,
-        "intact_true_mse": sum(row["intact_true_mse"] for row in rows) / n,
+        "intact_true_nll": sum(row["intact_true_nll"] for row in rows) / n,
         "wall_seconds": time.perf_counter() - started,
         **_latent_statistics(target_vectors),
     }

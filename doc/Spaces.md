@@ -652,6 +652,30 @@ percept-to-concept seam does not use tanh/atanh. Over a bounded unit range,
 SNORM16 has a roughly `3e-5` uniform grid and is finer than bf16 across most of
 the interval; SNORM8 is materially coarser.
 
+### The Cube as a Kleene Algebra; Forms as Joins; Room Between the Towers (2026-10-04)
+
+Under the componentwise order the percept cube `[0,1]^D` is a lattice with
+*nothing* at the bottom and *everything* at the top; componentwise `min` and
+`max` are its meet and join (`Ops.intersection` and `union`), and with the
+bipolar reflection `d → −d` (on presences `p → 1 − p`) as its order-reversing
+involution it is a Kleene algebra: De Morgan exact, no sign pooling, the
+unknown (bipolar zero) fixed by negation and by conjunction or disjunction
+with itself. The normalized Hadamard product of signed carriers is VSA
+binding, not a connective, and is interim for composing forms
+([6.8 plan §13.4](plans/2026-09-27-item-6-8-one-attention.md#134-perceptual-space-is-the-basis-of-zero-order-conceptual-space-alec-2026-10-04)).
+
+A word's form is the join of its parts at full presence, `L = ∨_{p : d_p > 0}
+c_p`, over the part codes whose net evidence is positive; evidence selects,
+it does not scale. The WS types a word belongs to contain it: `U = ∧` over
+the wholes (evidence-scaled toward everything, `1 − d(1 − c)`), and the room
+rule `L + m ≤ U` is enforced on the wholes only, after the owner's step, as a
+second clamp beside the `[0,1]` projection. Certainty is not a code's
+magnitude but the activation that reads it, the projection coefficient
+`(leaf·c)/(c·c)`. Distinct letter sets give distinct joins; sparse presences
+keep them far apart (dense codes' joins saturate toward everything, mean
+cosine ≈ .98 at any scale; presences on ~30% of coordinates give ≈ .83). The
+address bands are zero in a form: the particular is its occurrence row.
+
 ### Live Paths and Migration Status {#percept-live-path}
 
 The tracked baseline enables the global meronomy chart, but the actual carrier

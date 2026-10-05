@@ -1,0 +1,531 @@
+..............F..............................F....s..........F....F..... [ 48%]
+...FFs....F....sss.s.sssssssFs.s.s.s....F............................... [ 96%]
+.....                                                                    [100%]
+=================================== FAILURES ===================================
+_ TestSoftRuleProbsGradReachesRouter.test_grad_reaches_unary_anchors_via_projection _
+
+self = <test_intra_routing_grad_to_router.TestSoftRuleProbsGradReachesRouter testMethod=test_grad_reaches_unary_anchors_via_projection>
+
+    def test_grad_reaches_unary_anchors_via_projection(self):
+        """A loss through a NON-UNIFORM projection of ``rule_probs`` (the
+        predictor's routing_proj bias shape) backprops non-zero grad into
+        the router's unary scorer anchors.
+    
+        Two test-setup controls make the proof unambiguous:
+          * ``rule_probs.sum()`` is degenerate -- each L1-normalized row
+            sums to a constant 1 -- so the bias is projected by a
+            non-uniform map, exactly as the real
+            ``IntraSentenceLayer.routing_proj`` does.
+          * The unary action scorer is a straight-through softmax; with
+            random anchors it can SATURATE to one-hot, where
+            ``d(softmax)/d(logits) ~= 0`` and the (real, connected)
+            gradient is incidentally ~0. We zero the unary anchors so the
+            action posterior is non-degenerate and the gradient magnitude
+            is a clean, seed-robust non-zero -- the analogue of
+            ``test_bias_fires_on_real_model`` forcing a non-trivial
+            ``routing_proj``. The graph CONNECTIVITY (the deliverable) is
+            asserted unconditionally by
+            ``test_rule_probs_requires_grad_on_full_router``.
+        """
+        # The former not symbol is now a field operation. Declare a legal
+        # non unary for this unchanged unary-gradient mechanism proof.
+        import tempfile
+        with open(_ROUTER_CONFIG) as source:
+            text=source.read().replace('S = not(S)','S = non(S)')
+        with tempfile.NamedTemporaryFile(mode='w',suffix='.xml') as config:
+            config.write(text);config.flush()
+            model = _build_model(config.name)
+        ss = model.symbolSpace
+        ll = ss.languageLayer
+        # Space-role-free fold: the grammar collapses to a SINGLE reduction space_role
+        # (no hardcoded S/C/P). Resolve whichever key the unary layer was
+        # registered under -- there is exactly one -- and assert the
+        # router exposes the APPLY/COPY anchor scorers on it.
+        ul = ll.operation_layer
+        self.assertTrue(
+            hasattr(ul, "apply_anchor") and hasattr(ul, "stop_anchor"),
+            "unary reduction layer must expose the router's APPLY/COPY "
+            "anchor scorers.")
+        # De-saturate the straight-through action softmax so the gradient
+        # path magnitude is not masked by an incidental one-hot posterior.
+        with torch.no_grad():
+            ul.apply_anchor.zero_()
+            ul.stop_anchor.zero_()
+        for p in (ul.apply_anchor, ul.stop_anchor):
+            p.grad = None
+        torch.manual_seed(0)
+        D = ll.feature_dim
+        x = torch.randn(2, 4, D, requires_grad=True)
+        ss.compose(x)
+        rp = ss.routing_state.rule_probs
+        self.assertTrue(rp.requires_grad and rp.grad_fn is not None)
+        # Mimic routing_proj: [n_rules] -> [concept_dim] non-uniform map.
+        proj = nn.Linear(int(rp.shape[1]), 5, bias=True)
+        loss = proj(rp).pow(2).sum()
+        loss.backward()
+        apply_g = ul.apply_anchor.grad
+        self.assertIsNotNone(
+            apply_g, "unary apply_anchor must receive grad from rule_probs.")
+>       self.assertGreater(
+            float(apply_g.abs().sum()), 0.0,
+            "gradient must reach the unary apply_anchor (the router's "
+            "APPLY scorer) through rule_probs.")
+E       AssertionError: 0.0 not greater than 0.0 : gradient must reach the unary apply_anchor (the router's APPLY scorer) through rule_probs.
+
+test/test_intra_routing_grad_to_router.py:159: AssertionError
+_______ test_native_nonzero_composition_is_bit_identical_at_every_stance _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_native_nonzero_compositio0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12dccd9a0>
+
+    def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, monkeypatch):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+        snapshots = []
+        for enabled, staged, gain in ((True, False, 1.), (True, True, 0.), (True, True, 1.), (False, False, 1.)):
+            torch.manual_seed(948)
+            model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1,
+                training_overrides={"reconstructInLoop": False, "sentenceExpectation": enabled, "expectationGain": gain},
+                architecture_overrides={"attentionBudget": 32})
+            model.eval()
+            model._tensor_peer_while_eager = True
+            model._chart_compose_per_word = lambda: None
+            with torch.no_grad():
+                # A nonzero readout makes the snapshot sensitive to content;
+                # the zero-init cursor bootstrap alone could hide leaked inputs.
+                model.answer_attention.scorer[-1].weight.fill_(.25)
+                _stage_fullgraph_tensor_peer(model, ["a bicycle has a wheel"])
+                if staged:
+                    discourse = model.symbolSpace.expectation
+                    observe(discourse, torch.ones(3, discourse.concept_dim))
+                    assert discourse.expect_next_meaning() is not None
+                cs = model.conceptualSpace
+                # Seed ordinary intent through its owner so the priority surface
+                # is live and nonuniform; use the real staged percepts for scope.
+                cs.prime_desire(torch.tensor([0, 1]), valence=1.)
+                before_priority = model._assemble_relevance_priority(cs, 0, None, None).clone()
+>               model._reading_attention_step(1, cs.stm.snapshot(detach=True), model._staged_in_sub, None)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:495: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...    (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+  (_staged_in_sub): SubSpace()
+)
+name = '_reading_attention_step'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_reading_attention_step'. Did you mean: '_answer_attention_step'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____ test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction _____
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_missing_packed_sentence_d0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12eba4140>
+
+    def test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction(tmp_path, monkeypatch):
+        import util
+        from test_packed_reconstruction_parity import build_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = build_model(tmp_path, word_capacity=8)
+        stage = model._stage_snapshot_bytes
+        def without_second_sentence():
+            stage()
+            isp = model.inputSpace
+            isp._ar_bank_valid[isp._ar_concept_lookup_sentence_ids == 1] = False
+        monkeypatch.setattr(model, '_stage_snapshot_bytes', without_second_sentence)
+        try:
+            model._install_unit_span_fn()
+            raw = model.inputSpace.prepPackedInput([['quorp flarn', 'wug blim']])
+            with torch.no_grad():
+                model.runBatch(train=False, batchSize=1, split='validation',
+                    batch_override=(raw, torch.empty(1, 0)))
+            assert int(model.inputSpace._reconstruction_missing_sentence_count) == 1
+>           assert float(model._recon_sentence_costs[0, 1]) == 0.
+E           assert 6.988933563232422 == 0.0
+E            +  where 6.988933563232422 = float(tensor(6.9889))
+
+test/test_reconstruction_scope.py:69: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+____________ test_first_sight_admits_concepts_before_reconstruction ____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_first_sight_admits_concep0')
+
+    def test_first_sight_admits_concepts_before_reconstruction(tmp_path):
+        model = build_model(tmp_path, active_vectors=1)
+        try:
+            owner = model._concept_owner()
+>           before = owner._concept_allocator.next_id
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_reconstruction_bank_contract.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = '_concept_allocator'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________________________ test_run_record_schema_smoke _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_run_record_schema_smoke0')
+
+    def test_run_record_schema_smoke(tmp_path):
+        """One epoch on a tiny fixture yields a complete run record."""
+>       rec = run_config("data/MM_xor_fixture.xml", epochs=1, seed=0,
+                         out_dir=str(tmp_path))
+
+test/test_recon_bench.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/recon_bench.py:215: in run_config
+    _epoch_loop()
+bin/recon_bench.py:199: in _epoch_loop
+    out_loss, rec_loss, _, _ = model.runEpoch(
+bin/Models.py:15688: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:14973: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:14188: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:14290: in _commit_autobind_from_stash
+    self._maybe_autobind_words(
+bin/Spaces.py:14508: in _maybe_autobind_words
+    return self._autobind_property_concepts(
+bin/Spaces.py:14441: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:62: in lookup_word
+    cs._preflight_concept_row(0)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...  (concept_parts_layer): ConceptualAttentionLayer(
+    (conjunctive): SparseLayer()
+    (features): SparseLayer()
+  )
+)
+order = 0
+
+    def _preflight_concept_row(self, order=0):
+        """Check the physical seat before changing identity or definition records."""
+        store = _concept_alloc_of(self).layer()
+        caps, capacity = self._order_caps(), int(self.nVectors)
+        if getattr(self, '_concept_binding', 'mixing') == 'aligned':
+            base, size = 0, capacity
+        elif int(order) == 0:
+            base = 0 if store._row_next.get(0, 0) < caps[0] else sum(caps)
+            size = caps[0] if base == 0 else capacity - base
+        else:
+            rung = min(int(order), len(caps) - 1)
+            base, size = sum(caps[:rung]), caps[rung]
+        next_row = int(store._row_next.get(base, 0))
+        while next_row < size and base + next_row in store._tensor_row_keys:
+            next_row += 1
+        if next_row >= size:
+>           raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E           RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+
+bin/Spaces.py:14694: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+_________________ test_decode_rows_align_with_last_eval_batch __________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_decode_rows_align_with_la0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12eba52b0>
+
+    def test_decode_rows_align_with_last_eval_batch(tmp_path, monkeypatch):
+        """Targets and decoded rows correspond 1:1 (row order, not membership)."""
+        import recon_bench
+    
+        # Identity pairing scores 1.0; permuting TARGETS drops it to 0.0.
+        rows = ["hello there", "loving there"]
+        t, d = recon_bench._decode_texts(_stub_model(rows, rows))
+        assert exact_match_rate(t, d) == 1.0
+        t, d = recon_bench._decode_texts(_stub_model(rows[::-1], rows))
+        assert exact_match_rate(t, d) == 0.0
+    
+        # Force the 4-row fixture split to span two eval batches (cap=2): the
+        # decode must cover exactly the last batch and say so in the note.
+        monkeypatch.setattr(recon_bench, "_MAX_EVAL_BATCH", 2)
+>       rec = run_config("data/MM_xor_fixture.xml", epochs=1, seed=0,
+                         out_dir=str(tmp_path))
+
+test/test_recon_bench.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/recon_bench.py:215: in run_config
+    _epoch_loop()
+bin/recon_bench.py:199: in _epoch_loop
+    out_loss, rec_loss, _, _ = model.runEpoch(
+bin/Models.py:15688: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:14973: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:14188: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:14290: in _commit_autobind_from_stash
+    self._maybe_autobind_words(
+bin/Spaces.py:14508: in _maybe_autobind_words
+    return self._autobind_property_concepts(
+bin/Spaces.py:14441: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:62: in lookup_word
+    cs._preflight_concept_row(0)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...  (concept_parts_layer): ConceptualAttentionLayer(
+    (conjunctive): SparseLayer()
+    (features): SparseLayer()
+  )
+)
+order = 0
+
+    def _preflight_concept_row(self, order=0):
+        """Check the physical seat before changing identity or definition records."""
+        store = _concept_alloc_of(self).layer()
+        caps, capacity = self._order_caps(), int(self.nVectors)
+        if getattr(self, '_concept_binding', 'mixing') == 'aligned':
+            base, size = 0, capacity
+        elif int(order) == 0:
+            base = 0 if store._row_next.get(0, 0) < caps[0] else sum(caps)
+            size = caps[0] if base == 0 else capacity - base
+        else:
+            rung = min(int(order), len(caps) - 1)
+            base, size = sum(caps[:rung]), caps[rung]
+        next_row = int(store._row_next.get(base, 0))
+        while next_row < size and base + next_row in store._tensor_row_keys:
+            next_row += 1
+        if next_row >= size:
+>           raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E           RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+
+bin/Spaces.py:14694: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+_________________ test_reconstruct_buffer_period_assert_holds __________________
+
+    def test_reconstruct_buffer_period_assert_holds():
+        """(d) the reconstruct_to_buffer periodicity assert still fires when
+        the render buffer exceeds the period, and its remedy names
+        <wherePeriod> (not the retired nObjects coupling)."""
+        model = _build(_FIXTURE)
+        model.set_sigma(0)
+        model.train(False)
+        with torch.no_grad():
+>           model.runEpoch(batchSize=4, split="test")
+
+test/test_where_encoding_period.py:105: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15688: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:14973: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:14188: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:14290: in _commit_autobind_from_stash
+    self._maybe_autobind_words(
+bin/Spaces.py:14508: in _maybe_autobind_words
+    return self._autobind_property_concepts(
+bin/Spaces.py:14441: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:62: in lookup_word
+    cs._preflight_concept_row(0)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...  (concept_parts_layer): ConceptualAttentionLayer(
+    (conjunctive): SparseLayer()
+    (features): SparseLayer()
+  )
+)
+order = 0
+
+    def _preflight_concept_row(self, order=0):
+        """Check the physical seat before changing identity or definition records."""
+        store = _concept_alloc_of(self).layer()
+        caps, capacity = self._order_caps(), int(self.nVectors)
+        if getattr(self, '_concept_binding', 'mixing') == 'aligned':
+            base, size = 0, capacity
+        elif int(order) == 0:
+            base = 0 if store._row_next.get(0, 0) < caps[0] else sum(caps)
+            size = caps[0] if base == 0 else capacity - base
+        else:
+            rung = min(int(order), len(caps) - 1)
+            base, size = sum(caps[:rung]), caps[rung]
+        next_row = int(store._row_next.get(base, 0))
+        while next_row < size and base + next_row in store._tensor_row_keys:
+            next_row += 1
+        if next_row >= size:
+>           raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E           RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+
+bin/Spaces.py:14694: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+___ test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row ____
+
+eager_reading = None
+
+    def test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row(eager_reading):
+        from copy import deepcopy
+        from test_output_walk import _model
+        m = _model()
+        m._tensor_peer_while_eager = True
+        m._chart_compose_per_word = lambda: None
+        data = m.inputSpace.data
+        saved_addresses = deepcopy(data.source_addresses["train"])
+        for address in data.source_addresses["train"]:
+            address["document"] = 0
+            address["sentence"] = address["row"]
+        opt = m.getOptimizer(lr=1e-3)
+        try:
+            # Put the automatic text first: it must not select the text modality
+            # and displace the second row's explicitly supplied numeric target.
+            questions = (What.future(0), What.supervised(1))
+            assert all(data.what(q).available for q in questions)
+            got = _answer_training_probe(m, opt, questions)
+            assert got["mask"] == [False, True]
+            assert got["actual_grad"] is not None
+            assert torch.count_nonzero(got["actual_grad"][0]) == 0
+            assert bool(got["actual_grad"][1].abs().sum() > 0)
+>           assert got["changed"][got["active_index"]]
+E           assert False
+
+test/test_output_path_supervised.py:380: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+_______ test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path ________
+
+    def test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path():
+        from Models import BasicModel
+    
+        buffer = torch.arange(24, dtype=torch.float32).reshape(2, 3, 4).requires_grad_()
+        candidate = torch.tensor([[.5, .25, .125, .0625], [1., 1., 1., 1.]], requires_grad=True)
+        choice = SimpleNamespace(kind=torch.tensor([1, 2]), position=torch.tensor([0, 1]),
+            applied=torch.tensor([True, False]), candidate=candidate)
+        journal = torch.zeros(2, 5, 12)
+>       compiled = torch.compile(BasicModel._tensor_record_operation_values, backend='eager', fullgraph=True)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'BasicModel' has no attribute '_tensor_record_operation_values'. Did you mean: '_tensor_record_operation'?
+
+test/test_sentence_end_state.py:87: AttributeError
+=============================== warnings summary ===============================
+test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_real_mnist_subset_trains_0/ergodic-only.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Tensor, pred_full shape=(2, 784, 9)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_real_mnist_subset_trains_1/ergodic-only.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Tensor, pred_full shape=(2, 784, 9)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_field_learning.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_field_learning.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_missing_packed_sentence_d0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpn0c7gwdc/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_normal_supervised_output_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_normal_supervised_output_1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1633/test_input_event_time_uses_the0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_anchors_via_projection
+FAILED test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance
+FAILED test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+FAILED test/test_reconstruction_bank_contract.py::test_first_sight_admits_concepts_before_reconstruction
+FAILED test/test_recon_bench.py::test_run_record_schema_smoke - RuntimeError:...
+FAILED test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch
+FAILED test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+FAILED test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+FAILED test/test_sentence_end_state.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path
+9 failed, 123 passed, 17 skipped, 10 warnings in 31.17s

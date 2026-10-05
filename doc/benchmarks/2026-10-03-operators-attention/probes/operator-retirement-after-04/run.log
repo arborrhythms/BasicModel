@@ -1,0 +1,296 @@
+........................................................................ [ 48%]
+...................................................F...F...............F [ 97%]
+FF..                                                                     [100%]
+=================================== FAILURES ===================================
+______ test_completed_unary_concept_program_enters_the_normal_controller _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13a4f1130>
+
+    def test_completed_unary_concept_program_enters_the_normal_controller(
+            monkeypatch):
+        """A grammar-selected unary concept tool reaches its typed executor.
+    
+        The normal bridge must not assume every selected program is a binary
+        truth relation.  A completed quantize request owns its live signed
+        leaf and grammar-native VP, enters the same ordinary episode, and retains
+        the checked ``code`` result without coercing that result into a truth or
+        answer seed.
+        """
+        from Understanding import AnswerProgram
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, leaves, _program, _part, _whole = (
+            _program_owner(monkeypatch))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        # Quantize is thought-only. The completed field carries its selected
+        # request directly, without an identity compose wrapper or parse replay.
+        from Understanding import SentenceEndState
+        entry = SentenceEndState(ConceptualMeaning.from_description(leaves[0]),
+                                 query=registry.form('quantize', leaves[0]))
+    
+        with model._query_boundary_scope((0,)):
+            # The ordinary chooser also pays for its context reads. Give this
+            # executor mechanism the normal budget through its conclusion.
+            selected = model._run_selected_sentence_thoughts((entry,), work_budget=32)
+    
+        assert len(selected) == 1
+        row, result = selected[0]
+        assert row == 0 and result.meaning.mode == "interrogative"
+        assert result.result is not None
+>       assert result.result.semantic_id == "quantize"
+E       AssertionError: assert 'what' == 'quantize'
+E         
+E         - quantize
+E         + what
+
+test/test_normal_thought_controller.py:333: AssertionError
+____ test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13a4a4680>
+
+    def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monkeypatch):
+        """A completed thought's full grammar, not its trace, feeds output."""
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.reconstruct_in_loop = False
+        model.eval()
+        monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+        monkeypatch.setattr(
+            model, "_what_grammar_context",
+            lambda questions, **kwargs: (torch.zeros(
+                len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+        )
+        monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+    
+        derivation = model.resolveAnswer(
+            Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
+    
+        selected = derivation.selected_thoughts[0][1]
+        torch.testing.assert_close(derivation.conceptual_answer[0, 0], selected.result.value)
+        assert not derivation.conceptual_answer[0, 1:].any()
+>       assert derivation.source == "thought"
+E       AssertionError: assert 'thought-concept' == 'thought'
+E         
+E         - thought
+E         + thought-concept
+
+test/test_normal_thought_controller.py:497: AssertionError
+_ test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH] _
+
+positive = 0.8, negative = 0.7, posture = 'BOTH'
+
+    @pytest.mark.parametrize('positive,negative,posture', [(.8, .7, 'BOTH'), (.8, .1, 'TRUE'), (0, 0, 'UNKNOWN')])
+    def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):
+        from index_fixtures import terminal_model_index
+        model, registry, store, (a, b, _c, _d) = _world()
+        meaning = registry.form('part', a, b, mode='assertive')
+        order = terminal_model_index(model, meaning.role_refs)
+        for trust in (positive, -negative):
+            if trust:
+                store.append_meaning(meaning, kind='fact', trust=trust, order=order,
+                                     evidence=(max(trust, 0), max(-trust, 0)))
+        occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)
+        with model._query_boundary_scope((0,)):
+            from QueryWork import QueryWorkBudget
+            query = registry.form('what', store.row(occurrence)['occurrence'],
+                                  context=model._thought_grammar_context(meaning,
+                                      row=0, work=QueryWorkBudget(32), continuation=None))
+        before = len(store)
+>       result = model.reason_about(query)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_replacement_kernel_contracts.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22446: in reason_about
+    return self._run_public_thought(
+bin/Models.py:22411: in _run_public_thought
+    result = self.run_selected_thought(
+bin/Models.py:6492: in run_selected_thought
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6455: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6334: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:6111: in _choose_selected_thought_action
+    expectation_context = self._selected_thought_expectation(active, row=row, work=work)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5822: in _selected_thought_expectation
+    signature = registry.signature_for(question)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x11f50d100>
+meaning = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 2), ('sym', 4010033338316264258), ('sym', 4)), bindings=(), scope=(), sentence_kind='relation')
+work = None, verify_reference = True
+
+    def signature_for(self, meaning, *, work=None, verify_reference=True):
+        """Recover one checked operation from a canonical VP and role mask."""
+        if (not isinstance(meaning, ConceptualMeaning)
+                or meaning.mode != 'interrogative'):
+>           raise ValueError('thought execution requires a completed interrogative meaning')
+E           ValueError: thought execution requires a completed interrogative meaning
+
+bin/Queries.py:2085: ValueError
+_ test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE] _
+
+positive = 0.8, negative = 0.1, posture = 'TRUE'
+
+    @pytest.mark.parametrize('positive,negative,posture', [(.8, .7, 'BOTH'), (.8, .1, 'TRUE'), (0, 0, 'UNKNOWN')])
+    def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):
+        from index_fixtures import terminal_model_index
+        model, registry, store, (a, b, _c, _d) = _world()
+        meaning = registry.form('part', a, b, mode='assertive')
+        order = terminal_model_index(model, meaning.role_refs)
+        for trust in (positive, -negative):
+            if trust:
+                store.append_meaning(meaning, kind='fact', trust=trust, order=order,
+                                     evidence=(max(trust, 0), max(-trust, 0)))
+        occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)
+        with model._query_boundary_scope((0,)):
+            from QueryWork import QueryWorkBudget
+            query = registry.form('what', store.row(occurrence)['occurrence'],
+                                  context=model._thought_grammar_context(meaning,
+                                      row=0, work=QueryWorkBudget(32), continuation=None))
+        before = len(store)
+>       result = model.reason_about(query)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_replacement_kernel_contracts.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22446: in reason_about
+    return self._run_public_thought(
+bin/Models.py:22411: in _run_public_thought
+    result = self.run_selected_thought(
+bin/Models.py:6492: in run_selected_thought
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6455: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6334: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:6111: in _choose_selected_thought_action
+    expectation_context = self._selected_thought_expectation(active, row=row, work=work)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5822: in _selected_thought_expectation
+    signature = registry.signature_for(question)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x13a6fdd60>
+meaning = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 2), ('sym', 4010033338316264258), ('sym', 4)), bindings=(), scope=(), sentence_kind='relation')
+work = None, verify_reference = True
+
+    def signature_for(self, meaning, *, work=None, verify_reference=True):
+        """Recover one checked operation from a canonical VP and role mask."""
+        if (not isinstance(meaning, ConceptualMeaning)
+                or meaning.mode != 'interrogative'):
+>           raise ValueError('thought execution requires a completed interrogative meaning')
+E           ValueError: thought execution requires a completed interrogative meaning
+
+bin/Queries.py:2085: ValueError
+_ test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN] _
+
+positive = 0, negative = 0, posture = 'UNKNOWN'
+
+    @pytest.mark.parametrize('positive,negative,posture', [(.8, .7, 'BOTH'), (.8, .1, 'TRUE'), (0, 0, 'UNKNOWN')])
+    def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):
+        from index_fixtures import terminal_model_index
+        model, registry, store, (a, b, _c, _d) = _world()
+        meaning = registry.form('part', a, b, mode='assertive')
+        order = terminal_model_index(model, meaning.role_refs)
+        for trust in (positive, -negative):
+            if trust:
+                store.append_meaning(meaning, kind='fact', trust=trust, order=order,
+                                     evidence=(max(trust, 0), max(-trust, 0)))
+        occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)
+        with model._query_boundary_scope((0,)):
+            from QueryWork import QueryWorkBudget
+            query = registry.form('what', store.row(occurrence)['occurrence'],
+                                  context=model._thought_grammar_context(meaning,
+                                      row=0, work=QueryWorkBudget(32), continuation=None))
+        before = len(store)
+>       result = model.reason_about(query)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_replacement_kernel_contracts.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22446: in reason_about
+    return self._run_public_thought(
+bin/Models.py:22411: in _run_public_thought
+    result = self.run_selected_thought(
+bin/Models.py:6492: in run_selected_thought
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6455: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6334: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:6111: in _choose_selected_thought_action
+    expectation_context = self._selected_thought_expectation(active, row=row, work=work)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5822: in _selected_thought_expectation
+    signature = registry.signature_for(question)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x13a603830>
+meaning = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 2), ('sym', 4010033338316264258), ('sym', 4)), bindings=(), scope=(), sentence_kind='relation')
+work = None, verify_reference = True
+
+    def signature_for(self, meaning, *, work=None, verify_reference=True):
+        """Recover one checked operation from a canonical VP and role mask."""
+        if (not isinstance(meaning, ConceptualMeaning)
+                or meaning.mode != 'interrogative'):
+>           raise ValueError('thought execution requires a completed interrogative meaning')
+E           ValueError: thought execution requires a completed interrogative meaning
+
+bin/Queries.py:2085: ValueError
+=============================== warnings summary ===============================
+test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed
+FAILED test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]
+FAILED test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]
+FAILED test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]
+5 failed, 143 passed, 1 warning in 5.32s

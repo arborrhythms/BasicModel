@@ -1,0 +1,108 @@
+.......s............................................................FF.. [ 29%]
+..................F................................F.................... [ 58%]
+........................................................................ [ 87%]
+.......s...........ss.........                                           [100%]
+=================================== FAILURES ===================================
+_______________ test_one_native_read_retains_shared_owner[False] _______________
+test/test_interleave_schedule.py:45: in test_one_native_read_retains_shared_owner
+    assert owner.similarity_codebook.getW().data_ptr()==parameter.data_ptr()
+E   assert 510752194560 == 510752219136
+E    +  where 510752194560 = <built-in method data_ptr of Tensor object at 0x1462f68a0>()
+E    +    where <built-in method data_ptr of Tensor object at 0x1462f68a0> = tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]).data_ptr
+E    +      where tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]) = getW()
+E    +        where getW = Codebook(\n  (vq): VectorQuantize()\n  (mereology): MereologicalCodes()\n).getW
+E    +          where Codebook(\n  (vq): VectorQuantize()\n  (mereology): MereologicalCodes()\n) = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).similarity_codebook
+E    +  and   510752219136 = <built-in method data_ptr of Tensor object at 0x1464ee260>()
+E    +    where <built-in method data_ptr of Tensor object at 0x1464ee260> = tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]).data_ptr
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 1 (Δ=0.109s)
+_______________ test_one_native_read_retains_shared_owner[True] ________________
+test/test_interleave_schedule.py:45: in test_one_native_read_retains_shared_owner
+    assert owner.similarity_codebook.getW().data_ptr()==parameter.data_ptr()
+E   assert 510787952640 == 510787928064
+E    +  where 510787952640 = <built-in method data_ptr of Tensor object at 0x146795db0>()
+E    +    where <built-in method data_ptr of Tensor object at 0x146795db0> = tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]).data_ptr
+E    +      where tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]) = getW()
+E    +        where getW = Codebook(\n  (vq): VectorQuantize()\n  (mereology): MereologicalCodes()\n).getW
+E    +          where Codebook(\n  (vq): VectorQuantize()\n  (mereology): MereologicalCodes()\n) = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).similarity_codebook
+E    +  and   510787928064 = <built-in method data_ptr of Tensor object at 0x1462fe3a0>()
+E    +    where <built-in method data_ptr of Tensor object at 0x1462fe3a0> = tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]).data_ptr
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 1 (Δ=0.436s)
+batch = 2 (Δ=0.423s)
+batch = 3 (Δ=0.524s)
+__________ TestRuleConditionedPredictor.test_bias_fires_on_real_model __________
+test/test_intra_sentence_layer.py:378: in test_bias_fires_on_real_model
+    self._run_one_forward()
+test/test_intra_sentence_layer.py:328: in _run_one_forward
+    model.forward(x)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+________ test_exploration_forces_only_a_round_with_a_legal_alternative _________
+test/test_inverse_unary_exclusion.py:62: in test_exploration_forces_only_a_round_with_a_legal_alternative
+    exploit, explore = layer.derive_pair(value, rounds=6, slots=1, greedy=True)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7404: in derive_pair
+    explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+bin/Language.py:7383: in derive
+    _, x, route = self(
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7299: in forward
+    action, probabilities, has_choice = self.select_logits(logits, structural=flags,
+bin/Language.py:7191: in select_logits
+    action = torch.where(departure, sample_eligible_logits(selected), action)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:6477: in sample_eligible_logits
+    draw = torch.rand((*logits.shape[:-1], 1), device=logits.device,
+test/test_inverse_unary_exclusion.py:61: in <lambda>
+    monkeypatch.setattr(torch, 'rand', lambda *shape, **kw: torch.full(shape, .9, **kw))
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: full(): argument 'size' (position 1) must be tuple of ints, but found element of type tuple at pos 0
+=============================== warnings summary ===============================
+test/test_interleave_lifecycle.py::test_open_read_covers_exact_native_input[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_and_binary_anchors_bare_router
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7162: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[False]
+FAILED test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[True]
+FAILED test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_bias_fires_on_real_model
+FAILED test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative
+4 failed, 238 passed, 4 skipped, 3 warnings in 60.36s (0:01:00)

@@ -1,0 +1,274 @@
+...........F............................................................ [ 58%]
+F.FFFF....F.........s..............................                      [100%]
+=================================== FAILURES ===================================
+____ test_concept_quantization_cannot_refresh_the_reconstruction_dictionary ____
+
+    def test_concept_quantization_cannot_refresh_the_reconstruction_dictionary():
+        from pathlib import Path
+        import Models
+        from test_mm_xor import _fresh_model
+        model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+        seen = set()
+        for cs in model.conceptualSpaces:
+            cb = cs.similarity_codebook
+            if id(cb) in seen:
+                continue
+            seen.add(id(cb))
+>           assert isinstance(cb.W, nn.Parameter) and cb.W.requires_grad
+E           AssertionError: assert (False)
+E            +  where False = isinstance(tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]), <class 'torch.nn.parameter.Parameter'>)
+E            +    where tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]) = Codebook(\n  (vq): VectorQuantize()\n  (mereology): MereologicalCodes()\n).W
+E            +    and   <class 'torch.nn.parameter.Parameter'> = nn.Parameter
+
+test/test_concept_code_ownership.py:67: AssertionError
+_ test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk _
+
+    def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk():
+        """The answer-materialisation boundary (spec sections 1-2): after
+        resolution the answer is its own conceptual idea, [B, 3, D] at the
+        concept width (the three LTM slots), the operand of the output loop;
+        for the present relation it is the understanding's own end state with
+        the question conditioning the root slot (zero at initialisation);
+        reverseOutput un-folds it and realises the words through the reverse
+        chain, reporting the idea's sources."""
+        import tempfile
+        from pathlib import Path as _P
+        from test_meronomy_ladder import _build_ladder_variant
+        from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+        from What import What
+        m = _build_ladder_variant(_P(tempfile.mkdtemp()), "walk_e2e", [
+            ("<packSentences>false</packSentences>",
+             "<packSentences>false</packSentences>\n      <outputInLoop>true</outputInLoop>")])
+        m._tensor_peer_while_eager = True
+        m._chart_compose_per_word = lambda: None
+        m.reconstruct_in_loop = False
+        m.loss.reconstruction_scale = 0.
+        with torch.no_grad():
+            u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+            derivation = m._resolve_answer(u, What.supervised(0))
+            idea, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
+        D = int(m.conceptualSpace.stm.concept_dim)
+        assert tuple(idea.shape) == (2, 3, D) and bool(resolved.all())
+        assert all(src.startswith("idea:") for src in sources)
+        end = m._sentence_end_state(None)
+>       assert torch.allclose(idea, end)                        # zero-initialised conditioning
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert False
+E        +  where False = <built-in method allclose of type object at 0x10ab893a0>(tensor([[[ 6.8462e-02, -9.9198e-02,  4.4148e-02, -1.5319e-01, -5.3763e-02,\n           1.2325e-01,  6.8532e-03,  4.4770...e-01, -1.5640e-01,\n          -2.7911e-02, -1.0911e-01,  6.0230e-02,  2.9074e-02,  3.7293e-02,\n           1.2832e-02]]]), tensor([[[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,\n           0.0000e+00,  0.0000e+00,  0.0000...e-02,  6.5853e-02,\n           7.6938e-02, -8.0340e-02, -2.5272e-02, -8.3496e-03, -3.3939e-01,\n           4.7953e-02]]]))
+E        +    where <built-in method allclose of type object at 0x10ab893a0> = torch.allclose
+
+test/test_output_walk.py:255: AssertionError
+________ test_runbatch_trains_generate_policy_from_reconstruction[True] ________
+
+supplied = True, eager_reading = None
+
+    @pytest.mark.parametrize('supplied',[True,False])
+    def test_runbatch_trains_generate_policy_from_reconstruction(supplied,eager_reading):
+        from What import What
+        m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+        m.inputSpace.data.has_supervised_outputs=supplied
+        opt=m.getOptimizer(lr=1e-3)
+        try:
+            got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
+            assert any(g is not None and bool(g.abs().sum()>0) for row in got['reconstruction'] for g in row)
+>           assert all(got['changed'])
+E           assert False
+E            +  where False = all([False, True])
+
+test/test_output_walk.py:336: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+_______ test_runbatch_trains_generate_policy_from_reconstruction[False] ________
+
+supplied = False, eager_reading = None
+
+    @pytest.mark.parametrize('supplied',[True,False])
+    def test_runbatch_trains_generate_policy_from_reconstruction(supplied,eager_reading):
+        from What import What
+        m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+        m.inputSpace.data.has_supervised_outputs=supplied
+        opt=m.getOptimizer(lr=1e-3)
+        try:
+            got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
+            assert any(g is not None and bool(g.abs().sum()>0) for row in got['reconstruction'] for g in row)
+>           assert all(got['changed'])
+E           assert False
+E            +  where False = all([False, True])
+
+test/test_output_walk.py:336: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+________ test_runbatch_answer_availability_never_reassigns_the_decoder _________
+
+eager_reading = None
+
+    def test_runbatch_answer_availability_never_reassigns_the_decoder(eager_reading):
+        from What import What
+        m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+        opt=m.getOptimizer(lr=1e-3)
+        try:
+            for supplied in (True,False):
+                m.inputSpace.data.has_supervised_outputs=supplied
+                got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
+>               assert all(got['changed'])
+E               assert False
+E                +  where False = all([False, True])
+
+test/test_output_walk.py:353: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+______ test_runbatch_output_masks_rows_without_reassigning_decoder_credit ______
+
+eager_reading = None
+
+    def test_runbatch_output_masks_rows_without_reassigning_decoder_credit(eager_reading):
+        from What import What
+        m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+        opt=m.getOptimizer(lr=1e-3)
+        try:
+            got=_policy_training_probe(m,opt,(What.supervised(0),What.inference(1,split='train')))
+            assert got['mask']==[True,False]
+>           assert all(got['changed'])
+E           assert False
+E            +  where False = all([False, True])
+
+test/test_output_walk.py:370: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+________________ test_materialised_idea_follows_the_symbol_rows ________________
+
+    def test_materialised_idea_follows_the_symbol_rows():
+        """A completed answer owns its field; a new reading uses its own words.
+    
+        Exchanging the later input's row staging cannot alter the held answer.
+        Reading those exchanged words produces a distinct field through the same
+        sentence driver. Generation has no reading actions to replay.
+        """
+        from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+        from What import What
+        m = _model()
+        m._tensor_peer_while_eager = True
+        m._chart_compose_per_word = lambda: None
+        m.reconstruct_in_loop = False
+        m.loss.reconstruction_scale = 0.
+        with torch.no_grad():
+            u = _capture_program_probe(m, ["one plus two", "three plus four"])
+            derivation = m._resolve_answer(u, (What.supervised(0), What.supervised(1)))
+            idea0, resolved, sources, targets = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
+            end = torch.stack([field.end_state for field in u.sentence_states])
+            assert torch.allclose(idea0, end, atol=1e-4), float((idea0 - end).abs().max())
+            rows = m._word_symbol_rows()
+            assert bool((rows[:, (0, 2)] >= 0).all()) and bool((rows[:, 0] != rows[:, 2]).all())
+            isp = m.inputSpace
+            for name in ("_ar_word_object_rows", "_ar_word_concept_rows"):
+                table = getattr(isp, name).clone()
+                table[:, (0, 2)] = table[:, (0, 2)].flip(1)
+                setattr(isp, name, table)
+            assert torch.equal(m._word_symbol_rows()[:, (0, 2)], rows[:, (0, 2)].flip(1))
+            held, _r, _s, _t = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
+            torch.testing.assert_close(held, idea0, rtol=0, atol=0)
+>           exchanged = _capture_program_probe(m, ["plus one two", "plus three four"])
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_output_walk.py:518: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_output_walk.py:699: in _capture_program_probe
+    out = m(m.inputSpace.prepInput(texts))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8309: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23033: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13208: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:206: in stage_input
+    poles=native_word_poles(model,spans,forms,known)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ModelAttention.py:87: in native_word_poles
+    field = owner.cs_read_memberships((ids, positions,
+bin/Spaces.py:15334: in cs_read_memberships
+    dtype=self.similarity_codebook.getW().dtype, when=when,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:2390: in getW
+    return self.lookup_rows(torch.arange(len(self.W), device=self.W.device))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:2412: in lookup_rows
+    value = self.mereology.derive(idx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes()
+indices = tensor([   0,    1,    2,  ..., 4093, 4094, 4095])
+
+    def derive(self, indices):
+        from Spaces import _concept_alloc_of
+        owner = self.owner
+        indices = torch.as_tensor(indices, dtype=torch.long, device=self.locations.device)
+        shape = indices.shape
+        requested = indices.detach().flatten().cpu().tolist()
+        unique = list(dict.fromkeys(requested))
+        row_index = {row: i for i, row in enumerate(unique)}
+        basis_index = self._index()
+        basis_rows = {row: i for i, (_, _, _, row) in enumerate(self.entries())}
+        layer = _concept_alloc_of(owner).layer()
+        features = layer.features
+        destination, source, edge, sign = [], [], [], []
+        for (row, column), pos in features._index.items():
+            if row not in row_index:
+                continue
+            tower = (column // 2) % 2
+            group = layer.feature_groups.get((row, column), (column // 4,))
+            for pid in group:
+                slot = basis_index.get((tower, pid))
+                if slot is None:
+>                   raise RuntimeError('definition has no admitted percept-concept location')
+E                   RuntimeError: definition has no admitted percept-concept location
+
+bin/MereologicalCodes.py:112: RuntimeError
+=============================== warnings summary ===============================
+test/test_derived_concept_codes.py::test_code_is_signed_sum_of_lookup_locations_without_a_word_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmppfe1orx6/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0bnarxtx/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdrdtv3n_/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp5clhszro/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_concept_code_ownership.py::test_concept_quantization_cannot_refresh_the_reconstruction_dictionary
+FAILED test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[False]
+FAILED test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+FAILED test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+FAILED test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows
+7 failed, 115 passed, 1 skipped, 6 warnings in 116.83s (0:01:56)

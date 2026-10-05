@@ -1,0 +1,1658 @@
+{
+  "source": "attention-xor-02/source.json",
+  "trainings": 1,
+  "epochs": 400,
+  "seed": null,
+  "class_mse": 0.03996732319479257,
+  "correct_classes": 4,
+  "class_bar": true,
+  "reconstructed": 0,
+  "gate": {
+    "nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+    "kind": "grammar",
+    "accuracy": [
+      0.0
+    ],
+    "predictions": [
+      -0.23695576190948486,
+      1.2747292518615723,
+      0.8587189316749573,
+      0.09102064371109009
+    ],
+    "targets": [
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "reconstructions": [
+      "loving ",
+      "hello ",
+      "hello ",
+      "loving "
+    ],
+    "gate_reconstructions": [
+      "hello",
+      "hello",
+      "loving",
+      "loving"
+    ],
+    "grammar_reconstruction_unavailable": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "gate": 5
+  },
+  "same_model_for_both_gates": true,
+  "decoder_comparisons": 3200,
+  "decoder_explore_wins": 477,
+  "decoder_win_fraction": 0.1490625,
+  "decoder_selection_violations": 0,
+  "kept_decoder_stability": [
+    {
+      "modal_fraction": 0.9125,
+      "distinct": 4,
+      "paths": [
+        {
+          "actions": [
+            3
+          ],
+          "count": 730
+        },
+        {
+          "actions": [
+            2,
+            3
+          ],
+          "count": 48
+        },
+        {
+          "actions": [
+            1,
+            3,
+            3
+          ],
+          "count": 19
+        },
+        {
+          "actions": [
+            0,
+            3,
+            3
+          ],
+          "count": 3
+        }
+      ]
+    },
+    {
+      "modal_fraction": 0.785,
+      "distinct": 4,
+      "paths": [
+        {
+          "actions": [
+            3
+          ],
+          "count": 628
+        },
+        {
+          "actions": [
+            2,
+            3
+          ],
+          "count": 119
+        },
+        {
+          "actions": [
+            1,
+            3,
+            3
+          ],
+          "count": 35
+        },
+        {
+          "actions": [
+            0,
+            3,
+            3
+          ],
+          "count": 18
+        }
+      ]
+    },
+    {
+      "modal_fraction": 0.86375,
+      "distinct": 3,
+      "paths": [
+        {
+          "actions": [
+            3
+          ],
+          "count": 691
+        },
+        {
+          "actions": [
+            2,
+            3
+          ],
+          "count": 108
+        },
+        {
+          "actions": [
+            0,
+            3,
+            3
+          ],
+          "count": 1
+        }
+      ]
+    },
+    {
+      "modal_fraction": 0.8425,
+      "distinct": 3,
+      "paths": [
+        {
+          "actions": [
+            3
+          ],
+          "count": 674
+        },
+        {
+          "actions": [
+            2,
+            3
+          ],
+          "count": 125
+        },
+        {
+          "actions": [
+            0,
+            3,
+            3
+          ],
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "greedy_decoder_stability": [
+    {
+      "modal_fraction": 1.0,
+      "distinct": 1,
+      "paths": [
+        {
+          "actions": [
+            3
+          ],
+          "count": 800
+        }
+      ]
+    },
+    {
+      "modal_fraction": 1.0,
+      "distinct": 1,
+      "paths": [
+        {
+          "actions": [
+            3
+          ],
+          "count": 800
+        }
+      ]
+    },
+    {
+      "modal_fraction": 1.0,
+      "distinct": 1,
+      "paths": [
+        {
+          "actions": [
+            3
+          ],
+          "count": 800
+        }
+      ]
+    },
+    {
+      "modal_fraction": 1.0,
+      "distinct": 1,
+      "paths": [
+        {
+          "actions": [
+            3
+          ],
+          "count": 800
+        }
+      ]
+    }
+  ],
+  "compose_stability": [
+    {
+      "batch_row": 0,
+      "sentence_slot": 0,
+      "word_rows": [
+        0,
+        1
+      ],
+      "epochs": 400,
+      "modal_fraction": 0.345,
+      "distinct_derivations": 7,
+      "modal_derivation": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          1
+        ],
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "derivations": [
+        {
+          "sequence": [
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 53
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              2,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 138
+        },
+        {
+          "sequence": [
+            [
+              2,
+              2,
+              1
+            ]
+          ],
+          "epochs": 4
+        },
+        {
+          "sequence": [
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "epochs": 13
+        },
+        {
+          "sequence": [
+            [
+              2,
+              2,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 58
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "epochs": 129
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 5
+        }
+      ]
+    },
+    {
+      "batch_row": 1,
+      "sentence_slot": 0,
+      "word_rows": [
+        0,
+        2
+      ],
+      "epochs": 400,
+      "modal_fraction": 0.7475,
+      "distinct_derivations": 7,
+      "modal_derivation": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          1
+        ]
+      ],
+      "derivations": [
+        {
+          "sequence": [
+            [
+              2,
+              2,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 43
+        },
+        {
+          "sequence": [
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 27
+        },
+        {
+          "sequence": [
+            [
+              2,
+              2,
+              1
+            ]
+          ],
+          "epochs": 1
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "epochs": 299
+        },
+        {
+          "sequence": [
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "epochs": 11
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 18
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              2,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 1
+        }
+      ]
+    },
+    {
+      "batch_row": 2,
+      "sentence_slot": 0,
+      "word_rows": [
+        4,
+        1
+      ],
+      "epochs": 400,
+      "modal_fraction": 0.4225,
+      "distinct_derivations": 7,
+      "modal_derivation": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          1
+        ]
+      ],
+      "derivations": [
+        {
+          "sequence": [
+            [
+              2,
+              2,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 134
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              2,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 11
+        },
+        {
+          "sequence": [
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 22
+        },
+        {
+          "sequence": [
+            [
+              2,
+              2,
+              1
+            ]
+          ],
+          "epochs": 7
+        },
+        {
+          "sequence": [
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "epochs": 26
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 31
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "epochs": 169
+        }
+      ]
+    },
+    {
+      "batch_row": 3,
+      "sentence_slot": 0,
+      "word_rows": [
+        4,
+        2
+      ],
+      "epochs": 400,
+      "modal_fraction": 0.4375,
+      "distinct_derivations": 7,
+      "modal_derivation": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          1
+        ]
+      ],
+      "derivations": [
+        {
+          "sequence": [
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "epochs": 83
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 10
+        },
+        {
+          "sequence": [
+            [
+              2,
+              2,
+              1
+            ]
+          ],
+          "epochs": 4
+        },
+        {
+          "sequence": [
+            [
+              2,
+              2,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 13
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          "epochs": 175
+        },
+        {
+          "sequence": [
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 114
+        },
+        {
+          "sequence": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              2,
+              1
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "epochs": 1
+        }
+      ]
+    }
+  ],
+  "ownership": {
+    "parameters": [
+      {
+        "parameter": "conceptualSpaces.1.concept_parts_layer.features.values",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 8
+      },
+      {
+        "parameter": "perceptualSpace._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 512
+      },
+      {
+        "parameter": "perceptualSpace._percept_store.byte_fallback.byte_codebook",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 512
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.3.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 60
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.5.sigma.layer.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 9
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.6.callosum",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 72
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.6.layer.butterfly_L",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 448
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.6.layer.butterfly_d",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 896
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.6.layer.butterfly_U",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 448
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.3.W",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 60
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.5.sigma.layer.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 9
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.6.callosum",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 72
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.6.layer.butterfly_L",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 448
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.6.layer.butterfly_d",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 896
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.6.layer.butterfly_U",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 448
+      },
+      {
+        "parameter": "wholeSpaces.0.begins_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 262
+      },
+      {
+        "parameter": "wholeSpaces.0.ends_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 262
+      },
+      {
+        "parameter": "wholeSpaces.0.atom_level",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 262
+      },
+      {
+        "parameter": "wholeSpaces.0._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 12
+      },
+      {
+        "parameter": "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1536
+      },
+      {
+        "parameter": "wholeSpaces.1.begins_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 262
+      },
+      {
+        "parameter": "wholeSpaces.1.ends_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 262
+      },
+      {
+        "parameter": "wholeSpaces.1.atom_level",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 262
+      },
+      {
+        "parameter": "wholeSpaces.1._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 12
+      },
+      {
+        "parameter": "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1536
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 10
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 20
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 10
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.bracket_anchor",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 60
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.space_prior",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 6
+      },
+      {
+        "parameter": "symbolSpace.subspace.category_embedding.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.0.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 576
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.0.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 24
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.2.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 192
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.2.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 8
+      },
+      {
+        "parameter": "symbolSpace.languageSpace.generate_policy.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 40
+      },
+      {
+        "parameter": "symbolSpace.languageSpace.generate_policy.bias",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 4
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.4.coefficients",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 54
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.4.coefficients",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 54
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 100
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 10
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 100
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 10
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 100
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 10
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 100
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 10
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.routing_proj.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 80
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.routing_proj.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 10
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 100
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.d",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 10
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 100
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 10
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 100
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.d",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 10
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 100
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 10
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.routing_proj.weight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 80
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.routing_proj.bias",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 10
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.0.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 1400
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.0.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 20
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.2.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 200
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.2.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 10
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 66
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 17424
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 66
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 2178
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 33
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.0.weight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 1400
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.0.bias",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 20
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.2.weight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 200
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.2.bias",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 10
+      },
+      {
+        "parameter": "inputSpace.outputSpace._readout_bias",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 1
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.0.W",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 60
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.0.biasWeight",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.1.W",
+        "owner": "output",
+        "writers": [],
+        "elements": 60
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.1.biasWeight",
+        "owner": "output",
+        "writers": [],
+        "elements": 60
+      },
+      {
+        "parameter": "answer_attention.space_bias",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 6
+      },
+      {
+        "parameter": "answer_attention.consume_gate",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 1
+      },
+      {
+        "parameter": "answer_attention.scorer.0.weight",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 64
+      },
+      {
+        "parameter": "answer_attention.scorer.0.bias",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "answer_attention.scorer.2.weight",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "answer_attention.scorer.2.bias",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 1
+      },
+      {
+        "parameter": "answer_record_reader.weight",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 50
+      }
+    ],
+    "conflicts": 0,
+    "active": 30,
+    "inactive": 57,
+    "backward_steps": 1200,
+    "scope": "all training backwards; endpoint excluded"
+  },
+  "geometry": {
+    "start": {
+      "dictionary": [
+        {
+          "stage": 0,
+          "rows": 6,
+          "dimension": 10,
+          "cosine_matrix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "matrix_scope": "all rows",
+          "all_dictionary_pairs": {
+            "count": 30,
+            "mean": -0.03453712828331916,
+            "mean_square": 0.1898664502517993
+          },
+          "norms": {
+            "min": 0.9999999403953552,
+            "max": 1.0000001192092896,
+            "mean": 1.0
+          },
+          "vq_ema_update": false,
+          "cluster_size_file": null,
+          "cluster_size": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "stage": 1,
+          "rows": 6,
+          "dimension": 10,
+          "cosine_matrix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "matrix_scope": "all rows",
+          "all_dictionary_pairs": {
+            "count": 30,
+            "mean": -0.018005599377473983,
+            "mean_square": 0.07575120723710048
+          },
+          "norms": {
+            "min": 0.9999999403953552,
+            "max": 1.0,
+            "mean": 1.0
+          },
+          "vq_ema_update": false,
+          "cluster_size_file": null,
+          "cluster_size": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "roots": {
+        "shape": [
+          4,
+          10
+        ],
+        "values": [
+          [
+            -0.3514447808265686,
+            0.4429168999195099,
+            -0.15593166649341583,
+            -0.2547028660774231,
+            0.2670399248600006,
+            -0.27284902334213257,
+            -0.6383187174797058,
+            -0.18029828369617462,
+            0.06923195719718933,
+            0.024789893999695778
+          ],
+          [
+            0.1253938376903534,
+            0.12404780089855194,
+            -0.2697191834449768,
+            0.3459410071372986,
+            -0.024587273597717285,
+            -0.048771023750305176,
+            -0.17368392646312714,
+            -0.39359501004219055,
+            0.017362572252750397,
+            -0.0006264448165893555
+          ],
+          [
+            -0.055930569767951965,
+            0.03710174560546875,
+            0.030221715569496155,
+            -0.03248271346092224,
+            0.2716212868690491,
+            0.17090705037117004,
+            -0.4105719327926636,
+            -0.2656240463256836,
+            0.07389724999666214,
+            -0.22579291462898254
+          ],
+          [
+            -0.2726100981235504,
+            0.11852653324604034,
+            0.010618031024932861,
+            0.02238363027572632,
+            0.0994197204709053,
+            -0.19438114762306213,
+            -0.12324641644954681,
+            -0.4229813814163208,
+            0.0272788405418396,
+            -0.1896398365497589
+          ]
+        ],
+        "singular_values": [
+          1.1969200372695923,
+          0.6359526515007019,
+          0.4506855607032776,
+          0.37976130843162537
+        ],
+        "centered_singular_values": [
+          0.7491095662117004,
+          0.45803529024124146,
+          0.38091516494750977,
+          3.7738477232096557e-08
+        ]
+      },
+      "note": "No new forward or optimizer step; roots from the measured first trial and endpoint; dictionary pairs are cosine, not dot products."
+    },
+    "end": {
+      "dictionary": [
+        {
+          "stage": 0,
+          "rows": 6,
+          "dimension": 10,
+          "cosine_matrix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "matrix_scope": "all rows",
+          "all_dictionary_pairs": {
+            "count": 30,
+            "mean": -0.03453712828331916,
+            "mean_square": 0.1898664502517993
+          },
+          "norms": {
+            "min": 0.9999999403953552,
+            "max": 1.0000001192092896,
+            "mean": 1.0
+          },
+          "vq_ema_update": false,
+          "cluster_size_file": "cluster-size-stage-0.pt",
+          "cluster_size": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "stage": 1,
+          "rows": 6,
+          "dimension": 10,
+          "cosine_matrix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "matrix_scope": "all rows",
+          "all_dictionary_pairs": {
+            "count": 30,
+            "mean": 0.3129362953295824,
+            "mean_square": 0.14310174437493223
+          },
+          "norms": {
+            "min": 0.2755703926086426,
+            "max": 2.0980706214904785,
+            "mean": 1.1090017557144165
+          },
+          "vq_ema_update": false,
+          "cluster_size_file": "cluster-size-stage-1.pt",
+          "cluster_size": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "roots": {
+        "shape": [
+          4,
+          10
+        ],
+        "values": [
+          [
+            -0.20714963972568512,
+            0.34639519453048706,
+            0.06837061792612076,
+            -0.5010730624198914,
+            -0.523608922958374,
+            -0.1331208050251007,
+            0.25593993067741394,
+            -0.10564231127500534,
+            0.21499529480934143,
+            -0.3537435531616211
+          ],
+          [
+            0.022178465500473976,
+            0.06053470820188522,
+            -0.2408534586429596,
+            -0.4272273778915405,
+            -0.004813855979591608,
+            -0.10685256123542786,
+            0.06453905999660492,
+            0.008271627128124237,
+            -0.03431996330618858,
+            -0.0869283676147461
+          ],
+          [
+            -0.05340833216905594,
+            0.5245775580406189,
+            -0.042096808552742004,
+            0.28566673398017883,
+            -0.061525359749794006,
+            -0.06676987558603287,
+            -0.07607179135084152,
+            -0.008719470351934433,
+            0.07099976390600204,
+            0.04033856466412544
+          ],
+          [
+            -0.02774505876004696,
+            -0.2904222309589386,
+            0.09263845533132553,
+            -0.3271844983100891,
+            0.004870755132287741,
+            -0.29956361651420593,
+            -0.03656476363539696,
+            0.0034598351921886206,
+            -0.1238374337553978,
+            -0.021777011454105377
+          ]
+        ],
+        "singular_values": [
+          1.0352890491485596,
+          0.7896623611450195,
+          0.3648778796195984,
+          0.2983061671257019
+        ],
+        "centered_singular_values": [
+          0.7944096326828003,
+          0.7580634355545044,
+          0.33602747321128845,
+          3.442618279336784e-08
+        ]
+      },
+      "note": "No new forward or optimizer step; roots from the measured first trial and endpoint; dictionary pairs are cosine, not dot products."
+    }
+  },
+  "process": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+    ],
+    "pid": 98409,
+    "exit_code": 1,
+    "reason": "exit",
+    "peak_memory_bytes": 681035216,
+    "elapsed_seconds": 80.57790879099048,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/attention-xor-02/run.log"
+  },
+  "source_check": {
+    "source_matched": true,
+    "completed": true,
+    "retries": 0
+  }
+}

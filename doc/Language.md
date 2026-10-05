@@ -24,28 +24,32 @@ Input realization does not enter the answer's free generate chart.
 `Understanding` owns the result; the answer consumes its detached record.
 [GradientFlow](GradientFlow.md) lists its fields, ownership and trained cost.
 
-### Product, mean and the operator catalogue
+### Product, probabilistic sum, and the operator catalogue
 
-All three faces use each operator's own numerical binding. Reverse and
-generate search a supplied concept basis through the compose kernel; absent
-a legal pair they fail loudly. Conjunction of the same native reference is
+The searched operators use the same numerical binding in all three faces.
+Reverse and generate search a supplied concept basis through the compose
+kernel; absent a legal pair they fail loudly. Conjunction of the same native reference is
 that reference, whereas coincident codes at different addresses still bind.
 The code parameters have no norm constraint.
 
 | Name | Compose / forward | Generate | Reverse |
 |---|---|---|---|
 | `conjunction` | `norm(x) * norm(y) * unit(x*y)`; repeated reference → `x` | Search a pair through product binding | Same search |
-| `disjunction` | `(x+y)/2` | Search a pair through mean binding | Same search |
+| `disjunction` | `(norm(x)+norm(y)-norm(x)*norm(y))*unit(x+y-x*y)` | Search a pair through probabilistic sum | Same search |
+| `sum` | Arithmetic mean `(x+y)/2` | Direct balanced split; free decoder searches the primed bank | Direct `(parent,parent)`; known operand gives `2*parent-witness` |
 | `not` | `-x` | `-x` | `-x` |
 | `min` | Coordinate minimum | Search a pair through minimum | Same search |
 | `max` | Coordinate maximum | Search a pair through maximum | Same search |
 
 `complete.grammar`, XOR_grammar and MM_grammar select product conjunction
-and mean disjunction. No current grammar file selects `min` or `max`; both
-are live catalogue entries with tests, available to later grammars. A mean-only
-or sum-only derivation remains additive and cannot supply an affine XOR
-feature. Reference identity, operator choice and inverse quality are separate
-from the unchanged class and reconstruction acceptance bars.
+and probabilistic-sum disjunction (MM_grammar through `default.grammar`).
+No current grammar file selects `min` or `max`; both are live catalogue entries
+with tests, available to later grammars. `sum` keeps the mean as the additive
+control. Under [6.8 §12.1](plans/2026-09-27-item-6-8-one-attention.md#121-the-composition-gate-not-a-grammar-gate-alec-2026-10-04),
+the XOR table measures the composition mechanism: nonlinear composition,
+decoding, affine reading and single-objective ownership. The four-sentence
+fixture does not measure which operator a grammatical construction means.
+The unchanged bars measure convergence; nonlinearity does not guarantee it.
 
 ### Concept composition
 
@@ -209,6 +213,24 @@ thought permission. Matching faces share one identity and role contract but
 receive their phase-specific context. The capitalized `<Queries>` section is
 rejected, not treated as a parallel catalogue.
 
+The field candidates `divide`, `descend` and `gloss` are declared in
+`<compose>` with field operands and no predefined word surfaces. Their
+`<generate>` face is absent: the closing owns their bracket witness. `and`,
+`or` and `not` also act within a field; order-dependent operators require
+symbol operands between brackets. Parser validation enforces this distinction.
+The pinned word stop masks gloss above words and descent below known words.
+The same chooser scores priming, bracket actions and typed space reads.
+
+All executable operators declare their reads, writes, operand kinds, order
+change and head roles. One round permits one writer per affected subsystem.
+`sum` averages, `chunk` adds, `non` excludes without a faithful inverse, and
+`not` exchanges observed poles. `true`, `exist`, `lookup` and the binary
+`SymbolizeLayer` are retired. `quantize` and `arma` are thought-only;
+`generic` has its own identity. Compound operators select eligible primed
+cases before applying their ordinary algebra. See the
+[operator catalogue](specs/2026-09-29-operator-catalogue.md) for each face and
+its exact witness inverse.
+
 Compose/generate rules are parsed into `rules_upward` / `rules_downward` and
 concatenated into the one flat `TheGrammar.rules` table. Both structural
 directions carry the BARE `method_name` (the `.forward`/`.reverse` suffix is
@@ -277,7 +299,7 @@ fabricating a split would corrupt the reconstruction.
 | `intersection` | 2 | CS | `Ops.intersection` (RadMin / lattice min; ADJ mask, meet) | recommender w/ basis; `snap=True` $\to$ MEET-aware snap (priming-led — the meet is lossy); no basis $\to$ raise |
 | `union` | 2 | CS | `Ops.union` (RadMax / lattice max, OR-region, join) | recommender w/ basis; `snap=True` $\to$ JOIN snap (fit-determined); no basis $\to$ raise |
 | `chunk` | 2 | CS | additive `left + right` (PS-style chunking); in `ladder.grammar` a reducer candidate licensed only on a pair the analysis tiling places in one coarser whole (doc/plans/2026-09-10-meronomy-fold-ladder.md, Phase 2b); an admitted chunk is a concept over its member concepts | PEEL w/ basis: best-cosine row `x1`, exact residual `(x1, parent − x1)`; empty-set decomposition `(parent, 0)` without |
-| `sum` | 2 | CS | element-wise `left + right` | empty-set decomposition `(parent, 0)` — recomposes exactly |
+| `sum` | 2 | CS | arithmetic mean `(left + right)/2` | direct balanced split `(parent,parent)` recomposes; witnessed inverse `2*parent-witness`; free decoder uses pair search |
 | `product` | 2 | CS | element-wise `left * right` | **raise** (zeros annihilate; many-to-one) |
 | `lift` | 2 | CS | union fold within the current order (internal SigmaLayer; optional gate); order is raised by symbolization, not by this fold (11c) | `Ops.liftReverseAll` w/ basis ($\to$ unionReverse); balanced `_sigma.generate` split without |
 | `verb` | 2 | CS | sparse verb-conditioned spectral operator | requires `verb_what` (`reverse_required_kwargs`); returns `(unapply_verb(parent, verb_what), verb_what)` |
@@ -290,7 +312,7 @@ fabricating a split would corrupt the reconstruction.
 | `morphology` | 1 | CS | surface inflection $\to$ `.when` (tense/aspect feature ops) | analyzes features, undoes aspect ops in reverse order, then tense |
 | `symbolize` | 2 | CS | pure `(left + right) / 2` composition; no word/object admission | `(parent/2, parent/2)` numerical split; no store lookup |
 | `conjunction` | 2 | SS | product binding; same reference is identity | reverse and generate: bounded pair search through compose; no basis → raise |
-| `disjunction` | 2 | SS | mean `(x+y)/2` | reverse and generate: bounded pair search through compose; no basis → raise |
+| `disjunction` | 2 | SS | probabilistic sum `(norm(x)+norm(y)-norm(x)*norm(y))*unit(x+y-x*y)` | reverse and generate: bounded pair search through compose; no basis → raise |
 | `exist` | 1 | SS | identity (EXISTS roots the minimal event) | identity |
 | `isEqual` | 2 | SS | legacy identity-assertion truth bivector | **raise** (max-fold not bijective) |
 | `isPart` | 2 | SS | legacy parthood-assertion truth bivector | **raise** (A's identity not preserved) |

@@ -1,0 +1,74 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_______ test_word_extent_is_letters_and_numeric_percepts_remain_separate _______
+
+    def test_word_extent_is_letters_and_numeric_percepts_remain_separate():
+        import Meronomy
+        raw=b'abc123 cat-dog 01 A1B'
+>       assert [raw[a:b] for a,b in Meronomy.word_spans(raw)] == [b'abc',b'cat',b'dog',b'A',b'B']
+E       AssertionError: assert [b'abc123', b...b'01', b'A1B'] == [b'abc', b'ca...', b'A', b'B']
+E         
+E         At index 0 diff: b'abc123' != b'abc'
+E         Use -v to get more diff
+
+test/test_one_attention.py:9: AssertionError
+_____ test_word_whole_membership_is_fixed_while_other_properties_can_learn _____
+
+    def test_word_whole_membership_is_fixed_while_other_properties_can_learn():
+        from PerceptProperties import PrimitiveProperties
+        props=PrimitiveProperties(12)
+>       props.define_word(8)
+        ^^^^^^^^^^^^^^^^^
+
+test/test_one_attention.py:17: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PrimitiveProperties(), name = 'define_word'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'PrimitiveProperties' object has no attribute 'define_word'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___________ test_bracket_table_is_bounded_typed_and_shares_one_meter ___________
+
+    def test_bracket_table_is_bounded_typed_and_shares_one_meter():
+>       from Attention import BracketTable, SPACE_INPUT, SPACE_SYMBOL
+E       ModuleNotFoundError: No module named 'Attention'
+
+test/test_one_attention.py:28: ModuleNotFoundError
+________ test_pooling_keeps_both_poles_and_unknown_neither_exactly_zero ________
+
+    def test_pooling_keeps_both_poles_and_unknown_neither_exactly_zero():
+>       from Attention import pooled_read
+E       ModuleNotFoundError: No module named 'Attention'
+
+test/test_one_attention.py:42: ModuleNotFoundError
+______ test_pinned_masks_known_word_never_descends_and_wide_never_glosses ______
+
+    def test_pinned_masks_known_word_never_descends_and_wide_never_glosses():
+>       from Attention import narrowing_mask
+E       ModuleNotFoundError: No module named 'Attention'
+
+test/test_one_attention.py:53: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_word_extent_is_letters_and_numeric_percepts_remain_separate
+FAILED test/test_one_attention.py::test_word_whole_membership_is_fixed_while_other_properties_can_learn
+FAILED test/test_one_attention.py::test_bracket_table_is_bounded_typed_and_shares_one_meter
+FAILED test/test_one_attention.py::test_pooling_keeps_both_poles_and_unknown_neither_exactly_zero
+FAILED test/test_one_attention.py::test_pinned_masks_known_word_never_descends_and_wide_never_glosses
+5 failed in 2.00s

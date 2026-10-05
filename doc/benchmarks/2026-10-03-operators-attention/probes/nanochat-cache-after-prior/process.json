@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "doc/benchmarks/2026-10-03-operators-attention/nanochat_cache_probe.py"
+  ],
+  "pid": 10530,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 3988180808,
+  "elapsed_seconds": 21.495941792003578,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/nanochat-cache-after-prior/run.log"
+}

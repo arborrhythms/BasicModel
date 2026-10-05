@@ -90,12 +90,19 @@
          absolute_truth = exist_O1, the EXISTS no-op output (a thing exists,
          the minimal event); relative_truth = the relation family part / whole
          / equal, each a Relation(RI_1, RI_2) output over two ideas. -->
-    <start name="absolute_truth">exist_O1</start>
+    <start name="absolute_truth">S</start>
     <start name="relative_truth">part_O1</start>
     <start name="relative_truth">whole_O1</start>
     <start name="relative_truth">equal_O1</start>
 
     <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
       <!-- Relations R (the relation family): part / whole / equal are
            compositional operators over two ideas that head the relative-truth
            start. `whole` is the grammar-declared converse of canonical
@@ -109,7 +116,7 @@
            EXISTS is the no-op verb (EO_1 = EXISTS(EI_1)): applied to a thing it
            roots the minimal event, so no S = thing + EXISTS composition rule is
            needed; the operator does it. -->
-      <rule>exist_O1 = exist.forward(exist_I1)</rule>
+
 
       <!-- Negation: not = pole swap; non = non-affirming complement. -->
       <rule>not_O1 = not.forward(not_I1)</rule>
@@ -137,6 +144,7 @@
            lower = DET. -->
       <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
       <rule>verb_O1 = verb.forward(verb_I1, verb_I2)</rule>
+      <rule>compound_O1 = compound.forward(compound_I1, compound_I2)</rule>
       <rule>adverb_O1 = adverb.forward(adverb_I1, adverb_I2)</rule>
       <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
 
@@ -159,7 +167,7 @@
       <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
       <rule family="part" permutation="I2,I1">whole_O1 = whole.thought(whole_I1, whole_I2)</rule>
       <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
-      <rule>exist_O1 = exist.thought(exist_I1)</rule>
+
     </thought>
 
     <generate>

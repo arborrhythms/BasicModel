@@ -1,0 +1,26 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_prior_thought_reserves_the_input_allowance ________________
+
+    def test_prior_thought_reserves_the_input_allowance():
+     from test_negative_expectation import _anticipating_model
+     model,owner,meaning=_anticipating_model()
+     model.train();model.attention_budget=4
+     model._stage_expectation_queries(training=True)
+     pending=owner._inter_last_meaning[0]
+>    assert pending.work<=model.attention_budget, (pending.work,model.attention_budget)
+E    AssertionError: (10, 4)
+E    assert 10 <= 4
+E     +  where 10 = _PendingMeaningExpectation(prediction=MeaningExpectation(roles=tensor([[-0.0015,  0.1456,  0.0798,  0.0047,  0.1119,  ... 'discourse-prediction', 'resolution_records_scanned': 1, 'records_scanned': 0}))))), step_cost=0.01), comparison=None).work
+E     +  and   4 = BasicModel(\n  (selected_thought_choosers): ModuleDict(\n    (8): SelectedThoughtChooser(\n      (mlp): Sequential(\n     ...       (1): GELU(approximate='none')\n        (2): Linear(in_features=16, out_features=1, bias=True)\n      )\n    )\n  )\n).attention_budget
+
+doc/benchmarks/2026-10-03-operators-attention/attention_budget_probe.py:7: AssertionError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-operators-attention/attention_budget_probe.py::test_prior_thought_reserves_the_input_allowance
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-03-operators-attention/attention_budget_probe.py::test_prior_thought_reserves_the_input_allowance
+1 failed, 1 warning in 1.93s

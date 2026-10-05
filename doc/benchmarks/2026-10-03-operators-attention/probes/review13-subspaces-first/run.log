@@ -1,0 +1,244 @@
+FFFFF.                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_native_percept_rows_and_signed_evidence_are_the_only_live_code_sources __
+
+    def test_native_percept_rows_and_signed_evidence_are_the_only_live_code_sources():
+        cs, cb, ps, alloc = fixture()
+        row = word(cs, [(4, .75), (7, -.25)])
+>       result = cb.lookup_rows(row)
+                 ^^^^^^^^^^^^^^^^^^^
+
+test/test_review13_subspaces.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Spaces.py:2412: in lookup_rows
+    value = self.mereology.derive(idx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MereologicalCodes.py:194: in derive
+    return result.reshape(*shape, self.locations.shape[-1])
+                                  ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes(), name = 'locations'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'MereologicalCodes' object has no attribute 'locations'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___________ test_group_uses_native_perceptual_fold_and_shared_basis ____________
+
+    def test_group_uses_native_perceptual_fold_and_shared_basis():
+        cs, cb, ps, _ = fixture()
+        grouped = word(cs, [((4, 7), .5)])
+        single = word(cs, [(7, 1.)])
+>       torch.testing.assert_close(cb.lookup_rows(grouped)[:3], .5*ps.W[[4,7]].amax(0))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_review13_subspaces.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Spaces.py:2412: in lookup_rows
+    value = self.mereology.derive(idx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MereologicalCodes.py:194: in derive
+    return result.reshape(*shape, self.locations.shape[-1])
+                                  ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes(), name = 'locations'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'MereologicalCodes' object has no attribute 'locations'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ test_occurrence_mean_is_confined_to_detached_context_coordinates _______
+
+    def test_occurrence_mean_is_confined_to_detached_context_coordinates():
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+        cs, cb, ps, _ = fixture()
+        a, b = word(cs, [(4, 1.)]), word(cs, [(7, 1.)])
+        store = TernaryTruthStore(5, capacity=8)
+        cs.symbolSpace = SimpleNamespace(ltm_store=store)
+        root = torch.tensor([9.,8.,7.,.2,.4], requires_grad=True)
+        roles = torch.stack((root, root*0, root*0))
+        row = store.append_meaning(ConceptualMeaning(roles, torch.tensor([True,False,False]),
+            mode='assertive', sentence_kind='idea'), evidence=(0.,0.))
+        store._append_leaf_terms(row, ((a,b),(),()), (True,True,True))
+>       codes = cb.lookup_rows(torch.tensor([a,b]))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_review13_subspaces.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Spaces.py:2412: in lookup_rows
+    value = self.mereology.derive(idx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MereologicalCodes.py:194: in derive
+    return result.reshape(*shape, self.locations.shape[-1])
+                                  ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes(), name = 'locations'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'MereologicalCodes' object has no attribute 'locations'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ test_support_reports_exact_zeros_and_minimum_absolute_coordinate _______
+
+    def test_support_reports_exact_zeros_and_minimum_absolute_coordinate():
+        cs, cb, ps, _ = fixture()
+        a = word(cs, [(4, 1.)])
+        with torch.no_grad():
+            ps.W[4, 0] = 0.
+>       report = cb.mereology.support_audit([a])[0]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_review13_subspaces.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/MereologicalCodes.py:116: in support_audit
+    codes = self.derive(rows)[..., :self.percept_width].abs()
+            ^^^^^^^^^^^^^^^^^
+bin/MereologicalCodes.py:194: in derive
+    return result.reshape(*shape, self.locations.shape[-1])
+                                  ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes(), name = 'locations'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'MereologicalCodes' object has no attribute 'locations'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ test_actual_serial_code_uses_six_native_coordinates_and_no_context_bootstrap _
+
+    def test_actual_serial_code_uses_six_native_coordinates_and_no_context_bootstrap():
+        from test_mm_xor import _fresh_model
+        model, _, _ = _fresh_model('data/XOR_grammar.xml')
+>       model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
+
+test/test_review13_subspaces.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8310: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23030: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13211: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:206: in stage_input
+    poles=native_word_poles(model,spans,forms,known)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ModelAttention.py:67: in native_word_poles
+    poles = owner.similarity_codebook.getW().new_zeros(*known.shape, 2)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:2390: in getW
+    return self.lookup_rows(torch.arange(len(self.W), device=self.W.device))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:2412: in lookup_rows
+    value = self.mereology.derive(idx)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MereologicalCodes.py:194: in derive
+    return result.reshape(*shape, self.locations.shape[-1])
+                                  ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes(), name = 'locations'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'MereologicalCodes' object has no attribute 'locations'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_review13_subspaces.py::test_native_percept_rows_and_signed_evidence_are_the_only_live_code_sources
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review13_subspaces.py::test_native_percept_rows_and_signed_evidence_are_the_only_live_code_sources
+FAILED test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_and_shared_basis
+FAILED test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates
+FAILED test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate
+FAILED test/test_review13_subspaces.py::test_actual_serial_code_uses_six_native_coordinates_and_no_context_bootstrap
+5 failed, 1 passed, 1 warning in 3.30s

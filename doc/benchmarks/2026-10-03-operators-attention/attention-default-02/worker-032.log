@@ -1,0 +1,273 @@
+.....FFFFFFFF.............FF....s....F.........................F........ [ 56%]
+.F..F.FFF..............ssss.......ssssss.FF..........FF                  [100%]
+=================================== FAILURES ===================================
+_____ test_basicmodel_config_separates_concepts_properties_and_live_width ______
+test/test_wholespace_property_migration.py:98: in test_basicmodel_config_separates_concepts_properties_and_live_width
+    assert ws_rows == 8
+E   assert 9 == 8
+___________ test_aligned_model_accepts_unequal_inventory_capacities ____________
+test/test_wholespace_property_migration.py:106: in test_aligned_model_accepts_unequal_inventory_capacities
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_aligned_model_accepts_une0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_aligned_model_accepts_une0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_aligned_model_accepts_une0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+______ test_aligned_property_folds_share_one_physical_concept_dictionary _______
+test/test_wholespace_property_migration.py:117: in test_aligned_property_folds_share_one_physical_concept_dictionary
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_aligned_property_folds_sh0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_aligned_property_folds_sh0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_aligned_property_folds_sh0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______ test_wholespace_owns_one_property_codebook_and_no_concept_store ________
+test/test_wholespace_property_migration.py:150: in test_wholespace_owns_one_property_codebook_and_no_concept_store
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_wholespace_owns_one_prope0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_wholespace_owns_one_prope0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_wholespace_owns_one_prope0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________ test_property_model_stm_grammar_resolves_from_symbolspace ___________
+test/test_wholespace_property_migration.py:201: in test_property_model_stm_grammar_resolves_from_symbolspace
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_property_model_stm_gramma0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_property_model_stm_gramma0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_property_model_stm_gramma0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+________ test_symbolspace_and_grammar_use_conceptual_not_property_width ________
+test/test_wholespace_property_migration.py:221: in test_symbolspace_and_grammar_use_conceptual_not_property_width
+    model = _small_property_model(
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_symbolspace_and_grammar_u0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_symbolspace_and_grammar_u0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_symbolspace_and_grammar_u0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______ test_property_model_category_vq_and_parser_context_are_cs_owned ________
+test/test_wholespace_property_migration.py:278: in test_property_model_category_vq_and_parser_context_are_cs_owned
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_property_model_category_v0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_property_model_category_v0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_property_model_category_v0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+________ test_property_sidecar_cannot_recreate_lbg_or_downstream_state _________
+test/test_wholespace_property_migration.py:318: in test_property_sidecar_cannot_recreate_lbg_or_downstream_state
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_property_sidecar_cannot_r0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_property_sidecar_cannot_r0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1596/test_property_sidecar_cannot_r0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+____________________ test_live_default_on_divides_punct_run ____________________
+test/test_within_whole_division.py:102: in test_live_default_on_divides_punct_run
+    assert _live_spans(ws, "a). b") == [(0, 1), (1, 2), (2, 3), (4, 5)]
+E   assert [(0, 1), (1, 3), (4, 5)] == [(0, 1), (1, ...2, 3), (4, 5)]
+E     
+E     At index 1 diff: (1, 3) != (1, 2)
+E     Right contains one more item: (4, 5)
+E     Use -v to get more diff
+__________________ test_live_attested_whole_stays_one_concept __________________
+test/test_within_whole_division.py:118: in test_live_attested_whole_stays_one_concept
+    assert _live_spans(ws2, "a ...") == [(0, 1), (2, 3), (3, 4), (4, 5)]
+E   assert [(0, 1), (2, 5)] == [(0, 1), (2, ...3, 4), (4, 5)]
+E     
+E     At index 1 diff: (2, 5) != (2, 3)
+E     Right contains 2 more items, first extra item: (3, 4)
+E     Use -v to get more diff
+__________ test_29_each_reading_publishes_only_its_words[MM_xor.xml] ___________
+test/test_word_admission.py:108: in test_29_each_reading_publishes_only_its_words
+    assert not torch.equal(symbols[left], symbols[right])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10ed653a0>(tensor([[-0.3145,  0.4580,  0.1366, -0.2664,  0.1165, -0.0326, -0.3117,  0.0815,\n         -0.4189, -0.2349, -0.1838, -... -0.0000,  0.0000, -0.0000,  0.0000,  0.0000, -0.0000,\n          0.0000,  0.0000,  0.0000,  0.0000, -0.0000, -0.0000]]), tensor([[-0.3145,  0.4580,  0.1366, -0.2664,  0.1165, -0.0326, -0.3117,  0.0815,\n         -0.4189, -0.2349, -0.1838, -... -0.0000,  0.0000, -0.0000,  0.0000,  0.0000, -0.0000,\n          0.0000,  0.0000,  0.0000,  0.0000, -0.0000, -0.0000]]))
+E    +    where <built-in method equal of type object at 0x10ed653a0> = torch.equal
+__________ test_every_read_word_has_a_concept_and_symbol[MM_xor.xml] ___________
+test/test_word_interpretation.py:30: in test_every_read_word_has_a_concept_and_symbol
+    assert all(owner.word_concepts(word) for word in words), {
+E   AssertionError: {'go': (), 'hi': (1, 2), 'no': (), 'we': (3, 4)}
+E   assert False
+E    +  where False = all(<generator object test_every_read_word_has_a_concept_and_symbol.<locals>.<genexpr> at 0x123794740>)
+___________ test_every_serial_word_runs_interpret_before_composition ___________
+test/test_word_interpretation.py:202: in test_every_serial_word_runs_interpret_before_composition
+    assert (ids[active] != objects[active]).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x13fafc2d0>()
+E    +    where <built-in method all of Tensor object at 0x13fafc2d0> = tensor([ 1, -1,  3, -1,  5]) != tensor([ 2, -1,  4, -1,  6]).all
+_________________ test_smallest_fixed_word_bucket_is_selected __________________
+test/test_word_loop_buckets_and_orders.py:40: in test_smallest_fixed_word_bucket_is_selected
+    assert inp._serial_word_count_host == n
+E   assert 2 == 1
+E    +  where 2 = namespace(_active_word_bucket=16, _serial_word_capacity=16, _serial_word_count_host=2)._serial_word_count_host
+____ test_single_dynamic_capacity_accepts_short_and_long_complete_sentences ____
+test/test_word_loop_buckets_and_orders.py:57: in test_single_dynamic_capacity_accepts_short_and_long_complete_sentences
+    assert inp._serial_word_count_host == n
+E   assert 2 == 1
+E    +  where 2 = namespace(_active_word_bucket=256, _serial_word_capacity=256, _serial_word_count_host=2)._serial_word_count_host
+__ test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories ___
+test/test_word_loop_buckets_and_orders.py:75: in test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories
+    assert ws == 8
+E   assert 9 == 8
+__________________ test_one_operation_layer_owns_both_arities __________________
+test/test_word_loop_buckets_and_orders.py:104: in test_one_operation_layer_owns_both_arities
+    assert shared.r_reduce > 0 and shared.r_apply > 0
+E   assert (9 > 0 and 0 > 0)
+E    +  where 9 = OperationSelectionLayer(\n  (ops): ModuleList(\n    (0): _BinaryGrammarOpAdapter(\n      (gl): UnionLayer()\n    )\n    (1)...dapter(\n      (gl): DisjunctionLayer()\n    )\n  )\n  (unary_ops): ModuleList()\n  (chooser): AnchorDotTransformChooser()\n).r_reduce
+E    +  and   0 = OperationSelectionLayer(\n  (ops): ModuleList(\n    (0): _BinaryGrammarOpAdapter(\n      (gl): UnionLayer()\n    )\n    (1)...dapter(\n      (gl): DisjunctionLayer()\n    )\n  )\n  (unary_ops): ModuleList()\n  (chooser): AnchorDotTransformChooser()\n).r_apply
+___ test_surface_bytes_belong_to_words_and_objects_follow_their_association ____
+test/test_word_store.py:785: in test_surface_bytes_belong_to_words_and_objects_follow_their_association
+    owner.interpret.define(other_word, obj)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:145: in define
+    raise ValueError('DEF requires distinct, live native identities')
+E   ValueError: DEF requires distinct, live native identities
+_____ test_word_surface_and_reassociated_object_survive_strict_checkpoint ______
+test/test_word_store.py:815: in test_word_surface_and_reassociated_object_survive_strict_checkpoint
+    owner.interpret.define(other_word, obj)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:145: in define
+    raise ValueError('DEF requires distinct, live native identities')
+E   ValueError: DEF requires distinct, live native identities
+_ TestXORGrammarLanguageLayerIntegration.test_signal_router_has_grammar_ops_attached _
+test/test_xor_grammar.py:207: in test_signal_router_has_grammar_ops_attached
+    self.assertTrue(
+E   AssertionError: False is not true : Expected at least one unary space_role attached
+_ TestXORGrammarLanguageLayerIntegration.test_signal_router_rule_ids_match_grammar _
+test/test_xor_grammar.py:253: in test_signal_router_rule_ids_match_grammar
+    self.assertIn(not_id, all_unary_rule_ids,
+E   AssertionError: 0 not found in set() : Grammar 'not' rule_id must be attached to some unary space_role
+=============================== warnings summary ===============================
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:394: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span
+test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words
+test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans
+test/test_within_whole_division.py::test_live_no_store_is_inert
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_word_admission.py::test_23_fuse_parts_before_word_admission
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width
+FAILED test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities
+FAILED test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary
+FAILED test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store
+FAILED test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace
+FAILED test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width
+FAILED test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned
+FAILED test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state
+FAILED test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+FAILED test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+FAILED test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]
+FAILED test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]
+FAILED test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition
+FAILED test/test_word_loop_buckets_and_orders.py::test_smallest_fixed_word_bucket_is_selected
+FAILED test/test_word_loop_buckets_and_orders.py::test_single_dynamic_capacity_accepts_short_and_long_complete_sentences
+FAILED test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories
+FAILED test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities
+FAILED test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association
+FAILED test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint
+FAILED test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached
+FAILED test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar
+21 failed, 95 passed, 11 skipped, 9 warnings in 44.49s

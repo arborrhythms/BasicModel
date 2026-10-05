@@ -38,14 +38,14 @@ _SCOPED_STARTS_GRAMMAR = textwrap.dedent("""\
       </PartSpace>
       <Symbolic>
         <start name="relative_truth">isEqual_O1</start>
-        <start name="absolute_truth">exist_O1</start>
+        <start name="absolute_truth">S</start>
         <compose>
           <rule>isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
-          <rule>exist_O1 = exist.forward(exist_I1)</rule>
+          <rule>S = S</rule>
         </compose>
         <generate>
           <rule>isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
-          <rule>exist_I1 = exist.reverse(exist_O1)</rule>
+          <rule>S = S</rule>
         </generate>
       </Symbolic>
     </grammar>
@@ -91,7 +91,7 @@ def test_ws_start_scoped_to_symbolic_space(monkeypatch, tmp_path):
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
     assert g.ws_start_symbol == "isEqual_O1"
     assert ("isEqual_O1",) in g.ws_start_patterns
-    assert ("exist_O1",) in g.ws_start_patterns
+    assert ("S",) in g.ws_start_patterns
     assert ("U",) not in g.ws_start_patterns
 
 
@@ -110,7 +110,7 @@ def test_relative_and_absolute_starts_from_name_attribute(monkeypatch, tmp_path)
     absolute-truth SS starts (used by relative-rule detection, R1.3)."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
     assert g.ws_relative_starts == frozenset({"isEqual_O1"})
-    assert g.ws_absolute_starts == frozenset({"exist_O1"})
+    assert g.ws_absolute_starts == frozenset({"S"})
 
 
 def test_identity_rule_uses_symbolic_start(monkeypatch, tmp_path):

@@ -1,0 +1,34 @@
+........................................................................ [ 38%]
+.................ssssss............sssF.F............................... [ 77%]
+...........................................                              [100%]
+=================================== FAILURES ===================================
+________ TestBasicModelForwardReverse.test_grammar_has_syntactic_layers ________
+test/test_mental_model.py:72: in test_grammar_has_syntactic_layers
+    self.assertIn('exist', Language.TheGrammar.s_methods)
+E   AssertionError: 'exist' not found in {'interpret', 'conjunction', 'disjunction'}
+____ TestBasicModelGrammarConfiguration.test_configured_grammar_matches_xml ____
+test/test_mental_model.py:135: in test_configured_grammar_matches_xml
+    self.assertEqual(missing, set(),
+E   AssertionError: Items in the first set but not the second:
+E   'exist' : cfg-loaded grammar missing required ops: {'exist'}
+=============================== warnings summary ===============================
+test/test_lift_lower_recommender.py::TestLiftLowerRecommender::test_lift_reverse_uses_recommender_with_basis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words
+test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton
+test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1705: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_mental_model.py::TestBasicModelForwardReverse::test_grammar_has_syntactic_layers
+FAILED test/test_mental_model.py::TestBasicModelGrammarConfiguration::test_configured_grammar_matches_xml
+2 failed, 176 passed, 9 skipped, 5 warnings in 14.68s

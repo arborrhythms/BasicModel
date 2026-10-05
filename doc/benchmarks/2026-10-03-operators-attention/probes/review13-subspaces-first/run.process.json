@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_review13_subspaces.py"
+  ],
+  "pid": 32907,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 553370944,
+  "elapsed_seconds": 4.905490165983792,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review13-subspaces-first/run.log"
+}

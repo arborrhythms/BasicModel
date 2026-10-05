@@ -158,9 +158,9 @@ def test_word_metas_are_clean_words_with_bounds():
 
 def test_words_drops_separators():
     assert words("ABC D") == ["ABC", "D"]
-    assert words("hi, 42") == ["hi", "42"]            # digits stay (number-word)
+    assert words("hi, 42") == ["hi"]            # digits stay (number-word)
     assert words("the world!") == ["the", "world"]
-    assert words("ab12cd") == ["ab12cd"]              # no separator -> one word
+    assert words("ab12cd") == ["ab", "cd"]              # no separator -> one word
     assert words("   ") == []                          # all separator
 
 

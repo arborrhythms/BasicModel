@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ TestMMXorConvergence.test_convergence _____________________
+
+self = <test_mm_xor.TestMMXorConvergence testMethod=test_convergence>
+
+    @pytest.mark.slow
+    def test_convergence(self):
+        """Retain the existing 200-epoch .20 bar without seed selection."""
+>       self._fit_xor(_CONFIG, epochs=200, threshold=.20)
+
+test/test_mm_xor.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:165: in _fit_xor
+    self.assertLess(best_loss, threshold,
+E   AssertionError: 0.24772223830223083 not less than 0.2 : XOR loss 0.247722 after at most 200 epochs
+=========================== short test summary info ============================
+FAILED test/test_mm_xor.py::TestMMXorConvergence::test_convergence - Assertio...
+1 failed in 6.42s

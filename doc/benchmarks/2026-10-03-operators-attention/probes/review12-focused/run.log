@@ -1,0 +1,74 @@
+........................................................................ [ 50%]
+..............F......................................................s.  [100%]
+=================================== FAILURES ===================================
+__ test_margin_probe_records_only_training_gradient_and_actual_policy_motion ___
+
+    def test_margin_probe_records_only_training_gradient_and_actual_policy_motion():
+        from decoder_margin_probe import DecoderMarginProbe
+        from test_decoder_exploration import decoder
+        model, policy = decoder()
+        parent = torch.tensor([[1., 2.]])
+        logits = model.languageSpace.generate_policy_logits(parent)
+        loss = -logits.log_softmax(-1)[0, 0]
+        events = []
+        probe = DecoderMarginProbe(lambda kind, **data: events.append(dict(kind=kind, **data)))
+        rng = torch.random.get_rng_state().clone()
+>       probe.capture(model, logits, parent, torch.ones_like(logits, dtype=torch.bool),
+            round=0, explore=True, live=torch.tensor([True]), metadata=dict(epoch=0, batch=0))
+
+test/test_review10_contracts.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <decoder_margin_probe.DecoderMarginProbe object at 0x14a461610>
+model = namespace(languageSpace=namespace(_generate_binary_ops=(<object object at 0x1092ec700>,), _generate_unary_ops=(<object...ls>.<lambda> at 0x1471e7880>), _output_generate_walk=<bound method BasicModel._output_generate_walk of namespace(...)>)
+logits = tensor([[ 0., -1.,  2.]], grad_fn=<AddmmBackward0>)
+parent = tensor([[1., 2.]]), legal = tensor([[True, True, True]]), round = 0
+explore = True, live = tensor([True]), metadata = {'epoch': 0, 'batch': 0}
+
+    def capture(self, model, logits, parent, legal, *, round, explore, live, metadata):
+        if int(round) != 0 or not logits.requires_grad:
+            return
+        language = model.languageSpace
+        binary = len(language._generate_binary_ops)
+        stop = binary + len(language._generate_unary_ops)
+        row = dict(id=self.serial, **metadata, path='explore' if explore else 'greedy',
+                   live=live.detach().cpu().tolist(), legal=legal.detach().cpu().tolist(),
+                   binary_indices=list(range(binary)), stop_index=stop,
+>                  binary_rule_ids=language._generate_binary_rule_ids.detach().cpu().tolist(),
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                   binary_rule_names=list(language._generate_binary_names), stop_name='STOP',
+                   logits=logits.detach().cpu().tolist(),
+                   margin=(logits[:, stop:stop+1]-logits[:, :binary]).detach().cpu().tolist())
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_generate_binary_rule_ids'. Did you mean: '_generate_binary_ops'?
+
+test/decoder_margin_probe.py:22: AttributeError
+=============================== warnings summary ===============================
+test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxf1zypad/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpqoxjcdpb/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp3bu5mdt6/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7157: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpk84ckjl2/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review10_contracts.py::test_margin_probe_records_only_training_gradient_and_actual_policy_motion
+1 failed, 141 passed, 1 skipped, 6 warnings in 112.62s (0:01:52)

@@ -1,0 +1,241 @@
+{
+  "scope": "Saved observations of XOR run 10 only; no new model or training",
+  "phases": {
+    "start": {
+      "word_perceptual_coordinates": {
+        "hello": [
+          0.008912566117942333,
+          0.0146707221865654,
+          0.035255055874586105,
+          0.009678640402853489,
+          0.02227376401424408,
+          0.029498914256691933
+        ],
+        "world": [
+          0.05645035579800606,
+          0.0146707221865654,
+          0.03938157856464386,
+          0.009678640402853489,
+          0.02683471515774727,
+          0.0
+        ],
+        "there": [
+          0.05645035579800606,
+          0.0,
+          0.035255055874586105,
+          0.025749776512384415,
+          0.02683471515774727,
+          0.029498914256691933
+        ],
+        "loving": [
+          0.012109532952308655,
+          0.05141504481434822,
+          0.02582585997879505,
+          0.030306490138173103,
+          0.02227376401424408,
+          0.01791011169552803
+        ]
+      },
+      "word_pairs": [
+        {
+          "words": [
+            "hello",
+            "loving"
+          ],
+          "cosine": 0.7833481271527916,
+          "distance": 0.04482280788906914,
+          "proportional_residual": 0.04479066248251188,
+          "relative_proportional_residual": 0.6215832298946088
+        },
+        {
+          "words": [
+            "hello",
+            "there"
+          ],
+          "cosine": 0.7737579782042042,
+          "distance": 0.052480046001559935,
+          "proportional_residual": 0.05178647079570682,
+          "relative_proportional_residual": 0.6334813266114023
+        },
+        {
+          "words": [
+            "hello",
+            "world"
+          ],
+          "cosine": 0.6730165017245914,
+          "distance": 0.056283726376587934,
+          "proportional_residual": 0.05616573147057159,
+          "relative_proportional_residual": 0.7396274659626921
+        },
+        {
+          "words": [
+            "loving",
+            "there"
+          ],
+          "cosine": 0.5942372466446909,
+          "distance": 0.06981684179579214,
+          "proportional_residual": 0.06574989488370267,
+          "relative_proportional_residual": 0.8042898076565045
+        },
+        {
+          "words": [
+            "loving",
+            "world"
+          ],
+          "cosine": 0.6114726455259316,
+          "distance": 0.06532299658902276,
+          "proportional_residual": 0.060087018972634215,
+          "relative_proportional_residual": 0.7912655709516991
+        },
+        {
+          "words": [
+            "there",
+            "world"
+          ],
+          "cosine": 0.8931226387003981,
+          "distance": 0.036888014817304485,
+          "proportional_residual": 0.03415785770187479,
+          "relative_proportional_residual": 0.44981324151345137
+        }
+      ],
+      "root_norms": [
+        0.004157600415453385,
+        0.004475760551277113,
+        0.005472006657973178,
+        0.005890751706996855
+      ],
+      "centered_root_singular_values": [
+        0.002985467202961445,
+        0.0022344638127833605,
+        0.0010020826011896133,
+        1.768217100517333e-10
+      ]
+    },
+    "end": {
+      "word_perceptual_coordinates": {
+        "hello": [
+          0.0206371508538723,
+          0.045114994049072266,
+          0.0684652030467987,
+          0.02958228439092636,
+          0.054424118250608444,
+          0.05332686007022858
+        ],
+        "world": [
+          0.11893898993730545,
+          0.05608316883444786,
+          0.09770110994577408,
+          0.06639950722455978,
+          0.08009765297174454,
+          0.04581686854362488
+        ],
+        "there": [
+          0.11921187490224838,
+          0.05621129646897316,
+          0.09792447090148926,
+          0.0665515586733818,
+          0.08028079569339752,
+          0.04592128470540047
+        ],
+        "loving": [
+          0.14091262221336365,
+          0.066445492208004,
+          0.11575277149677277,
+          0.07866719365119934,
+          0.09489674866199493,
+          0.054282840341329575
+        ]
+      },
+      "word_pairs": [
+        {
+          "words": [
+            "hello",
+            "loving"
+          ],
+          "cosine": 0.8716919317758927,
+          "distance": 0.14562132165363575,
+          "proportional_residual": 0.11577174979662423,
+          "relative_proportional_residual": 0.49005425829882604
+        },
+        {
+          "words": [
+            "hello",
+            "there"
+          ],
+          "cosine": 0.8716859347999084,
+          "distance": 0.11312864432573125,
+          "proportional_residual": 0.09794344895750198,
+          "relative_proportional_residual": 0.4900649253639868
+        },
+        {
+          "words": [
+            "hello",
+            "world"
+          ],
+          "cosine": 0.8716881190376558,
+          "distance": 0.11273565954258549,
+          "proportional_residual": 0.09771898988560472,
+          "relative_proportional_residual": 0.49006104020682345
+        },
+        {
+          "words": [
+            "loving",
+            "there"
+          ],
+          "cosine": 0.9999999999251187,
+          "distance": 0.03638460942692892,
+          "proportional_residual": 2.4458168375598205e-06,
+          "relative_proportional_residual": 1.223776637141721e-05
+        },
+        {
+          "words": [
+            "loving",
+            "world"
+          ],
+          "cosine": 0.9999999999697282,
+          "distance": 0.03684104759428611,
+          "proportional_residual": 1.551541087160477e-06,
+          "relative_proportional_residual": 7.780983409546055e-06
+        },
+        {
+          "words": [
+            "there",
+            "world"
+          ],
+          "cosine": 0.999999999990066,
+          "distance": 0.0004564390931791849,
+          "proportional_residual": 8.888101561841848e-07,
+          "relative_proportional_residual": 4.45738571587687e-06
+        }
+      ],
+      "root_norms": [
+        0.023449492529803335,
+        0.023503170093644492,
+        0.04710719628626995,
+        0.0472150263788801
+      ],
+      "centered_root_singular_values": [
+        0.03041147254407406,
+        4.561498644761741e-05,
+        1.953149819655664e-08,
+        2.678750776752281e-09
+      ]
+    }
+  },
+  "first_step_legal_action_counts": {
+    "1": 6400
+  },
+  "stop_eligible": 0,
+  "decoder_parameter_updates": {
+    "symbolSpace.languageSpace.generate_policy.weight": {
+      "observations": 1200,
+      "nonzero": 0,
+      "max_norm": 0.0
+    },
+    "symbolSpace.languageSpace.generate_policy.bias": {
+      "observations": 1200,
+      "nonzero": 0,
+      "max_norm": 0.0
+    }
+  }
+}

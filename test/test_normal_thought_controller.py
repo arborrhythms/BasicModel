@@ -151,7 +151,7 @@ def test_selected_history_retains_the_typed_checked_result_through_restore():
     stored = executed.result
     assert stored is not None
     assert stored.semantic_id == selected.result.semantic_id == "part"
-    assert stored.result_kind == selected.result.result_kind == "truth"
+    assert stored.result_kind == selected.result.result_kind == "concept"
     assert stored.request is not selected.result.request
     assert not stored.request.roles.requires_grad
     assert stored.evidence["support_true"] == selected.evidence["support_true"]
@@ -166,7 +166,7 @@ def test_selected_history_retains_the_typed_checked_result_through_restore():
         if record.kind == "thought" and record.operation == "part")
     assert replayed.result is not None
     assert replayed.result.semantic_id == "part"
-    assert replayed.result.result_kind == "truth"
+    assert replayed.result.result_kind == "concept"
     assert not replayed.result.request.roles.requires_grad
 
 
@@ -294,7 +294,7 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
     """A grammar-selected unary concept tool reaches its typed executor.
 
     The normal bridge must not assume every selected program is a binary
-    truth relation.  A completed ``what(quantize(x))`` owns its live signed
+    truth relation.  A completed quantize request owns its live signed
     leaf and grammar-native VP, enters the same ordinary episode, and retains
     the checked ``code`` result without coercing that result into a truth or
     answer seed.
@@ -315,26 +315,16 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
-    quantize = next(
-        index for index, rule in enumerate(language._compose_unary_rules)
-        if rule.method_name == "quantize")
-    what = next(
-        index for index, rule in enumerate(language._compose_unary_rules)
-        if rule.method_name == "what")
-    entry = AnswerProgram(
-        rows=torch.tensor([3]), word_rows=torch.tensor([7]),
-        activations=torch.tensor([-.25]), leaves=leaves[:1],
-        actions=torch.tensor(
-            [[0, -1, 0], [2, quantize, -1], [2, what, -1]],
-            dtype=torch.long),
-        targets=torch.tensor([quantize, what, -1]),
-        end_state=torch.zeros(3, leaves.shape[-1]),
-        concept_ids=torch.tensor([-1]), lexical_forms=(None,))
+    # Quantize is thought-only. The completed field carries its selected
+    # request directly, without an identity compose wrapper or parse replay.
+    from Understanding import SentenceEndState
+    entry = SentenceEndState(ConceptualMeaning.from_description(leaves[0]),
+                             query=registry.form('quantize', leaves[0]))
 
     with model._query_boundary_scope((0,)):
         # The ordinary chooser also pays for its context reads. Give this
         # executor mechanism the normal budget through its conclusion.
-        selected = model._run_selected_sentence_thoughts((sentence_state(language, entry, registry),), work_budget=32)
+        selected = model._run_selected_sentence_thoughts((entry,), work_budget=32)
 
     assert len(selected) == 1
     row, result = selected[0]
@@ -502,8 +492,9 @@ def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monke
         Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
-    torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
-    assert derivation.source == "thought"
+    torch.testing.assert_close(derivation.conceptual_answer[0, 0], selected.result.value)
+    assert not derivation.conceptual_answer[0, 1:].any()
+    assert derivation.source == "thought-concept"
 
 
 def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
@@ -612,7 +603,8 @@ def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch)
 
     selected = derivation.selected_thoughts[0][1]
     assert registry.signature_for(selected.meaning).operation.semantic_id == "equal"
-    torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
+    torch.testing.assert_close(derivation.conceptual_answer[0, 0], selected.result.value)
+    assert not derivation.conceptual_answer[0, 1:].any()
     assert derivation.grammar_trace[1]["semantic_id"] == "equal"
 
 
@@ -658,7 +650,7 @@ def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
     result = model.resolveAnswer(understanding, question)
 
     assert len(result.selected_thoughts) == 1
-    assert result.source == "thought"
+    assert result.source == "thought-concept"
     assert not legacy_calls
     assert memory.thought_state().finished and not memory.in_episode(0)
 

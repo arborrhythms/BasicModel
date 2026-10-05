@@ -279,15 +279,15 @@ class TestConjunctionDisjunctionForwarders(unittest.TestCase):
         out_lower = Ops.lower(self.x, self.y, mode='AND', kind='strict')
         self.assertTrue(torch.equal(out_conj, out_lower))
 
-    def test_conjunction_bitonic_equals_lower_soft(self):
-        # 2026-05-29: non-monotonic conjunction now routes to
-        # ``kind='soft'`` (LSE-smoothed RadMin), not ``kind='radial'``
-        # (hard min). The hard-radial path remains reachable via
-        # ``Ops.lower(..., kind='radial')`` and is tested below
-        # under ``test_lower_radial_matches_pre_step2_radmin``.
-        out_conj = Ops.intersection(self.x, self.y, monotonic=False)
-        out_lower = Ops.lower(self.x, self.y, mode='AND', kind='soft')
-        self.assertTrue(torch.equal(out_conj, out_lower))
+    def test_intersection_is_exact_minimum_with_silence_neutral(self):
+        # Catalogue §4.3 replaces the soft radial forward. A repeated
+        # adjective is idempotent; a silent coordinate preserves either sign.
+        out = Ops.intersection(self.x, self.y, monotonic=False)
+        expected = torch.tensor([.4, -.3, -.2, .9, .2, 0.])
+        self.assertTrue(torch.equal(out, expected))
+        self.assertTrue(torch.equal(Ops.intersection(out, self.y), out))
+        self.assertTrue(torch.equal(Ops.intersection(self.x, self.x), self.x))
+        self.assertTrue(torch.equal(Ops.intersection(torch.zeros_like(self.x), self.x), self.x))
 
     def test_disjunction_monotonic_equals_lift_strict(self):
         out_disj = Ops.union(self.x, self.y, monotonic=True)
@@ -295,7 +295,7 @@ class TestConjunctionDisjunctionForwarders(unittest.TestCase):
         self.assertTrue(torch.equal(out_disj, out_lift))
 
     def test_disjunction_bitonic_equals_lift_soft(self):
-        # 2026-05-29: see test_conjunction_bitonic_equals_lower_soft.
+        # Union retains its soft radial kernel; intersection has a separate decided contract.
         out_disj = Ops.union(self.x, self.y, monotonic=False)
         out_lift = Ops.lift(self.x, self.y, mode='OR', kind='soft')
         self.assertTrue(torch.equal(out_disj, out_lift))

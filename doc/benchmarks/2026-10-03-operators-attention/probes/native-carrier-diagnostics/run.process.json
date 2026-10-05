@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "doc/benchmarks/2026-10-03-operators-attention/inspect_carriers.py",
+    "test/test_reconstruction_scope.py",
+    "test/test_reconstruction_bank_contract.py",
+    "test/test_sentence_end_state.py",
+    "test/test_sentence_comparison.py"
+  ],
+  "pid": 4509,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1708526088,
+  "elapsed_seconds": 14.489160124998307,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/native-carrier-diagnostics/run.log"
+}

@@ -51,11 +51,11 @@ def test_missing_semantic_context_remains_visible_in_the_checked_result():
 
 def test_consolidated_legacy_chain_reads_the_actual_two_role_presence():
     from types import SimpleNamespace
-    from Layers import InterSentenceLayer
+    from Layers import BracketExpectation
     store = TernaryTruthStore(6, capacity=8)
     roles = torch.eye(6)[:2]
     store.append_relation(roles[0], roles[1], None, trust=.8)
-    chain = InterSentenceLayer.get_stm_chain(SimpleNamespace(_ltm_store=store))
+    chain = BracketExpectation.get_stm_chain(SimpleNamespace(_ltm_store=store))
     depth, payload, trust = chain[0]
     assert depth == 2
     torch.testing.assert_close(payload, roles)

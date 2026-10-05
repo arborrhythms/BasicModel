@@ -241,10 +241,10 @@ def test_tiling_ladder_nests_units_in_space_bounded_wholes():
         [(0, 1), (1, 2), (3, 7), (8, 9), (9, 10), (11, 13)]
     assert fake._staged_unit_parent[0].tolist() == [0, 0, 1, 2, 2, 3]
     assert torch.equal(fake._staged_unit_spans, fine)
-    # Letter/digit flips are not unit boundaries (contract 3 priors): one unit.
+    # Fixed words end at digits even with digitWholes disabled.
     fake = property_reader(analysis_mode="meronomy", digit_wholes=False)
     WholeSpace.stage_analysis_spans(fake, _bytes("w0 abc123"))
-    assert [tuple(x) for x in fake._staged_unit_spans[0].tolist() if x[1] > x[0]] == [(0, 2), (3, 9)]
+    assert [tuple(x) for x in fake._staged_unit_spans[0].tolist() if x[1] > x[0]] == [(0, 1), (1, 2), (3, 6), (6, 9)]
     # Without digit wholes the digit run is one unit under one coarse whole.
     fake = property_reader(analysis_mode="meronomy", digit_wholes=False)
     WholeSpace.stage_analysis_spans(fake, _bytes("12 plus 1"))
@@ -431,11 +431,11 @@ def test_word_unit_fraction_counts_digit_wholes_as_sub_word_units(ladder):
     assert abs(m.word_unit_fraction() - 2.0 / 3.0) < 1e-9
 
 
-def test_word_unit_fraction_is_zero_on_the_atomic_cold_start(tmp_path):
+def test_fixed_words_are_units_even_on_the_atomic_cold_start(tmp_path):
     m = _build_none_ladder(tmp_path)
     m.reset_word_unit_stats()
     _stage(m, ["the quick brown fox"])
-    assert m.word_unit_fraction() == 0.0
+    assert m.word_unit_fraction() == 1.0
 
 
 def test_epoch_report_carries_the_word_unit_fraction(capsys, eager_reading, trained_ladder):
@@ -611,8 +611,8 @@ def test_boundary_types_none_starts_without_boundaries(tmp_path):
     b_on, e_on, a_on, _ = ws._predicate_masks()
     assert not bool(b_on.any() or e_on.any() or a_on.any())
     units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1"])
-    # The cold start is the atomic tiling: every byte a whole, spaces included.
-    assert units[0] == ["1", "2", " ", "p", "l", "u", "s", " ", "1"]
+    # Nonwords keep the atomic cold start; fixed letter runs remain words.
+    assert units[0] == ["1", "2", " ", "plus", " ", "1"]
 
 
 # -- Phase 2, step 3: the cold start learns space as the basic boundary ---------

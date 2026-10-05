@@ -1,0 +1,65 @@
+.....F....................F.........s..sss.............................. [ 50%]
+..............s............F..........................................   [100%]
+=================================== FAILURES ===================================
+_______ test_standalone_memory_serves_think_without_sentence_prediction ________
+test/test_what_episode_memory.py:147: in test_standalone_memory_serves_think_without_sentence_prediction
+    assert m.symbolSpace.expectation is None
+E   assert BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=98, out_features=28, bias=True)\n    (1): Ta...)\n    (1): Tanh()\n    (2): Linear(in_features=28, out_features=14, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) is None
+E    +  where BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=98, out_features=28, bias=True)\n    (1): Ta...)\n    (1): Tanh()\n    (2): Linear(in_features=28, out_features=14, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) = SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...Space(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=14, out_features=4, bias=True)\n  )\n).expectation
+E    +    where SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...Space(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=14, out_features=4, bias=True)\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).symbolSpace
+_________________ test_think_never_consults_the_desired_answer _________________
+test/test_what_thinking_episode.py:94: in test_think_never_consults_the_desired_answer
+    result = model.think((What.supervised(0), What.supervised(1)), x[1:2])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10483: in think
+    first = self.what(question, input_data, executor=executor, record=True,
+bin/Models.py:10278: in what
+    values=tuple(answer.what if answer.available and question.relation is WhatRelation.SUPERVISED else None
+bin/Models.py:10279: in <genexpr>
+    for question in questions for answer in (self.inputSpace.data.what(question),))
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_what_thinking_episode.py:89: in forbidden
+    raise AssertionError("Data.what() reached during thinking")
+E   AssertionError: Data.what() reached during thinking
+_________________ test_reconstruct_buffer_period_assert_holds __________________
+test/test_where_encoding_period.py:105: in test_reconstruct_buffer_period_assert_holds
+    model.runEpoch(batchSize=4, split="test")
+bin/Models.py:15684: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:14969: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:14188: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:14290: in _commit_autobind_from_stash
+    self._maybe_autobind_words(
+bin/Spaces.py:14508: in _maybe_autobind_words
+    return self._autobind_property_concepts(
+bin/Spaces.py:14441: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:62: in lookup_word
+    cs._preflight_concept_row(0)
+bin/Spaces.py:14694: in _preflight_concept_row
+    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E   RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+=============================== warnings summary ===============================
+test/test_what_episode_memory.py::test_default_has_one_memory_and_think_is_single_step
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7130: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1594/cfg2/MM_xor_synth_discourse.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7130: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_what_episode_memory.py::test_standalone_memory_serves_think_without_sentence_prediction
+FAILED test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer
+FAILED test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+3 failed, 134 passed, 5 skipped, 3 warnings in 8.45s

@@ -1,0 +1,22 @@
+.F.......                                                                [100%]
+=================================== FAILURES ===================================
+_____ test_word_whole_membership_is_fixed_while_other_properties_can_learn _____
+
+    def test_word_whole_membership_is_fixed_while_other_properties_can_learn():
+        from PerceptProperties import PrimitiveProperties
+        props=PrimitiveProperties(12)
+        props.define_word(8)
+        before=props.coefficients().detach().clone()
+        assert before[8,ord('A')] == 1 and before[8,ord('0')] == 0
+        optimizer=torch.optim.SGD(props.parameters(),lr=.5)
+        props.coefficients().sum().backward();optimizer.step()
+        torch.testing.assert_close(props.coefficients()[8],before[8])
+>       assert not torch.equal(props.coefficients()[0],before[0])
+E       assert not True
+E        +  where True = <built-in method equal of type object at 0x10e3693a0>(tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0.... 0., 0., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n       grad_fn=<SelectBackward0>), tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]))
+E        +    where <built-in method equal of type object at 0x10e3693a0> = torch.equal
+
+test/test_one_attention.py:23: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_word_whole_membership_is_fixed_while_other_properties_can_learn
+1 failed, 8 passed, 3 deselected in 2.29s

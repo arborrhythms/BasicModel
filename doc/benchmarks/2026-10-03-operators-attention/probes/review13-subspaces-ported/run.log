@@ -1,0 +1,64 @@
+...............................F........                                 [100%]
+=================================== FAILURES ===================================
+_____ test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x145937620>
+
+    def test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term(monkeypatch):
+        from pathlib import Path
+        import Models, util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+        original = model._reconstruct_sentences
+        calls=[]
+        def observe(*args, **kw):
+            record = kw['understanding']
+            assert record.primed.codes.requires_grad
+            from dataclasses import replace, fields
+            assert 'witness_offsets' not in {f.name for f in fields(record)}
+            # The original leaves are targets, never inverse operands. Changing
+            # them cannot change the recovered leaves or the byte objective.
+            returned = original(*args, **kw)
+            result = returned[0] if kw.get('return_decoded') else returned
+            changed = replace(record, word_values=record.word_values + 19)
+            altered = original(args[0], changed.word_values, *args[2:],
+                               **(kw | {'understanding': changed}))
+            if kw.get('return_decoded'):
+                altered = altered[0]
+            torch.testing.assert_close(result[0], altered[0])
+            torch.testing.assert_close(result[2], altered[2])
+            calls.append('explore' if kw.get('decoder_exploit') is not None else 'greedy')
+            return returned
+        monkeypatch.setattr(model, '_reconstruct_sentences', observe)
+        optimizer=model.getOptimizer(lr=.01)
+        try:
+            raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
+            model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
+                batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+            assert calls == ['greedy', 'explore', 'greedy', 'explore']
+>           assert {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')} == {'reconstruction.free_bytes', 'reconstruction.antipode'}
+E           AssertionError: assert {'reconstruction.free_bytes'} == {'reconstruct...n.free_bytes'}
+E             
+E             Extra items in the right set:
+E             'reconstruction.antipode'
+E             Use -v to get more diff
+
+test/test_free_reconstruction.py:61: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_review13_subspaces.py::test_native_percept_rows_and_signed_evidence_are_the_only_live_code_sources
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term
+1 failed, 39 passed, 2 warnings in 23.35s

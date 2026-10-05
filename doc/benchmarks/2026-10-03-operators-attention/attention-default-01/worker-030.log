@@ -1,0 +1,138 @@
+.................FFFFF.......F....s.................................. [ 49%]
+............................................................ss.......FF  [100%]
+=================================== FAILURES ===================================
+__________ test_answer_reads_understanding_with_gradient_cut[False-1] __________
+test/test_understanding_readout.py:35: in test_answer_reads_understanding_with_gradient_cut
+    answer = BasicModel._forward_head(model, carrier)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16975: in _forward_head
+    if (self.word_brackets and record is not None and reader is not None
+        ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'word_brackets'
+__________ test_answer_reads_understanding_with_gradient_cut[False-3] __________
+test/test_understanding_readout.py:35: in test_answer_reads_understanding_with_gradient_cut
+    answer = BasicModel._forward_head(model, carrier)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16975: in _forward_head
+    if (self.word_brackets and record is not None and reader is not None
+        ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'word_brackets'
+__________ test_answer_reads_understanding_with_gradient_cut[True-1] ___________
+test/test_understanding_readout.py:35: in test_answer_reads_understanding_with_gradient_cut
+    answer = BasicModel._forward_head(model, carrier)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16975: in _forward_head
+    if (self.word_brackets and record is not None and reader is not None
+        ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'word_brackets'
+__________ test_answer_reads_understanding_with_gradient_cut[True-3] ___________
+test/test_understanding_readout.py:35: in test_answer_reads_understanding_with_gradient_cut
+    answer = BasicModel._forward_head(model, carrier)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16975: in _forward_head
+    if (self.word_brackets and record is not None and reader is not None
+        ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'word_brackets'
+______________ test_named_concept_head_keeps_its_identity_carrier ______________
+test/test_understanding_readout.py:57: in test_named_concept_head_keeps_its_identity_carrier
+    assert BasicModel._forward_head(model, object()) is carrier
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16975: in _forward_head
+    if (self.word_brackets and record is not None and reader is not None
+        ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'word_brackets'
+_ TestFlatSlabInvariant.test_aligned_serial_allows_compact_ps_into_high_dim_cs _
+test/test_unified_lexicon_codebook.py:857: in test_aligned_serial_allows_compact_ps_into_high_dim_cs
+    Models.ModelFactory.validate_config(cfg)  # no raise expected
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23879: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - flat-slab invariant violated: PS.nOutput*content (8*128=1088) must equal CS.nOutput*content (8*1032=8256), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 8x136, WS 8x136, and CS input 8x1032 -> output 8x1032; IS may be larger (PS scopes the input down).
+___ TestOrthogonalFlags.test_flags_match_expected (cfg='RamsifiedModel.xml') ___
+test/test_use_flags.py:60: in test_flags_match_expected
+    m = _load(cfg)
+        ^^^^^^^^^^
+test/test_use_flags.py:23: in _load
+    model, _cfg = Models.BasicModel.from_config(path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13913: in __init__
+    self.subspace = SymbolSubSpace(
+bin/Language.py:9224: in __init__
+    TheGrammar._ensure_configured()
+bin/Language.py:2308: in _ensure_configured
+    self.configure(cfg)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+_______ test_standalone_memory_serves_think_without_sentence_prediction ________
+test/test_what_episode_memory.py:147: in test_standalone_memory_serves_think_without_sentence_prediction
+    assert m.symbolSpace.expectation is None
+E   assert BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=98, out_features=28, bias=True)\n    (1): Ta...)\n    (1): Tanh()\n    (2): Linear(in_features=28, out_features=14, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) is None
+E    +  where BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=98, out_features=28, bias=True)\n    (1): Ta...)\n    (1): Tanh()\n    (2): Linear(in_features=28, out_features=14, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) = SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...Space(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=14, out_features=4, bias=True)\n  )\n).expectation
+E    +    where SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...Space(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=14, out_features=4, bias=True)\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).symbolSpace
+____________ test_reset_clears_the_standalone_memory_at_epoch_start ____________
+test/test_what_episode_memory.py:179: in test_reset_clears_the_standalone_memory_at_epoch_start
+    m.runEpoch(optimizer=opt, batchSize=2, split="train", max_batches=1)
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+=============================== warnings summary ===============================
+test/test_typed_definition.py::test_covers_walks_sym_whole_links
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_typed_definition.py::test_typed_definition_head_modifiers_exclusions
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7125: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7125: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpu193g823/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-1]
+FAILED test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-3]
+FAILED test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-1]
+FAILED test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-3]
+FAILED test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier
+FAILED test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_serial_allows_compact_ps_into_high_dim_cs
+SUBFAILED(cfg='RamsifiedModel.xml') test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected
+FAILED test/test_what_episode_memory.py::test_standalone_memory_serves_think_without_sentence_prediction
+FAILED test/test_what_episode_memory.py::test_reset_clears_the_standalone_memory_at_epoch_start
+9 failed, 129 passed, 3 skipped, 4 warnings, 2 subtests passed in 10.11s

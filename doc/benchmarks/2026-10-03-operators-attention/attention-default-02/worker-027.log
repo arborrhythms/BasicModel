@@ -1,0 +1,23 @@
+........................................................................ [ 35%]
+............................F..F........................................ [ 70%]
+.............................................................            [100%]
+=================================== FAILURES ===================================
+_____________ test_syntactic_order_defaults_zero_and_reads_config ______________
+test/test_syntactic_order.py:57: in test_syntactic_order_defaults_zero_and_reads_config
+    assert "<symbolicOrder>" in src
+E   assert '<symbolicOrder>' in '<?xml version="1.0" ?>\n<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n       xsi:noNamespaceSchemaLoc...S)</rule>\n          </symbols>\n        </compose>\n      </grammar>\n    </language>\n  </SymbolSpace>\n\n</model>\n'
+____________________ test_syntactic_order_negative_rejected ____________________
+test/test_syntactic_order.py:134: in test_syntactic_order_negative_rejected
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_syntactic_order.py::test_syntactic_order_defaults_zero_and_reads_config
+FAILED test/test_syntactic_order.py::test_syntactic_order_negative_rejected
+2 failed, 203 passed, 1 warning in 5.68s

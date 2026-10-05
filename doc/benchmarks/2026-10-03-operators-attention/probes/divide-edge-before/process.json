@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-operators-attention/divide_edge_probe.py"
+  ],
+  "pid": 10919,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 427361456,
+  "elapsed_seconds": 3.5842151250108145,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/divide-edge-before/run.log"
+}

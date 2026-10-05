@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_catalogue.py",
+    "test/test_clause_storage.py",
+    "test/test_clause_grammar.py",
+    "test/test_selected_relation_meaning.py",
+    "test/test_sentence_references.py",
+    "test/test_grammar_order_typing.py"
+  ],
+  "pid": 91741,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 476153200,
+  "elapsed_seconds": 4.914274959010072,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/verb-head-after/run.log"
+}

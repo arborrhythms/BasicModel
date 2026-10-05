@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-operators-attention/inspect_admission.py",
+    "-s"
+  ],
+  "pid": 2410,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 503940392,
+  "elapsed_seconds": 3.86752675002208,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/admission-stage-before/run.log"
+}

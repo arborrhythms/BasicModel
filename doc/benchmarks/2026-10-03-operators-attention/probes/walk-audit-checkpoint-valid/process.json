@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_walk_trials.py",
+    "test/test_one_attention.py",
+    "test/test_interleave_schedule.py",
+    "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner"
+  ],
+  "pid": 564,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 753551448,
+  "elapsed_seconds": 11.646859959000722,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/walk-audit-checkpoint-valid/run.log"
+}

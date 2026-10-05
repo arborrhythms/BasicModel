@@ -1,0 +1,52 @@
+........................F..................F............................ [ 91%]
+.......                                                                  [100%]
+=================================== FAILURES ===================================
+_ TestUnaryGrammarLayers.test_non_excludes_the_expressed_pole_without_an_inverse _
+
+self = <test_grammar_binary_ops.TestUnaryGrammarLayers testMethod=test_non_excludes_the_expressed_pole_without_an_inverse>
+
+    def test_non_excludes_the_expressed_pole_without_an_inverse(self):
+        """Non-affirming exclusion preserves the other pole and metadata."""
+        layer = NonLayer(representation='poles')
+        x = torch.rand(4, 3, 6)
+        y = layer.compose(x)
+        self.assertEqual(y.shape, x.shape)
+        self.assertTrue(torch.equal(y[..., 0], torch.zeros_like(x[..., 0])))
+        self.assertTrue(torch.equal(y[..., 1:], x[..., 1:]))
+        self.assertTrue(torch.equal(layer.compose(y), y))
+>       with self.assertRaises(NotImplementedError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: NotImplementedError not raised
+
+test/test_grammar_binary_ops.py:60: AssertionError
+____________________ test_ws_start_scoped_to_symbolic_space ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11eecbce0>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1411/test_ws_start_scoped_to_symbol0')
+
+    def test_ws_start_scoped_to_symbolic_space(monkeypatch, tmp_path):
+        """``<start>`` under ``<WholeSpace>`` configures SS starts; the PS
+        root ``U`` does NOT leak into the symbolic start set."""
+        g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
+        assert g.ws_start_symbol == "isEqual_O1"
+        assert ("isEqual_O1",) in g.ws_start_patterns
+>       assert ("exist_O1",) in g.ws_start_patterns
+E       AssertionError: assert ('exist_O1',) in (('isEqual_O1',), ('S',))
+E        +  where (('isEqual_O1',), ('S',)) = <Language.Grammar object at 0x11eec9340>.ws_start_patterns
+
+test/test_grammar_space_scoped_starts.py:94: AssertionError
+=============================== warnings summary ===============================
+test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_excludes_the_expressed_pole_without_an_inverse
+FAILED test/test_grammar_space_scoped_starts.py::test_ws_start_scoped_to_symbolic_space
+2 failed, 77 passed, 2 warnings in 3.28s

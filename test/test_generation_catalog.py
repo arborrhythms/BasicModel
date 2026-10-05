@@ -21,7 +21,7 @@ def test_declared_generation_catalog_shares_one_optimizer_owner(tmp_path, output
         language = model.languageSpace
         names = language._generate_binary_names + language._generate_unary_names
         assert set(names) == {rule.method_name for rule in TheGrammar.rules_downward}
-        assert bool(language.generate_policy is not None) is output_loop
+        assert language.generate_policy is not None  # reconstruction owns it in either output mode
         shared = model.symbolSpace.subspace._resolve_rule_layer("CS", "lift")
         assert language.resolve_generation_op("CS", "lift") is shared
         assert shared in language._generate_binary_ops
@@ -85,7 +85,7 @@ def test_shared_generation_weights_and_adam_survive_strict_reload(tmp_path, outp
                 instance.symbolSpace.soft_reset()
 
 
-def test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state(monkeypatch):
+def test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy(monkeypatch):
     import Language
     import util
 
@@ -105,11 +105,11 @@ def test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state
             for role in roles]
         before = torch.get_rng_state().clone()
         result = Language.LanguageSpace(SimpleNamespace(subspace=coordinator))
-        assert torch.equal(torch.get_rng_state(), before)
+        assert not torch.equal(torch.get_rng_state(), before)  # the new decoder chooser initializes once
         assert result.resolve_generation_op("CS", "sum") is source
         assert result.resolve_generation_op("SS", "sum") is source
-        assert not list(result.parameters())
-        assert not result.state_dict()
+        assert {id(p) for p in result.parameters()} == {id(p) for p in result.generate_policy.parameters()}
+        assert {name for name in result.state_dict() if not name.startswith('_generate_')} == {'generate_policy.weight','generate_policy.bias'}
         return result
 
     first = catalog(("CS", "SS"))

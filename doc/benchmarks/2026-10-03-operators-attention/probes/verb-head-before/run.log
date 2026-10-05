@@ -1,0 +1,52 @@
+.................FF                                                      [100%]
+=================================== FAILURES ===================================
+___________________ test_verb_declares_first_operand_as_head ___________________
+
+    def test_verb_declares_first_operand_as_head():
+        from Language import Grammar
+        grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
+        verb=next(rule for rule in grammar.rules_upward if rule.method_name == 'verb')
+>       assert verb.head_role == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = RuleDef(space_role='CS', canonical='verb_O1 -> verb.forward(verb_I1, verb_I2)', arity=2, method_name='verb', lhs='verb...e, effect_reads=('percept', 'knowing', 'symbolic', 'serial', 'priming', 'budget'), field_eligible=False, order_delta=0).head_role
+
+test/test_operator_catalogue.py:207: AssertionError
+________ test_verb_head_does_not_erase_its_object_in_the_clause_journal ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123073860>
+
+    def test_verb_head_does_not_erase_its_object_in_the_clause_journal(monkeypatch):
+        from Language import Grammar
+        import Language
+        from ClauseJournal import finish_clause
+        from Understanding import AnswerProgram
+        from types import SimpleNamespace
+        grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
+        monkeypatch.setattr(Language, 'TheGrammar', grammar)
+        by_name={rule.method_name:rule for rule in grammar.rules_upward}
+        # Exercise the required head even against the old unheaded declaration.
+        verb=by_name['verb']._replace(head_role=1)
+        owner=SimpleNamespace(_compose_binary_rules=(verb, by_name['lift']), _compose_unary_rules=())
+        leaves=torch.eye(4)[:3]
+        vp=leaves[1] + .25*leaves[2]
+        point=.5*(leaves[0]+vp)
+        frames=torch.zeros(5,3,4)
+        frames[3]=torch.stack((leaves[1],leaves[2],vp))
+        frames[4]=torch.stack((leaves[0],vp,point))
+        entry=AnswerProgram(rows=torch.arange(3),word_rows=torch.arange(3),
+            activations=torch.ones(3),leaves=leaves,
+            actions=torch.tensor([[0,-1,0],[0,-1,1],[0,-1,2],[1,0,-1],[1,1,-1]]),
+            targets=torch.tensor([1,-1]),end_state=point[None],
+            concept_ids=torch.tensor([101,102,103]), operation_values=frames)
+        result=finish_clause(owner,entry)
+>       assert result.factored_refs == (101,102,103)
+E       assert (101, 102, -1) == (101, 102, 103)
+E         
+E         At index 2 diff: -1 != 103
+E         Use -v to get more diff
+
+test/test_operator_catalogue.py:235: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_verb_declares_first_operand_as_head
+FAILED test/test_operator_catalogue.py::test_verb_head_does_not_erase_its_object_in_the_clause_journal
+2 failed, 17 passed in 2.04s

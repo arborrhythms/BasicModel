@@ -1,0 +1,233 @@
+.............................sssss..................FFF...........Fs..ss [ 54%]
+ssssssssss..................FFFFFFF..........F....ss.......              [100%]
+=================================== FAILURES ===================================
+_______________________ test_reset_fires_every_ar_batch ________________________
+test/test_reset_at_batch_boundary.py:64: in test_reset_fires_every_ar_batch
+    model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+__________________ test_per_row_state_clears_between_batches ___________________
+test/test_reset_at_batch_boundary.py:89: in test_per_row_state_clears_between_batches
+    model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+______________________ test_end_of_stream_reset_to_false _______________________
+test/test_reset_at_batch_boundary.py:119: in test_end_of_stream_reset_to_false
+    model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+_______________________ test_retired_names_remain_absent _______________________
+test/test_retired_names.py:175: in test_retired_names_remain_absent
+    models[key] = factories[key]()
+                  ^^^^^^^^^^^^^^^^
+test/test_cs_reentrancy.py:65: in _make_model
+    m, _ = Models.BasicModel.from_config(_CONFIG)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+___________________ test_default_router_wire_serial_is_both ____________________
+test/test_router_fires_per_word.py:198: in test_default_router_wire_serial_is_both
+    model = _make_serial_model()
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmph2fti1ru.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmph2fti1ru.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmph2fti1ru.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+____________ test_serial_words_use_the_shared_operation_layer[both] ____________
+test/test_router_fires_per_word.py:206: in test_serial_words_use_the_shared_operation_layer
+    model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9j3wvo6w.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9j3wvo6w.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9j3wvo6w.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________ test_serial_words_use_the_shared_operation_layer[per-word] __________
+test/test_router_fires_per_word.py:206: in test_serial_words_use_the_shared_operation_layer
+    model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdmqqmr66.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdmqqmr66.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdmqqmr66.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________ test_router_wire_serial_boundary_no_serial_forward_compose __________
+test/test_router_fires_per_word.py:220: in test_router_wire_serial_boundary_no_serial_forward_compose
+    model = _make_serial_model(router_wire_serial="boundary")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpl9ox470f.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpl9ox470f.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpl9ox470f.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+____________ test_router_wire_serial_off_no_serial_forward_compose _____________
+test/test_router_fires_per_word.py:235: in test_router_wire_serial_off_no_serial_forward_compose
+    model = _make_serial_model(router_wire_serial="off")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpoe9hdglw.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpoe9hdglw.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpoe9hdglw.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+______________ test_boundary_generate_gated_by_router_wire_serial ______________
+test/test_router_fires_per_word.py:276: in test_boundary_generate_gated_by_router_wire_serial
+    assert _generate_fires("both") >= 1, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:254: in _generate_fires
+    model = _make_serial_model(router_wire_serial=mode)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpz4br6q40.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpz4br6q40.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpz4br6q40.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_________________ test_invalid_router_wire_serial_raises_loud __________________
+test/test_router_fires_per_word.py:290: in test_invalid_router_wire_serial_raises_loud
+    with pytest.raises(ValueError, match="routerWireSerial"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'routerWireSerial'
+E     Actual message: "XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpqgtwt7dq.xml\n  (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\n/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpqgtwt7dq.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\n/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpqgtwt7dq.xml fails to validate\nFix the config, or update data/model.xsd if this is a new config element."
+_____ test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode ______
+test/test_row_local_concept_optimizer.py:289: in test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode
+    model.create(
+E   TypeError: BasicModel.create() got an unexpected keyword argument 'subsymbolicOrder'
+=============================== warnings summary ===============================
+test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch
+FAILED test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches
+FAILED test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false
+FAILED test/test_retired_names.py::test_retired_names_remain_absent - ValueEr...
+FAILED test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]
+FAILED test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose
+FAILED test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose
+FAILED test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial
+FAILED test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud
+FAILED test/test_row_local_concept_optimizer.py::test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode
+12 failed, 99 passed, 20 skipped, 1 warning in 7.73s

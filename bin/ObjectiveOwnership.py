@@ -20,7 +20,7 @@ def registry_costs(registry, *, reader_rows=None):
         elif category == 'reg':
             # A regularizer writes only the owned parameters it actually uses.
             owners = tuple('penalty.' + owner for owner in PRIMARY)
-        elif objective in ('expectation', 'intra', 'inter', 'discourse'):
+        elif objective in ('expectation', 'intra', 'inter', 'expectation'):
             owners = ('expectation',)
         elif objective in ('output', 'prediction', 'policy'):
             owners = ('output',)

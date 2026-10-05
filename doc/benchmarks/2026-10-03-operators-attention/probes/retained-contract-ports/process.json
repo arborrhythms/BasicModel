@@ -1,0 +1,32 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py",
+    "test/test_generation_catalog.py",
+    "test/test_reader_trial_ownership.py",
+    "test/test_interleave_lifecycle.py",
+    "test/test_xor_grammar.py",
+    "test/test_grammar_separator.py",
+    "test/test_occurrence_coordinates.py",
+    "test/test_query_native_ids.py",
+    "test/test_word_interpretation.py",
+    "test/test_gradient_factorization.py",
+    "test/test_union_difference_ops.py",
+    "test/test_shamatha_inline_grammar.py",
+    "test/test_definition_taxonomy.py",
+    "test/test_sentence_identity.py",
+    "test/test_surface_grammar.py",
+    "test/test_thought_answer_adapters.py",
+    "test/test_grammar_word_learning.py",
+    "test/test_relation_closing.py"
+  ],
+  "pid": 4218,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2648428144,
+  "elapsed_seconds": 30.06821166697773,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/retained-contract-ports/run.log"
+}

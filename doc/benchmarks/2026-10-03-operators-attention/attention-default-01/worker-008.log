@@ -1,0 +1,136 @@
+..................FFFFFFsF.F..........F.ssssss..............F....ss..... [ 67%]
+.Fs....................F.....ss....                                      [100%]
+=================================== FAILURES ===================================
+_________ test_omitted_enabled_and_disabled_model_settings[None-True] __________
+test/test_expectation_defaults.py:81: in test_omitted_enabled_and_disabled_model_settings
+    (re.search(r"<interLossWeight>.*?</interLossWeight>", source).group(), ""),
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'group'
+_________ test_omitted_enabled_and_disabled_model_settings[true-True] __________
+test/test_expectation_defaults.py:81: in test_omitted_enabled_and_disabled_model_settings
+    (re.search(r"<interLossWeight>.*?</interLossWeight>", source).group(), ""),
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'group'
+________ test_omitted_enabled_and_disabled_model_settings[false-False] _________
+test/test_expectation_defaults.py:81: in test_omitted_enabled_and_disabled_model_settings
+    (re.search(r"<interLossWeight>.*?</interLossWeight>", source).group(), ""),
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'group'
+_ test_canonical_configuration_enables_only_the_selected_prediction_objective __
+test/test_expectation_defaults.py:101: in test_canonical_configuration_enables_only_the_selected_prediction_objective
+    assert float(training.findtext("interLossWeight")) == .1
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: float() argument must be a string or a real number, not 'NoneType'
+______ test_native_runtime_reports_pairs_without_accumulating_or_updating ______
+test/test_expectation_defaults.py:109: in test_native_runtime_reports_pairs_without_accumulating_or_updating
+    model = _build_ladder_variant(tmp_path, "runtime_expectation", [
+test/test_meronomy_ladder.py:457: in _build_ladder_variant
+    assert old in src, old
+E   AssertionError: <interLossWeight>0.0</interLossWeight>
+E   assert '<interLossWeight>0.0</interLossWeight>' in '<?xml version="1.0" ?>\n<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n       xsi:noNamespaceSchemaLoc... <SymbolSpace>\n    <language>\n      <grammar>ladder.grammar</grammar>\n    </language>\n  </SymbolSpace>\n</model>\n'
+____ test_native_future_and_other_row_changes_do_not_change_first_estimate _____
+test/test_expectation_defaults.py:151: in test_native_future_and_other_row_changes_do_not_change_first_estimate
+    model = _build_ladder_variant(tmp_path, f"isolated_expectation_{index}", [
+test/test_meronomy_ladder.py:457: in _build_ladder_variant
+    assert old in src, old
+E   AssertionError: <interLossWeight>0.0</interLossWeight>
+E   assert '<interLossWeight>0.0</interLossWeight>' in '<?xml version="1.0" ?>\n<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n       xsi:noNamespaceSchemaLoc... <SymbolSpace>\n    <language>\n      <grammar>ladder.grammar</grammar>\n    </language>\n  </SymbolSpace>\n</model>\n'
+__________ test_expectation_off_keeps_every_packed_observation_in_ltm __________
+test/test_expectation_defaults.py:228: in test_expectation_off_keeps_every_packed_observation_in_ltm
+    assert model.symbolSpace.expectation is None
+E   assert BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) is None
+E    +  where BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) = SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n).expectation
+E    +    where SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).symbolSpace
+________ test_enabling_expectation_preserves_the_callers_random_stream _________
+test/test_expectation_defaults.py:268: in test_enabling_expectation_preserves_the_callers_random_stream
+    assert model.symbolSpace.expectation is None
+E   assert BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) is None
+E    +  where BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) = SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n).expectation
+E    +    where SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).symbolSpace
+________________ test_expectation_names_and_production_defaults ________________
+test/test_expectation_review.py:74: in test_expectation_names_and_production_defaults
+    assert float(training.findtext("interLossWeight")) == .1
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: float() argument must be a string or a real number, not 'NoneType'
+_________ test_vector_head_selects_symbols_without_truncating_knowing __________
+test/test_field_binding.py:170: in test_vector_head_selects_symbols_without_truncating_knowing
+    model, _ = grounded_model(tmp_path, inventory=128)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1517/test_vector_head_selects_symbo0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1517/test_vector_head_selects_symbo0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1517/test_vector_head_selects_symbo0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_____________ test_checkpoint_restores_optimizer_counters_and_rng ______________
+test/test_fineweb_preflight.py:133: in test_checkpoint_restores_optimizer_counters_and_rng
+    model.runEpoch(optimizer=model._optimizer, batchSize=2,
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+_____ test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term ______
+test/test_free_reconstruction.py:33: in test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term
+    model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_field_learning.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]
+FAILED test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[true-True]
+FAILED test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]
+FAILED test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective
+FAILED test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating
+FAILED test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate
+FAILED test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm
+FAILED test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream
+FAILED test/test_expectation_review.py::test_expectation_names_and_production_defaults
+FAILED test/test_field_binding.py::test_vector_head_selects_symbols_without_truncating_knowing
+FAILED test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+FAILED test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_owns_antipode_term
+12 failed, 83 passed, 12 skipped, 2 warnings in 6.61s

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_review11_contracts.py",
+    "test/test_decoder_exploration.py",
+    "test/test_output_walk.py",
+    "test/test_global_consume.py",
+    "test/test_review10_contracts.py",
+    "test/test_thought_review.py",
+    "test/test_free_reconstruction.py",
+    "test/test_objective_ownership.py",
+    "test/test_one_attention.py"
+  ],
+  "pid": 18577,
+  "exit_code": 2,
+  "reason": "exit",
+  "peak_memory_bytes": 4350728528,
+  "elapsed_seconds": 244.80627945801825,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review11-focused-ports/run.log"
+}

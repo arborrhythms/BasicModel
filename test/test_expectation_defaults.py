@@ -78,16 +78,18 @@ def test_omitted_enabled_and_disabled_model_settings(tmp_path, setting, enabled)
     replacement = "" if setting is None else f"<sentenceExpectation>{setting}</sentenceExpectation>"
     model = _build_ladder_variant(tmp_path, "expectation_default", [
         (re.search(r"<sentenceExpectation>.*?</sentenceExpectation>", source).group(), replacement),
-        (re.search(r"<interLossWeight>.*?</interLossWeight>", source).group(), ""),
-        (re.search(r"<armaScale>.*?</armaScale>", source).group(), ""),
+        (re.search(r"<sentenceExpectationLossWeight>.*?</sentenceExpectationLossWeight>", source).group(), ""),
+        (re.search(r"<sentenceExpectationArmaScale>.*?</sentenceExpectationArmaScale>", source).group(), ""),
     ])
     try:
-        assert (model.symbolSpace.discourse is not None) == enabled
+        assert model.symbolSpace.expectation is not None  # word level stays live
+        assert model.symbolSpace.expectation.expectation_enabled == enabled
+        assert ('sentence' in model.symbolSpace.expectation.enabled_levels) == enabled
         assert model.inter_loss_weight == 0.1
         assert model.arma_scale == 0
         assert model.inter_contrastive_weight == 0
         if enabled:
-            assert model.symbolSpace.discourse.expectation_scope == "structured"
+            assert model.symbolSpace.expectation.expectation_scope == "structured"
     finally:
         model.End()
         torch._dynamo.reset()
@@ -98,9 +100,9 @@ def test_canonical_configuration_enables_only_the_selected_prediction_objective(
     config = ET.parse(Path(__file__).resolve().parents[1] / "data/BasicModel.xml")
     training = config.getroot().find(".//architecture/training")
     assert training.findtext("sentenceExpectation") == "true"
-    assert float(training.findtext("interLossWeight")) == .1
-    assert float(training.findtext("armaScale")) == 0
-    assert float(training.findtext("interContrastiveWeight")) == 0
+    assert float(training.findtext("sentenceExpectationLossWeight")) == .1
+    assert float(training.findtext("sentenceExpectationArmaScale")) == 0
+    assert float(training.findtext("sentenceExpectationContrastiveWeight")) == 0
 
 
 def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path, monkeypatch, eager_reading):
@@ -110,13 +112,13 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
         ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
-        ("<interLossWeight>0.0</interLossWeight>", "<interLossWeight>0.1</interLossWeight>"),
+        ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
     ])
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
     model._install_unit_span_fn()
     model.train()  # the runtime call must apply its own declared training gate
-    discourse = model.symbolSpace.discourse
+    discourse = model.symbolSpace.expectation
     before = [p.detach().clone() for p in discourse.parameters()]
     try:
         inputs = model.inputSpace.prepPackedInput([["1 plus 2", "3 plus 4"]])
@@ -152,7 +154,7 @@ def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_pa
             ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
             ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
             ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
-            ("<interLossWeight>0.0</interLossWeight>", "<interLossWeight>0.1</interLossWeight>"),
+            ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
         ])
         model._tensor_peer_while_eager = True
         model._chart_compose_per_word = lambda: None
@@ -162,7 +164,7 @@ def test_native_future_and_other_row_changes_do_not_change_first_estimate(tmp_pa
             inputs = model.inputSpace.prepPackedInput(rows)
             model.runBatch(train=False, batchSize=2, split="runtime",
                            batch_override=(inputs, torch.zeros(2, 1, 0)))
-            comparison = model.symbolSpace.discourse.last_expectation_comparison(0)
+            comparison = model.symbolSpace.expectation.last_expectation_comparison(0)
             assert comparison is not None
             estimates.append(comparison.estimate.roles)
         finally:
@@ -180,7 +182,7 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
     model = _build_ladder_variant(tmp_path, "toggle_expectation", [
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
-        ("<interLossWeight>0.0</interLossWeight>", "<interLossWeight>0.1</interLossWeight>"),
+        ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
     ])
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
@@ -189,11 +191,11 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
     model.eval()
     optimizer = model.getOptimizer(lr=1e-5)
     owner = model._what_memory()
-    assert model.symbolSpace.discourse is None
+    assert not model.symbolSpace.expectation.expectation_enabled
     try:
         for enabled in (True, False, True):
             model.set_sentence_expectation(enabled)
-            discourse = model.symbolSpace.discourse
+            discourse = model.symbolSpace.expectation
             parameters = list(discourse._inter_predictor.parameters())
             before = [p.detach().clone() for p in parameters]
             count = discourse.expectation_metrics()["predicted_targets"]
@@ -225,7 +227,7 @@ def test_expectation_off_keeps_every_packed_observation_in_ltm(tmp_path, monkeyp
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
     model._install_unit_span_fn()
-    assert model.symbolSpace.discourse is None
+    assert not model.symbolSpace.expectation.expectation_enabled
     store = model.symbolSpace.ltm_store
     try:
         before = len(store)
@@ -245,12 +247,12 @@ def test_expectation_off_keeps_every_packed_observation_in_ltm(tmp_path, monkeyp
 
 def test_packed_ltm_ignores_masked_slots_even_with_retained_storage(monkeypatch):
     from types import SimpleNamespace
-    from Layers import InterSentenceLayer
+    from Layers import BracketExpectation
     from Models import BasicModel
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     entry = f.program('cat')
-    discourse = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
+    discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
         concept_dim=8, expectation_scope='structured')
     from reading_fixtures import commit_reading
     store = f.store
@@ -265,7 +267,7 @@ def test_packed_ltm_ignores_masked_slots_even_with_retained_storage(monkeypatch)
 def test_enabling_expectation_preserves_the_callers_random_stream(tmp_path):
     from test_meronomy_ladder import _build_ladder_variant
     model = _build_ladder_variant(tmp_path, "expectation_rng", [])
-    assert model.symbolSpace.discourse is None
+    assert not model.symbolSpace.expectation.expectation_enabled
     before = torch.get_rng_state().clone()
     try:
         model.set_sentence_expectation(True)

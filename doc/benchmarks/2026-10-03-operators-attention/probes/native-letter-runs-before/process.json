@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py::test_native_attention_keeps_every_complete_letter_run"
+  ],
+  "pid": 96927,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 444122504,
+  "elapsed_seconds": 3.8753046249912586,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/native-letter-runs-before/run.log"
+}

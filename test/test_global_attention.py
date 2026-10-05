@@ -34,7 +34,7 @@ def _entropy(a):
 
 
 def _spaces(B=2, D=16, big_codebook=False):
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     V = 65536 if big_codebook else 11
     return [
         {"id": GA.SPACE_INPUT, "keys": torch.randn(B, 5, D)},      # per-batch
@@ -46,11 +46,11 @@ def _spaces(B=2, D=16, big_codebook=False):
 
 
 # ---------------------------------------------------------------------------
-# (a) the GlobalAttention module in isolation
+# (a) the PrimedSymbolReader module in isolation
 # ---------------------------------------------------------------------------
 
 def test_ranges_over_all_addressable_spaces():
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     ga = GA()
     sp = _spaces(B=2, D=16)
     out = ga(concept_q=torch.randn(2, 16), symbol_q=torch.randn(2, 16),
@@ -62,7 +62,7 @@ def test_ranges_over_all_addressable_spaces():
 
 
 def test_typed_where_and_soft_read_shapes():
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     ga = GA()
     sp = _spaces(B=2, D=16)
     out = ga(concept_q=torch.randn(2, 16), symbol_q=torch.randn(2, 16),
@@ -78,7 +78,7 @@ def test_large_shared_codebook_is_memory_safe():
     # A 65536-row shared codebook must NOT be broadcast to [B, V, D] (it is
     # matmul'd). If it were materialized this would blow memory; reaching the
     # asserts means the shared path held.
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     ga = GA()
     sp = _spaces(B=2, D=16, big_codebook=True)
     out = ga(concept_q=torch.randn(2, 16), symbol_q=torch.randn(2, 16),
@@ -91,7 +91,7 @@ def test_gradient_stops_at_keys():
     # A downstream loss on the soft-read content trains the scorer ONLY; the
     # codebook/LTM/input keys and the query receive no gradient (the EMA/
     # persistent stores stay frozen; orders.md §6 "Learning").
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     ga = GA()
     B, D = 2, 16
     inp = torch.randn(B, 5, D, requires_grad=True)
@@ -109,7 +109,7 @@ def test_gradient_stops_at_keys():
 def test_temperature_flattens_peaked_distribution():
     # The stochastic element: with a peaked prior (space_bias), a higher
     # temperature raises entropy and bleeds mass off the preferred space.
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     ga = GA()
     ga.space_bias.data = torch.tensor([3.0, -3.0, -3.0, -3.0, -3.0, -3.0])  # prefer INPUT
     sp = _spaces(B=2, D=16)
@@ -120,7 +120,7 @@ def test_temperature_flattens_peaked_distribution():
 
 
 def test_temperature_zero_is_sharpest():
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     ga = GA()
     ga.space_bias.data = torch.tensor([3.0, -3.0, -3.0, -3.0, -3.0, -3.0])
     sp = _spaces(B=2, D=16)
@@ -132,7 +132,7 @@ def test_temperature_zero_is_sharpest():
 
 
 def test_empty_spaces_returns_none():
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     ga = GA()
     assert ga(concept_q=torch.randn(2, 8), symbol_q=None, spaces=[],
               temperature=0.0) is None
@@ -164,22 +164,23 @@ def _batch(m):
 
 @pytest.mark.slow
 def test_global_on_builds_module():
-    from Spaces import GlobalAttention
+    from Attention import PrimedSymbolReader
     m = _build("MM_global.xml")
-    assert m.global_attention_enabled
-    assert isinstance(m.global_attention, GlobalAttention)
+    assert not hasattr(m, 'answer_attention_enabled')
+    assert isinstance(m.answer_attention, PrimedSymbolReader)
 
 
 @pytest.mark.slow
-def test_global_off_has_no_module():
-    m = _build("MM_reading.xml")            # readingAttention only
-    assert not getattr(m, "global_attention_enabled", False)
-    assert getattr(m, "global_attention", None) is None
+def test_reading_config_shares_the_answer_reader():
+    from Attention import PrimedSymbolReader
+    m = _build("MM_reading.xml")
+    assert not hasattr(m, 'answer_attention_enabled')
+    assert isinstance(m.answer_attention, PrimedSymbolReader)
 
 
 @pytest.mark.slow
 def test_forward_parks_typed_obs_over_spaces(monkeypatch):
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     m = _build("MM_global.xml")
     x = _batch(m)
     from configuration_fixtures import freeze_admission
@@ -190,7 +191,7 @@ def test_forward_parks_typed_obs_over_spaces(monkeypatch):
         out2 = m.forward(x)[2]
     assert torch.isfinite(out1).all()
     assert torch.equal(out1, out2), "dark global attention stays deterministic"
-    obs = getattr(m, "_global_attention_obs", None)
+    obs = getattr(m, "_answer_attention_obs", None)
     assert obs is not None
     # input window + STM + codebook are present (LTM only under ltmConsolidation).
     # MM_global's WholeSpace is <codebook>none</codebook>, so the codebook
@@ -203,7 +204,7 @@ def test_forward_parks_typed_obs_over_spaces(monkeypatch):
 
 @pytest.mark.slow
 def test_addressable_spaces_gathers_input_stm_codebook():
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     m = _build("MM_global.xml")
     x = _batch(m)
     m.train()
@@ -225,7 +226,7 @@ def test_ltm_space_appears_when_store_present_but_excludes_estimates():
     # The LTM address space is gathered from symbolSpace.ltm_store; stage a
     # synthetic TernaryTruthStore so the path is exercised without
     # <ltmConsolidation>.
-    from Spaces import GlobalAttention as GA
+    from Attention import PrimedSymbolReader as GA
     from Layers import TernaryTruthStore
     m = _build("MM_global.xml")
     if getattr(m, "symbolSpace", None) is None:
@@ -253,7 +254,7 @@ def test_ltm_space_appears_when_store_present_but_excludes_estimates():
 def test_global_params_reach_optimizer():
     m = _build("MM_global.xml")
     opt = m.getOptimizer(lr=0.01)
-    gp = {p.data_ptr() for p in m.global_attention.parameters()}
+    gp = {p.data_ptr() for p in m.answer_attention.parameters()}
     op = set()
     groups = list(getattr(opt, "param_groups", []) or [])
     for o in getattr(opt, "optimizers", []) or []:

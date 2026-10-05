@@ -1,0 +1,52 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_numeric_head_does_not_call_learned_retrieval _______________
+
+    def test_numeric_head_does_not_call_learned_retrieval():
+        from Models import BasicModel
+        from Spaces import SubSpace
+        shape = (3, 2)
+        value = torch.tensor([[[1., 2.], [0., 0.], [0., 0.]]])
+        sub = SubSpace.from_tensor(value, inputShape=shape, outputShape=shape,
+                                  nInputDim=2, nOutputDim=2)
+        class Head:
+            concept_ids = ()
+            inputShape = shape
+            def __call__(self, carrier):
+                return carrier
+        def forbidden(*args, **kwargs):
+            raise AssertionError('the numeric head called nonlinear retrieval')
+        model = SimpleNamespace(outputSpace=Head(), word_brackets=True,
+            answer_synthesis=False, answer_attention=object(), answer_record_reader=None,
+            _answer_attention_step=forbidden, perceptualSpace=SimpleNamespace(subspace=sub))
+        state = (value[:, 0], value, torch.ones(1, dtype=torch.long))
+>       result = BasicModel._forward_head(model, sub, sentence_state=state)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_review11_contracts.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:17077: in _forward_head
+    self._answer_attention_step(sub, self.perceptualSpace.subspace,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (SubSpace(
+  (activeEncoding): ActiveEncoding()
+  (objectEncoding): EventEncoding()
+  (whatEncoding): WhatEncoding()
+ ...ordEncoding()
+  (activation): Tensor()
+  (event): Tensor()
+  (what): Tensor()
+  (where): Tensor()
+  (when): Tensor()
+))
+kwargs = {'record': None, 'charge': True}
+
+    def forbidden(*args, **kwargs):
+>       raise AssertionError('the numeric head called nonlinear retrieval')
+E       AssertionError: the numeric head called nonlinear retrieval
+
+test/test_review11_contracts.py:21: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_review11_contracts.py::test_numeric_head_does_not_call_learned_retrieval
+1 failed in 2.21s

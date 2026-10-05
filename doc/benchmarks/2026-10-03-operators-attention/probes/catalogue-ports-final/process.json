@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_mental_model.py",
+    "test/test_taxonomy_policy.py",
+    "test/test_operator_catalogue.py",
+    "test/test_decoder_exploration.py",
+    "test/test_clause_storage.py",
+    "test/test_clause_grammar.py",
+    "test/test_normal_thought_controller.py",
+    "test/test_thought_answer_adapters.py::test_subgoal_carries_the_typed_child_result_into_the_answer"
+  ],
+  "pid": 87503,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 712460400,
+  "elapsed_seconds": 9.840433040983044,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/catalogue-ports-final/run.log"
+}

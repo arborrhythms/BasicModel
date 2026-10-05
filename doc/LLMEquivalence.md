@@ -66,6 +66,11 @@ it, and where it deliberately does not, is recorded beside each.
    distribution over the next representation: a mixture, a diffusion, or
    the discrete form BasicModel already has, the chooser over candidate
    rows.
+   In 6.8-1 the word level of `BracketExpectation` supplies that discrete
+   distribution over a native candidate bank. The frozen next-word pilot uses
+   its probabilities. This meets the distribution requirement at the word
+   bracket; it does not make the sentence-level regressor a distribution over
+   all sentences or establish the language learning gates.
 3. **The history must be the same.** A token model conditions on every
    token in its window; the sentence model conditions on what it keeps.
    With LTM rows as a lossy statistic

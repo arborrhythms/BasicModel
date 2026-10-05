@@ -1,0 +1,16 @@
+test/test_review14_contracts.py
+test/test_review13_subspaces.py
+test/test_derived_concept_codes.py
+test/test_concept_code_ownership.py
+test/test_objective_ownership.py
+test/test_sentence_priming.py
+test/test_review10_contracts.py
+test/test_review11_contracts.py
+test/test_review12_contracts.py
+test/test_decoder_exploration.py
+test/test_echoic_decoder.py
+test/test_output_walk.py
+test/test_tied_operator_reconstruction.py
+test/test_free_reconstruction.py
+test/test_readback_operand_unaries.py
+test/test_review14_addendum.py

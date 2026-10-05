@@ -1,0 +1,1060 @@
+{
+  "reader_weights": [
+    {
+      "epoch": 1,
+      "norm": 5.851606082381338,
+      "parameters": {
+        "inputSpace.outputSpace._readout_bias": 0.002493628766387701,
+        "inputSpace.outputSpace.layers.0.W": 0.07401810586452484,
+        "inputSpace.outputSpace.layers.0.biasWeight": 0.0,
+        "inputSpace.outputSpace.layers.1.W": 5.301098823547363,
+        "inputSpace.outputSpace.layers.1.biasWeight": 0.0,
+        "answer_attention.scorer.0.weight": 2.401738166809082,
+        "answer_attention.scorer.2.weight": 0.6010301113128662,
+        "answer_record_reader.weight": 0.06765124946832657
+      }
+    }
+  ],
+  "sentence_gradients": {
+    "perceptualSpace._owned_bases.what.W": {
+      "backwards": 2,
+      "absent": 0,
+      "zero": 2,
+      "nonzero": 0,
+      "maximum": 0.0
+    },
+    "conceptualSpaces.1.concept_parts_layer.features.values": {
+      "backwards": 2,
+      "absent": 2,
+      "zero": 0,
+      "nonzero": 0,
+      "maximum": 0.0
+    },
+    "wholeSpaces.0._owned_bases.what.W": {
+      "backwards": 2,
+      "absent": 2,
+      "zero": 0,
+      "nonzero": 0,
+      "maximum": 0.0
+    },
+    "wholeSpaces.1._owned_bases.what.W": {
+      "backwards": 2,
+      "absent": 2,
+      "zero": 0,
+      "nonzero": 0,
+      "maximum": 0.0
+    }
+  },
+  "room": {
+    "start": [
+      {
+        "margin": 0.0,
+        "before": {
+          "count": 0,
+          "largest": 0.0
+        },
+        "after": {
+          "count": 0,
+          "largest": 0.0
+        }
+      },
+      {
+        "margin": 0.0,
+        "before": {
+          "count": 20,
+          "largest": 0.04184762388467789
+        },
+        "after": {
+          "count": 2,
+          "largest": 0.033207572996616364
+        }
+      }
+    ],
+    "end": [
+      {
+        "margin": 0.0,
+        "before": {
+          "count": 0,
+          "largest": 0.0
+        },
+        "after": {
+          "count": 0,
+          "largest": 0.0
+        }
+      },
+      {
+        "margin": 0.0,
+        "before": {
+          "count": 1,
+          "largest": 3.725290298461914e-08
+        },
+        "after": {
+          "count": 0,
+          "largest": 0.0
+        }
+      }
+    ]
+  },
+  "compose_score_function_steps": [
+    {
+      "step": 0,
+      "epoch": 1,
+      "sentence": 0,
+      "owner_step": 2,
+      "batch_row": 0,
+      "departed": true,
+      "C_greedy": 0.00010074686724692583,
+      "C_explore": 0.00010074686724692583,
+      "advantage": 0.0,
+      "action": 1,
+      "action_name": "disjunction",
+      "p_before": 0.499419629573822,
+      "p_after": 0.499419629573822,
+      "measured_costs": [
+        0.00010074686724692583,
+        0.00010074686724692583
+      ],
+      "round": 6,
+      "p_forward": 0.499419629573822,
+      "logit_gradient": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected_gradient": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "gradient_max_error": 0.0,
+      "finite_difference": {
+        "logit": 1,
+        "epsilon": 0.0001,
+        "numeric": 0.0,
+        "analytic": 0.0,
+        "error": 0.0
+      },
+      "eligible_alternatives": 1
+    },
+    {
+      "step": 1,
+      "epoch": 1,
+      "sentence": 0,
+      "owner_step": 2,
+      "batch_row": 1,
+      "departed": true,
+      "C_greedy": 0.0008929073228500783,
+      "C_explore": 0.0008929073228500783,
+      "advantage": 0.0,
+      "action": 1,
+      "action_name": "disjunction",
+      "p_before": 0.4992430508136749,
+      "p_after": 0.4992430508136749,
+      "measured_costs": [
+        0.0008929073228500783,
+        0.0008929073228500783
+      ],
+      "round": 6,
+      "p_forward": 0.4992430508136749,
+      "logit_gradient": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected_gradient": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "gradient_max_error": 0.0,
+      "finite_difference": {
+        "logit": 1,
+        "epsilon": 0.0001,
+        "numeric": 0.0,
+        "analytic": 0.0,
+        "error": 0.0
+      },
+      "eligible_alternatives": 1
+    },
+    {
+      "step": 2,
+      "epoch": 1,
+      "sentence": 0,
+      "owner_step": 2,
+      "batch_row": 2,
+      "departed": true,
+      "C_greedy": 0.02853846549987793,
+      "C_explore": 0.02853846549987793,
+      "advantage": 0.0,
+      "action": 1,
+      "action_name": "disjunction",
+      "p_before": 0.4994724988937378,
+      "p_after": 0.4994724988937378,
+      "measured_costs": [
+        0.02853846549987793,
+        0.02853846549987793
+      ],
+      "round": 6,
+      "p_forward": 0.4994724988937378,
+      "logit_gradient": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected_gradient": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "gradient_max_error": 0.0,
+      "finite_difference": {
+        "logit": 1,
+        "epsilon": 0.0001,
+        "numeric": 0.0,
+        "analytic": 0.0,
+        "error": 0.0
+      },
+      "eligible_alternatives": 1
+    },
+    {
+      "step": 3,
+      "epoch": 1,
+      "sentence": 0,
+      "owner_step": 2,
+      "batch_row": 3,
+      "departed": true,
+      "C_greedy": 0.09189274162054062,
+      "C_explore": 0.09189274162054062,
+      "advantage": 0.0,
+      "action": 1,
+      "action_name": "disjunction",
+      "p_before": 0.49924129247665405,
+      "p_after": 0.49924129247665405,
+      "measured_costs": [
+        0.09189274162054062,
+        0.09189274162054062
+      ],
+      "round": 6,
+      "p_forward": 0.49924129247665405,
+      "logit_gradient": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected_gradient": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "gradient_max_error": 0.0,
+      "finite_difference": {
+        "logit": 1,
+        "epsilon": 0.0001,
+        "numeric": 0.0,
+        "analytic": 0.0,
+        "error": 0.0
+      },
+      "eligible_alternatives": 1
+    }
+  ],
+  "chooser_logit_ranges": {
+    "1": {
+      "minimum": 3.566678424249403e-05,
+      "maximum": 0.28572097420692444,
+      "calls": 8,
+      "nan_count": 0,
+      "positive_infinity_count": 0
+    }
+  },
+  "start": {
+    "roots": {
+      "values": [
+        [
+          0.0,
+          0.0011876262724399567,
+          0.0018279349897056818,
+          8.161421283148229e-05,
+          0.0008871493046171963,
+          0.0001288428029511124,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0028406984638422728,
+          0.0010059948544949293,
+          0.0032852552831172943,
+          0.0005353630986064672,
+          0.0003901770687662065,
+          0.0002693482965696603,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0014523937134072185,
+          0.0008643019245937467,
+          0.00010302007285645232,
+          0.000882616441231221,
+          0.0002080070407828316,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0013277812395244837,
+          0.0019412374822422862,
+          0.0024510505609214306,
+          0.0010663087014108896,
+          0.0006125131039880216,
+          0.0006861365400254726,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "pairwise_cosines": [
+        [
+          1.0,
+          0.7160252332687378,
+          0.9101640582084656,
+          0.8653464913368225
+        ],
+        [
+          0.7160252332687378,
+          0.9999998211860657,
+          0.5484177470207214,
+          0.8897014856338501
+        ],
+        [
+          0.9101640582084656,
+          0.5484177470207214,
+          1.0,
+          0.8114092350006104
+        ],
+        [
+          0.8653464913368225,
+          0.8897014856338501,
+          0.8114092350006104,
+          1.0
+        ]
+      ],
+      "mean_pairwise_cosine": 0.7901773452758789,
+      "centered_singular_values": [
+        0.0029567081946879625,
+        0.0010201362892985344,
+        0.000575504032894969,
+        9.318874144570444e-11
+      ]
+    },
+    "root_inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "codes": [
+      {
+        "rows": [],
+        "values": [],
+        "pairwise_cosines": [],
+        "mean_pairwise_cosine": null,
+        "centered_singular_values": [],
+        "forms": {
+          "values": [],
+          "pairwise_cosines": [],
+          "mean_pairwise_cosine": null,
+          "centered_singular_values": []
+        },
+        "d_definition": "relu(e_for - e_against), summed net 11b evidence per native address; d > 0 selects a full-presence part",
+        "net_evidence": {
+          "parts": {
+            "count": 0,
+            "minimum": null,
+            "maximum": null,
+            "positive": 0
+          },
+          "wholes": {
+            "count": 0,
+            "minimum": null,
+            "maximum": null,
+            "positive": 0
+          }
+        },
+        "support": [],
+        "room": {
+          "count": 0,
+          "largest": 0.0
+        }
+      },
+      {
+        "rows": [
+          0,
+          1,
+          2,
+          4
+        ],
+        "values": [
+          [
+            0.03640309348702431,
+            0.02276596799492836,
+            0.03914806619286537,
+            0.005968003999441862,
+            0.01845756359398365,
+            0.011209412477910519,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.02276596799492836,
+            0.02037712186574936,
+            0.005968003999441862,
+            0.020975617691874504,
+            0.005016141105443239,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.03640309348702431,
+            0.02061394415795803,
+            0.03914806619286537,
+            0.04184762388467789,
+            0.009861405938863754,
+            0.011209412477910519,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.012367748655378819,
+            0.031931549310684204,
+            0.02122972533106804,
+            0.008640015497803688,
+            0.021060999482870102,
+            0.020755350589752197,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "pairwise_cosines": [
+          [
+            1.0000001192092896,
+            0.7611136436462402,
+            0.8603332042694092,
+            0.8489289283752441
+          ],
+          [
+            0.7611136436462402,
+            1.0000001192092896,
+            0.6481943726539612,
+            0.9147353768348694
+          ],
+          [
+            0.8603332042694092,
+            0.6481943726539612,
+            1.0000001192092896,
+            0.7455263137817383
+          ],
+          [
+            0.8489289283752441,
+            0.9147353768348694,
+            0.7455263137817383,
+            1.0000001192092896
+          ]
+        ],
+        "mean_pairwise_cosine": 0.796471893787384,
+        "centered_singular_values": [
+          0.042934197932481766,
+          0.02231411635875702,
+          0.013972938060760498,
+          2.1512733816564378e-09
+        ],
+        "forms": {
+          "values": [
+            [
+              0.03640309348702431,
+              0.02276596799492836,
+              0.03914806619286537,
+              0.005968003999441862,
+              0.01845756359398365,
+              0.011209412477910519
+            ],
+            [
+              0.0,
+              0.02276596799492836,
+              0.02037712186574936,
+              0.005968003999441862,
+              0.020975617691874504,
+              0.005016141105443239
+            ],
+            [
+              0.03640309348702431,
+              0.02061394415795803,
+              0.03914806619286537,
+              0.04184762388467789,
+              0.009861405938863754,
+              0.011209412477910519
+            ],
+            [
+              0.012367748655378819,
+              0.031931549310684204,
+              0.02122972533106804,
+              0.008640015497803688,
+              0.021060999482870102,
+              0.020755350589752197
+            ]
+          ],
+          "pairwise_cosines": [
+            [
+              1.0000001192092896,
+              0.7611136436462402,
+              0.8603332042694092,
+              0.8489289283752441
+            ],
+            [
+              0.7611136436462402,
+              1.0000001192092896,
+              0.6481943726539612,
+              0.9147353768348694
+            ],
+            [
+              0.8603332042694092,
+              0.6481943726539612,
+              1.0000001192092896,
+              0.7455263137817383
+            ],
+            [
+              0.8489289283752441,
+              0.9147353768348694,
+              0.7455263137817383,
+              1.0000001192092896
+            ]
+          ],
+          "mean_pairwise_cosine": 0.796471893787384,
+          "centered_singular_values": [
+            0.04293419420719147,
+            0.02231411635875702,
+            0.013972935266792774,
+            2.5415483051460797e-09
+          ]
+        },
+        "d_definition": "relu(e_for - e_against), summed net 11b evidence per native address; d > 0 selects a full-presence part",
+        "net_evidence": {
+          "parts": {
+            "count": 19,
+            "minimum": 1.0,
+            "maximum": 1.0,
+            "positive": 19
+          },
+          "wholes": {
+            "count": 8,
+            "minimum": 1.0,
+            "maximum": 1.0,
+            "positive": 8
+          }
+        },
+        "support": [
+          {
+            "row": 0,
+            "word": "hello",
+            "dimension": 6,
+            "percept_event_width": 14,
+            "nonzero_coordinates": 6,
+            "nonzero_fraction": 1.0,
+            "minimum_absolute_value": 0.005968003999441862,
+            "minimum_nonzero_absolute_value": 0.005968003999441862
+          },
+          {
+            "row": 1,
+            "word": "world",
+            "dimension": 6,
+            "percept_event_width": 14,
+            "nonzero_coordinates": 5,
+            "nonzero_fraction": 0.8333333333333334,
+            "minimum_absolute_value": 0.0,
+            "minimum_nonzero_absolute_value": 0.005016141105443239
+          },
+          {
+            "row": 2,
+            "word": "there",
+            "dimension": 6,
+            "percept_event_width": 14,
+            "nonzero_coordinates": 6,
+            "nonzero_fraction": 1.0,
+            "minimum_absolute_value": 0.009861405938863754,
+            "minimum_nonzero_absolute_value": 0.009861405938863754
+          },
+          {
+            "row": 4,
+            "word": "loving",
+            "dimension": 6,
+            "percept_event_width": 14,
+            "nonzero_coordinates": 6,
+            "nonzero_fraction": 1.0,
+            "minimum_absolute_value": 0.008640015497803688,
+            "minimum_nonzero_absolute_value": 0.008640015497803688
+          }
+        ],
+        "room": {
+          "count": 20,
+          "largest": 0.04184762388467789
+        }
+      }
+    ],
+    "unit_root_xor_interaction": 0.4158467650413513,
+    "interaction_order": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ]
+  },
+  "before_learning_readback": {
+    "texts": [
+      "hello world",
+      "hello there",
+      "world loving",
+      "there loving"
+    ],
+    "truncated": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "nonzero_advantage_sentences": 0,
+  "end": {
+    "roots": {
+      "values": [
+        [
+          0.0,
+          0.0011876262724399567,
+          0.0018279349897056818,
+          8.161421283148229e-05,
+          0.0008871493046171963,
+          0.0001288428029511124,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0028406984638422728,
+          0.0010059948544949293,
+          0.0032852552831172943,
+          0.0005353630986064672,
+          0.0003901770687662065,
+          0.0002693482965696603,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0014523937134072185,
+          0.0008643019245937467,
+          0.00010302007285645232,
+          0.000882616441231221,
+          0.0002080070407828316,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0013277812395244837,
+          0.0019412374822422862,
+          0.0024510505609214306,
+          0.0010663087014108896,
+          0.0006125131039880216,
+          0.0006861365400254726,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "pairwise_cosines": [
+        [
+          1.0,
+          0.7160252332687378,
+          0.9101640582084656,
+          0.8653464913368225
+        ],
+        [
+          0.7160252332687378,
+          0.9999998211860657,
+          0.5484177470207214,
+          0.8897014856338501
+        ],
+        [
+          0.9101640582084656,
+          0.5484177470207214,
+          1.0,
+          0.8114092350006104
+        ],
+        [
+          0.8653464913368225,
+          0.8897014856338501,
+          0.8114092350006104,
+          1.0
+        ]
+      ],
+      "mean_pairwise_cosine": 0.7901773452758789,
+      "centered_singular_values": [
+        0.0029567081946879625,
+        0.0010201362892985344,
+        0.000575504032894969,
+        9.318874144570444e-11
+      ]
+    },
+    "root_inputs": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ],
+    "codes": [
+      {
+        "rows": [],
+        "values": [],
+        "pairwise_cosines": [],
+        "mean_pairwise_cosine": null,
+        "centered_singular_values": [],
+        "forms": {
+          "values": [],
+          "pairwise_cosines": [],
+          "mean_pairwise_cosine": null,
+          "centered_singular_values": []
+        },
+        "d_definition": "relu(e_for - e_against), summed net 11b evidence per native address; d > 0 selects a full-presence part",
+        "net_evidence": {
+          "parts": {
+            "count": 0,
+            "minimum": null,
+            "maximum": null,
+            "positive": 0
+          },
+          "wholes": {
+            "count": 0,
+            "minimum": null,
+            "maximum": null,
+            "positive": 0
+          }
+        },
+        "support": [],
+        "room": {
+          "count": 0,
+          "largest": 0.0
+        }
+      },
+      {
+        "rows": [
+          0,
+          1,
+          2,
+          4
+        ],
+        "values": [
+          [
+            0.03640309348702431,
+            0.02276596799492836,
+            0.03914806619286537,
+            0.005968003999441862,
+            0.01845756359398365,
+            0.011209412477910519,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.02276596799492836,
+            0.02037712186574936,
+            0.005968003999441862,
+            0.020975617691874504,
+            0.005016141105443239,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.03640309348702431,
+            0.02061394415795803,
+            0.03914806619286537,
+            0.04184762388467789,
+            0.009861405938863754,
+            0.011209412477910519,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.012367748655378819,
+            0.031931549310684204,
+            0.02122972533106804,
+            0.008640015497803688,
+            0.021060999482870102,
+            0.020755350589752197,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "pairwise_cosines": [
+          [
+            1.0000001192092896,
+            0.7611136436462402,
+            0.8603332042694092,
+            0.8489289283752441
+          ],
+          [
+            0.7611136436462402,
+            1.0000001192092896,
+            0.6481943726539612,
+            0.9147353768348694
+          ],
+          [
+            0.8603332042694092,
+            0.6481943726539612,
+            1.0000001192092896,
+            0.7455263137817383
+          ],
+          [
+            0.8489289283752441,
+            0.9147353768348694,
+            0.7455263137817383,
+            1.0000001192092896
+          ]
+        ],
+        "mean_pairwise_cosine": 0.796471893787384,
+        "centered_singular_values": [
+          0.042934197932481766,
+          0.02231411635875702,
+          0.013972938060760498,
+          2.1512733816564378e-09
+        ],
+        "forms": {
+          "values": [
+            [
+              0.03640309348702431,
+              0.02276596799492836,
+              0.03914806619286537,
+              0.005968003999441862,
+              0.01845756359398365,
+              0.011209412477910519
+            ],
+            [
+              0.0,
+              0.02276596799492836,
+              0.02037712186574936,
+              0.005968003999441862,
+              0.020975617691874504,
+              0.005016141105443239
+            ],
+            [
+              0.03640309348702431,
+              0.02061394415795803,
+              0.03914806619286537,
+              0.04184762388467789,
+              0.009861405938863754,
+              0.011209412477910519
+            ],
+            [
+              0.012367748655378819,
+              0.031931549310684204,
+              0.02122972533106804,
+              0.008640015497803688,
+              0.021060999482870102,
+              0.020755350589752197
+            ]
+          ],
+          "pairwise_cosines": [
+            [
+              1.0000001192092896,
+              0.7611136436462402,
+              0.8603332042694092,
+              0.8489289283752441
+            ],
+            [
+              0.7611136436462402,
+              1.0000001192092896,
+              0.6481943726539612,
+              0.9147353768348694
+            ],
+            [
+              0.8603332042694092,
+              0.6481943726539612,
+              1.0000001192092896,
+              0.7455263137817383
+            ],
+            [
+              0.8489289283752441,
+              0.9147353768348694,
+              0.7455263137817383,
+              1.0000001192092896
+            ]
+          ],
+          "mean_pairwise_cosine": 0.796471893787384,
+          "centered_singular_values": [
+            0.04293419420719147,
+            0.02231411635875702,
+            0.013972935266792774,
+            2.5415483051460797e-09
+          ]
+        },
+        "d_definition": "relu(e_for - e_against), summed net 11b evidence per native address; d > 0 selects a full-presence part",
+        "net_evidence": {
+          "parts": {
+            "count": 4,
+            "minimum": 1.0,
+            "maximum": 1.0,
+            "positive": 4
+          },
+          "wholes": {
+            "count": 8,
+            "minimum": 1.0,
+            "maximum": 1.0,
+            "positive": 8
+          }
+        },
+        "support": [
+          {
+            "row": 0,
+            "word": "hello",
+            "dimension": 6,
+            "percept_event_width": 14,
+            "nonzero_coordinates": 6,
+            "nonzero_fraction": 1.0,
+            "minimum_absolute_value": 0.005968003999441862,
+            "minimum_nonzero_absolute_value": 0.005968003999441862
+          },
+          {
+            "row": 1,
+            "word": "world",
+            "dimension": 6,
+            "percept_event_width": 14,
+            "nonzero_coordinates": 5,
+            "nonzero_fraction": 0.8333333333333334,
+            "minimum_absolute_value": 0.0,
+            "minimum_nonzero_absolute_value": 0.005016141105443239
+          },
+          {
+            "row": 2,
+            "word": "there",
+            "dimension": 6,
+            "percept_event_width": 14,
+            "nonzero_coordinates": 6,
+            "nonzero_fraction": 1.0,
+            "minimum_absolute_value": 0.009861405938863754,
+            "minimum_nonzero_absolute_value": 0.009861405938863754
+          },
+          {
+            "row": 4,
+            "word": "loving",
+            "dimension": 6,
+            "percept_event_width": 14,
+            "nonzero_coordinates": 6,
+            "nonzero_fraction": 1.0,
+            "minimum_absolute_value": 0.008640015497803688,
+            "minimum_nonzero_absolute_value": 0.008640015497803688
+          }
+        ],
+        "room": {
+          "count": 0,
+          "largest": 0.0
+        }
+      }
+    ],
+    "unit_root_xor_interaction": 0.4158467650413513,
+    "interaction_order": [
+      "hello world",
+      "hello there",
+      "loving world",
+      "loving there"
+    ]
+  }
+}

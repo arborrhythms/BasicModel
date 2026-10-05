@@ -1,0 +1,64 @@
+.............FFF...........F                                             [100%]
+=================================== FAILURES ===================================
+_________ test_scalar_query_experiments_are_retired[query-QueryLayer] __________
+
+name = 'query', class_name = 'QueryLayer'
+
+    @pytest.mark.parametrize('name, class_name', [('query','QueryLayer'),('queryPart','QueryPartLayer'),('queryEqual','QueryEqualLayer')])
+    def test_scalar_query_experiments_are_retired(name, class_name):
+        import Language
+        import Layers
+>       assert not hasattr(Language, class_name)
+E       AssertionError: assert not True
+E        +  where True = hasattr(<module 'Language' from '/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py'>, 'QueryLayer')
+
+test/test_symbolize_layer.py:78: AssertionError
+_____ test_scalar_query_experiments_are_retired[queryPart-QueryPartLayer] ______
+
+name = 'queryPart', class_name = 'QueryPartLayer'
+
+    @pytest.mark.parametrize('name, class_name', [('query','QueryLayer'),('queryPart','QueryPartLayer'),('queryEqual','QueryEqualLayer')])
+    def test_scalar_query_experiments_are_retired(name, class_name):
+        import Language
+        import Layers
+>       assert not hasattr(Language, class_name)
+E       AssertionError: assert not True
+E        +  where True = hasattr(<module 'Language' from '/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py'>, 'QueryPartLayer')
+
+test/test_symbolize_layer.py:78: AssertionError
+____ test_scalar_query_experiments_are_retired[queryEqual-QueryEqualLayer] _____
+
+name = 'queryEqual', class_name = 'QueryEqualLayer'
+
+    @pytest.mark.parametrize('name, class_name', [('query','QueryLayer'),('queryPart','QueryPartLayer'),('queryEqual','QueryEqualLayer')])
+    def test_scalar_query_experiments_are_retired(name, class_name):
+        import Language
+        import Layers
+>       assert not hasattr(Language, class_name)
+E       AssertionError: assert not True
+E        +  where True = hasattr(<module 'Language' from '/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py'>, 'QueryEqualLayer')
+
+test/test_symbolize_layer.py:78: AssertionError
+_____ test_answer_case_bank_detaches_reader_keys_without_detaching_parent ______
+
+    def test_answer_case_bank_detaches_reader_keys_without_detaching_parent():
+        from CaseSelection import search_cases
+        bank=_bank()
+        bank.codes.requires_grad_(); bank.cases.requires_grad_(); bank.observed.requires_grad_()
+>       frozen=bank.detached()
+               ^^^^^^^^^^^^^
+E       AttributeError: 'CaseBank' object has no attribute 'detached'
+
+test/test_compound_cases.py:187: AttributeError
+=============================== warnings summary ===============================
+test/test_compound_cases.py::test_native_case_staging_uses_existing_sigma_and_allocates_nothing
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[query-QueryLayer]
+FAILED test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryPart-QueryPartLayer]
+FAILED test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryEqual-QueryEqualLayer]
+FAILED test/test_compound_cases.py::test_answer_case_bank_detaches_reader_keys_without_detaching_parent
+4 failed, 24 passed, 1 warning in 3.20s

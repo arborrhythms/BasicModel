@@ -1,0 +1,23 @@
+{
+  "head": "802abb1acc95e1bddc8cb237b13230a336681c49",
+  "all_measured_source_unchanged": true,
+  "changed_measured_files": [],
+  "measurement_harness_unchanged": {
+    "review12_campaign.py": true,
+    "review12_gate_observer.py": true
+  },
+  "post_measurement_changes": "Receipt, reporting tools and repository documentation only; no model, data, test or gate changes.",
+  "verification": {
+    "source_matched": true,
+    "measurement_harness_matched": true,
+    "trainings": 30,
+    "retries": 0,
+    "shared_xor_trainings": 10,
+    "named_final_xor_sentences": 40,
+    "named_final_sum_sentences": 40,
+    "named_compose_steps_in_audit": 3204,
+    "ownership_conflicts": 0,
+    "guards_unchanged": true,
+    "sum_read_first": true
+  }
+}

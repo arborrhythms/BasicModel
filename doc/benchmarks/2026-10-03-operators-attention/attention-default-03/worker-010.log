@@ -1,0 +1,56 @@
+........FFFF.......................F.................................... [ 63%]
+........................................s                                [100%]
+=================================== FAILURES ===================================
+_ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False] __
+test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)
+E   assert ([tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]])] and False)
+E    +  where False = <built-in method equal of type object at 0x10ea193a0>(tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]))
+E    +    where <built-in method equal of type object at 0x10ea193a0> = torch.equal
+E    +    and   tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._ar_target_word_bytes
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True] __
+test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)
+E   assert ([tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]])] and False)
+E    +  where False = <built-in method equal of type object at 0x10ea193a0>(tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]))
+E    +    where <built-in method equal of type object at 0x10ea193a0> = torch.equal
+E    +    and   tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._ar_target_word_bytes
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False] __
+test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)
+E   assert ([tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]])] and False)
+E    +  where False = <built-in method equal of type object at 0x10ea193a0>(tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]))
+E    +    where <built-in method equal of type object at 0x10ea193a0> = torch.equal
+E    +    and   tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._ar_target_word_bytes
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True] ___
+test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)
+E   assert ([tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]])] and False)
+E    +  where False = <built-in method equal of type object at 0x10ea193a0>(tensor([[[104, 101, 108, 108, 111,   0],\n         [119, 111, 114, 108, 100,   0],\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]))
+E    +    where <built-in method equal of type object at 0x10ea193a0> = torch.equal
+E    +    and   tensor([[[104, 101, 108, 108, 111,   0],\n         [ 32,   0,   0,   0,   0,   0],\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0],\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._ar_target_word_bytes
+_________ test_normal_text_reconstruction_updates_the_grammar_chooser __________
+test/test_grammar_word_learning.py:167: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    assert model.output_in_loop and model.output_policy_weight > 0
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'output_policy_weight'
+=============================== warnings summary ===============================
+test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser
+5 failed, 107 passed, 1 skipped, 2 warnings in 59.24s

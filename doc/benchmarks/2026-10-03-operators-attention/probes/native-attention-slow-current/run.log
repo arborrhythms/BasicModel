@@ -1,0 +1,34 @@
+.....................................................................    [100%]
+=============================== warnings summary ===============================
+test/test_reading_attention.py::test_normal_configs_share_bracket_and_expectation_owners[MM_reading.xml]
+test/test_reading_attention.py::test_forward_is_finite_and_deterministic
+test/test_reading_attention.py::test_train_forward_then_backward_is_finite
+test/test_reading_attention.py::test_producer_writes_bracket_scope_and_registers_loss
+test/test_reading_attention.py::test_registered_loss_backprops_to_producer
+test/test_reading_attention.py::test_producer_scope_replaces_previous_input
+test/test_reading_attention.py::test_producer_params_reach_the_optimizer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_reading_attention.py::test_forward_is_finite_and_deterministic
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-development]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1599/test_native_realized_answer_lo0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[False-production]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1599/test_native_realized_answer_lo1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-development]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1599/test_native_realized_answer_lo2/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner[True-production]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1599/test_native_realized_answer_lo3/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+69 passed, 12 warnings in 24.21s

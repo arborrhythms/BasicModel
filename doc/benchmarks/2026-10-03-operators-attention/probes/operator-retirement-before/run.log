@@ -1,0 +1,115 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+__ test_retired_operators_are_absent_from_shipped_grammars[complete.grammar] ___
+
+filename = 'complete.grammar'
+
+    @pytest.mark.parametrize('filename', ['complete.grammar', 'ladder.grammar',
+                                          'tied_reconstruction_output_benchmark.grammar'])
+    def test_retired_operators_are_absent_from_shipped_grammars(filename):
+        from Language import Grammar, GRAMMAR_LAYER_CLASSES
+        from Queries import THOUGHT_EXECUTORS
+        grammar = Grammar()
+        grammar.load_from_grammar_file(filename)
+        retired = {'exist', 'true', 'lookup'}
+>       assert retired.isdisjoint(THOUGHT_EXECUTORS)
+E       AssertionError: assert False
+E        +  where False = <built-in method isdisjoint of set object at 0x10ce34200>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('concept',...'>, <Subsystem.SYMBOLIC: 'higher-order knowing'>), evidence_kind='subgoal', executor=<function _what at 0x10d006ca0>)}))
+E        +    where <built-in method isdisjoint of set object at 0x10ce34200> = {'exist', 'lookup', 'true'}.isdisjoint
+
+test/test_operator_catalogue.py:155: AssertionError
+___ test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar] ____
+
+filename = 'ladder.grammar'
+
+    @pytest.mark.parametrize('filename', ['complete.grammar', 'ladder.grammar',
+                                          'tied_reconstruction_output_benchmark.grammar'])
+    def test_retired_operators_are_absent_from_shipped_grammars(filename):
+        from Language import Grammar, GRAMMAR_LAYER_CLASSES
+        from Queries import THOUGHT_EXECUTORS
+        grammar = Grammar()
+        grammar.load_from_grammar_file(filename)
+        retired = {'exist', 'true', 'lookup'}
+>       assert retired.isdisjoint(THOUGHT_EXECUTORS)
+E       AssertionError: assert False
+E        +  where False = <built-in method isdisjoint of set object at 0x13d3a7d80>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('concept',...'>, <Subsystem.SYMBOLIC: 'higher-order knowing'>), evidence_kind='subgoal', executor=<function _what at 0x10d006ca0>)}))
+E        +    where <built-in method isdisjoint of set object at 0x13d3a7d80> = {'exist', 'lookup', 'true'}.isdisjoint
+
+test/test_operator_catalogue.py:155: AssertionError
+_ test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar] _
+
+filename = 'tied_reconstruction_output_benchmark.grammar'
+
+    @pytest.mark.parametrize('filename', ['complete.grammar', 'ladder.grammar',
+                                          'tied_reconstruction_output_benchmark.grammar'])
+    def test_retired_operators_are_absent_from_shipped_grammars(filename):
+        from Language import Grammar, GRAMMAR_LAYER_CLASSES
+        from Queries import THOUGHT_EXECUTORS
+        grammar = Grammar()
+        grammar.load_from_grammar_file(filename)
+        retired = {'exist', 'true', 'lookup'}
+>       assert retired.isdisjoint(THOUGHT_EXECUTORS)
+E       AssertionError: assert False
+E        +  where False = <built-in method isdisjoint of set object at 0x13d4f8900>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('concept',...'>, <Subsystem.SYMBOLIC: 'higher-order knowing'>), evidence_kind='subgoal', executor=<function _what at 0x10d006ca0>)}))
+E        +    where <built-in method isdisjoint of set object at 0x13d4f8900> = {'exist', 'lookup', 'true'}.isdisjoint
+
+test/test_operator_catalogue.py:155: AssertionError
+____________ test_retired_operator_declarations_fail_loudly[exist] _____________
+
+name = 'exist'
+
+    @pytest.mark.parametrize('name', ['exist', 'true', 'lookup'])
+    def test_retired_operator_declarations_fail_loudly(name):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_operator_catalogue.py:165: Failed
+_____________ test_retired_operator_declarations_fail_loudly[true] _____________
+
+name = 'true'
+
+    @pytest.mark.parametrize('name', ['exist', 'true', 'lookup'])
+    def test_retired_operator_declarations_fail_loudly(name):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_operator_catalogue.py:165: Failed
+____________ test_retired_operator_declarations_fail_loudly[lookup] ____________
+
+name = 'lookup'
+
+    @pytest.mark.parametrize('name', ['exist', 'true', 'lookup'])
+    def test_retired_operator_declarations_fail_loudly(name):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_operator_catalogue.py:165: Failed
+__________ test_equality_returns_conceptual_content_with_its_evidence __________
+
+    def test_equality_returns_conceptual_content_with_its_evidence():
+        from test_query_vp_boundaries import _context, _signature
+        from test_cs_symbol_table import _cs
+        idea = torch.arange(8, dtype=torch.float32) / 10
+        result = _signature('equal', 'I1', 'I2').invoke(_context(_cs()), idea, idea)
+>       assert result['result_kind'] == 'concept'
+E       AssertionError: assert 'truth' == 'concept'
+E         
+E         - concept
+E         + truth
+
+test/test_operator_catalogue.py:174: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]
+FAILED test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar]
+FAILED test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar]
+FAILED test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[exist]
+FAILED test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[true]
+FAILED test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[lookup]
+FAILED test/test_operator_catalogue.py::test_equality_returns_conceptual_content_with_its_evidence
+7 failed in 2.02s

@@ -155,7 +155,7 @@ def test_model_forward_passes_unity_at_stage0():
     # WholeSpace only; later stages read the recurrent CS (input once).
     # The per-stage WholeSpaces are DISTINCT objects (``m.wholeSpaces[t]``,
     # ``body_stages[t]["ws"]``); the terminal ``m.wholeSpace`` is the LAST
-    # stage, so at subsymbolicOrder>1 (MM_20M ships sO=3, T=3) the capture
+    # stage, so at bindingDepth>1 (MM_20M ships sO=3, T=3) the capture
     # must hook EVERY stage's ws -- hooking only the terminal would miss the
     # stage-0 unity call entirely.
     m = _build("MM_20M_xor.xml")

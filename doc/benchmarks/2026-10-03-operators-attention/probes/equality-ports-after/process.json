@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_catalogue.py",
+    "test/test_thought_operation_catalog.py",
+    "test/test_grammatical_query_vps.py",
+    "test/test_selected_relation_meaning.py",
+    "test/test_query_vp_boundaries.py",
+    "test/test_query_owner_width.py",
+    "test/test_clause_storage.py"
+  ],
+  "pid": 92101,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 446743968,
+  "elapsed_seconds": 4.899285084014991,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/equality-ports-after/run.log"
+}

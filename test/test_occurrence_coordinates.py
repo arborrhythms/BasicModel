@@ -34,7 +34,7 @@ def test_native_program_captures_the_symbol_band_and_one_field_time(tmp_path):
     assert program.symbol_where.shape == (*program.rows.shape, 4)
     addresses = model.where_encoding.decode_index(program.symbol_where)
     starts = model.inputSpace._ar_word_part_offsets[0,
-        model.inputSpace._word_active_mask[0], 0]
+        model.inputSpace._ar_grammar_leaf_mask[0], 0]
     expected = model.where_registry.intervals('input', starts)[..., 0]
     torch.testing.assert_close(addresses, expected)
     assert program.symbol_when.shape == program.symbol_where.shape
@@ -135,10 +135,10 @@ def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model):
             batch_override=(model.inputSpace.prepInput([text]), torch.empty(1, 0)),
             questions=(What.present(0, split='validation'),))
     program, = readings[0]
-    # This grammar retains the two spaces as units too.
-    assert len(program.rows) == 5
+    # Whitespace stays in perception; the grammar holds only the three words.
+    assert len(program.rows) == 3
     torch.testing.assert_close(model.where_encoding.decode_index(program.symbol_where),
-                               torch.tensor([0, 3, 4, 7, 8]))
+                               torch.tensor([0, 4, 8]))
     torch.testing.assert_close(program.symbol_when,
         model.when_encoding.encode(model.when_time).expand_as(program.symbol_when))
 

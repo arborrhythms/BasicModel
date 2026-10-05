@@ -78,14 +78,14 @@ def test_incomplete_forest_keeps_its_slots_for_reconstruction():
 
 
 def test_parallel_completion_guards_memory_without_serial_depths():
-    model = SimpleNamespace(serial=False, symbolSpace=SimpleNamespace(languageLayer=SimpleNamespace(
+    model = SimpleNamespace(word_brackets=False, symbolSpace=SimpleNamespace(languageLayer=SimpleNamespace(
         _last_derivation={'complete': torch.tensor([True, False])})))
     assert BasicModel._compose_completed_rows(model).tolist() == [True, False]
     # A previous serial sentence has a different batch width. Parallel
     # context must use its own completion mask, not the stale serial depth.
     model._stm_post_depth = torch.tensor([-2])
     assert BasicModel._compose_completed_rows(model).tolist() == [True, False]
-    model.serial = True
+    model.word_brackets = True
     model._stm_post_depth = torch.tensor([-2, 1])
     assert BasicModel._compose_completed_rows(model).tolist() == [False, True]
 

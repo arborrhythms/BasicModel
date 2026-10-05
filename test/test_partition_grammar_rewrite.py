@@ -53,7 +53,8 @@ _POST_REWRITE_GRAMMAR = {
 def _make_grammar():
     """Return a fresh Grammar configured with the post-rewrite production dict."""
     g = Grammar()
-    g.configure(_POST_REWRITE_GRAMMAR)
+    g.configure({'S': [rule for rule in _POST_REWRITE_GRAMMAR['S']
+                       if not rule.startswith(('true(', 'query('))]})
     return g
 
 
@@ -93,14 +94,15 @@ GOLDEN_CANONICALS = [
 # Test: canonical strings are byte-exact
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("rule_id,expected_canonical", list(enumerate(GOLDEN_CANONICALS)))
+@pytest.mark.parametrize("rule_id,expected_canonical", list(enumerate([rule for rule in GOLDEN_CANONICALS
+    if not rule.startswith(('S -> true(', 'S -> query('))])))
 def test_grammar_golden(grammar, rule_id, expected_canonical):
     """Post-rewrite: canonical production string for each rule index.
 
     Locks in the S-only production set after the Task 1.2 XML rewrite
     and the subsymbolic-space_role deletion (2026-04-19). 17 SS-space_role rules total.
     """
-    assert len(grammar.rules) == len(GOLDEN_CANONICALS), (
+    assert len(grammar.rules) == len(GOLDEN_CANONICALS) - 2, (
         f"Rule count changed: got {len(grammar.rules)}, expected {len(GOLDEN_CANONICALS)}"
     )
     actual = grammar.rules[rule_id].canonical
@@ -115,3 +117,9 @@ def test_grammar_rule_table_roundtrip(grammar):
         assert isinstance(rule_id, int)
         assert isinstance(production, str)
         assert grammar.rule_by_id(rule_id) == production
+
+
+@pytest.mark.parametrize("rule", ["true(S)", "query(S, S)"])
+def test_retired_golden_rule_is_rejected(rule):
+    with pytest.raises(ValueError, match="retired"):
+        Grammar().configure({"S": [rule]})

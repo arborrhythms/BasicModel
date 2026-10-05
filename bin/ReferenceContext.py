@@ -57,8 +57,6 @@ def reference_requests(language, actions):
             for leaf in operands[int(role[1:]) - 1]:
                 requests[leaf] = order, modes.get(role)
         head = getattr(rules[local], 'head_role', 0)
-        if not head and getattr(rules[local], 'method_name', None) in ('lower', 'bind', 'surface', 'preposition'):
-            head = 2
         stack.append(operands[head - 1]
                      if head else tuple(leaf for operand in operands for leaf in operand))
     return requests
@@ -80,6 +78,7 @@ class ReferenceBank(NamedTuple):
     query: torch.Tensor
     predicted: torch.Tensor
     types: object = None
+    cases: object = None
 
 
 def resolve_order(value, identity, order, types):
@@ -180,7 +179,9 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
         if order != 1:
             return value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid)
         return resolve_operand(value, ids, pos, mode=mode, bank=bank, live=live, active=valid)
-    lefts, rights, brefs, brels, bvalid = [], [], [], [], []
+    lefts, rights, brefs, brels, bvalid, case_weights = [], [], [], [], [], []
+    case_bank = getattr(bank, 'cases', None)
+    case_count = 1 if case_bank is None else len(case_bank.ids)
     for rule in rules:
         left = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],
                        rule, 'I1', active[:, :-1] & active[:, 1:])
@@ -190,7 +191,20 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
         rights.append(right[0])
         brefs.append(torch.stack((left[1], right[1]), -1))
         brels.append(torch.stack((left[2], right[2]), -1))
-        bvalid.append(left[3] & right[3])
+        valid = left[3] & right[3]
+        weights = window.new_zeros(B, N-1, case_count, 2)
+        case_head = getattr(rule, 'case_head_role', 0)
+        if case_head:
+            if case_bank is None:
+                valid = torch.zeros_like(valid)
+            else:
+                from CaseSelection import select_cases
+                modifier, head = (left[1], right[1]) if case_head == 2 else (right[1], left[1])
+                selection = select_cases(case_bank, modifier, head)
+                weights = selection.weights
+                valid = valid & selection.available
+        case_weights.append(weights)
+        bvalid.append(valid)
     values, urefs, urels, uvalid = [], [], [], []
     for rule in unary_rules:
         operand = propose(window, identities, flags, positions, rule, 'I1', active)
@@ -201,7 +215,7 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
 
     def stack(items, width, tail=(), *, dtype=None):
         return torch.stack(items, 2) if items else torch.zeros((B, width, 0, *tail), device=window.device, dtype=dtype or window.dtype)
-    return dict(left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
+    return dict(case_bank=case_bank, case_weights=stack(case_weights, N-1, (case_count, 2)), left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
                 binary_refs=stack(brefs, N-1, (2,), dtype=torch.long), unary_refs=stack(urefs, N, (2,), dtype=torch.long),
                 binary_relations=stack(brels, N-1, (2,), dtype=torch.bool), unary_relations=stack(urels, N, (2,), dtype=torch.bool),
                 binary_valid=stack(bvalid, N-1, dtype=torch.bool), unary_valid=stack(uvalid, N, dtype=torch.bool))

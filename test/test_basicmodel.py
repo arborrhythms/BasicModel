@@ -406,7 +406,7 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Simple path: BasicModel with subsymbolicOrder=1
+# Simple path: BasicModel with bindingDepth=1
 # ---------------------------------------------------------------------------
 def _make_simple_model(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nWords=16, nOutput=4):
     """Helper to create a BasicModel with config set up for simple path."""
@@ -1198,7 +1198,7 @@ class TestBaseModelFactory(unittest.TestCase):
         try:
             model, cfg = Models.BaseModel.from_config(path)
             self.assertIsInstance(model, Models.BasicModel)
-            self.assertEqual(model.subsymbolicOrder, 1)
+            self.assertEqual(model.bindingDepth, 1)
         finally:
             os.unlink(path)
 
@@ -1209,7 +1209,7 @@ class TestBaseModelFactory(unittest.TestCase):
         # SigmaLayer/PiLayer post 2026-05 ownership rule).
         xml = """<model>
   <architecture>
-    <subsymbolicOrder>2</subsymbolicOrder>    <training><autoload>false</autoload></training>
+    <bindingDepth>2</bindingDepth>    <training><autoload>false</autoload></training>
   </architecture>
   <InputSpace><nOutput>32</nOutput><nDim>10</nDim></InputSpace>
   <PartSpace><nOutput>4</nOutput><nDim>10</nDim><nVectors>4</nVectors></PartSpace>
@@ -1765,11 +1765,11 @@ class TestModelTypeVariants(unittest.TestCase):
     # test_invertible retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_conceptual_order_1(self):
-        """subsymbolicOrder=1 with non-passthrough symbolic -- forward only.
+        """bindingDepth=1 with non-passthrough symbolic -- forward only.
 
         After the 2026-05-05 BasicModel/BasicModel merger, the
         per-stage path is the only construction path and
-        ``subsymbolicOrder`` literally drives the per-stage iteration.
+        ``bindingDepth`` literally drives the per-stage iteration.
         """
         # symbolDim is the SS EVENT nDim (not band-adjusted by the fixture);
         # under the uniform (4,4) band SS content = symbolDim - 8, which must
@@ -1784,7 +1784,7 @@ class TestModelTypeVariants(unittest.TestCase):
                               flatten=True)
         model = Models.BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
-                     subsymbolicOrder=1)
+                     bindingDepth=1)
         x = torch.randn(2, 8, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)

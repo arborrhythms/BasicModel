@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_catalogue.py::test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row"
+  ],
+  "pid": 91988,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 433145152,
+  "elapsed_seconds": 3.6066847080073785,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/equality-identity-before/run.log"
+}

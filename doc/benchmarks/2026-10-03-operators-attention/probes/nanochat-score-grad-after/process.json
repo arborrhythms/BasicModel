@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_nanochat_grammar_eval.py"
+  ],
+  "pid": 8898,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 467453368,
+  "elapsed_seconds": 3.8672650000080466,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/nanochat-score-grad-after/run.log"
+}

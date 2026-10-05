@@ -1,0 +1,45 @@
+NATIVE answer [[0.0, 1.0, 0.7615941166877747], [0.0, 1.0, 0.7615941762924194]] depth None
+NATIVE ops ('not', 'non', 'null', 'tense', 'morphology') ('part', 'whole', 'equal', 'intersection', 'union', 'sum', 'product', 'chunk', 'lift', 'verb', 'adverb', 'lower', 'preposition', 'bind', 'conjunction', 'disjunction')
+NATIVE state 0 SentenceEndState(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('ltm', '06d8397381ed4662bbe5da7097520f7f', 8), ('sym', 3404711439185107637), ('sym', 9)), bindings=(), scope=(), sentence_kind='relation'), refs=(4611686018427387912, 3404711439185107637, 9), row_id=4611686018427387913, where=tensor([0.0980, 0.9952, 0.0000, 1.0000]), when=tensor([0., 1., 0., 1.]), query=None, order=0, evidence=(0.46211716532707214, 0.0), trust=1.0)
+NATIVE state 1 SentenceEndState(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('ltm', '06d8397381ed4662bbe5da7097520f7f', 12), ('sym', 3404711439185107637), ('sym', 13)), bindings=(), scope=(), sentence_kind='relation'), refs=(4611686018427387916, 3404711439185107637, 13), row_id=4611686018427387917, where=tensor([0.0980, 0.9952, 0.0000, 1.0000]), when=tensor([0., 1., 0., 1.]), query=None, order=0, evidence=(0.46211716532707214, 0.0), trust=1.0)
+NATIVE output [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+F
+=================================== FAILURES ===================================
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development] _
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1446/test_native_answer_uses_owned_0')
+output_loop = False, concept_width = 264, eager_reading = None
+
+    @pytest.mark.parametrize("concept_width", _NATIVE_CONCEPT_WIDTHS)
+    @pytest.mark.parametrize("output_loop", [False, True])
+    def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, output_loop, concept_width, eager_reading):
+        from dataclasses import replace
+        from test_output_walk import _capture_program_probe, _stop
+        m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
+        m.eval()
+        if output_loop:
+            _stop(m)
+        try:
+            with torch.no_grad():
+                u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
+                assert len(u.sentence_states) == 2 and all(p is not None for p in u.sentence_states)
+                # These dense compatibility carriers cannot own a production answer.
+                owned = replace(u, symbolic_state=None, conceptual_state=None, answer_seed=None)
+                c = m.reverseOutput(owned, m.resolveAnswer(owned, (What.supervised(0), What.supervised(1))))
+            assert c.derivation.resolved
+            assert c.concepts.shape[0] == 2 and c.concepts.shape[-1] == concept_width
+>           assert not torch.equal(c.concepts[0], c.concepts[1])
+E           assert not True
+E            +  where True = <built-in method equal of type object at 0x10d4213a0>(tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]), tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]...       [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]))
+E            +    where <built-in method equal of type object at 0x10d4213a0> = torch.equal
+
+test/test_output_path_supervised.py:193: AssertionError
+=============================== warnings summary ===============================
+test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+1 failed, 1 warning in 2.67s

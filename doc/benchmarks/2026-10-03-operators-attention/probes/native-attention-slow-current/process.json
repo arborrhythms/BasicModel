@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_reading_attention.py",
+    "test/test_output_path_supervised.py::test_native_realized_answer_loss_trains_the_active_conditioner",
+    "test/test_recorded_compose_dispatch.py",
+    "test/test_predicate_storage.py",
+    "test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries",
+    "test/test_one_attention.py"
+  ],
+  "pid": 2801,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 8290118264,
+  "elapsed_seconds": 26.157397500006482,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/native-attention-slow-current/run.log"
+}

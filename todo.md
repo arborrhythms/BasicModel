@@ -193,6 +193,52 @@ generation is expected at this stage and is recorded, not tuned away.
 - **6.8. One attention: brackets, narrowing, and expectation at every bracket**
    ([plan](doc/plans/2026-09-27-item-6-8-one-attention.md); Alec, 2026-09-27;
    after 7.5 and 7, before 6.5; three non-blocking questions in plan §6).
+   **October 5 §16.3 candidate, measurement held:** the XOR table remains the
+   **composition mechanism gate** (§12.1). The compose chooser now receives the
+   reconstruction-owned `p(a_dep) * (C_explore-C_greedy)` surrogate with detached
+   costs. Departure rounds and value-distinct eligible alternatives are sampled
+   uniformly; ineffective STOP/identity/duplicate choices are excluded. Cheaper
+   and dearer alternatives train with opposite signs; ties add no term. The
+   strict-win update and compose straight-through credit are gone. Pair search
+   stays hard with detached candidates and a relative residual. Generate's
+   straight-through walk, seeds, bars, budgets and runner guards are unchanged.
+   Forms remain the join of positive-evidence parts at full presence; wholes
+   bound forms without shrinking parts. Both class gates use the same raw-root
+   output-owned affine reader. Two spaces share the symbol/concept index, with
+   CS capacities **6 / 8**. Perception owns codes and evidence; sentence-path
+   gradients there are zero. Empty same-context meanings correctly coincide.
+   **Verification:** final ten-worker default sweep completed **5187 cases:
+   4900 passed, 286 skipped, one non-strict XPASS, zero failed assertions**.
+   Every pytest worker exited zero, but the bounded supervisor rejects XPASS.
+   The unchanged .8 overlap test unexpectedly passed; the required green-sweep
+   condition is therefore unmet. A decision on that named XPASS is pending.
+   No guard was relaxed, test omitted or stochastic rerun used to seek green.
+   All sixteen original output-gradient regressions pass with assertions intact.
+   The full sweep includes all 57 focused files, with none dropped. Complete
+   old/new ports and failure classifications are in the one
+   [receipt](doc/benchmarks/2026-10-03-operators-attention/README.md).
+   The original seed-613 ordinary batch now has two nonzero advantages after
+   ineffective departures are excluded. Its probabilities move in the expected
+   directions; the surrogate gradient agrees with the analytical derivative to
+   **1.87e-9**, and a one-logit finite difference to **1.21e-9**. Explicit tie and
+   non-tie fixtures retain the seed and batch. One ordinary XOR batch has four
+   departures, zero nonzero advantages, zero code/evidence sentence gradients
+   and zero ownership conflicts. These are mechanism checks, not gate runs.
+   **Zero §16.3 gate trainings.** Pending the sweep decision: sum ×10 (10/10
+   required), ten shared XOR trainings with both bars and all requested audits,
+   then MM_xor ×10, once on frozen source. No tuning or gate retries.
+   Historical class/reconstruction/joint counts stand: §12 **0/7/0**, §13
+   **0/0/0**, §14 **1/8/1** (pre-addendum CS 262/264); each had MM and sum **10/10**.
+   Accepted MSE **.114748**, reconstruction **0/4**, zero conflicts and prior
+   **9/10 / 5/10** remain historical. Archived evidence is unchanged.
+   The observers cover geometry, support, d ranges, room, reader trajectories,
+   per-word read-back, decoder margin/stability and per-step chooser advantage/
+   probability/logit ranges. Protected architecture docs were not rewritten;
+   concurrent external 6.8-plan/FutureWork edits are preserved separately.
+   The 6.9 §20.3 status records the implemented decoder exploration and current
+   measurement hold; its distributional row is unchanged. Carried work remains
+   deferred. Frozen evaluation admits nothing; the trained NanoChat gate waits
+   for item 4. No fresh BasicModel scoring. **Nothing committed; Claude reviews.**
    **Item-7 reading residue:** every read word currently runs the complete
    `interpret` unary under every binding. This forcing stays until reading
    mode decides when an object is interpreted; its removal is not part of
@@ -453,7 +499,11 @@ generation is expected at this stage and is recorded, not tuned away.
    concept-level taxonomy owns them. Move the 2.9 MB
    `evaluation-source.tar.gz` out of the repository (the receipt keeps its
    hash) unless Alec wants it in-tree.
-- **1. Compiler work.** The throughput levers for the serial loop — batch
+- **1. Compiler work.** *Added 2026-10-04:* the open read of 6.8-1 made the
+   whole forward 2.6× slower (.141 s against .055 s on the XOR fixture;
+   [profile](doc/benchmarks/2026-10-03-operators-attention/attention-profile-review/measurement.json));
+   Alec: "the slowdown will have to be addressed." The decoder's two-word
+   walk (6.8 plan §10.2) may pay part of it back. The throughput levers for the serial loop — batch
    across sentences, the known-word lookup concession under the serial
    flag, subsampled reconstruction, closing the host islands and moving
    the sparse stores to device CSR, single passes — are listed in
@@ -483,7 +533,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- `bfe6a0d7` Item 6.9: accepted grammatical-learning baseline, one reconstruction/output decoder and one writer per weight; class MSE .11475 and reconstruction 0/4 remain red, with zero ownership conflicts ([closing receipt](doc/benchmarks/2026-10-03-item6-9-closing/README.md), [round history](doc/benchmarks/2026-10-03-item6-9-closing/todo-history.md)).
+- `bfe6a0d7` Item 6.9: the baseline of the composition mechanism (6.8 §12.1), one reconstruction/output decoder and one writer per weight; accepted class MSE .11475 and reconstruction 0/4 remain historical, with zero ownership conflicts ([closing receipt](doc/benchmarks/2026-10-03-item6-9-closing/README.md), [round history](doc/benchmarks/2026-10-03-item6-9-closing/todo-history.md)).
 - `9810fc7` Item 7: two truths, indexed definitions, ended clause state and shared row-free predicates; accepted under review §25 after all three fixture ports and required checks ([landing receipt](doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md)).
 - `6906727` Item 7.5: one-operation exploit/explore derivations trained at each sentence closing, reduction pressure/deadlines and closing-gradient reporting; accepted with the unchanged depth-three campaign red ([receipt](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
 - `8bc710a` Item 9b: shared fields, parallel-first context, association-first interpretation, fixed capacities and corrected occurrence/time objectives; Claude accepted the source-matched 4,948-case sweep ([receipt](doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md)).

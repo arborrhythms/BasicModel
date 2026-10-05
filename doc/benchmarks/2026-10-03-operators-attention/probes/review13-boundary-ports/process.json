@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_echoic_decoder.py::test_antipode_aligns_the_same_surface_word_as_the_byte_readback",
+    "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction",
+    "test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder",
+    "test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit"
+  ],
+  "pid": 33560,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1536821648,
+  "elapsed_seconds": 11.631952875002753,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review13-boundary-ports/run.log"
+}

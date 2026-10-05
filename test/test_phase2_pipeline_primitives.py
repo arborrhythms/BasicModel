@@ -212,7 +212,7 @@ def test_build_pipelines_creates_body_stages():
     import torch.nn as nn_
     model = _make_mm_xor_model()
     assert isinstance(model.body_stages, nn_.ModuleList)
-    assert len(model.body_stages) == model.subsymbolicOrder
+    assert len(model.body_stages) == model.bindingDepth
     for stage in model.body_stages:
         assert isinstance(stage, nn_.Module)
         assert not isinstance(stage, nn_.ModuleDict)

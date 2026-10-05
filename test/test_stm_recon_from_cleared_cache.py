@@ -44,17 +44,17 @@ TOPK = 3            # top-k recovered words per position to compare
 # -- harness ---------------------------------------------------------------
 
 def _write_serial_config():
-    """Materialize a temp XML overlaying ``<serial>true</serial>`` --
+    """Materialize a temp XML overlaying ```` --
     BasicModel.from_config re-reads from disk, so the knob must be on a
     file. Mirrors test_router_fires_per_word._write_config_with_overrides.
     """
     with open(_GRAMMAR_CONFIG, "r") as f:
         text = f.read()
     text = re.sub(
-        r"\s*<symbolicOrder>[^<]*</symbolicOrder>\s*\n", "\n", text)
+        r"\s*<conceptLayers>[^<]*</conceptLayers>\s*\n", "\n", text)
     text = re.sub(
         r"\s*<serial>[^<]*</serial>\s*\n", "\n", text)
-    inject = "<serial>true</serial>\n    <symbolicOrder>1</symbolicOrder>"
+    inject = "\n    <conceptLayers>2</conceptLayers>"
     if "<architecture>" in text:
         text = text.replace("<architecture>", f"<architecture>\n    {inject}", 1)
     else:

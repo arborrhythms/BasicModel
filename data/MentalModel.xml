@@ -9,7 +9,7 @@
     <l1Lambda>0.01</l1Lambda>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <symbolicOrder>1</symbolicOrder>
+    <conceptLayers>2</conceptLayers>
     <weightsPath>MentalModel.ckpt</weightsPath>
     <data>
       <dataType>embedding</dataType>

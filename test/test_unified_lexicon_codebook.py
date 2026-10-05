@@ -759,7 +759,7 @@ class TestFlatSlabInvariant(unittest.TestCase):
     """Validate legacy flat slabs and aligned sparse concept activation."""
 
     def _build_config_dict(self, is_out, is_dim, ps_out, ps_dim,
-                           cs_out, cs_dim, *, aligned_serial=False,
+                           cs_out, cs_dim, *, aligned_word_brackets=False,
                            cs_input_event=None):
         """Build a minimal cfg dict the validator can chew on.
 
@@ -774,16 +774,16 @@ class TestFlatSlabInvariant(unittest.TestCase):
         ps_event = ps_dim + sum(canonical_shape("PartSpace"))
         # the concept code is the whole percept event: no conceptual band
         cs_event = cs_dim + sum(canonical_shape("PartSpace"))
-        ws_dim = ps_dim if aligned_serial else cs_dim
+        ws_dim = ps_dim if aligned_word_brackets else cs_dim
         ws_event = ws_dim + sum(canonical_shape("WholeSpace"))
         architecture = {
                 "dataType": "embedding",
                 "monotonic": False,
                 "naive": False,
         }
-        if aligned_serial:
+        if aligned_word_brackets:
             architecture.update({
-                "serial": True,
+                "conceptLayers": 2,
                 "serialObjectMeta": True,
                 "conceptBinding": "aligned",
             })
@@ -801,7 +801,7 @@ class TestFlatSlabInvariant(unittest.TestCase):
             },
             "ConceptualSpace": {
                 "nInput": ps_out,
-                "nInputDim": ((cs_event if aligned_serial else ps_event)
+                "nInputDim": ((cs_event if aligned_word_brackets else ps_event)
                               if cs_input_event is None
                               else int(cs_input_event)),
                 "nOutput": cs_out, "nDim": cs_event,
@@ -848,22 +848,22 @@ class TestFlatSlabInvariant(unittest.TestCase):
         msg = str(ctx.exception)
         self.assertIn("flat-slab", msg.lower())
 
-    def test_aligned_serial_allows_compact_ps_into_high_dim_cs(self):
+    def test_aligned_word_brackets_allows_compact_ps_into_high_dim_cs(self):
         cfg = self._build_config_dict(
             is_out=8, is_dim=504,
             ps_out=8, ps_dim=128,
             cs_out=8, cs_dim=1024,
-            aligned_serial=True)
+            aligned_word_brackets=True)
         Models.ModelFactory.validate_config(cfg)  # no raise expected
 
-    def test_aligned_serial_requires_predecoded_cs_input_boundary(self):
+    def test_aligned_word_brackets_requires_predecoded_cs_input_boundary(self):
         from architecture import canonical_shape
         ps_event = 128 + sum(canonical_shape("PartSpace"))
         cfg = self._build_config_dict(
             is_out=8, is_dim=504,
             ps_out=8, ps_dim=128,
             cs_out=8, cs_dim=1024,
-            aligned_serial=True,
+            aligned_word_brackets=True,
             cs_input_event=ps_event)
         with self.assertRaises((ValueError, AssertionError, KeyError)) as ctx:
             Models.ModelFactory.validate_config(cfg)
@@ -874,8 +874,8 @@ class TestFlatSlabInvariant(unittest.TestCase):
             is_out=8, is_dim=504,
             ps_out=8, ps_dim=128,
             cs_out=8, cs_dim=1024,
-            aligned_serial=True)
-        cfg["architecture"]["serial"] = False
+            aligned_word_brackets=True)
+        cfg["architecture"]["conceptLayers"] = 1
         with self.assertRaises((ValueError, AssertionError, KeyError)) as ctx:
             Models.ModelFactory.validate_config(cfg)
         self.assertIn("flat-slab", str(ctx.exception).lower())

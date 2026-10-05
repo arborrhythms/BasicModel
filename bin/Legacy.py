@@ -548,7 +548,7 @@ class QKVAttentionLayer(Layer):
         if mask is not None:
             scores = scores.masked_fill(~mask, float("-inf"))
         attn = F.softmax(scores, dim=-1)
-        # Cached for diagnostic readers (e.g. InterSentenceLayer uses
+        # Cached for diagnostic readers (e.g. BracketExpectation uses
         # the last-position entropy as a confidence signal).  Detached
         # so holding it doesn't pin the graph.
         self.last_attn = attn.detach()

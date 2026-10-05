@@ -1,0 +1,59 @@
+..............................F..........s.......F...................... [ 64%]
+..s.............................F.......                                 [100%]
+=================================== FAILURES ===================================
+_____________ test_recovers_on_transitional_grammar_participation ______________
+test/test_semantic_categories_pipeline.py:48: in test_recovers_on_transitional_grammar_participation
+    g.load_from_grammar_file(os.path.join(
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1583: in _fill_rule_list
+    raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E   ValueError: exist is retired; query conceptual content with what
+_______ test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path ________
+test/test_sentence_end_state.py:87: in test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path
+    compiled = torch.compile(BasicModel._tensor_record_operation_values, backend='eager', fullgraph=True)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_tensor_record_operation_values'. Did you mean: '_tensor_record_operation'?
+______ test_same_individual_uses_prior_sentence_point_and_keeps_own_words ______
+test/test_sentence_references.py:50: in test_same_individual_uses_prior_sentence_point_and_keeps_own_words
+    torch.testing.assert_close(clause.point, prior.point + original.leaves[1])
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 4 / 4 (100.0%)
+E   Greatest absolute difference: 0.699999988079071 at index (2,) (up to 1e-05 allowed)
+E   Greatest relative difference: 0.5 at index (0,) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[False-part-order0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1435/test_sentence_trials_keep_thei0/tiny_chunk_model.xml]: Data.what target (2, 16) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1435/test_sentence_trials_keep_thei0/tiny_chunk_model.xml]: head pred (2, 1, 1) vs labels (2, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1435/test_real_packed_ends_train_be0/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1435/test_first_and_later_words_kee0/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1435/test_first_and_later_words_kee0/tiny_chunk_model.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation
+FAILED test/test_sentence_end_state.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path
+FAILED test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words
+3 failed, 107 passed, 2 skipped, 6 warnings in 297.76s (0:04:57)

@@ -1,21 +1,19 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- XOR_grammar: XOR-via-grammar test config. The signal router
-       is the candidate grammar discoverer;
-       the parse-side grammar names exactly the three Boolean
-       primitives XOR's DNF requires (not, intersection, union). The
-       chart's recovered (Viterbi-hardened) grammar is then compared
-       to expectation: a working chart should commit to a mix of
-       not + intersection + union; degenerate collapse to a single
-       rule indicates the chart is a passenger and downstream layers
-       are carrying the XOR computation.
+  <!-- XOR_grammar: the composition mechanism gate (6.8 §12.1).
+       Two words compose into one understanding, are decoded back, and an
+       affine answer reads XOR. Conjunction is product binding; disjunction
+       is the probabilistic sum of magnitudes times unit(x+y-x*y).
+       Both binary rules are nonlinear. The separate sum control uses mean.
+       No corpus tells this four-sentence fixture which operator a
+       construction means; it does not measure grammatical learning.
 
        Inherits the always-on Pi/Sigma/Not folds from model.xml's
        tier-scoped defaults; the rules in <compose> below add the
        3-rule Boolean grammar at the symbolic tier. -->
   <architecture>
-    <subsymbolicOrder>2</subsymbolicOrder>
+    <bindingDepth>2</bindingDepth>
     <!-- Native passes preserve width: every conceptual level keeps the
          same nVectors width (4+4+4 at order 2). Wide enough at each
          level to accommodate terminals and their negations
@@ -29,7 +27,7 @@
     </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <symbolicOrder>1</symbolicOrder>
+    <conceptLayers>2</conceptLayers>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -58,7 +56,7 @@
   <!-- Stage 1.D flat-slab invariant (2026-05-27): IS.nOutput aligned
        to PS/CS (6). nVectors stays at 8 for vocab headroom. -->
   <InputSpace>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <nOutput>6</nOutput>
     <codebook>quantize</codebook>
@@ -66,14 +64,15 @@
 
   <PartSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>256</nVectors>
     <invertible>true</invertible>
   </PartSpace>
 
   <ConceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
+    <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
     <nVectors>6</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -83,8 +82,8 @@
     <!-- 2026-06-06 uniform-band migration: nDim is the EVENT width
          (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
          tier, so nDim was bumped 4 -> 8 to preserve nWhat=4. -->
-    <nDim>10</nDim>
-    <nVectors>6</nVectors>
+    <nDim>14</nDim>
+    <nVectors>9</nVectors>
   </WholeSpace>
 
   <OutputSpace>
@@ -103,6 +102,13 @@
            symbolic tier (XOR is a Boolean function over symbols). -->
       <grammar>
         <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
           <symbols>
             <rule>S = not.forward(S)</rule>
             <rule>S = conjunction.forward(S, S)</rule>

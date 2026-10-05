@@ -1,0 +1,374 @@
+.....F..........EEEE                                                     [100%]
+==================================== ERRORS ====================================
+__________ ERROR at setup of TestMMXorConvergence.test_a_forward_runs __________
+
+cls = <class 'test_mm_xor.TestMMXorConvergence'>
+
+    @classmethod
+    def setUpClass(cls):
+        import torch
+        import matplotlib
+        matplotlib.use('Agg')
+    
+>       m, cfg, data = _fresh_model()
+                       ^^^^^^^^^^^^^^
+
+test/test_mm_xor.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:40: in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6562: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6582: in create
+    return self._create_per_stage(
+bin/Models.py:16724: in _create_per_stage
+    self.build_pipelines()
+bin/Models.py:6607: in build_pipelines
+    return self._build_pipelines_per_stage()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16792: in _build_pipelines_per_stage
+    install_where_registry(self)
+bin/WhereRegistry.py:69: in install_where_registry
+    if model.serial and not bool(TheXMLConfig.get('architecture.serialObjectMeta', default=False)):
+       ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... Tensor()
+    (where): Tensor()
+    (when): Tensor()
+  )
+  (body_stages): ModuleList(
+    (0-2): 3 x _BodyStage()
+  )
+)
+name = 'serial'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'serial'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ ERROR at setup of TestMMXorConvergence.test_forward_keeps_continuous_symbols _
+
+cls = <class 'test_mm_xor.TestMMXorConvergence'>
+
+    @classmethod
+    def setUpClass(cls):
+        import torch
+        import matplotlib
+        matplotlib.use('Agg')
+    
+>       m, cfg, data = _fresh_model()
+                       ^^^^^^^^^^^^^^
+
+test/test_mm_xor.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:40: in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6562: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6582: in create
+    return self._create_per_stage(
+bin/Models.py:16724: in _create_per_stage
+    self.build_pipelines()
+bin/Models.py:6607: in build_pipelines
+    return self._build_pipelines_per_stage()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16792: in _build_pipelines_per_stage
+    install_where_registry(self)
+bin/WhereRegistry.py:69: in install_where_registry
+    if model.serial and not bool(TheXMLConfig.get('architecture.serialObjectMeta', default=False)):
+       ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... Tensor()
+    (where): Tensor()
+    (when): Tensor()
+  )
+  (body_stages): ModuleList(
+    (0-2): 3 x _BodyStage()
+  )
+)
+name = 'serial'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'serial'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__ ERROR at setup of TestMMXorConvergence.test_has_conceptual_symbolic_spaces __
+
+cls = <class 'test_mm_xor.TestMMXorConvergence'>
+
+    @classmethod
+    def setUpClass(cls):
+        import torch
+        import matplotlib
+        matplotlib.use('Agg')
+    
+>       m, cfg, data = _fresh_model()
+                       ^^^^^^^^^^^^^^
+
+test/test_mm_xor.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:40: in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6562: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6582: in create
+    return self._create_per_stage(
+bin/Models.py:16724: in _create_per_stage
+    self.build_pipelines()
+bin/Models.py:6607: in build_pipelines
+    return self._build_pipelines_per_stage()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16792: in _build_pipelines_per_stage
+    install_where_registry(self)
+bin/WhereRegistry.py:69: in install_where_registry
+    if model.serial and not bool(TheXMLConfig.get('architecture.serialObjectMeta', default=False)):
+       ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... Tensor()
+    (where): Tensor()
+    (when): Tensor()
+  )
+  (body_stages): ModuleList(
+    (0-2): 3 x _BodyStage()
+  )
+)
+name = 'serial'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'serial'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ ERROR at setup of TestMMXorConvergence.test_model_is_mental __________
+
+cls = <class 'test_mm_xor.TestMMXorConvergence'>
+
+    @classmethod
+    def setUpClass(cls):
+        import torch
+        import matplotlib
+        matplotlib.use('Agg')
+    
+>       m, cfg, data = _fresh_model()
+                       ^^^^^^^^^^^^^^
+
+test/test_mm_xor.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:40: in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6562: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6582: in create
+    return self._create_per_stage(
+bin/Models.py:16724: in _create_per_stage
+    self.build_pipelines()
+bin/Models.py:6607: in build_pipelines
+    return self._build_pipelines_per_stage()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16792: in _build_pipelines_per_stage
+    install_where_registry(self)
+bin/WhereRegistry.py:69: in install_where_registry
+    if model.serial and not bool(TheXMLConfig.get('architecture.serialObjectMeta', default=False)):
+       ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... Tensor()
+    (where): Tensor()
+    (when): Tensor()
+  )
+  (body_stages): ModuleList(
+    (0-2): 3 x _BodyStage()
+  )
+)
+name = 'serial'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'serial'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=================================== FAILURES ===================================
+_____ test_normal_field_answer_reaches_every_binding_and_keeps_first_word ______
+
+    def test_normal_field_answer_reaches_every_binding_and_keeps_first_word():
+        from test_mm_xor import _fresh_model
+>       model,_,_= _fresh_model()
+                   ^^^^^^^^^^^^^^
+
+test/test_one_attention.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:40: in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6562: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6582: in create
+    return self._create_per_stage(
+bin/Models.py:16724: in _create_per_stage
+    self.build_pipelines()
+bin/Models.py:6607: in build_pipelines
+    return self._build_pipelines_per_stage()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:16792: in _build_pipelines_per_stage
+    install_where_registry(self)
+bin/WhereRegistry.py:69: in install_where_registry
+    if model.serial and not bool(TheXMLConfig.get('architecture.serialObjectMeta', default=False)):
+       ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... Tensor()
+    (where): Tensor()
+    (when): Tensor()
+  )
+  (body_stages): ModuleList(
+    (0-2): 3 x _BodyStage()
+  )
+)
+name = 'serial'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'serial'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+ERROR test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs - Attrib...
+ERROR test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols
+ERROR test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces
+ERROR test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental - Attri...
+1 failed, 15 passed, 3 deselected, 4 errors in 8.84s

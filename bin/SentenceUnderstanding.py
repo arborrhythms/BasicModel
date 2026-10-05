@@ -5,20 +5,56 @@ from torch import nn
 from torch.nn import functional as F
 
 
-def readback_scores(leaf, codes, priming):
-    """Signed activation times cosine times the candidate's priming weight.
+def readback_scores(leaf, codes, priming, *, percept_width=None):
+    """Read native surface identity by scale-free perceptual cosine and priming.
 
-    For a non-unit code c the recovered activation is the least-squares
-    coefficient (leaf.c)/(c.c). Multiplying it by the signed cosine preserves
+    Generic field callers without a perceptual band retain their signed
+    activation times cosine score. For a non-unit code c the least-squares
+    activation is (leaf.c)/(c.c). Multiplying it by the signed cosine preserves
     an excluded word's identity without assuming a unit code. A zero code has
     no direction and scores zero. The codes and the recovered leaf stay live.
     """
+    if percept_width is not None:
+        # The sign is the leaf's activation, not its surface identity. On
+        # native nonnegative percepts, absolute cosine reads either pole of
+        # that identity without using code length or context as evidence.
+        return F.cosine_similarity(leaf[:, None, :percept_width],
+                                   codes[..., :percept_width], dim=-1).abs() * priming
     square = codes.square().sum(-1)
     nonzero = square > 0
     denominator = torch.where(nonzero, square, torch.ones_like(square))
     activation = (leaf[:, None] * codes).sum(-1) / denominator
     cosine = F.cosine_similarity(leaf[:, None], codes, dim=-1)
     return torch.where(nonzero, activation * cosine * priming, 0.)
+
+
+@torch.no_grad()
+def readback_decisions(words, counts, bank, active):
+    """Code, priming, or exact tie, using the same leaves without re-decoding."""
+    valid = bank.valid & bank.byte_valid.any(-1)
+    result = []
+    for position in range(words.shape[1]):
+        code = readback_scores(words[:, position], bank.codes, torch.ones_like(bank.weights),
+                               percept_width=bank.percept_width)
+        weighted = readback_scores(words[:, position], bank.codes, bank.weights,
+                                   percept_width=bank.percept_width)
+        code = code.masked_fill(~valid, -torch.inf)
+        weighted = weighted.masked_fill(~valid, -torch.inf)
+        for b in range(words.shape[0]):
+            if not bool(active[b]) or position >= int(counts[b]) or not bool(valid[b].any()):
+                continue
+            winner, neutral = int(weighted[b].argmax()), int(code[b].argmax())
+            code_ties = int(((code[b] == code[b].max()) & valid[b]).sum())
+            weighted_ties = int(((weighted[b] == weighted[b].max()) & valid[b]).sum())
+            decision = ('tie' if weighted_ties > 1 else
+                        'priming' if code_ties > 1 or winner != neutral else 'code')
+            result.append(dict(batch_row=b, position=position, decided_by=decision,
+                winner_row=int(bank.rows[b, winner]), code_winner_row=int(bank.rows[b, neutral]),
+                code_ties=code_ties, weighted_ties=weighted_ties,
+                changed_winner=winner != neutral,
+                winner_priming=float(bank.weights[b, winner]),
+                winner_code_score=float(code[b, winner]), best_code_score=float(code[b].max())))
+    return result
 
 
 @dataclass(frozen=True)
@@ -29,6 +65,8 @@ class PrimedSymbols:
     own: torch.Tensor
     bytes: torch.Tensor
     byte_valid: torch.Tensor
+    case_bank: object = None
+    percept_width: int | None = None
 
     @property
     def valid(self):
@@ -59,7 +97,8 @@ class SentenceUnderstanding:
                 * self.primed.valid[..., None]).sum(1)
         positions = torch.arange(self.end_slots.shape[1], device=self.root.device)
         end = self.end_slots * (positions[None] < self.end_depth[:, None])[..., None]
-        return torch.cat((self.root, end.flatten(1), bank), -1).detach()
+        root = self.root
+        return torch.cat((root, end.flatten(1), bank), -1).detach()
 
     def detached(self):
         return type(self)(**{f.name: getattr(self, f.name).detach()

@@ -69,8 +69,9 @@ def test_subgoal_carries_the_typed_child_result_into_the_answer():
     assert selected.result.value.semantic_id == "part"
     answers = thought_answer_meanings(selected)
     assert len(answers) == 1
-    assert answers[0].role_refs == inner.role_refs
-    torch.testing.assert_close(answers[0].roles, inner.roles)
+    assert answers[0].role_mask.tolist() == [True, False, False]
+    torch.testing.assert_close(answers[0].roles[0], selected.result.value.value)
+    assert answers[0].bindings == inner.bindings and answers[0].scope == inner.scope
     stored = ThoughtResult.from_checkpoint(selected.result.checkpoint())
     assert isinstance(stored.value, ThoughtResult)
     assert stored.value.request.role_refs == inner.role_refs
@@ -120,13 +121,24 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
     model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
     model._select_perceptual_bindings = lambda *_a: ()
-    model._condition_answer_on_question = lambda idea, _context: idea
+    model._condition_answer_on_question = lambda idea, _context, **_kwargs: idea
     model._synthesis_guard = nullcontext
     model.conceptualSpace.synthesize_idea = lambda idea, **_k: idea
     object.__setattr__(model, 'perceptualSpace', SimpleNamespace(synthesize=lambda idea, **_k: idea))
     object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
     model.selected_thought_budget = 128
     model.reconstruct_in_loop = False
+    # Numerical generation is an explicit identity stub in this adapter test.
+    model._walk_operand=lambda value, **kwargs: value
+    def walk(idea, *args, **kwargs):
+        model._adapter_words=idea
+        return (idea,torch.full((len(idea),),idea.shape[1]),
+                torch.zeros(len(idea),dtype=torch.bool),None,
+                torch.zeros(len(idea),1,dtype=torch.long))
+    model._compiled_output_walk=lambda: walk
+    model.conceptualSpace.commit_event=lambda value: None
+    model._reverse_body=lambda sub: model._adapter_words
+    model._reverse_perceptual=lambda value: value
     from Understanding import SentenceEndState
     from Meaning import ConceptualMeaning
     field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)

@@ -41,6 +41,7 @@ import SentenceCompose
 import util
 from GradientDiagnostics import _norm, _dot_unit
 from bounded_tests import source_snapshot
+from derivation_probe import compose_derivations, named_decoder_sequence
 
 SOURCE = source_snapshot(ROOT)
 (OUT/'source.json').write_text(json.dumps(SOURCE, indent=2))
@@ -93,7 +94,16 @@ class Probe:
         if self.model is None or not self.current.get('train'):
             return []
         named = dict(self.model.named_parameters())
-        codes = {id(cs.similarity_codebook.W) for cs in self.model.conceptualSpaces}
+        codes = {id(p) for cs in self.model.conceptualSpaces for p in cs.similarity_codebook.parameters()}
+        # Derived serial codes have no parameters of their own: their live
+        # sources are the native PS prototype rows and definition evidence.
+        native = self.model.perceptualSpace.subspace.what
+        codes.add(id(native.W))
+        for cs in self.model.conceptualSpaces:
+            derived = getattr(cs.similarity_codebook, 'mereology', None)
+            if derived is not None:
+                from Spaces import _concept_alloc_of
+                codes.add(id(_concept_alloc_of(cs).layer().features.values))
         members = {id(p) for g in optimizer.param_groups for p in g['params']}
         captured = []
         for name, p in named.items():
@@ -147,18 +157,12 @@ class Probe:
     def derivation(self, model, state, sid, active):
         if not self.in_batch or not model._sentence_training:
             return
-        record = model._last_sentence_understanding
-        for b in active.nonzero().flatten().tolist():
+        for observed in compose_derivations(model, state, sid, active):
             # Row and sentence slot identify each configured training stream;
             # word identities distinguish changing native sentences in it.
-            word_rows = record.word_rows[b][record.word_valid[b]].detach().cpu().tolist()
+            b, word_rows = observed['batch_row'], observed['word_rows']
             key = json.dumps(word_rows)
-            lang = state[1]
-            owners, _, _ = model._compose_round_owners(lang[4])
-            valid = lang[6][b] & (owners[b] == sid)
-            sequence = list(zip(lang[5][b][valid].cpu().tolist(),
-                                lang[4][b][valid].cpu().tolist(),
-                                lang[17][b][valid].cpu().tolist()))
+            sequence = observed['sequence']
             signature = json.dumps(sequence)
             row = self.stability.setdefault(key, dict(batch_row=b, sentence_slot=int(sid),
                 word_rows=word_rows, epochs={}, derivations=Counter()))
@@ -202,7 +206,7 @@ class Probe:
             if cb.W.data_ptr() in seen:
                 continue
             seen.add(cb.W.data_ptr())
-            raw = cb.W.detach().float().cpu()
+            raw = cb.getW().detach().float().cpu()
             norms = raw.norm(dim=-1)
             codes = torch.nn.functional.normalize(raw, dim=-1)
             n = len(codes)
@@ -223,6 +227,13 @@ class Probe:
                 cluster_file = f'cluster-size-stage-{stage}.pt'
                 torch.save(cluster.detach().cpu(), OUT/cluster_file)
             books.append(dict(stage=stage, rows=n, dimension=raw.shape[-1],
+                centered_singular_values=torch.linalg.svdvals(raw[rows]-raw[rows].mean(0,keepdim=True)),
+                symbol_concept_pairs=[dict(row=r, concept=cs.concept_id_at_row(r),
+                    symbol=cs.word_surface_for_row(r).decode('utf8'))
+                    for r in rows if cs.word_surface_for_row(r) is not None],
+                context=None if getattr(cb, 'mereology', None) is None else cb.mereology.context_audit(),
+                word_perceptual_support=(None if getattr(cb, 'mereology', None) is None else
+                    cb.mereology.support_audit([r for r in rows if cs.word_surface_for_row(r) is not None])),
                 cosine_matrix_rows=rows, matrix_scope='all rows' if n<=256 else 'all observed primed rows',
                 all_dictionary_pairs=dict(count=count, mean=pair_sum/count if count else None,
                     mean_square=pair_square_sum/count if count else None),
@@ -233,6 +244,7 @@ class Probe:
         roots = self.geometry_roots.get(phase)
         write(f'geometry-{phase}.json', dict(dictionary=books,
             roots=None if roots is None else dict(shape=list(roots.shape), values=roots,
+                pairwise_cosines=torch.nn.functional.normalize(roots, dim=-1) @ torch.nn.functional.normalize(roots, dim=-1).T,
                 singular_values=torch.linalg.svdvals(roots),
                 centered_singular_values=torch.linalg.svdvals(roots-roots.mean(0,keepdim=True))),
             note='No new forward or optimizer step; roots from the measured first trial and endpoint; dictionary pairs are cosine, not dot products.'))
@@ -267,7 +279,7 @@ class Probe:
         # make the numeric answer head a perception parameter. The shared
         # vocabulary belongs to perception, not the reading map.
         percept = [p for p in percept if id(p) not in output_ids] + vocabulary
-        predictors = module_parameters(getattr(model.symbolSpace, 'discourse', None))
+        predictors = module_parameters(getattr(model.symbolSpace, 'expectation', None))
         for cs in model.conceptualSpaces:
             codes += module_parameters(getattr(cs, 'similarity_codebook', None))
             percept += module_parameters(getattr(cs, 'concepts_from_percepts', None))
@@ -403,7 +415,8 @@ class Probe:
             bank = record.primed
             with torch.no_grad():
                 from SentenceUnderstanding import readback_scores
-                similarity = torch.stack([readback_scores(recovered[:, w], bank.codes, bank.weights)
+                similarity = torch.stack([readback_scores(recovered[:, w], bank.codes, bank.weights,
+                                          percept_width=bank.percept_width)
                                           for w in range(recovered.shape[1])], 1)
                 surface = bank.byte_valid.any(-1) & bank.valid
                 own_word = (record.word_rows[..., None] == bank.rows[:, None, :]) & surface[:, None, :]
@@ -422,6 +435,9 @@ class Probe:
             with torch.no_grad():
                 leaves, counts, truncated, _, actions = model._last_decoder_trace
                 bank = record.primed
+                from SentenceUnderstanding import readback_decisions
+                self.log('readback_decisions', epoch=self.epoch, train=bool(model._sentence_training),
+                    trial=model._sentence_trial, decisions=readback_decisions(leaves, counts, bank, active))
                 cosines = torch.nn.functional.cosine_similarity(
                     leaves[:, :, None], bank.codes[:, None], dim=-1)
                 lang = local['state'][1]
@@ -446,10 +462,21 @@ class Probe:
                     rows=rows, surfaces=spellings, priming=bank.weights,
                     pair_cosines=pairs, truncated=truncated,
                     chosen_operations=[[names[i] for i in batch if i >= 0] for batch in actions.cpu().tolist()],
+                    decoder_derivations=[named_decoder_sequence(model.languageSpace, batch)
+                                         for batch in actions.cpu().tolist()],
+                    compose_derivations=compose_derivations(model, local['state'], local['sid'], active, record=record),
                     compose_rules=[lang[4][b][compose_valid[b]].cpu().tolist() for b in range(len(rows))],
                     compose_arities=[lang[5][b][compose_valid[b]].cpu().tolist() for b in range(len(rows))],
                     leaves=[leaves[b, :int(n)] for b,n in enumerate(counts)],
                     leaf_code_cosines=[cosines[b, :int(n)] for b,n in enumerate(counts)])
+                comparison = getattr(model, '_last_decoder_comparison', None)
+                if comparison is not None:
+                    self.log('decoder_comparison', epoch=self.epoch, batch=self.training_batches,
+                        trial=model._sentence_trial, sid=int(local['sid']), **comparison,
+                        greedy_derivations=[named_decoder_sequence(model.languageSpace, batch)
+                                            for batch in comparison['greedy'].cpu().tolist()],
+                        explore_derivations=[named_decoder_sequence(model.languageSpace, batch)
+                                             for batch in comparison['explore'].cpu().tolist()])
         answer = model._sentence_answer_cost
         evaluation_answer = None
         if self.in_batch and not model._sentence_training:
@@ -587,6 +614,8 @@ class Probe:
 
 
 P=Probe()
+from decoder_margin_probe import DecoderMarginProbe
+DECODER_MARGIN = DecoderMarginProbe(P.log)
 patches=[]
 def instrument(cls,name,old,new):
     function=getattr(cls,name)
@@ -603,6 +632,15 @@ def instrument(cls,name,old,new):
 instrument(Models.BasicModel,'_sentence_path_cost',
     '    return cost, reconstruction, observation, pending',
     '    _objective_probe.trial(self, locals())\n    return cost, reconstruction, observation, pending')
+P.decoder_margin = DECODER_MARGIN
+instrument(Models.BasicModel, '_output_generate_walk',
+    '        logits = logits.masked_fill(~legal, -torch.inf)',
+    '        if not torch.compiler.is_compiling() and _objective_probe.in_batch and getattr(self, "_sentence_training", False):\n'
+    '            _objective_probe.decoder_margin.capture(self, logits, parent, legal, round=t,\n'
+    '                explore=exploit_actions is not None, live=live,\n'
+    '                metadata=dict(epoch=_objective_probe.epoch, batch=_objective_probe.training_batches,\n'
+    '                              trial=getattr(self, "_sentence_trial", None)))\n'
+    '        logits = logits.masked_fill(~legal, -torch.inf)')
 instrument(Models.BasicModel,'_run_batch_once',
     '    self._sentence_answer_questions = what_questions',
     '    self._sentence_answer_questions = what_questions\n    _objective_probe.opened(self, locals())')
@@ -646,7 +684,11 @@ def paired(cache,compose,score,step,*,active,training=True,before_step=None):
 SentenceCompose.sentence_pair=paired
 original_backward = Models.BaseModel._backward_training_loss
 def owned_backward(model, total, amp_scaler=None, *, optimizer=None):
-    result = original_backward(model, total, amp_scaler, optimizer=optimizer)
+    DECODER_MARGIN.begin_backward()
+    try:
+        result = original_backward(model, total, amp_scaler, optimizer=optimizer)
+    finally:
+        DECODER_MARGIN.end_backward()
     live = model._sentence_optimizer if getattr(model, '_sentence_backward', False) else optimizer
     P.capture_ownership(model, live)
     return result
@@ -655,7 +697,9 @@ from Optimizer import MultiOptimizer
 original_optimizer_step = MultiOptimizer._step_without_finite_preflight
 def observed_optimizer_step(optimizer):
     captured = P.before_optimizer_step(optimizer)
+    DECODER_MARGIN.before_step()
     result = original_optimizer_step(optimizer)
+    DECODER_MARGIN.after_step()
     P.after_optimizer_step(captured)
     return result
 MultiOptimizer._step_without_finite_preflight = observed_optimizer_step

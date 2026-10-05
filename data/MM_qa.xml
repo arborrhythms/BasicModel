@@ -27,9 +27,9 @@
   <architecture>
     <!-- TruthSet assertions require a selected grammatical closing. Read
          their plain text through the serial grammar before LTM admission. -->
-    <serial>true</serial>
-    <symbolicOrder>0</symbolicOrder>
-    <subsymbolicOrder>3</subsymbolicOrder>
+
+    <conceptLayers>1</conceptLayers>
+    <bindingDepth>3</bindingDepth>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <!-- The mereologyRaise handoff CONSUMES the reading scope (the 4-case
@@ -38,13 +38,13 @@
     <mereologyRaise>true</mereologyRaise>
     <!-- The reading-attention PRODUCER (the learned `.where`). Default false
          elsewhere gives no module, no scope, no loss (byte-identical). -->
-    <readingAttention>true</readingAttention>
+
     <!-- (B) free attention over the typed addressable space: input window, STM,
          LTM, and the symbol/whole codebook. Parks a typed .where + soft-read on
          _global_attention_obs (dark: not fed back yet). -->
-    <globalAttention>true</globalAttention>
+
     <!-- close the loop: feed the soft-read (incl. the LTM TruthSet read) back into the head. -->
-    <globalAttentionConsume>true</globalAttentionConsume>
+
     <!-- the LTM "book": parse this TruthSet into ltm_store at provision; global attention reads SPACE_LTM over it. -->
     <ltmConsolidation>true</ltmConsolidation>
     <truthSet>

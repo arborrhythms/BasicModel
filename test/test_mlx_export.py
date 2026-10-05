@@ -52,7 +52,7 @@ _MLX_ONLY = pytest.mark.skipif(
     not _APPLE_SILICON,
     reason="MLX delegate needs Apple Silicon + Metal (uname -m != arm64)")
 
-# MM_20M ships subsymbolicOrder=3 (the multi-stage combine target). torch.export
+# MM_20M ships bindingDepth=3 (the multi-stage combine target). torch.export
 # value-deduplicates the butterfly's per-level permutation -- identical across
 # the three per-stage ConceptualCombine subgraphs -- into ONE constant that
 # every delegated subgraph references. ExecuTorch's per-submodule constant

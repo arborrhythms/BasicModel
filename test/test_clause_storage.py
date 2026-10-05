@@ -298,7 +298,7 @@ def test_full_store_can_update_an_existing_relation():
     assert store.row(0)['evidence'] == pytest.approx((.8, 0.))
 
 
-def test_declared_true_executes_over_end_clause_and_preserves_both_poles():
+def test_query_returns_end_clause_content_and_preserves_both_poles():
     from test_query_vp_boundaries import _world, _context
     cs, _grammar, registry, _a, _b, _ = _world()
     store = TernaryTruthStore(8, capacity=8)
@@ -307,8 +307,9 @@ def test_declared_true_executes_over_end_clause_and_preserves_both_poles():
     meaning = ConceptualMeaning.from_description(point)
     row = store.write_clause(Clause(meaning, point=point), kind='fact', evidence=(.8, .7))
     context = _context(cs, store=store)
-    question = registry.form('true', store.occurrence_of(row), context=context)
+    question = registry.form('what', store.occurrence_of(row), context=context)
     result = registry.execute(question, context)
-    assert result.evidence['semantic_id'] == 'true'
+    assert result.evidence['semantic_id'] == 'what'
+    torch.testing.assert_close(result.value[0]['meaning'].roles, meaning.roles)
     assert result.support_true == pytest.approx(.8)
     assert result.support_false == pytest.approx(.7)

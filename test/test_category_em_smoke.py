@@ -55,12 +55,12 @@ def _write_category_config(*, mlp=False):
     if mlp:
         # transformChooser precedes categoryCodebook in the xsd sequence.
         flags = "    <transformChooser>mlp</transformChooser>\n" + flags
-    needle = "<symbolicOrder>1</symbolicOrder>"
+    needle = "<conceptLayers>2</conceptLayers>"
     assert needle in text, "POS_smoke.xml shape changed"
     text = text.replace(
         needle,
-        "<serial>true</serial>\n"
-        "    <symbolicOrder>0</symbolicOrder>\n" + flags,
+        "\n"
+        "    <conceptLayers>2</conceptLayers>\n" + flags,
         1)
     tmp = tempfile.NamedTemporaryFile(
         mode="w", suffix=".xml", delete=False)

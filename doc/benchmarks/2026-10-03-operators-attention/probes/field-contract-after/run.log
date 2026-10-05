@@ -1,0 +1,106 @@
+....................FF.F..................................               [100%]
+=================================== FAILURES ===================================
+_________ test_boolean_field_cannot_be_declared_between_symbols[and-1] _________
+
+operation = 'and', arity = 1
+
+    @pytest.mark.parametrize('operation,arity',[('and',1),('or',1),('not',1)])
+    def test_boolean_field_cannot_be_declared_between_symbols(operation,arity):
+        from Language import Grammar
+>       with pytest.raises(ValueError,match='field'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'field'
+E         Actual message: 'reads names an unknown subsystem'
+
+test/test_one_attention.py:170: AssertionError
+_________ test_boolean_field_cannot_be_declared_between_symbols[or-1] __________
+
+operation = 'or', arity = 1
+
+    @pytest.mark.parametrize('operation,arity',[('and',1),('or',1),('not',1)])
+    def test_boolean_field_cannot_be_declared_between_symbols(operation,arity):
+        from Language import Grammar
+>       with pytest.raises(ValueError,match='field'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'field'
+E         Actual message: 'reads names an unknown subsystem'
+
+test/test_one_attention.py:170: AssertionError
+_ test_bracket_candidates_are_grammar_declared_field_operations_without_generate _
+
+self = OperatorEffects(reads=('perception',), writes=())
+
+    def __post_init__(self):
+        for name in ('reads', 'writes'):
+            original = tuple(getattr(self, name))
+            try:
+>               values = tuple(value if isinstance(value, Subsystem) else
+                               Subsystem[str(value).upper()] for value in original)
+
+bin/AccessibleMind.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/AccessibleMind.py:56: in <genexpr>
+    Subsystem[str(value).upper()] for value in original)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <enum 'Subsystem'>, name = 'PERCEPTION'
+
+    def __getitem__(cls, name):
+        """
+        Return the member matching `name`.
+        """
+>       return cls._member_map_[name]
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'PERCEPTION'
+
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/enum.py:813: KeyError
+
+The above exception was the direct cause of the following exception:
+
+    def test_bracket_candidates_are_grammar_declared_field_operations_without_generate():
+        from Language import Grammar
+        g=Grammar();rules=[]
+        for name in ('divide','descend','gloss'):
+>           g._fill_rule_list(rules,{'rule':{'_':f'X = {name}.forward(X)','operands':'field'}})
+
+test/test_one_attention.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:1593: in _fill_rule_list
+    rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:1927: in _parse_rule
+    return self._declared_rule(self.RuleDef(
+bin/Language.py:783: in _declared_rule
+    effects = OperatorEffects(reads, writes)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:5: in __init__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = OperatorEffects(reads=('perception',), writes=())
+
+    def __post_init__(self):
+        for name in ('reads', 'writes'):
+            original = tuple(getattr(self, name))
+            try:
+                values = tuple(value if isinstance(value, Subsystem) else
+                               Subsystem[str(value).upper()] for value in original)
+            except KeyError as error:
+>               raise ValueError(f'{name} names an unknown subsystem') from error
+E               ValueError: reads names an unknown subsystem
+
+bin/AccessibleMind.py:58: ValueError
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_boolean_field_cannot_be_declared_between_symbols[and-1]
+FAILED test/test_one_attention.py::test_boolean_field_cannot_be_declared_between_symbols[or-1]
+FAILED test/test_one_attention.py::test_bracket_candidates_are_grammar_declared_field_operations_without_generate
+3 failed, 55 passed, 1 warning in 6.94s

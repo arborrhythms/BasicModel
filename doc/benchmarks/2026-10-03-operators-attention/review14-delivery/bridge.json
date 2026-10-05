@@ -1,0 +1,42 @@
+{
+  "head": "802abb1acc95e1bddc8cb237b13230a336681c49",
+  "source_matched": true,
+  "whole_old_new_test_ports": 169,
+  "changed_seed_calls": 0,
+  "receipt_links_verified": 26,
+  "source_files": 691,
+  "delivery_files": 710,
+  "supplement_files": 1610,
+  "frozen_source_manifest_sha256": "f3f584a84c3f96e4077fa1753b1ce76fa099574723dbfa96767314d0fab7069a",
+  "measurement_source_manifest_sha256": "f3f584a84c3f96e4077fa1753b1ce76fa099574723dbfa96767314d0fab7069a",
+  "delivery_source_manifest_sha256": "f3f584a84c3f96e4077fa1753b1ce76fa099574723dbfa96767314d0fab7069a",
+  "source_zip_sha256": "08fbe3daf1c332e4eb41a443d7ab9dcfcae95448ea744203f2af306af1376926",
+  "supplement_zip_sha256": "e638ad533be9c998e576e9dd751f6b6f08dfbc109faf94acfbaff1f2ea2d3a44",
+  "supplement_manifest_sha256": "dec824d7c2a45a03750f8da835bd303409e44ffdcdfcffce08c454370216817a",
+  "comparison": {
+    "class_pass": 1,
+    "reconstruction_pass": 8,
+    "joint": 1,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "xor_bands": {
+      "at 0": 1,
+      "at 1/4": 8,
+      "between": 1,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "single_sweep": {
+    "passed": 4813,
+    "skipped": 285,
+    "failed": 74,
+    "xfailed": 1
+  },
+  "note": "Saved measurements only. The supplement includes the receipt, todo, reporting helpers, all \u00a714 probes, source snapshots, sweep and gate evidence. Nothing committed."
+}

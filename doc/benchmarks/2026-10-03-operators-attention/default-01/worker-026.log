@@ -1,0 +1,22 @@
+..........................s............................................. [ 41%]
+.................................................................s...... [ 83%]
+......F......................                                            [100%]
+=================================== FAILURES ===================================
+___________________ test_unary_ops_use_unary_affix_template ____________________
+test/test_surface_schema.py:45: in test_unary_ops_use_unary_affix_template
+    sch = GRAMMAR_LAYER_CLASSES[name].surface_schema
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'exist'
+=============================== warnings summary ===============================
+test/test_stm_substrate.py::test_word_space_params_include_category_embedding
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1705: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_stm_substrate.py::test_word_space_params_include_category_embedding
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1705: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_surface_schema.py::test_unary_ops_use_unary_affix_template
+1 failed, 170 passed, 2 skipped, 2 warnings in 9.11s

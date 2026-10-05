@@ -1,0 +1,46 @@
+................................s....................................... [ 56%]
+.F.....................ssss.......ssssss.............FF                  [100%]
+=================================== FAILURES ===================================
+___________ test_every_serial_word_runs_interpret_before_composition ___________
+test/test_word_interpretation.py:202: in test_every_serial_word_runs_interpret_before_composition
+    assert (ids[active] != objects[active]).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x12fe2ee40>()
+E    +    where <built-in method all of Tensor object at 0x12fe2ee40> = tensor([ 1, -1,  3, -1,  5]) != tensor([ 2, -1,  4, -1,  6]).all
+_ TestXORGrammarLanguageLayerIntegration.test_signal_router_has_grammar_ops_attached _
+test/test_xor_grammar.py:207: in test_signal_router_has_grammar_ops_attached
+    self.assertTrue(
+E   AssertionError: False is not true : Expected at least one unary space_role attached
+_ TestXORGrammarLanguageLayerIntegration.test_signal_router_rule_ids_match_grammar _
+test/test_xor_grammar.py:253: in test_signal_router_rule_ids_match_grammar
+    self.assertIn(not_id, all_unary_rule_ids,
+E   AssertionError: 0 not found in set() : Grammar 'not' rule_id must be attached to some unary space_role
+=============================== warnings summary ===============================
+test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:394: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span
+test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words
+test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans
+test/test_within_whole_division.py::test_live_no_store_is_inert
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition
+FAILED test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached
+FAILED test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar
+3 failed, 113 passed, 11 skipped, 9 warnings in 44.96s

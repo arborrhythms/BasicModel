@@ -6,7 +6,7 @@ from Language import OperationSelectionLayer
 from test_compose_operations import Add, Negate, layer
 
 
-def test_zero_temperature_is_valid_and_keeps_the_chooser_gradient():
+def test_zero_temperature_keeps_the_score_function_gradient():
     step = OperationSelectionLayer(d_model=1, ops=[Add()], unary_ops=[Negate()],
                                    temperature=0)
     with torch.no_grad():
@@ -15,6 +15,9 @@ def test_zero_temperature_is_valid_and_keeps_the_chooser_gradient():
     x = torch.tensor([[[1.], [2.], [3.]]], requires_grad=True)
     _, path, route = step(x, sample=True)
     path.sum().backward()
+    assert step.reduce_anchor.grad is None
+    assert step.apply_anchor.grad is None
+    (-route['probability'].sum()).backward()
     assert route['action'].tolist() == [1]
     assert 0 < route['probability'].item() < 1
     assert step.reduce_anchor.grad.abs().sum() > 0
@@ -28,9 +31,9 @@ def test_temperature_and_forced_mask_do_not_change_model_credit():
     for temperature in (0., .25, 2.):
         step.temperature = temperature
         _, _, route = step(x, masked_action=torch.tensor([1]))
-        assert route['action'].tolist() == [0]
+        assert route['departure_eligible'].gather(1, route['action'][:, None]).all()
         torch.testing.assert_close(route['probabilities'], expected)
-        torch.testing.assert_close(route['probability'], expected[:, 0])
+        torch.testing.assert_close(route['probability'], expected.gather(1, route['action'][:, None]).squeeze(1))
 
 
 def test_zero_temperature_explore_is_identical_until_the_forced_round(monkeypatch):

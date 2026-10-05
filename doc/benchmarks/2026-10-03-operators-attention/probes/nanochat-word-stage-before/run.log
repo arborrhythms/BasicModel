@@ -1,0 +1,11 @@
+BUILT 1751449600
+STAGED 5175296000
+{"elapsed": 4.725477208994562, "scores": [2.7638919353485107, 2.8111824989318848, 2.793943405151367, 2.7854151725769043, 2.7560372352600098, 2.8110451698303223, 2.7400927543640137, 2.773655414581299, 2.778989553451538, 2.790539026260376, 2.7333946228027344, 2.754818916320801, 2.766054153442383, 2.7871618270874023, 2.7683908939361572, 2.7507832050323486], "counts": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6], "peak": 5231034368}
+.
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-operators-attention/nanochat_stage_probe.py::test_native_word_staging
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 5.22s

@@ -1,0 +1,110 @@
+...................................s.................F.................. [ 87%]
+..........                                                               [100%]
+=================================== FAILURES ===================================
+________ test_29_each_reading_publishes_only_its_words[XOR_grammar.xml] ________
+
+configuration = 'XOR_grammar.xml'
+
+    @pytest.mark.usefixtures('eager_reading')
+    @pytest.mark.parametrize('configuration', ['MM_xor.xml', 'MM_grammar.xml', 'XOR_grammar.xml'])
+    def test_29_each_reading_publishes_only_its_words(configuration):
+        from test_mm_xor import _fresh_model, _PROJECT
+        model, _, data = _fresh_model(str(Path(_PROJECT) / 'data' / configuration))
+        model.eval()
+        texts = ['hello world', 'hello there', 'loving world', 'loving there']
+        inp = model.inputSpace.prepInput(texts)
+        with torch.no_grad():
+>           _, symbols, _, _ = model(inp)
+                               ^^^^^^^^^^
+
+test/test_word_admission.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8286: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23031: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11212: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...Space(
+    (clause_scope): ClauseScope()
+    (generate_policy): Linear(in_features=10, out_features=3, bias=True)
+  )
+)
+concept_sub = SubSpace(), prior_symbolic = None, language_plan = None
+
+    def forward_concept_to_symbol(self, concept_sub, *, prior_symbolic=None,
+                                  language_plan=None):
+        """Decode paired symbols from the argument's one code per concept.
+    
+        A paired field produces [B, 2S, D], with positive and negative rows
+        interleaved. Gradients flow through evidence; the detached dictionary
+        names each concept once. Located, row-aligned input events retain
+        their band on both symbol rows. An opaque conceptual dictionary has
+        no band; its occurrence scope travels in the evidence field.
+        Serial event inputs without a paired field remain detached snapshots.
+        """
+        # The peer scheduler hands SS a completed CS tensor rather than the
+        # live mutable CS carrier: A(w+1) may already have reused that carrier
+        # when B(w) begins.  Keep the legacy SubSpace/read-view API as well so
+        # parallel callers remain unchanged.
+        raw_event = torch.is_tensor(concept_sub)
+        read_view = isinstance(concept_sub, SubSpaceView)
+        if concept_sub is None:
+            return None
+        acts = (None if raw_event or read_view
+                else getattr(concept_sub, '_concept_activations', None))
+        if raw_event:
+            event = concept_sub
+        else:
+            if concept_sub.is_empty() and not torch.is_tensor(acts):
+                return None
+            event = concept_sub.materialize()
+        if not torch.is_tensor(acts) and (event is None or event.dim() < 2):
+            return None
+        if torch.is_tensor(acts):
+            from ConceptEvidence import decode, symbols
+            codes = getattr(concept_sub, '_concept_codes', None)
+            row_events = codes is None
+            if codes is None:
+                if event is None:
+                    raise ValueError('paired symbol read requires concept codes')
+                if event.ndim == 2:
+                    event = event.unsqueeze(0)
+                codes = event.detach().mean(dim=0)
+            if codes.ndim not in (2, 3) or codes.shape[-2] < len(acts):
+>               raise ValueError('paired symbol read requires one code per concept')
+E               ValueError: paired symbol read requires one code per concept
+
+bin/Language.py:14235: ValueError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-operators-attention/forecast_trial_probe.py::test_anticipation_holds_both_walks_until_future_return
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]
+1 failed, 80 passed, 1 skipped, 2 warnings in 60.62s (0:01:00)

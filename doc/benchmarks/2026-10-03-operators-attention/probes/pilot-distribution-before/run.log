@@ -1,0 +1,26 @@
+..F..                                                                    [100%]
+=================================== FAILURES ===================================
+_________ test_word_distribution_score_uses_final_active_word_per_row __________
+
+    def test_word_distribution_score_uses_final_active_word_per_row():
+        from Layers import BracketExpectation
+        layer=BracketExpectation(n_symbols=2,max_depth=2,n_dim=2,concept_dim=2,p=1,q=0)
+        layer.word_predictor=torch.nn.Linear(2,2,bias=False)
+        with torch.no_grad():layer.word_predictor.weight.copy_(torch.eye(2))
+        codes=torch.tensor([[[1.,0.],[1.,0.],[0.,0.]],
+                            [[1.,0.],[0.,1.],[0.,0.]],
+                            [[0.,0.],[0.,1.],[1.,0.]],
+                            [[0.,0.],[0.,1.],[0.,1.]]])
+        active=torch.tensor([[True,True,False],[True,True,False],[False,True,True],[False,True,True]])
+        model=SimpleNamespace(symbolSpace=SimpleNamespace(expectation=layer),
+            _word_expectation_input=(codes,None,None,None),
+            _attention_words=SimpleNamespace(accepted=active),
+            inputSpace=SimpleNamespace(_word_active_mask=active))
+>       scores,targets,predictions,counts=gate.word_candidate_scores(model,choices=2)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'eval_nanochat_grammar' has no attribute 'word_candidate_scores'
+
+test/test_nanochat_grammar_eval.py:90: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_nanochat_grammar_eval.py::test_word_distribution_score_uses_final_active_word_per_row
+1 failed, 4 passed in 2.00s

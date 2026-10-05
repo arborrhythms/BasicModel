@@ -1,0 +1,27 @@
+"""Explicit retired-contract ports; full previous source is in before.zip."""
+from pathlib import Path
+
+def edit(name, before, after):
+ p=Path(name);text=p.read_text()
+ if before not in text:raise ValueError((name,before))
+ p.write_text(text.replace(before,after))
+p=Path('test/fixtures/transitional_pos.grammar')
+p.write_text('\n'.join(line for line in p.read_text().splitlines() if 'exist.forward' not in line and 'exist.reverse' not in line)+'\n')
+edit('test/test_grammar_sections.py', "{'part', 'equal', 'exist', 'lookup', 'quantize', 'arma', 'what'}", "{'part', 'equal', 'quantize', 'arma', 'what'}")
+edit('test/test_query_registry.py', "{'what', 'lookup'}.issubset(operations)", "{'what'}.issubset(operations) and 'lookup' not in operations")
+p=Path('test/test_mental_model.py');text=p.read_text().replace("self.assertIn('exist', Language.TheGrammar.s_methods)","self.assertNotIn('exist', Language.TheGrammar.s_methods)")
+text=text.replace("'exist', ", '').replace(", 'exist'",'');p.write_text(text)
+p=Path('test/test_surface_schema.py');text=p.read_text();text=text.replace('"exist", ', '').replace(', "exist"', '').replace("'exist', ",'').replace(", 'exist'",'');p.write_text(text)
+p=Path('test/test_role_collapsed_grammar.py');text=p.read_text().replace('"part", "whole", "equal", "exist", "lookup", "quantize", "arma", "what",','"part", "whole", "equal", "what",')
+text=text.replace('exist_O1','S').replace('S remains the absolute-truth start.','S is the absolute-truth start, without a truth-reducing wrapper.')
+text=text.replace('# ``lookup`` is intentionally compose-only: retrieval has no faithful\n    # structural inverse.\n    assert (_REQUIRED_OPS - {"lookup"}) <= dn','# Non is an exclusion and has no faithful inverse.\n    assert (_REQUIRED_OPS - {"non"}) <= dn')
+p.write_text(text)
+p=Path('test/test_relative_rule_detection_collapsed.py');text=p.read_text().replace('exist_O1','S')
+text=text.replace('<rule>S = exist.forward(exist_I1)</rule>','<rule>S = S</rule>').replace('<rule>exist_I1 = exist.reverse(S)</rule>','<rule>S = S</rule>')
+text=text.replace('``exist`` rule does not.', 'identity rule does not.');p.write_text(text)
+p=Path('test/test_union_difference_ops.py');text=p.read_text().replace('sum(a, b)      = a + b','sum(a, b)      = (a + b) / 2')
+text=text.replace('def test_chunk_and_sum_compose_are_additive():','def test_chunk_is_additive_and_sum_is_a_mean():').replace('chunk(a, b) == sum(a, b) == a + b exactly (no tanh/clamp/normalize).','Chunk adds; sum averages, with no tanh/clamp/normalize.')
+text=text.replace('assert torch.equal(SumLayer().compose(a, b), a + b)','assert torch.equal(SumLayer().compose(a, b), (a + b) * .5)')
+text=text.replace('def test_bare_reverse_is_null_decomposition():','def test_bare_reverse_recomposes_for_sum_and_chunk():').replace('reverse(parent) = (parent, 0) for the additive ops (chunk, sum): the\n    mereologically honest w = w ⊔ ∅ split, recomposing EXACTLY.','Chunk splits as (parent, 0); mean as (parent, parent), both exact.')
+text=text.replace('assert torch.equal(right, torch.zeros_like(parent))','assert torch.equal(right, parent if isinstance(layer, SumLayer) else torch.zeros_like(parent))').replace('assert torch.equal(g_right, torch.zeros_like(parent))','assert torch.equal(g_right, parent if isinstance(layer, SumLayer) else torch.zeros_like(parent))');p.write_text(text)
+p=Path('test/test_sentence_references.py');text=p.read_text().replace("lhs='exist_O1'","lhs='S'").replace('forward_binary_step=lambda a, b, *_: a + b','forward_binary_step=lambda a, b, *_: (a + b) * .5').replace('leaves.sum(0),','leaves.mean(0),').replace('clause.point, prior.point + original.leaves[1]','clause.point, (prior.point + original.leaves[1]) * .5');p.write_text(text)

@@ -1,0 +1,84 @@
+.....................FFF................................ssssssss........ [ 90%]
+........                                                                 [100%]
+=================================== FAILURES ===================================
+________ test_open_read_precedes_every_native_word[MM_xor_loopback.xml] ________
+test/test_sentence_protocol.py:28: in test_open_read_precedes_every_native_word
+    model._lex_embed_stem(model.inputSpace.prepInput(['hello world']))
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+test/test_sentence_protocol.py:26: in words
+    assert events==['open'];events.append('words');return admit()
+                                                          ^^^^^^^
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+______________ test_open_read_has_no_optimizer_or_parameter_write ______________
+test/test_sentence_protocol.py:44: in test_open_read_has_no_optimizer_or_parameter_write
+    model._lex_embed_stem(model.inputSpace.prepInput(['hello world']))
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+______________ test_no_mid_sentence_reopening_even_under_conflict ______________
+test/test_sentence_protocol.py:57: in test_no_mid_sentence_reopening_even_under_conflict
+    model(model.inputSpace.prepInput(['hello world']))
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23009: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13183: in _lex_embed_stem
+    self._stage_reading_word_concepts()
+bin/Models.py:11101: in _stage_reading_word_concepts
+    word = owner.interpret.lookup_word([id_rows[b][i] for i in selected],
+bin/Interpret.py:144: in lookup_word
+    cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+bin/Spaces.py:16031: in _populate_concept_weights
+    self.add_concept_feature(target, tower, ref, 1., negated=bool(pole))
+bin/Spaces.py:15180: in add_concept_feature
+    derived.admit(tower, group or (feature,))
+bin/MereologicalCodes.py:55: in admit
+    raise RuntimeError('concept inventory exhausted before percept admission')
+E   RuntimeError: concept inventory exhausted before percept admission
+=============================== warnings summary ===============================
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7162: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1790/test_first_and_later_words_kee0/tiny_chunk_model.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor_loopback.xml]
+FAILED test/test_sentence_protocol.py::test_open_read_has_no_optimizer_or_parameter_write
+FAILED test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+3 failed, 69 passed, 8 skipped, 2 warnings in 59.80s

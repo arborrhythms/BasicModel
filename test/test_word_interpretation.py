@@ -197,7 +197,7 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
         model.understand(model.inputSpace.prepInput(['the wug sat']))
     ids = model.inputSpace._ar_word_concept_ids
     objects = model.inputSpace._ar_word_object_ids
-    active = model.inputSpace._word_active_mask
+    active = model.inputSpace._ar_grammar_leaf_mask
     assert len(calls) >= int(active.sum())
     assert (ids[active] != objects[active]).all()
     for word, obj in zip(ids[active].tolist(), objects[active].tolist()):
@@ -284,3 +284,22 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     assert field[slot, 0, 0, 0] > 0
     assert cs._csw_row_of(obj) == row and tuple(cs.concept_parts(obj)) == before
     assert interpret.reverse(obj) == word
+
+
+def test_known_word_survives_full_inventory_without_partial_alternative(monkeypatch):
+    from copy import deepcopy
+    cs, interpret = _operator()
+    word = interpret.lookup_word([7], [1], form='cat')
+    obj = interpret.forward(word)
+    before = deepcopy(cs.definitions.description(word))
+    ids = dict(_concept_alloc_of(cs).placement)
+    def full(*args):
+        raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+    monkeypatch.setattr(cs, '_preflight_concept_row', full)
+    assert interpret.lookup_word([8], [1], form='cat', word_reading=True) == word
+    assert interpret.forward(word) == obj
+    assert cs.definitions.description(word) == before
+    assert dict(_concept_alloc_of(cs).placement) == ids
+    assert cs.concept_admission_stats()['dropped']['word alternative'] == 1
+    with pytest.raises(RuntimeError, match='capacity exhausted'):
+        interpret.lookup_word([8], [1], form='cat')

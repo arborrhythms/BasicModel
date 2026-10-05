@@ -205,8 +205,8 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         self.assertIsNotNone(
             router, "LanguageLayer must be built")
         self.assertTrue(
-            router.operation_layer.r_apply > 0,
-            "Expected at least one unary space_role attached")
+            5 in router.operation_layer.attention_operations,
+            "Expected field negation in the shared attention chooser")
         self.assertTrue(
             router.operation_layer.r_reduce > 0,
             "Expected at least one binary space_role attached")
@@ -222,8 +222,8 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
                       for layer in (router.operation_layer,)
                       for op in layer.ops]
         self.assertTrue(
-            any(isinstance(op, NotLayer) for op in unary_ops),
-            "Expected a NotLayer attached to some unary space_role")
+            not any(isinstance(op, NotLayer) for op in unary_ops),
+            "Field negation cannot act between symbolic brackets")
         self.assertTrue(
             any(isinstance(op, ConjunctionLayer) for op in binary_ops),
             "Expected a ConjunctionLayer attached to some binary space_role")
@@ -250,8 +250,8 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         all_binary_rule_ids = set()
         for rids in router._binary_rule_ids.values():
             all_binary_rule_ids.update(rids)
-        self.assertIn(not_id, all_unary_rule_ids,
-            "Grammar 'not' rule_id must be attached to some unary space_role")
+        self.assertNotIn(not_id, all_unary_rule_ids,
+            "Grammar not belongs to the field chooser")
         self.assertLessEqual(
             {conj_id, disj_id}, all_binary_rule_ids,
             "Grammar 'conjunction'/'disjunction' rule_ids must be "

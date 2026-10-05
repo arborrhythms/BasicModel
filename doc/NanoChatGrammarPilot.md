@@ -21,11 +21,27 @@ The first milestone is deliberately narrower:
 > the true next word from 16 surface-word candidates in held-out FineWeb-Edu
 > documents.
 
-For BasicModel, score a candidate by the mismatch between the
-`IntraSentenceLayer`'s held next-idea prediction and the idea produced when the
-candidate is perceived.  For NanoChat, score the same candidates by conditional
-log probability.  The score scales differ, but top-1 accuracy and reciprocal
-rank are directly comparable.
+For BasicModel, the 6.8 evaluator uses the shared expectation owner's
+**word-level categorical distribution**, conditioned on the observed prefix.
+All 16 candidates share one bank and are scored by negative log probability.
+Candidate completions never enter the predictor's prefix history. NanoChat
+scores its same candidates by conditional log probability. Top-1 and reciprocal
+rank remain directly comparable; this finite-bank likelihood is not token
+perplexity. The retired `IntraSentenceLayer` point-distance scorer is retained
+only in historical receipts.
+
+**Scope clarified by Alec, 2026-10-03:** 6.8 checks the evaluator's mechanism
+on a small configuration over a few unchanged manifest items. The language gate
+waits for item 4's trained checkpoint. It does not call for scoring the fresh
+BasicModel now. The three-item mechanism check and earlier stopped attempts
+are preserved in the [6.8 receipt](benchmarks/2026-10-03-operators-attention/README.md).
+
+The evaluator stages the normal native word readings, then scores the complete
+candidate bank under `no_grad`. It does not build sentence composition or the
+answer output, which cannot change the staged word snapshot. Tests compare its
+scores exactly with the full-forward boundary. Native evidence and priming
+omit inactive padding during eager staging; the returned word buffers retain
+their configured dimensions. No item, candidate, or live word is removed.
 
 This is a better language gate than reconstruction loss.  An invertible model
 can learn to copy an ill-formed sentence, and its raw MSE is not a normalized
@@ -50,7 +66,7 @@ initial gate is:
 - shuffled-prefix accuracy below intact-prefix accuracy, and
 - the result repeats for three seeds before scaling the model.
 
-Also record validation intra-prediction MSE, candidate mean reciprocal rank,
+Also record candidate-bank negative log likelihood, candidate mean reciprocal rank,
 and the variance/effective rank of target ideas.  Those last checks catch a
 latent-collapse shortcut.  Exact surface reconstruction is useful smoke-test
 telemetry, but is not a language pass criterion.
@@ -95,9 +111,14 @@ Both tiers therefore use:
 - reconstruction, intra-sentence prediction, inter-sentence prediction, and
   contrastive discourse losses.
 
-Turn the two-pass exploration mode on only after the one-pass model passes the
-language gate.  It approximately doubles grammar-path compute and is an
-ablation, not a prerequisite for demonstrating language acquisition.
+The tier table and configuration choices above are historical. Current runs
+use `data/BasicModel.xml`: the mandatory paired grammar walks, one attention
+budget and level-indexed expectation replace the old mode and order switches.
+The frozen 500-item manifest and all numerical learning bars remain unchanged.
+No fresh-model gate is scheduled in 6.8.
+Qualification still requires item 9's million-sentence prerequisite and
+ordered/shuffled/context-free controls at equal updates for the three
+predeclared seeds. See the [6.8 receipt](benchmarks/2026-10-03-operators-attention/README.md).
 
 ## Corpus ladder
 
@@ -121,7 +142,8 @@ items from all 20 test documents in the 200-document gate, has randomized answer
 positions, and is pinned by item SHA-256
 `ad594aa33ae1ac2f0bc49cc16c2822144fe26c73897f6b17228f641abc9773d7`.
 `train.py --test` remains reconstruction telemetry; use this evaluator for the
-language claim:
+language claim after item 4 provides the trained checkpoint. The commands below
+are historical reproductions, not instructions to run a fresh gate in 6.8:
 
 ```sh
 cd basicmodel
@@ -142,7 +164,8 @@ cd basicmodel
 
 All prior initialized/trained results and checkpoints used either the flat
 sentence-percept axis or the rejected 64-deep STM. They are diagnostic only and
-must not be compared with this model. A fresh STM8 baseline is required.
+must not be compared with this model. The current trained-checkpoint comparison
+and its controls belong to item 4.
 
 Before training or scoring, run the explicit reduction audit:
 

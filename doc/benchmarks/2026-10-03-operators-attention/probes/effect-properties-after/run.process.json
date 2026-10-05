@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_effects.py",
+    "test/test_accessible_mind.py",
+    "test/test_query_phase_permissions.py",
+    "test/test_query_contract_boundaries.py",
+    "test/test_query_vp_boundaries.py",
+    "test/test_normal_thought_controller.py",
+    "test/test_grammatical_query_vps.py"
+  ],
+  "pid": 91573,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 530908600,
+  "elapsed_seconds": 4.902012457983801,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/effect-properties-after/run.log"
+}

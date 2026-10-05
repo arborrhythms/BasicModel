@@ -3,8 +3,9 @@
 > **Status:** specification in progress, written by Claude on 2026-09-29 from
 > Alec's statements of 2026-09-27 to 2026-09-29. It is the specification of the
 > todo's *grammatical operators update*, which is taken up after item 7 is
-> accepted: "let's iron out the operators after getting 7 accepted". Nothing in
-> it is built and nothing in it changes item 7. What the word classes *mean* is
+> accepted: "let's iron out the operators after getting 7 accepted". This opening
+> records the original specification; the uncommitted implementation candidate
+> and its review status are recorded in §12 below. What the word classes *mean* is
 > in [accessible mind §2.0 to §2.0.1](2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)
 > and [§2.6.2](2026-09-20-accessible-mind-subsystems.md#262-negation-exists-only-for-concepts-not-percepts-or-symbols),
 > and is not repeated. This document is the catalogue: which operators there
@@ -62,6 +63,39 @@
    2026-09-29)*. "This would suggest that even supplying multiple
    alternative implementations (up to a point) would allow learning to
    chose the best fit." Section 3.9.
+
+10. **Footprint: form, meaning, poles** *(2026-10-04, from Alec's question
+    "are there operations like negation that operate only on the conceptual
+    or perceptual part of the conceptual space?")*. A concept lives in
+    conceptual space and its symbol, its form, in perceptual space, the
+    shared index pairing them (6.8 plan §13.4, decided 2026-10-04;
+    implemented as one vector [form | meaning]); the symbol's activation
+    carries the poles (c⁺, c⁻). Each operator declares which of the three it reads and which
+    it writes; the declaration is checked with the writes of rule 2.
+    - *Form only:* the surface operations of 5.5 (morphology, the
+      realisation of markers: how a word is written, the marker's meaning
+      entering by composition); the mereological reads at order 0 (`part`,
+      `whole` as the cube's order; the lattice interval; the room clamp);
+      the identity read-back; `interpret`'s departure (a sign is a form that
+      stands for something; the operation leaves form by the DEF lookup and
+      lands on the referent's code).
+    - *Meaning only:* similarity and priming reads; the distributional
+      writes (co-activation placing the wholes' locations and the context
+      means); after this update, the connectives: conjunction as meet and
+      disjunction as join on meaning, the fold composing form.
+    - *Poles only:* `not` (exchange) and `non` (zero the expressed pole):
+      whether something is affirmed, not what it is or means; no coordinate
+      moves (6.8 plan §13.4, the Kleene finding). Modality is not here: a
+      dimension, the alternative index, not an operation on the code.
+    - *Both subspaces by one coordinate-wise rule:* the present binding
+      kernel; expectation's negative image (an expected sentence cancelled in
+      form and meaning alike); `lift` and `lower` (order and content
+      together).
+    - *Neither, because not in a concept:* the address, .where/.when
+      narrowing, the clock, tense's time kernel, acting on percepts and rows.
+    Form, meaning, valence: how it is written, what it says, whether it is
+    affirmed. An operator writing two at once does two jobs; the three that do
+    (binding, the negative image, lift/lower) do so by one rule.
 
 ## 2. The catalogue
 
@@ -298,6 +332,20 @@ scalars."
   Boole's complement and affirms; and `ConjunctionLayer` reads the greater
   of the two poles, which `not` cannot change
   ([accessible mind §2.6.2](2026-09-20-accessible-mind-subsystems.md#262-negation-exists-only-for-concepts-not-percepts-or-symbols)).
+  *Third defect, logged 2026-10-04* (6.8 plan
+  [§13.4](../plans/2026-09-27-item-6-8-one-attention.md#134-perceptual-space-is-the-basis-of-zero-order-conceptual-space-alec-2026-10-04)):
+  `_conjunction_kernel` is the normalized Hadamard product of signed
+  carriers, i.e. VSA binding, whose sign is a phase: (−x)∘(−y) = x∘y and
+  (−x)∘y = x∘(−y), so the composed location cannot say which constituent
+  was negated, and any bilinear binding pools the same way. With zero as
+  uncertainty the connectives over codes are Kleene's: ∧ = min, ∨ = max,
+  ¬ = −d (the pole exchange above, unchanged), the meet and join of the
+  towers' cube, with De Morgan exact and no pooling; `Ops.intersection` and
+  `union` already are these. §22's product and probabilistic sum, chosen for
+  invertibility, are revisited in this update (the inverses are codebook
+  searches either way). The 6.9 row "unit-sphere codes, magnitude =
+  certainty" is retired: certainty is the activation and the poles, not a
+  norm.
 * **The two pairs of connectives** (2026-09-28): "conjunction/disjunction
   and intersection/union, the prior operate over symbols, and the latter
   operate over vectors in conceptual space."
@@ -1207,3 +1255,93 @@ Sadrzadeh, M., Clark, S. & Coecke, B. (2013). The Frobenius anatomy of word
 meanings I: subject and object relative pronouns. *Journal of Logic and
 Computation* 23(6), 1293–1317. The claims were checked on 2026-09-29; page
 numbers within the works were not.
+
+## 12. Implementation candidate, 2026-10-03 (uncommitted)
+
+The candidate implements the decided operator changes against `802abb1a`.
+It declares operands, exhaustive reads/writes, head, polarity, order, relation,
+and inverse properties at load. Face permissions only remove writes, and the
+runtime effect ledger rejects a second write to a subsystem in a round.
+Aliases use the implementation's properties rather than their surface spelling.
+`non` excludes without affirmation or an inverse; `not` exchanges evidence poles.
+The scalar query experiments, `true`, `exist`, `lookup`, and unused binary
+`symbolize` are retired. `what` supplies unified content retrieval; `quantize`
+and `arma` are thought-only. The proposed renames remain deferred.
+
+**6.8 §12 amendment (Alec, 2026-10-04):** disjunction is the probabilistic
+sum in conjunction's form. With `a = norm(x)` and `b = norm(y)`, it computes
+`(a + b - a*b) * unit(x + y - x*y)`. The zero direction yields zero; no norm
+clamp, learned weight or new inverse parameter is introduced. Its free inverse
+uses the same bounded candidate-pair search as conjunction, through its own
+forward kernel. `complete.grammar`, XOR_grammar and MM_grammar (through
+`default.grammar`) select this implementation under the existing rule name.
+
+| Operator | Compose / forward | Reverse | Generate |
+|---|---|---|---|
+| `conjunction` | `norm(x)*norm(y)*unit(x*y)`; a shared reference is itself | Free bounded pair search | Same search |
+| `disjunction` | `(a+b-a*b)*unit(x+y-x*y)` | Free bounded pair search | Same search |
+| `sum` | Arithmetic mean `(x+y)/2`, the composition control | Known operand: `2*parent-witness`; direct balanced split: `(parent,parent)` | Direct balanced split; the free decoder searches both operands in its primed bank |
+
+These are the three numerical faces; the explicit thought allow-list remains
+separate. Both binary choices in XOR_grammar are now nonlinear, restoring the
+intended affine-readability condition of 6.9 §3.11. This is the **composition
+mechanism gate**, not a grammatical-learning gate, under
+[6.8 §12.1](../plans/2026-09-27-item-6-8-one-attention.md#121-the-composition-gate-not-a-grammar-gate-alec-2026-10-04).
+`sum` stays additive as the separate control. Nonlinearity alone is not a
+guarantee of trained convergence or nondegenerate codes; the unchanged measured
+bars remain the acceptance criteria.
+
+**6.8 §14 and addendum (October 4):** the index pairs a symbol in perceptual
+space with its concept in conceptual space, implemented as `[form | meaning]`.
+The word symbol's form is the net-evidence-weighted lattice midpoint over its
+letters and WS types. It reads native perceptual prototypes and 11b evidence,
+detached from sentence losses; perception's reconstruction is their sole writer.
+Letters used as parts require no conceptual rows. The cached paired rows are
+never free parameters, and their type location/time positions are zero.
+At order zero, the concept's meaning is only the detached context mean over
+existing LTM occurrences' meaning coordinates. Native references and inverted
+postings supply whole membership and two-way word → row → constituent activation,
+without BOW minting.
+
+This is the distributional item's structural component: context as whole
+membership, not an attraction between word parameters. **Bootstrap learning
+from property/situation locations and its co-activation objective are deferred
+to the operators update by Alec's explicit October 4 clarification.** Zero
+context does not bootstrap itself. The toy fixtures have empty meaning
+complements. Same-context concepts coinciding is correct, not a collapse to
+repair. The XOR table measures composition of forms by this round's binding
+kernel, its inverse, the affine read at unit norm and one owner; MM_xor's field
+path measures the connectives where meanings exist.
+
+The antipode objective, reporting key, helper and two obsolete tests are removed.
+Sentence reconstruction uses only
+byte error, with absolute cosine on the native perceptual content and the
+existing priming weight and temperature. There is no substitute repulsion or
+change to the optimizer, learning rate or budget. The current product and
+probabilistic-sum operators and inverse search remain unchanged for this round.
+Identity comes from below through forms and meaning from above through contexts
+at every order; at orders ≥ 1, composition of meanings also joins from below.
+The form fold at all orders, Kleene meet/join on meanings, complement bootstrap,
+the `not` items and expectation's negative image on the concept face only
+(item 2) remain this operators update's work. Form/root distinctness is measured,
+not assumed; there is no distinctness requirement on same-context concepts.
+
+`chunk` remains additive. The intersection is the signed
+coordinate minimum with zero silence. Compound composition selects the existing
+head's sigma cases using the modifier's observed field, keeps both evidence
+poles, and refolds those cases. Its inverse searches only primed native operand
+pairs under the unchanged basis limit. No parameters or identity table are added.
+The answer detaches the staged case dictionary; reconstruction retains its graph.
+Verb uses the I1 head with the existing gain implementation allowed by §5.6;
+adverb uses an exact multiplicative gain given its right witness.
+
+Equality's question formula has a fixed grammatical identity independent of
+inventory allocation; it does not allocate an equality VP row. Closing equality
+continues to store two canonical part rows, one in each direction. The alternative
+sentence projections, ICA, dimensional lift/lower, modality, morphology, and the
+remaining surface work retain their recorded future scope.
+
+The complete before/after test sources, failed probes, unchanged seed audit,
+and measured baselines are retained in
+[the implementation receipt](../benchmarks/2026-10-03-operators-attention/README.md).
+This is a candidate for Claude's review, not an accepted or committed landing.

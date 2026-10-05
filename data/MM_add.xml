@@ -9,8 +9,8 @@
        problems before any substitution. Many stochastic examples, split
        by unseen operand pairs. MM_xor topology otherwise. -->
   <architecture>
-    <subsymbolicOrder>3</subsymbolicOrder>
-    <symbolicOrder>0</symbolicOrder>
+    <bindingDepth>3</bindingDepth>
+    <conceptLayers>1</conceptLayers>
     <answerSynthesis>true</answerSynthesis>
     <data>
       <dataType>embedding</dataType>

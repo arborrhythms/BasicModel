@@ -1,0 +1,4685 @@
+[
+  {
+    "scope": "trial",
+    "trial": "exploit",
+    "pair": 0,
+    "batch": 0,
+    "version_sha256": "cc100394845a4276ce1ff0533870141c88947e058f274b8dcd074b7592b1921f",
+    "versions": [
+      [
+        "perceptualSpace._owned_bases.what.W",
+        0
+      ],
+      [
+        "perceptualSpace._percept_store.byte_fallback.byte_codebook",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.4.coefficients",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.5.sigma.layer.W",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.4.coefficients",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.5.sigma.layer.W",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.3.mereology.locations",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.3.mereology.locations",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.bracket_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.space_prior",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.6.callosum",
+        2
+      ],
+      [
+        "conceptualSpaces.0.layers.6.layer.butterfly_L",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.6.layer.butterfly_d",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.6.layer.butterfly_U",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.6.callosum",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.6.layer.butterfly_L",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.6.layer.butterfly_d",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.6.layer.butterfly_U",
+        0
+      ],
+      [
+        "wholeSpaces.0.begins_weight",
+        3
+      ],
+      [
+        "wholeSpaces.0.ends_weight",
+        3
+      ],
+      [
+        "wholeSpaces.0.atom_level",
+        0
+      ],
+      [
+        "wholeSpaces.0._owned_bases.what.W",
+        0
+      ],
+      [
+        "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+        307
+      ],
+      [
+        "wholeSpaces.1.begins_weight",
+        3
+      ],
+      [
+        "wholeSpaces.1.ends_weight",
+        3
+      ],
+      [
+        "wholeSpaces.1.atom_level",
+        0
+      ],
+      [
+        "wholeSpaces.1._owned_bases.what.W",
+        0
+      ],
+      [
+        "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+        307
+      ],
+      [
+        "symbolSpace.subspace.category_embedding.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.2.bias",
+        1
+      ],
+      [
+        "symbolSpace.languageSpace.generate_policy.weight",
+        2
+      ],
+      [
+        "symbolSpace.languageSpace.generate_policy.bias",
+        3
+      ],
+      [
+        "inputSpace.outputSpace._readout_bias",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.0.W",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.0.biasWeight",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.1.W",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.1.biasWeight",
+        0
+      ],
+      [
+        "answer_record_reader.weight",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.2.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.2.bias",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.routing_proj.weight",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.0.routing_proj.bias",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.routing_proj.weight",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.0.routing_proj.bias",
+        1
+      ],
+      [
+        "conceptualSpaces.1.concept_parts_layer.features.values",
+        1
+      ],
+      [
+        "answer_attention.space_bias",
+        0
+      ],
+      [
+        "answer_attention.consume_gate",
+        0
+      ],
+      [
+        "answer_attention.scorer.0.weight",
+        1
+      ],
+      [
+        "answer_attention.scorer.0.bias",
+        1
+      ],
+      [
+        "answer_attention.scorer.2.weight",
+        1
+      ],
+      [
+        "answer_attention.scorer.2.bias",
+        1
+      ]
+    ],
+    "costs": {
+      "reconstruction": 0.31634971499443054,
+      "expectation": 0.21168647706508636,
+      "supplied_answer": 0.37683939933776855
+    },
+    "groups": {
+      "perception": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "codes": {
+        "norms": {
+          "reconstruction": 0.14625875189296522,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [
+            "conceptualSpaces.1.layers.3.mereology.locations"
+          ],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "chooser": {
+        "norms": {
+          "reconstruction": 3.397951488205106e-30,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [
+            "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor"
+          ],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "operators_and_tied_inverses": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "generate": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "reading_map": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 3.057490138412293
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": [
+            "inputSpace.outputSpace._readout_bias",
+            "inputSpace.outputSpace.layers.0.W",
+            "answer_record_reader.weight"
+          ]
+        }
+      },
+      "expectation_predictor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.37256277483119055,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [
+            "symbolSpace.subspace.layers.2.word_predictor.0.weight",
+            "symbolSpace.subspace.layers.2.word_predictor.0.bias",
+            "symbolSpace.subspace.layers.2.word_predictor.2.weight",
+            "symbolSpace.subspace.layers.2.word_predictor.2.bias",
+            "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+            "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+            "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+            "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+            "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+            "conceptualSpaces.1.layers.0.sigma.layer.biasWeight"
+          ],
+          "supplied_answer": []
+        }
+      },
+      "other": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      }
+    },
+    "per_parameter": {
+      "perceptualSpace._owned_bases.what.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "perceptualSpace._percept_store.byte_fallback.byte_codebook": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.4.coefficients": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.5.sigma.layer.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.5.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.4.coefficients": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.5.sigma.layer.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.5.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.3.mereology.locations": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.3.mereology.locations": {
+        "norms": {
+          "reconstruction": 0.14625875189296522,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.stop_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor": {
+        "norms": {
+          "reconstruction": 3.397951488205106e-30,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.apply_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.bracket_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.space_prior": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.callosum": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.layer.butterfly_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.layer.butterfly_d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.layer.butterfly_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.callosum": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.layer.butterfly_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.layer.butterfly_d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.layer.butterfly_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0.begins_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0.ends_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0.atom_level": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0._owned_bases.what.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0._owned_bases.what.primitive_properties.members": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1.begins_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1.ends_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1.atom_level": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1._owned_bases.what.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1._owned_bases.what.primitive_properties.members": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.category_embedding.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.languageSpace.generate_policy.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.languageSpace.generate_policy.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace._readout_bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.03541859984397888
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.0.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 1.7603513448648158
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.0.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.1.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.1.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_record_reader.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 2.4996308951335493
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.kind_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.kind_bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.03348465132990697,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0020314423822448413,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.01306339966409542,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.002857865935163406,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.routing_proj.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.routing_proj.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.30903930830920956,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.15381068639272577,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.021384781304162326,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.07787778882922813,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.08203908566189,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.07129629007991634,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.routing_proj.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.routing_proj.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.concept_parts_layer.features.values": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.space_bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.consume_gate": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      }
+    },
+    "rng_unchanged": true
+  },
+  {
+    "scope": "trial",
+    "trial": "explore",
+    "pair": 0,
+    "batch": 0,
+    "version_sha256": "cc100394845a4276ce1ff0533870141c88947e058f274b8dcd074b7592b1921f",
+    "versions": [
+      [
+        "perceptualSpace._owned_bases.what.W",
+        0
+      ],
+      [
+        "perceptualSpace._percept_store.byte_fallback.byte_codebook",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.4.coefficients",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.5.sigma.layer.W",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.4.coefficients",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.5.sigma.layer.W",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.3.mereology.locations",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.3.mereology.locations",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.bracket_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.space_prior",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.6.callosum",
+        2
+      ],
+      [
+        "conceptualSpaces.0.layers.6.layer.butterfly_L",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.6.layer.butterfly_d",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.6.layer.butterfly_U",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.6.callosum",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.6.layer.butterfly_L",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.6.layer.butterfly_d",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.6.layer.butterfly_U",
+        0
+      ],
+      [
+        "wholeSpaces.0.begins_weight",
+        3
+      ],
+      [
+        "wholeSpaces.0.ends_weight",
+        3
+      ],
+      [
+        "wholeSpaces.0.atom_level",
+        0
+      ],
+      [
+        "wholeSpaces.0._owned_bases.what.W",
+        0
+      ],
+      [
+        "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+        307
+      ],
+      [
+        "wholeSpaces.1.begins_weight",
+        3
+      ],
+      [
+        "wholeSpaces.1.ends_weight",
+        3
+      ],
+      [
+        "wholeSpaces.1.atom_level",
+        0
+      ],
+      [
+        "wholeSpaces.1._owned_bases.what.W",
+        0
+      ],
+      [
+        "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+        307
+      ],
+      [
+        "symbolSpace.subspace.category_embedding.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.2.bias",
+        1
+      ],
+      [
+        "symbolSpace.languageSpace.generate_policy.weight",
+        2
+      ],
+      [
+        "symbolSpace.languageSpace.generate_policy.bias",
+        3
+      ],
+      [
+        "inputSpace.outputSpace._readout_bias",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.0.W",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.0.biasWeight",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.1.W",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.1.biasWeight",
+        0
+      ],
+      [
+        "answer_record_reader.weight",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.2.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.2.bias",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.routing_proj.weight",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.0.routing_proj.bias",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.0.routing_proj.weight",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.0.routing_proj.bias",
+        1
+      ],
+      [
+        "conceptualSpaces.1.concept_parts_layer.features.values",
+        1
+      ],
+      [
+        "answer_attention.space_bias",
+        0
+      ],
+      [
+        "answer_attention.consume_gate",
+        0
+      ],
+      [
+        "answer_attention.scorer.0.weight",
+        1
+      ],
+      [
+        "answer_attention.scorer.0.bias",
+        1
+      ],
+      [
+        "answer_attention.scorer.2.weight",
+        1
+      ],
+      [
+        "answer_attention.scorer.2.bias",
+        1
+      ]
+    ],
+    "costs": {
+      "reconstruction": 0.31634971499443054,
+      "expectation": 0.21168647706508636,
+      "supplied_answer": 0.3458215594291687
+    },
+    "groups": {
+      "perception": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "codes": {
+        "norms": {
+          "reconstruction": 0.14556298518895439,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [
+            "conceptualSpaces.1.layers.3.mereology.locations"
+          ],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "chooser": {
+        "norms": {
+          "reconstruction": 0.0004269442240833546,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [
+            "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor"
+          ],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "operators_and_tied_inverses": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "generate": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "reading_map": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 3.377296799180293
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": [
+            "inputSpace.outputSpace._readout_bias",
+            "inputSpace.outputSpace.layers.0.W",
+            "answer_record_reader.weight"
+          ]
+        }
+      },
+      "expectation_predictor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.37256277483119055,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [
+            "symbolSpace.subspace.layers.2.word_predictor.0.weight",
+            "symbolSpace.subspace.layers.2.word_predictor.0.bias",
+            "symbolSpace.subspace.layers.2.word_predictor.2.weight",
+            "symbolSpace.subspace.layers.2.word_predictor.2.bias",
+            "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+            "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+            "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+            "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+            "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+            "conceptualSpaces.1.layers.0.sigma.layer.biasWeight"
+          ],
+          "supplied_answer": []
+        }
+      },
+      "other": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      }
+    },
+    "per_parameter": {
+      "perceptualSpace._owned_bases.what.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "perceptualSpace._percept_store.byte_fallback.byte_codebook": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.4.coefficients": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.5.sigma.layer.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.5.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.4.coefficients": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.5.sigma.layer.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.5.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.3.mereology.locations": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.3.mereology.locations": {
+        "norms": {
+          "reconstruction": 0.14556298518895439,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.stop_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor": {
+        "norms": {
+          "reconstruction": 0.0004269442240833546,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.apply_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.bracket_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.space_prior": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.callosum": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.layer.butterfly_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.layer.butterfly_d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.layer.butterfly_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.callosum": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.layer.butterfly_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.layer.butterfly_d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.layer.butterfly_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0.begins_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0.ends_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0.atom_level": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0._owned_bases.what.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0._owned_bases.what.primitive_properties.members": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1.begins_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1.ends_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1.atom_level": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1._owned_bases.what.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1._owned_bases.what.primitive_properties.members": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.category_embedding.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.languageSpace.generate_policy.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.languageSpace.generate_policy.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace._readout_bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.004556119441986084
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.0.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 1.9496684612580282
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.0.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.1.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.1.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_record_reader.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 2.757699367716654
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.kind_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.kind_bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.03348465132990697,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0020314423822448413,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.01306339966409542,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.002857865935163406,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.routing_proj.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.routing_proj.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.30903930830920956,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.15381068639272577,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.021384781304162326,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.07787778882922813,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.08203908566189,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.07129629007991634,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.routing_proj.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.routing_proj.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.concept_parts_layer.features.values": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.space_bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.consume_gate": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      }
+    },
+    "rng_unchanged": true
+  },
+  {
+    "scope": "batch",
+    "trial": null,
+    "pair": 1,
+    "batch": 0,
+    "version_sha256": "efb96ee2364f9a6257d764de6ef28c8817c94101acef4db5ae0eb2e233331422",
+    "versions": [
+      [
+        "perceptualSpace._owned_bases.what.W",
+        2
+      ],
+      [
+        "perceptualSpace._percept_store.byte_fallback.byte_codebook",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.4.coefficients",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.5.sigma.layer.W",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.4.coefficients",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.5.sigma.layer.W",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.3.mereology.locations",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.3.mereology.locations",
+        2
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+        2
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+        2
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.bracket_anchor",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.0.operation_layer.space_prior",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.6.callosum",
+        2
+      ],
+      [
+        "conceptualSpaces.0.layers.6.layer.butterfly_L",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.6.layer.butterfly_d",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.6.layer.butterfly_U",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.6.callosum",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.6.layer.butterfly_L",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.6.layer.butterfly_d",
+        0
+      ],
+      [
+        "conceptualSpaces.1.layers.6.layer.butterfly_U",
+        0
+      ],
+      [
+        "wholeSpaces.0.begins_weight",
+        3
+      ],
+      [
+        "wholeSpaces.0.ends_weight",
+        3
+      ],
+      [
+        "wholeSpaces.0.atom_level",
+        0
+      ],
+      [
+        "wholeSpaces.0._owned_bases.what.W",
+        0
+      ],
+      [
+        "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+        311
+      ],
+      [
+        "wholeSpaces.1.begins_weight",
+        3
+      ],
+      [
+        "wholeSpaces.1.ends_weight",
+        3
+      ],
+      [
+        "wholeSpaces.1.atom_level",
+        0
+      ],
+      [
+        "wholeSpaces.1._owned_bases.what.W",
+        0
+      ],
+      [
+        "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+        311
+      ],
+      [
+        "symbolSpace.subspace.category_embedding.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.rule_predictor.2.bias",
+        1
+      ],
+      [
+        "symbolSpace.languageSpace.generate_policy.weight",
+        4
+      ],
+      [
+        "symbolSpace.languageSpace.generate_policy.bias",
+        5
+      ],
+      [
+        "inputSpace.outputSpace._readout_bias",
+        1
+      ],
+      [
+        "inputSpace.outputSpace.layers.0.W",
+        1
+      ],
+      [
+        "inputSpace.outputSpace.layers.0.biasWeight",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.1.W",
+        0
+      ],
+      [
+        "inputSpace.outputSpace.layers.1.biasWeight",
+        0
+      ],
+      [
+        "answer_record_reader.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.predictor.2.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+        0
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+        1
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.0.weight",
+        3
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.0.bias",
+        3
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.2.weight",
+        3
+      ],
+      [
+        "symbolSpace.subspace.layers.2.word_predictor.2.bias",
+        3
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.d",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+        0
+      ],
+      [
+        "conceptualSpaces.0.layers.0.routing_proj.weight",
+        1
+      ],
+      [
+        "conceptualSpaces.0.layers.0.routing_proj.bias",
+        1
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.d",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.d",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+        2
+      ],
+      [
+        "conceptualSpaces.1.layers.0.routing_proj.weight",
+        3
+      ],
+      [
+        "conceptualSpaces.1.layers.0.routing_proj.bias",
+        3
+      ],
+      [
+        "conceptualSpaces.1.concept_parts_layer.features.values",
+        3
+      ],
+      [
+        "answer_attention.space_bias",
+        0
+      ],
+      [
+        "answer_attention.consume_gate",
+        0
+      ],
+      [
+        "answer_attention.scorer.0.weight",
+        1
+      ],
+      [
+        "answer_attention.scorer.0.bias",
+        1
+      ],
+      [
+        "answer_attention.scorer.2.weight",
+        1
+      ],
+      [
+        "answer_attention.scorer.2.bias",
+        1
+      ]
+    ],
+    "costs": {
+      "reconstruction": 0.31634968519210815,
+      "expectation": null,
+      "supplied_answer": 0.29111337661743164
+    },
+    "groups": {
+      "perception": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "codes": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "chooser": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "operators_and_tied_inverses": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "generate": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "reading_map": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 2.4515605913898644
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": [
+            "inputSpace.outputSpace._readout_bias",
+            "inputSpace.outputSpace.layers.0.W",
+            "answer_record_reader.weight"
+          ]
+        }
+      },
+      "expectation_predictor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      },
+      "other": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "cosines": {
+          "reconstruction__expectation": null,
+          "reconstruction__supplied_answer": null,
+          "expectation__supplied_answer": null
+        },
+        "nonzero_parameters": {
+          "reconstruction": [],
+          "expectation": [],
+          "supplied_answer": []
+        }
+      }
+    },
+    "per_parameter": {
+      "perceptualSpace._owned_bases.what.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "perceptualSpace._percept_store.byte_fallback.byte_codebook": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.4.coefficients": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.5.sigma.layer.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.5.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.4.coefficients": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.5.sigma.layer.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.5.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.3.mereology.locations": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.3.mereology.locations": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.stop_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.apply_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.bracket_anchor": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.0.operation_layer.space_prior": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.callosum": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.layer.butterfly_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.layer.butterfly_d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.6.layer.butterfly_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.callosum": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.layer.butterfly_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.layer.butterfly_d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.6.layer.butterfly_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0.begins_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0.ends_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0.atom_level": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0._owned_bases.what.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.0._owned_bases.what.primitive_properties.members": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1.begins_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1.ends_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1.atom_level": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1._owned_bases.what.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "wholeSpaces.1._owned_bases.what.primitive_properties.members": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.category_embedding.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.rule_predictor.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.languageSpace.generate_policy.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.languageSpace.generate_policy.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace._readout_bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.21365880966186523
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.0.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 1.0745457354314425
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.0.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.1.W": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "inputSpace.outputSpace.layers.1.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_record_reader.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 2.19313718421256
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.predictor.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.kind_weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.kind_bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "symbolSpace.subspace.layers.2.word_predictor.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.pi.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.routing_proj.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.0.layers.0.routing_proj.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.pi.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.raw_L": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.d": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.raw_U": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.sigma.layer.biasWeight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.routing_proj.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.layers.0.routing_proj.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "conceptualSpaces.1.concept_parts_layer.features.values": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.space_bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.consume_gate": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.0.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.0.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.2.weight": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      },
+      "answer_attention.scorer.2.bias": {
+        "norms": {
+          "reconstruction": 0.0,
+          "expectation": 0.0,
+          "supplied_answer": 0.0
+        },
+        "unit_dots": {
+          "reconstruction__expectation": 0.0,
+          "reconstruction__supplied_answer": 0.0,
+          "expectation__supplied_answer": 0.0
+        }
+      }
+    },
+    "rng_unchanged": true
+  }
+]

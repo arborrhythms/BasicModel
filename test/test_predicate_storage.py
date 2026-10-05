@@ -10,8 +10,8 @@ def fixture(tmp_path, mode):
     primitives = owner.subspace.what.primitive_properties
     with torch.no_grad():
         primitives.members.zero_()
-        primitives.members[1, [65, 66]] = 1.
-        primitives.members[5, [66, 67]] = 1.
+        primitives.members[1, [49, 50]] = 1.
+        primitives.members[5, [50, 51]] = 1.
         owner.begins_weight.fill_(-8.)
         owner.ends_weight.fill_(-8.)
         owner.atom_level.fill_(-8.)
@@ -20,7 +20,7 @@ def fixture(tmp_path, mode):
             owner.ends_weight[261] = 8.
         elif mode == 'absent':
             owner.begins_weight[260] = 8.
-    idx = torch.tensor([[65, 65, 66, 67, 0], [66, 32, 65, 67, 0]])
+    idx = torch.tensor([[49, 49, 50, 51, 0], [50, 32, 49, 51, 0]])
     dense = torch.zeros(*idx.shape, owner._predicate_column_count(), dtype=torch.bool)
     dense.scatter_(2, idx[..., None], True)
     lookup = primitives.coefficients().detach().t() > .5

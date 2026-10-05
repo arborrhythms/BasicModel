@@ -1,0 +1,30 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_selected_exclusion_cannot_be_recovered_as_negation ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10feae9f0>
+
+    def test_selected_exclusion_cannot_be_recovered_as_negation(monkeypatch):
+        from test_selected_relation_meaning import _program_owner
+        from dataclasses import replace
+        _cs,_grammar,registry,owner,_leaves,program,_a,_b=_program_owner(monkeypatch)
+        local=next(i for i,rule in enumerate(owner._compose_unary_rules) if rule.polarity_effect == 'exclude')
+        entry=program()
+        entry=replace(entry,actions=torch.cat((entry.actions,torch.tensor([[2,local,-1]]))))
+        # Exclusion lives on the clause's evidence. This request adapter has no
+        # evidence carrier and must leave it to closing, never invent opposite truth.
+>       assert owner.program_meaning(entry,registry) is None
+E       AssertionError: assert ConceptualMeaning(mode='assertive', polarity=False, role_refs=(('sym', 6), ('sym', 4010033338316264258), ('sym', 7)), bindings=(), scope=(), sentence_kind=None) is None
+E        +  where ConceptualMeaning(mode='assertive', polarity=False, role_refs=(('sym', 6), ('sym', 4010033338316264258), ('sym', 7)), bindings=(), scope=(), sentence_kind=None) = program_meaning(AnswerProgram(rows=tensor([3, 5]), word_rows=tensor([7, 9]), activations=tensor([-0.2500,  0.7500]), leaves=tensor([[-...tions=None, operation_values=None, operation_refs=None, operation_relations=None, leaf_orders=None, leaf_evidence=None), <Queries.GrammaticalThoughtRegistry object at 0x129e51730>)
+E        +    where program_meaning = LanguageSpace(\n  (clause_scope): ClauseScope()\n).program_meaning
+
+test/test_operator_catalogue.py:249: AssertionError
+=============================== warnings summary ===============================
+test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+1 failed, 1 warning in 2.01s

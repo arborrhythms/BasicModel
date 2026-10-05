@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_grammar_word_learning.py",
+    "test/test_walk_trials.py",
+    "test/test_sentence_comparison.py",
+    "test/test_trial_policy_ownership.py",
+    "test/test_compose_operations.py",
+    "test/test_compose_review.py"
+  ],
+  "pid": 63648,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1196984936,
+  "elapsed_seconds": 105.28790666599525,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review16-router/run.log"
+}

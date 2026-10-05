@@ -1,0 +1,13 @@
+test/test_gradient_factorization.py
+test/test_grammar_separator.py
+test/test_grammar_word_learning.py
+test/test_interleave_schedule.py
+test/test_mind_generativity.py
+test/test_output_path_supervised.py
+test/test_prepared_answer_boundary.py
+test/test_reasoning.py
+test/test_reduction_pressure.py
+test/test_review14_addendum.py
+test/test_review14_contracts.py
+test/test_tied_operator_reconstruction.py
+test/test_trial_policy_ownership.py

@@ -1,0 +1,347 @@
+.................F....F.....................                             [100%]
+=================================== FAILURES ===================================
+__ test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11e110140>
+
+    def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
+            monkeypatch):
+        """A selected ``arma`` estimate is a typed answer seed, never a fact."""
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.reconstruct_in_loop = False
+        model.eval()
+        monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+        monkeypatch.setattr(
+            model, "_what_grammar_context",
+            lambda questions, **kwargs: (torch.zeros(
+                len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+        )
+        monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+    
+        width = int(cs.outputShape[-1])
+        estimate_roles = torch.arange(
+            3 * width, dtype=program().leaves.dtype).reshape(3, width)
+        estimate_roles.requires_grad_()
+        request = ConceptualMeaning(
+            torch.zeros_like(estimate_roles), torch.tensor([True, True, True]),
+            mode="interrogative")
+        checked = ThoughtResult(
+            semantic_id="arma", domain="discourse-prediction",
+            result_kind="prediction", evidence_kind="estimate",
+            request=request.detached(), evidence=MappingProxyType({
+                "value": MeaningExpectation(
+                    estimate_roles, torch.tensor([1.0, -1.0, 1.0])),
+                "incomplete": (),
+            }))
+        selected = SimpleNamespace(
+            meaning=request,
+            result=checked,
+            evidence={"query_signature": "arma", "support_true": 0.0,
+                      "support_false": 0.0, "incomplete": (),
+                      "semantic_id": "arma", "result_kind": "prediction"},
+            work=SimpleNamespace(spent=4))
+        monkeypatch.setattr(
+            model, "_run_selected_sentence_thoughts",
+            lambda programs, *, work_budget: ((0, selected),),
+        )
+    
+>       derivation = model.resolveAnswer(
+            Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
+
+test/test_normal_thought_controller.py:555: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:8612: in resolveAnswer
+    return self._resolve_answer(understanding, questions,score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel()
+understanding = Understanding(perceptual_context=None, conceptual_state=None, symbolic_state=None, reconstruction_carriers=mappingproxy({}))
+question = (WhatQuestion(where=0, relation=<WhatRelation.PRESENT: 'present'>, offset=0, split='train', prompt=None),)
+score = None, selected_thoughts = ()
+
+    def _resolve_answer(self, understanding, question, *, score=None, selected_thoughts=None):
+        """Resolve owned concepts for an answer, before question conditioning.
+    
+        The indexed path selects the current or recalled completed field and
+        materialises its full-width ideas once. Thinking transforms those ideas;
+        no dense symbol event is needed. Future answers remain unresolved until
+        a conceptual predictor exists. Topologies without row fields retain
+        their established dense-state resolution as a compatibility path.
+        """
+        questions = question_batch(question)
+        first = questions[0] if questions else None
+        current_fields = understanding.sentence_states
+        symbolic = understanding.symbolic_state
+        seed = getattr(understanding, "answer_seed", None)
+        if torch.is_tensor(seed):
+            symbolic = seed
+        if current_fields:
+            B = len(current_fields)
+        elif torch.is_tensor(symbolic):
+            B = int(symbolic.shape[0])
+        else:
+            raise RuntimeError("cannot resolve an answer without a completed field or symbolic state")
+        per_row = [questions[min(b, len(questions) - 1)] for b in range(B)]
+        temporal = tuple(q.context_values() for q in questions)
+        # Direct ``answer_query`` remains an explicit compatibility API, but a
+        # normal answer boundary is grammar-owned.  An unselected field is
+        # therefore unresolved here; raw surface text may not choose the
+        # legacy controller behind the grammatical trace.
+        row_sources, fields = [], []
+        resolved_all = True
+        if current_fields:
+            template = next((p.end_state for p in current_fields if p is not None), None)
+            if template is None:
+                template = next(self.parameters())
+            base = template.new_zeros(B, 3, int(self.conceptualSpace.stm.concept_dim))
+            for b, q in enumerate(per_row):
+                source = "identity"
+                entry = current_fields[b]
+                if q.relation is WhatRelation.PAST:
+                    k = abs(int(q.offset))
+                    history = self._recall_sentence_history().get(b)
+                    entry = (history[-k] if history is not None
+                             and k >= 1 and len(history) >= k else None)
+                    source = "recall" if entry is not None else "identity:cold-memory"
+                elif q.relation is WhatRelation.FUTURE:
+                    entry, source = None, "prediction"
+                resolved_all = resolved_all and entry is not None
+                fields.append(entry)
+                row_sources.append(source)
+            answer = torch.stack([base[b] if field is None else field.end_state.to(base)
+                                  for b, field in enumerate(fields)])
+        else:
+            answer = symbolic.clone()
+            for b, q in enumerate(per_row):
+                source = "identity"
+                if q.relation in (WhatRelation.PAST, WhatRelation.FUTURE):
+                    rep = self._temporal_answer_rep_row(
+                        q.relation, q.offset, b, symbolic.shape[-1])
+                    if rep is None:
+                        source, resolved_all = "identity:cold-memory", False
+                    else:
+                        answer[b:b + 1] = self._install_root_slot(symbolic[b:b + 1], rep)
+                        source = "recall" if q.relation is WhatRelation.PAST else "prediction"
+                row_sources.append(source)
+        # Only a completed interrogative opens the normal controller episode.
+        choose_thoughts=selected_thoughts is None
+        selected_thoughts=() if choose_thoughts else selected_thoughts
+        if current_fields and choose_thoughts:
+            try:
+                selected_budget = int(getattr(
+                    self, "attention_budget", 32) or 0)
+            except (TypeError, ValueError):
+                selected_budget = 32
+            selected_budget = max(0, selected_budget)
+            memory = self._what_memory()
+            # Never replace another live episode on the chronological owner.
+            if memory is None or not any(
+                    getattr(memory, "in_episode", lambda _row: False)(row)
+                    for row in range(len(fields))):
+                costed={}
+                def thought_cost(row,result):
+                    # No query is rerun to adapt an already checked result.
+                    held=self._resolve_answer(understanding,questions,selected_thoughts=((row,result),))
+                    constructed=self.reverseOutput(understanding,held,score=score)
+                    costed[id(result.records)]=constructed
+                    return score(constructed)[row]
+>               selected_thoughts = self._run_selected_sentence_thoughts(
+                    tuple(fields), work_budget=selected_budget,score=None if score is None else thought_cost)
+E               TypeError: test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed.<locals>.<lambda>() got an unexpected keyword argument 'score'
+
+bin/Models.py:8707: TypeError
+______ test_selected_row_cannot_open_a_second_controller_for_another_row _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f878440>
+
+    def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatch):
+        """A selected boundary is row-local, including its legacy handoff."""
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=2, capacity=64, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.what_thinking_iterations = 2
+        model.reconstruct_in_loop = False
+        model.eval()
+        monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+        monkeypatch.setattr(
+            model, "_what_grammar_context",
+            lambda questions, **kwargs: (torch.zeros(
+                len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+        )
+        monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+    
+        selected = SimpleNamespace(
+            evidence={"query_signature": "part", "support_true": 1.0,
+                      "support_false": 0.0, "incomplete": ()},
+            work=SimpleNamespace(spent=3))
+        monkeypatch.setattr(
+            model, "_run_selected_sentence_thoughts",
+            lambda programs, *, work_budget: ((0, selected),),
+        )
+        calls = []
+    
+        def legacy_resolve(_understanding, _questions, _per_row, answer, *,
+                           programs=None, excluded_rows=()):
+            calls.append((tuple(programs), tuple(excluded_rows)))
+            adjusted = answer.clone()
+            adjusted[1, 0].fill_(0.75)
+            return adjusted, (None, "legacy-row"), (
+                {"operation": "legacy-row", "row": 1},), ()
+    
+        monkeypatch.setattr(model, "_resolve_step", legacy_resolve, raising=False)
+        first_program = sentence_state(language, program(), registry)
+>       derivation = model.resolveAnswer(
+            Understanding(sentence_states=(first_program, None)), WhatQuestion.present(0))
+
+test/test_normal_thought_controller.py:794: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:8612: in resolveAnswer
+    return self._resolve_answer(understanding, questions,score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel()
+understanding = Understanding(perceptual_context=None, conceptual_state=None, symbolic_state=None, reconstruction_carriers=mappingproxy({}))
+question = (WhatQuestion(where=0, relation=<WhatRelation.PRESENT: 'present'>, offset=0, split='train', prompt=None),)
+score = None, selected_thoughts = ()
+
+    def _resolve_answer(self, understanding, question, *, score=None, selected_thoughts=None):
+        """Resolve owned concepts for an answer, before question conditioning.
+    
+        The indexed path selects the current or recalled completed field and
+        materialises its full-width ideas once. Thinking transforms those ideas;
+        no dense symbol event is needed. Future answers remain unresolved until
+        a conceptual predictor exists. Topologies without row fields retain
+        their established dense-state resolution as a compatibility path.
+        """
+        questions = question_batch(question)
+        first = questions[0] if questions else None
+        current_fields = understanding.sentence_states
+        symbolic = understanding.symbolic_state
+        seed = getattr(understanding, "answer_seed", None)
+        if torch.is_tensor(seed):
+            symbolic = seed
+        if current_fields:
+            B = len(current_fields)
+        elif torch.is_tensor(symbolic):
+            B = int(symbolic.shape[0])
+        else:
+            raise RuntimeError("cannot resolve an answer without a completed field or symbolic state")
+        per_row = [questions[min(b, len(questions) - 1)] for b in range(B)]
+        temporal = tuple(q.context_values() for q in questions)
+        # Direct ``answer_query`` remains an explicit compatibility API, but a
+        # normal answer boundary is grammar-owned.  An unselected field is
+        # therefore unresolved here; raw surface text may not choose the
+        # legacy controller behind the grammatical trace.
+        row_sources, fields = [], []
+        resolved_all = True
+        if current_fields:
+            template = next((p.end_state for p in current_fields if p is not None), None)
+            if template is None:
+                template = next(self.parameters())
+            base = template.new_zeros(B, 3, int(self.conceptualSpace.stm.concept_dim))
+            for b, q in enumerate(per_row):
+                source = "identity"
+                entry = current_fields[b]
+                if q.relation is WhatRelation.PAST:
+                    k = abs(int(q.offset))
+                    history = self._recall_sentence_history().get(b)
+                    entry = (history[-k] if history is not None
+                             and k >= 1 and len(history) >= k else None)
+                    source = "recall" if entry is not None else "identity:cold-memory"
+                elif q.relation is WhatRelation.FUTURE:
+                    entry, source = None, "prediction"
+                resolved_all = resolved_all and entry is not None
+                fields.append(entry)
+                row_sources.append(source)
+            answer = torch.stack([base[b] if field is None else field.end_state.to(base)
+                                  for b, field in enumerate(fields)])
+        else:
+            answer = symbolic.clone()
+            for b, q in enumerate(per_row):
+                source = "identity"
+                if q.relation in (WhatRelation.PAST, WhatRelation.FUTURE):
+                    rep = self._temporal_answer_rep_row(
+                        q.relation, q.offset, b, symbolic.shape[-1])
+                    if rep is None:
+                        source, resolved_all = "identity:cold-memory", False
+                    else:
+                        answer[b:b + 1] = self._install_root_slot(symbolic[b:b + 1], rep)
+                        source = "recall" if q.relation is WhatRelation.PAST else "prediction"
+                row_sources.append(source)
+        # Only a completed interrogative opens the normal controller episode.
+        choose_thoughts=selected_thoughts is None
+        selected_thoughts=() if choose_thoughts else selected_thoughts
+        if current_fields and choose_thoughts:
+            try:
+                selected_budget = int(getattr(
+                    self, "attention_budget", 32) or 0)
+            except (TypeError, ValueError):
+                selected_budget = 32
+            selected_budget = max(0, selected_budget)
+            memory = self._what_memory()
+            # Never replace another live episode on the chronological owner.
+            if memory is None or not any(
+                    getattr(memory, "in_episode", lambda _row: False)(row)
+                    for row in range(len(fields))):
+                costed={}
+                def thought_cost(row,result):
+                    # No query is rerun to adapt an already checked result.
+                    held=self._resolve_answer(understanding,questions,selected_thoughts=((row,result),))
+                    constructed=self.reverseOutput(understanding,held,score=score)
+                    costed[id(result.records)]=constructed
+                    return score(constructed)[row]
+>               selected_thoughts = self._run_selected_sentence_thoughts(
+                    tuple(fields), work_budget=selected_budget,score=None if score is None else thought_cost)
+E               TypeError: test_selected_row_cannot_open_a_second_controller_for_another_row.<locals>.<lambda>() got an unexpected keyword argument 'score'
+
+bin/Models.py:8707: TypeError
+=============================== warnings summary ===============================
+test/test_walk_trials.py::test_thought_pair_keeps_one_episode_and_costs_before_policy_backward
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7154: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpvr6z9z73/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7154: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1551/test_normal_supervised_output_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7154: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1551/test_normal_supervised_output_1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed
+FAILED test/test_normal_thought_controller.py::test_selected_row_cannot_open_a_second_controller_for_another_row
+2 failed, 42 passed, 4 warnings in 10.26s

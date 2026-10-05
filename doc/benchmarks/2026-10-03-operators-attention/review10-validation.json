@@ -1,0 +1,34 @@
+{
+  "source_matched": true,
+  "receipt_links_resolve": true,
+  "trainings": 30,
+  "retries": 0,
+  "counts": {
+    "class_pass": 7,
+    "reconstruction_pass": 0,
+    "joint": 0,
+    "mm_pass": 10,
+    "sum_pass": 0,
+    "xor_bands": {
+      "at 0": 7,
+      "above 1/4": 2,
+      "between": 1
+    },
+    "sum_bands": {
+      "between": 4,
+      "above 1/4": 3,
+      "at 0": 3
+    }
+  },
+  "seconds": 797.6733829999866,
+  "peak_worker_bytes": 681903592,
+  "guards_triggered": [],
+  "reporting_scripts": {
+    "review10_campaign.py": "e3277c2b21de4a6a00905e588451c1c4bcfaab149c048427e7463dae50631a11",
+    "review10_summarize.py": "68481a3e531332107c7e80f8c11da9c807aab771ac75e837200504a133c81fd2",
+    "review10_observer_probe.py": "f818dceb89c4b6d8a4fdbc1e9d7efc697e8f05f8db6464a7be80b71654239646",
+    "review10_gate_observer.py": "703ea991ca5d610f0e5518ece8c08c9a5a06a50b8e8014c4c3888e4dd6267ad4",
+    "review10_write_receipt.py": "6046c51eb9a929ae9648820688062c32831b0847804dcfe971d11387798b509e",
+    "review10_plot.py": "034cd58598281849e12d1d5fc5559eafd7f67168e5292e11d9cdf83dc0a6030e"
+  }
+}

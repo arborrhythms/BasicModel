@@ -31,7 +31,7 @@ def test_unpacked_forward_observes_each_published_sentence_once(
         costs.append(model._sentence_cost_registry.total(objective='expectation'))
         return result
     monkeypatch.setattr(model, '_sentence_path_cost', score)
-    discourse = model.symbolSpace.discourse
+    discourse = model.symbolSpace.expectation
     try:
         for index, samples in enumerate((["alpha beta", "gamma delta"],
                                          ["alpha gamma", "beta delta"])):
@@ -71,11 +71,11 @@ def test_unpacked_forward_observes_each_published_sentence_once(
 
 
 def test_explicit_boundary_retains_factored_roles_and_skips_masked_rows(monkeypatch):
-    from Layers import InterSentenceLayer
+    from Layers import BracketExpectation
     from reading_fixtures import commit_reading, finish_reading
     from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
-    discourse = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
+    discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
         concept_dim=8, expectation_scope='structured')
     entry = fixture.program(('lift', 'cat', ('verb', 'chases', 'mouse')))
     for active in (True, False):

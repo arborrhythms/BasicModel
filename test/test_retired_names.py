@@ -137,7 +137,7 @@ def test_retired_names_remain_absent():
             'row_is_identity', 'assign_row', 'hebbian_strengthen_row')),
         (Language.RuleCodebook(num_rules=1), ('forward_to_parent_what',)),
         (Layers.TruthLayer(nDim=8, max_truths=16), ('should_store',)),
-        (Layers.InterSentenceLayer(n_symbols=4, max_depth=2, n_dim=3, p=5, q=2,
+        (Layers.BracketExpectation(n_symbols=4, max_depth=2, n_dim=3, p=5, q=2,
             concept_dim=6, batch=1), ('prime', 'cast')),
         (Layers.ChunkLayer(nDim=8, bpe=True, n_vectors=1024, word_learning=2),
             ('split', 'merge', 'threshold', 'score_pair', 'encode', 'decode', 'should_merge')),

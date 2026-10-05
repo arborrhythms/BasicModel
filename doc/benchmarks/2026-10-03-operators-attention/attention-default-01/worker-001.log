@@ -1,0 +1,367 @@
+..........FF...........................FF...FFF......................FFF [ 28%]
+.....................s.....FFFF.....FF...F.............................. [ 56%]
+...................................FF...F.........ssssss................ [ 84%]
+................................sss.....                                 [100%]
+=================================== FAILURES ===================================
+______________ TestSimpleModelCreation.test_simple_model_ergodic _______________
+test/test_basicmodel.py:455: in test_simple_model_ergodic
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+____________ TestSimpleModelCreation.test_simple_model_traditional _____________
+test/test_basicmodel.py:441: in test_simple_model_traditional
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+_______________ TestSimpleModel.test_simple_model_ergodic_shapes _______________
+test/test_basicmodel.py:797: in test_simple_model_ergodic_shapes
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+_____________ TestSimpleModel.test_simple_model_traditional_shapes _____________
+test/test_basicmodel.py:812: in test_simple_model_traditional_shapes
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+______________ TestModelEndToEnd.test_simple_model_ergodic_shapes ______________
+test/test_basicmodel.py:865: in test_simple_model_ergodic_shapes
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+________________ TestModelEndToEnd.test_simple_model_loss_runs _________________
+test/test_basicmodel.py:898: in test_simple_model_loss_runs
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+____________ TestModelEndToEnd.test_simple_model_traditional_shapes ____________
+test/test_basicmodel.py:880: in test_simple_model_traditional_shapes
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+____________ TestBaseModelFactory.test_factory_creates_basic_model _____________
+test/test_basicmodel.py:1224: in test_factory_creates_basic_model
+    model, cfg = Models.BaseModel.from_config(path)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1834: in create_from_config
+    init_config(path=config_path, defaults_path=defaults_path)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_pvl_abm.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_pvl_abm.xml:3: element subsymbolicOrder: Schemas validity error : Element 'subsymbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_pvl_abm.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+____________ TestBaseModelFactory.test_factory_creates_mental_model ____________
+test/test_basicmodel.py:1238: in test_factory_creates_mental_model
+    model, cfg = Models.BaseModel.from_config(path)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+____________ TestBaseModelFactory.test_factory_creates_simple_model ____________
+test/test_basicmodel.py:1199: in test_factory_creates_simple_model
+    model, cfg = Models.BaseModel.from_config(path)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+______________ TestModelTypeVariants.test_concept_with_attention _______________
+test/test_basicmodel.py:1820: in test_concept_with_attention
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+________________ TestModelTypeVariants.test_conceptual_order_1 _________________
+test/test_basicmodel.py:1786: in test_conceptual_order_1
+    model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+E   TypeError: BasicModel.create() got an unexpected keyword argument 'subsymbolicOrder'
+_______________ TestModelTypeVariants.test_percept_no_attention ________________
+test/test_basicmodel.py:1804: in test_percept_no_attention
+    model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+________ TestReconstructionSymbols.test_forward_output_shape_unchanged _________
+test/test_basicmodel.py:1927: in test_forward_output_shape_unchanged
+    m = self._create_xor_model(nSymbols=8, nOutput=1)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_basicmodel.py:1916: in _create_xor_model
+    m.create_from_config(tmp.name, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+________________ TestVocabSaveRestore.test_save_load_with_vocab ________________
+test/test_basicmodel.py:2073: in test_save_load_with_vocab
+    m1.create_from_config(xml_path, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+______ TestTrainingUpdatesWeights.test_xor_weights_change_after_one_epoch ______
+test/test_basicmodel.py:2122: in test_xor_weights_change_after_one_epoch
+    m.create_from_config(xml_path, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+_________ TestRuntimeDataLoader.test_runtime_data_loader_returns_batch _________
+test/test_basicmodel.py:2188: in test_runtime_data_loader_returns_batch
+    m.create_from_config(tmp.name, data=Models.TheData)
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+_____ TestSubspaceActivationPipeline.test_simple_model_subspace_activation _____
+test/test_basicmodel.py:2905: in test_simple_model_subspace_activation
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+________ TestSubspaceActivationPipeline.test_subspace_activation_stored ________
+test/test_basicmodel.py:2919: in test_subspace_activation_stored
+    model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+________________ TestBasicModelDemuxed.test_create_from_config _________________
+test/test_basicmodel.py:3032: in test_create_from_config
+    model.create(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nOutput=4,
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+=============================== warnings summary ===============================
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector
+test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector
+test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_basic_model
+FAILED test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_mental_model
+FAILED test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_simple_model
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_concept_with_attention
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention
+FAILED test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+FAILED test/test_basicmodel.py::TestVocabSaveRestore::test_save_load_with_vocab
+FAILED test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+FAILED test/test_basicmodel.py::TestRuntimeDataLoader::test_runtime_data_loader_returns_batch
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored
+FAILED test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+20 failed, 226 passed, 10 skipped, 11 warnings in 119.77s (0:01:59)

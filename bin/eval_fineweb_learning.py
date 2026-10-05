@@ -53,7 +53,7 @@ def load_model(config, checkpoint, *, minimum_sentences=MIN_FINEWEB_SENTENCES):
 
 def _forecast_question(model):
     """Ask the declared arma operation about the latest owned observation."""
-    discourse = model.symbolSpace.discourse
+    discourse = model.symbolSpace.expectation
     occurrences = discourse._inter_context_occurrences[0]
     if not occurrences or occurrences[-1] is None:
         raise ValueError('a prediction question requires an owned observation')
@@ -86,7 +86,7 @@ def read_validation(model, *, sentences=64, documents=1024, gain=None):
     assert train_docs.isdisjoint(r['document'] for r in addresses)
     if len(data.validation_input) < sentences:
         raise ValueError('held-out corpus is shorter than the declared evaluation')
-    discourse = model.symbolSpace.discourse
+    discourse = model.symbolSpace.expectation
     if discourse is None or discourse.expectation_scope != 'structured':
         raise ValueError('learning evaluation requires structured sentence expectation')
     if gain is not None:

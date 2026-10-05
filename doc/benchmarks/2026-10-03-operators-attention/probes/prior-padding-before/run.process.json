@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py::test_input_priming_reads_live_word_extent_without_changing_prior"
+  ],
+  "pid": 10480,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 507053472,
+  "elapsed_seconds": 3.8553637909935787,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/prior-padding-before/run.log"
+}

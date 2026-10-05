@@ -66,7 +66,7 @@ def test_sequential_builds_body_stages_and_invertible_path():
 
 
 def test_sequential_unrolls_subsymbolic_order():
-    """body_stages has T (subsymbolicOrder) non-owning stage records.
+    """body_stages has T (bindingDepth) non-owning stage records.
 
     Replaces the prior pipeline_fwd.modules() walk: the per-stage
     structure is now first-class in ``body_stages`` (no more buried

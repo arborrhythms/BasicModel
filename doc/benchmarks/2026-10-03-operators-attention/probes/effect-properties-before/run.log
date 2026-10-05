@@ -1,0 +1,28 @@
+........FF                                                               [100%]
+=================================== FAILURES ===================================
+_________________ test_mean_bundling_is_not_a_field_operation __________________
+
+    def test_mean_bundling_is_not_a_field_operation():
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='field'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_operator_effects.py:73: Failed
+______ test_thought_result_and_effect_properties_survive_semantic_rename _______
+
+    def test_thought_result_and_effect_properties_survive_semantic_rename():
+        from dataclasses import replace
+        from Queries import THOUGHT_EXECUTORS
+        for original in THOUGHT_EXECUTORS.values():
+            renamed=replace(original, semantic_id='opaque')
+            assert renamed.result_kind == original.result_kind
+>           assert renamed.effect_kind == original.effect_kind
+                   ^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'ThoughtExecutorDescriptor' object has no attribute 'effect_kind'
+
+test/test_operator_effects.py:85: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_operator_effects.py::test_mean_bundling_is_not_a_field_operation
+FAILED test/test_operator_effects.py::test_thought_result_and_effect_properties_survive_semantic_rename
+2 failed, 8 passed in 2.01s

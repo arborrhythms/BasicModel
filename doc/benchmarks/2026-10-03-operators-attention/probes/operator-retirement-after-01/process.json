@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_catalogue.py",
+    "test/test_query_executors.py",
+    "test/test_query_grammar_loader.py",
+    "test/test_thought_operation_catalog.py",
+    "test/test_clause_scope.py",
+    "test/test_clause_storage.py",
+    "test/test_clause_grammar.py",
+    "test/test_serial_reverse_errors.py",
+    "test/test_tied_operator_reconstruction.py"
+  ],
+  "pid": 83821,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1248282568,
+  "elapsed_seconds": 20.685082666983362,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/operator-retirement-after-01/run.log"
+}

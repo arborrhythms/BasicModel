@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py",
+    "-k",
+    "not old_attention",
+    "test/test_compound_cases.py",
+    "test/test_decoder_exploration.py"
+  ],
+  "pid": 94119,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 697944104,
+  "elapsed_seconds": 13.447062874998664,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/attention-chooser-after/run.log"
+}

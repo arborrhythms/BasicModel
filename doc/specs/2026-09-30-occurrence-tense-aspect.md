@@ -1,7 +1,9 @@
 # Item 5.5: where and when a sentence occurred, tense, aspect, the preposition and surface form
 
 > **Status:** specification, 2026-09-30, written by Claude from Alec's
-> decisions in conversation on 2026-09-30. Todo item **5.5**, after item 6
+> decisions in conversation on 2026-09-30; **revised 2026-10-03 (§0): `.when`
+> stays in percepts and concepts as the sentence's index in its document,
+> and the address is content over the bands.** Todo item **5.5**, after item 6
 > and before item 5: "So 5.5?" Codex implements; Claude reviews. It closes
 > the last group of the [operator catalogue](2026-09-29-operator-catalogue.md#9-the-order-of-the-pass)
 > (the preposition, tense, morphology, aspect and `surface`) and changes what
@@ -10,6 +12,76 @@
 > reading* is Claude's, to be confirmed. *Measured* means a probe run on a
 > clean copy of HEAD `1678ee1f` on 2026-09-30; the probe scripts are not in
 > the repository and nothing in it was edited for them.
+
+## 0. Revision of 2026-10-03: `.when` stays, and the address is content *(decided, Alec)*
+
+Alec, 2026-10-03: "I see it as a valuable value when stamped inside
+concepts, just as .where is currently stamped, so that concepts have
+information about temporal order that they would not otherwise have access
+to." And: "if we do content-based addressing over LTM, then conceptual mind
+can do its own .what, .where and .when querying without any explicit index
+management, which seems desirable. So I'm thinking 5.5 should not remove the
+.when."
+
+The defect of §1.1 was the **value**, not the band: a global clock, the same
+for every word of a batch and different every batch, carrying time of
+reading rather than order, at a norm that dominated the content. The band
+stays, with the value `.where` already has one level up:
+
+- **§3.2 reverses.** Percepts and concepts carry `.when`. Its value is the
+  sentence's **index within its document**, from 1, encoded as `.where` is
+  (the existing `when_encoding` applied to the index instead of `when_time`)
+  and scaled like `.where`, so that it informs the chooser without
+  dominating. The same sentence of the same document gets the same stamp at
+  every reading; sentences of one document are ordered; documents are not.
+  Every word of a sentence carries the sentence's stamp (word order is
+  `.where`), so its ideas carry it, and the row written at the closing
+  carries it: memory's `.when` and the concept's `.when` are one value,
+  written once.
+- **§3.1's address is the row's own content and bands**, queried by
+  content. The **document is a code**: the situation whole of §3.4, present
+  in every sentence's content, never a band value (a whole is a type; a value
+  that changes every sentence in WholeSpace is §1.1's defect in a new place).
+  So the bands keep their positional meaning: `.where` the place in the input
+  (word order, as today), `.when` the place in the document. "What did
+  sentence *k* of document *d* say", "what holds now" and "what was said
+  before this" are one kind of query. No index is kept beside the store;
+  `MemoryIndex._scope_contains`, which reads a query's metadata today,
+  becomes a band match. **No `.where` or `.when` is passed to the LTM query
+  as a parameter** (Alec, 2026-10-03): the query is a conceptual event,
+  matched over the whole vector. **No mask, pre-defined or learned** (Alec):
+  a band the query leaves at zero contributes nothing to the match, so the
+  filter's own content selects. The query events are formed by the thought
+  and generate operators from the current idea, and those operators are
+  trained by what uses the recall (expectation, output): "the information
+  relevant to time will find its way into the gradient, and knowledge about
+  before and after will be learned through experience".
+- **§3.3's recency and "holds at *k*"** are content queries over `.what`,
+  `.where` and `.when` within a document; the index "by content, ordered by
+  start" is not a separate structure.
+- **§7** no longer removes the `.when` band of the perceptual spaces; the
+  clock-stamped row `.when` becomes the index-stamped one. **Test 6**
+  inverts (the band is present and equals the index); **test 3** becomes a
+  content query; **test 1** stands (the same sentences at nine step counts
+  give identical derivations, rows and answers).
+- **Order must be learnable, so the encoding is structural.** `.when`
+  takes the form `.where` already has: an endpoint-sum bracket, [start, end]
+  as centre and extent, so that order is a simple function of the channels
+  and an operator producing "before this" or "after this" from the current
+  idea has something linear to learn (a bare phase would make "before"
+  ambiguous across its period). Containment on the bracket remains available
+  as a hard read for reasoning, as `.where`'s mereology has it; the recall
+  filter itself is soft similarity. Nothing codes before and after; the
+  retired `_lift_when`/`_lower_when` were a hand-written version of the
+  operator that is now learned.
+- §2 is unchanged: the band is occurrence order, written by the reading from
+  outside the concept; what the sentence says about time stays in the verb
+  phrase (§4).
+
+§3.4 (the situation as identities in WholeSpace) stands and stays in 5.5.
+§3.5 (interleave everywhere) is delivered by item 6.8's open read, which
+deletes the schedule knob it names. The sections below are as written on
+2026-09-30; where they conflict with this revision, the revision governs.
 
 ## 1. The problem
 

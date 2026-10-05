@@ -58,7 +58,7 @@
            SyntacticLayer.compose dispatch per stage replaces
            sigma_cs[k] (the per-stage SERIAL dispatch is a follow-up;
            currently the per-word loop uses the terminal CS). -->
-      <xs:element name="subsymbolicOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="bindingDepth" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Concept formation at the serial {PS,WS,SS} -> CS boundary.
            mixing: the historical learned ConceptualCombine matrix, retained
            as an explicit comparison option. aligned: preserve the location
@@ -74,7 +74,6 @@
       <!-- serial selects the per-word grammatical body. If omitted, code
            derives it from symbolicOrder > 0 for legacy configs. New configs
            should set it explicitly. -->
-      <xs:element name="serial" type="xs:boolean" minOccurs="0"/>
       <!-- Sampling temperature shared by exploit/explore; zero is argmax.
            Evaluation is always argmax. Gradient credit is untempered. -->
       <xs:element name="composeTemperature" minOccurs="0" default="0">
@@ -88,11 +87,6 @@
           <xs:minInclusive value="0"/>
         </xs:restriction></xs:simpleType>
       </xs:element>
-      <xs:element name="modeSchedule" minOccurs="0">
-        <xs:simpleType><xs:restriction base="xs:string">
-          <xs:pattern value="serial|parallel|interleave:[1-9][0-9]*"/>
-        </xs:restriction></xs:simpleType>
-      </xs:element>
       <!-- symbolicOrder is the symbolic iteration budget K of the conceptual
            wave. We are NOT forcing ramsification: the value is the maximum
            possible conceptual order, i.e. the order reached if a novel concept
@@ -100,7 +94,7 @@
            It no longer serves as the primary mode selector; serial does. If
            omitted, the default still derives from the configured grammar for
            legacy configs: 1 when the XML enables a non-substrate rule, else 0. -->
-      <xs:element name="symbolicOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="conceptLayers" type="xs:positiveInteger" minOccurs="0"/>
       <!-- syntacticOrder (doc/specs/orders.md, NEW 2026-06-19): the maximum
            DEPTH of the parse tree the grammatical (serial) reduction may build
            per sentence. A distinct axis from subsymbolicOrder (refinement
@@ -181,7 +175,6 @@
            region or mereological level: all (default), off, or comma-
            separated indices in 1..subsymbolicOrder-1. Pass 0 reads the
            initial field; subsymbolicOrder remains the processing bound. -->
-      <xs:element name="subsymbolicLoop" type="xs:string" minOccurs="0"/>
       <!-- SymbolSpace 3-stream peer bind (2026-06-21, Slice B). When true, the
            terminal ConceptualCombine is built with n_streams=3 and bind_streams
            routes a third (symbol) peer leg (PS/WS percepts + SS symbols). Default
@@ -225,7 +218,6 @@
            In text mode (dataType embedding) training, a next-word cross-entropy
            term trains the producer to land on the next word. Default false: no
            module allocated, no scope written, no loss (byte-identical). -->
-      <xs:element name="readingAttention" type="xs:boolean" minOccurs="0"/>
       <!-- Global attention (doc/specs/reading-attention.md "(B) Global
            attention"). When true, a free, content/relation-driven attention
            ranges over a TYPED addressable space - the input window, STM, LTM,
@@ -238,7 +230,6 @@
            scorer readout trains. Dark by default: no module, the soft-read is
            parked not fed back, so the forward is byte-identical (the consumer
            that feeds the read into the task is a later slice). -->
-      <xs:element name="globalAttention" type="xs:boolean" minOccurs="0"/>
       <!-- Global-attention CONSUMER (doc/specs/reading-attention.md "(B)").
            When true, the parked soft-read is fed BACK into the head (the
            "answer") as a zero-init gated residual, so the answer/output loss
@@ -250,7 +241,6 @@
            in LTM" is the SPACE_LTM read fed back here. Requires
            globalAttention. Default false keeps the soft-read parked (B
            unchanged), byte-identical. -->
-      <xs:element name="globalAttentionConsume" type="xs:boolean" minOccurs="0"/>
       <!-- answerSynthesis (What spec Steps 3-4, 2026-09-09): construct the
            answer through resolve -> ConceptualSpace.synthesize ->
            PerceptualSpace.synthesize -> OutputSpace.from_percepts instead of
@@ -293,7 +283,7 @@
       <xs:element name="whatThinkingIterations" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Bounded work for one normal selected grammatical-thought episode.
            Zero permits only the defined cutoff/finish drain. -->
-      <xs:element name="selectedThoughtBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="attentionBudget" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Thought-step MLP capacity: defaults hidden=16, depth=1. These
            do not enable episodes, memory, or policy training. -->
       <xs:element name="whatThinkingHidden" type="xs:positiveInteger" minOccurs="0"/>
@@ -938,6 +928,18 @@
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <!-- Automatic sentence expectation; ARMA remains separately weighted.
            sentenceExpectation replaces the retired sentencePrediction name. -->
+      <xs:element name="byteExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="byteExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="byteExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="byteExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="wordExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="wordExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="wordExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="wordExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="rowExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="rowExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="rowExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="rowExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="sentenceExpectation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sentenceExpectationScope" minOccurs="0">
         <xs:simpleType>
@@ -947,7 +949,7 @@
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
-      <xs:element name="armaScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentenceExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="expectationGain" type="unitInterval" minOccurs="0"/>
       <xs:element name="expectationPolicyWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="expectationQueryBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -960,12 +962,12 @@
            distinct occupied NP1/VP/NP2 vectors plus presence logits;
            root scope retains the historical single-vector MSE baseline.
            This scales the mean over eligible observed sentences. -->
-      <xs:element name="interLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentenceExpectationLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- InfoNCE next-idea contrastive term: weight + softmax temperature.
            Reuses the InterSentenceLayer end-state chain (positive next root
            ranked above the chain's past roots). 0.0 weight -> MSE-only
            (byte-identical). -->
-      <xs:element name="interContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentenceExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="interContrastiveTemp" type="positiveFloat" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
@@ -1111,6 +1113,7 @@
 
   <xs:complexType name="conceptualSpaceType">
     <xs:all>
+      <xs:element name="latticeMargin" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.
            0 disables; BasicModel opts into weak 0.01. Not activation shrink. -->
       <xs:element name="conceptReadoutL1" type="nonNegativeFloat" minOccurs="0"/>

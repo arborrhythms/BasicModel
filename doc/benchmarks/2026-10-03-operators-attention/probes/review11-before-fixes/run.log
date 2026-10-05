@@ -1,0 +1,100 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+______________ test_numeric_head_does_not_call_learned_retrieval _______________
+
+    def test_numeric_head_does_not_call_learned_retrieval():
+        from Models import BasicModel
+>       from SubSpace import SubSpace
+E       ModuleNotFoundError: No module named 'SubSpace'
+
+test/test_review11_contracts.py:10: ModuleNotFoundError
+______ test_supported_compound_cannot_stop_even_with_a_chunk_code[False] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123836750>
+chunk_in_bank = False
+
+    @pytest.mark.parametrize('chunk_in_bank', [False, True])
+    def test_supported_compound_cannot_stop_even_with_a_chunk_code(monkeypatch, chunk_in_bank):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _ = decoder()
+        event = torch.tensor([[[1., 1.], [0., 0.], [0., 0.]]])
+        bank = torch.tensor([[[1., 0.], [0., 1.], [1., 1.]]])
+        valid = torch.tensor([[True, True, chunk_in_bank]])
+        out, count, truncated, _, actions = model._output_generate_walk(
+            event, 6, basis=bank, basis_valid=valid, return_trace=True)
+>       assert count.tolist() == [2]
+E       assert [1] == [2]
+E         
+E         At index 0 diff: 1 != 2
+E         Use -v to get more diff
+
+test/test_review11_contracts.py:63: AssertionError
+_______ test_supported_compound_cannot_stop_even_with_a_chunk_code[True] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123878050>
+chunk_in_bank = True
+
+    @pytest.mark.parametrize('chunk_in_bank', [False, True])
+    def test_supported_compound_cannot_stop_even_with_a_chunk_code(monkeypatch, chunk_in_bank):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _ = decoder()
+        event = torch.tensor([[[1., 1.], [0., 0.], [0., 0.]]])
+        bank = torch.tensor([[[1., 0.], [0., 1.], [1., 1.]]])
+        valid = torch.tensor([[True, True, chunk_in_bank]])
+        out, count, truncated, _, actions = model._output_generate_walk(
+            event, 6, basis=bank, basis_valid=valid, return_trace=True)
+>       assert count.tolist() == [2]
+E       assert [1] == [2]
+E         
+E         At index 0 diff: 1 != 2
+E         Use -v to get more diff
+
+test/test_review11_contracts.py:63: AssertionError
+___________ test_single_symbol_cannot_be_split_by_a_large_undo_logit ___________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123889a00>
+
+    def test_single_symbol_cannot_be_split_by_a_large_undo_logit(monkeypatch):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, policy = decoder()
+        with torch.no_grad():
+            policy.bias.copy_(torch.tensor([20., 0.]))
+        event = torch.tensor([[[1., 0.], [0., 0.], [0., 0.]]])
+        bank = torch.tensor([[[1., 0.], [0., 1.]]])
+        out, count, truncated, _, actions = model._output_generate_walk(
+            event, 6, basis=bank, basis_valid=torch.ones(1, 2, dtype=torch.bool), return_trace=True)
+>       assert count.tolist() == [1]
+E       assert [2] == [1]
+E         
+E         At index 0 diff: 2 != 1
+E         Use -v to get more diff
+
+test/test_review11_contracts.py:79: AssertionError
+________ test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x123880110>
+
+    def test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal(monkeypatch):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _ = decoder()
+        event = torch.tensor([[[1., 1.], [0., 0.]]], requires_grad=True)
+        out, count, truncated, _, actions = model._output_generate_walk(
+            event, 4, basis=event, basis_valid=torch.zeros(1, 2, dtype=torch.bool), return_trace=True)
+>       assert count.tolist() == [0]
+E       assert [1] == [0]
+E         
+E         At index 0 diff: 1 != 0
+E         Use -v to get more diff
+
+test/test_review11_contracts.py:92: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_review11_contracts.py::test_numeric_head_does_not_call_learned_retrieval
+FAILED test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False]
+FAILED test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[True]
+FAILED test/test_review11_contracts.py::test_single_symbol_cannot_be_split_by_a_large_undo_logit
+FAILED test/test_review11_contracts.py::test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal
+5 failed in 2.01s

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_echoic_decoder.py",
+    "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+    "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+    "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state"
+  ],
+  "pid": 21987,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1239632320,
+  "elapsed_seconds": 49.0031296669913,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review11-final-fixtures/run.log"
+}

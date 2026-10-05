@@ -1,0 +1,112 @@
+......................FFFF..............s.                               [100%]
+=================================== FAILURES ===================================
+________ test_runbatch_trains_generate_policy_from_reconstruction[True] ________
+
+supplied = True, eager_reading = None
+
+    @pytest.mark.parametrize('supplied',[True,False])
+    def test_runbatch_trains_generate_policy_from_reconstruction(supplied,eager_reading):
+        from What import What
+        m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+        m.inputSpace.data.has_supervised_outputs=supplied
+        opt=m.getOptimizer(lr=1e-3)
+        try:
+            got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
+>           assert any(g is not None and bool(g.abs().sum()>0) for row in got['reconstruction'] for g in row)
+E           assert False
+E            +  where False = any(<generator object test_runbatch_trains_generate_policy_from_reconstruction.<locals>.<genexpr> at 0x15421c6d0>)
+
+test/test_output_walk.py:337: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+_______ test_runbatch_trains_generate_policy_from_reconstruction[False] ________
+
+supplied = False, eager_reading = None
+
+    @pytest.mark.parametrize('supplied',[True,False])
+    def test_runbatch_trains_generate_policy_from_reconstruction(supplied,eager_reading):
+        from What import What
+        m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+        m.inputSpace.data.has_supervised_outputs=supplied
+        opt=m.getOptimizer(lr=1e-3)
+        try:
+            got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
+            assert any(g is not None and bool(g.abs().sum()>0) for row in got['reconstruction'] for g in row)
+>           assert all(got['changed'])
+E           assert False
+E            +  where False = all([False, True])
+
+test/test_output_walk.py:338: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+________ test_runbatch_answer_availability_never_reassigns_the_decoder _________
+
+eager_reading = None
+
+    def test_runbatch_answer_availability_never_reassigns_the_decoder(eager_reading):
+        from What import What
+        m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+        opt=m.getOptimizer(lr=1e-3)
+        try:
+            for supplied in (True,False):
+                m.inputSpace.data.has_supervised_outputs=supplied
+                got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
+>               assert all(got['changed'])
+E               assert False
+E                +  where False = all([False, False])
+
+test/test_output_walk.py:355: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+______ test_runbatch_output_masks_rows_without_reassigning_decoder_credit ______
+
+eager_reading = None
+
+    def test_runbatch_output_masks_rows_without_reassigning_decoder_credit(eager_reading):
+        from What import What
+        m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+        opt=m.getOptimizer(lr=1e-3)
+        try:
+            got=_policy_training_probe(m,opt,(What.supervised(0),What.inference(1,split='train')))
+            assert got['mask']==[True,False]
+>           assert all(got['changed'])
+E           assert False
+E            +  where False = all([False, False])
+
+test/test_output_walk.py:372: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_derived_concept_codes.py::test_code_is_signed_sum_of_lookup_locations_without_a_word_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxji1f58z/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpkpr34owt/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpwx3z2k75/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7160: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpus1uxpld/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+FAILED test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[False]
+FAILED test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+FAILED test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+4 failed, 37 passed, 1 skipped, 6 warnings in 67.22s (0:01:07)

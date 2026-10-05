@@ -1,0 +1,6 @@
+{
+  "path": "doc/plans/2026-09-27-item-6-8-one-attention.md",
+  "sha256": "a0bf02731a9706fb5fcff74de2d62cfae579b96e1bd80b88d95851b6f25e2267",
+  "lines": 977,
+  "note": "Second concurrent plan amendment: native perceptual subspace plus context subspace, XOR nDim14. Conflicts with the direct user request for a percept-concept lookup. Measurement held pending clarification; Codex has not edited the plan."
+}

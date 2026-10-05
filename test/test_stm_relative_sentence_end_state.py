@@ -87,13 +87,13 @@ def _forward_relative_rule_id():
 
 def _forward_absolute_rule_id():
     """A forward ABSOLUTE operational rule_id: a forward operator rule NOT in
-    the relative set (e.g. ``exist`` / ``conjunction``). Grammar-agnostic."""
+    the relative set, selected by its declared relation kind."""
     g = Language.TheGrammar
     g._ensure_configured()
     rel = g._relative_rule_id_set()
     for rid, r in enumerate(g.rules):
         if (rid not in rel and r.method_name is not None
-                and r.method_name not in g._RELATIVE_OP_NAMES
+                and r.relation_kind not in g._RELATIVE_RELATION_KINDS
                 and '.reverse' not in (r.canonical or '')):
             return rid
     raise AssertionError("no forward absolute rule found in the grammar")
@@ -177,7 +177,7 @@ def test_grammar_marks_relative_rules():
     for rid in rel_set:
         r = g.rules[rid]
         assert (r.lhs in rel_starts
-                or r.method_name in g._RELATIVE_OP_NAMES), (
+                or r.relation_kind in g._RELATIVE_RELATION_KINDS), (
             f"rule {rid} in relative set without a relative signal: "
             f"{r.canonical!r}")
 

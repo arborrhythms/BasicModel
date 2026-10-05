@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py",
+    "test/test_nanochat_grammar_eval.py",
+    "test/test_reading_attention.py"
+  ],
+  "pid": 10378,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 763185216,
+  "elapsed_seconds": 12.66901520799729,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/word-inference-padding-after/run.log"
+}

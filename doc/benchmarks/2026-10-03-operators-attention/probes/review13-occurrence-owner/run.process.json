@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_derived_concept_codes.py",
+    "test/test_sentence_priming.py"
+  ],
+  "pid": 29379,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 596297240,
+  "elapsed_seconds": 4.374319708032999,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review13-occurrence-owner/run.log"
+}

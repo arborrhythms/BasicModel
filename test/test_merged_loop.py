@@ -7,9 +7,9 @@ specialized path.
 These tests verify:
 * ``WholeSpace.empty_state`` is callable and shape-correct -- the
   unified loop's seed for ``ws``.
-* The j-loop runs ``subsymbolicOrder`` times (via
+* The j-loop runs ``bindingDepth`` times (via
   ``_unified_j_iterations`` counter).
-* ``subsymbolicOrder==0`` -> zero j-iterations + a single pre-seed C->S
+* ``bindingDepth==0`` -> zero j-iterations + a single pre-seed C->S
   pass (spec's implicit j=-1); concepts/symbols are still populated.
 """
 import os
@@ -34,9 +34,9 @@ def test_symbolicspace_empty_state_shape():
     assert state.abs().sum().item() == 0.0
 
 
-def _load_mental_model(subsymbolicOrder: int = 1):
+def _load_mental_model(bindingDepth: int = 1):
     """Build a BasicModel from MentalModel.xml with the requested
-    subsymbolicOrder, via an XML patch."""
+    bindingDepth, via an XML patch."""
     import xml.etree.ElementTree as ET
     import tempfile
     import Models
@@ -47,10 +47,10 @@ def _load_mental_model(subsymbolicOrder: int = 1):
     tree = ET.parse(src)
     root = tree.getroot()
     arch = root.find("architecture")
-    co = arch.find("subsymbolicOrder")
+    co = arch.find("bindingDepth")
     if co is None:
-        co = ET.SubElement(arch, "subsymbolicOrder")
-    co.text = str(subsymbolicOrder)
+        co = ET.SubElement(arch, "bindingDepth")
+    co.text = str(bindingDepth)
 
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
     tree.write(tmp.name)

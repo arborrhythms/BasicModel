@@ -524,7 +524,7 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
         "CSLang" in key for key in tensor_loop.state_dict())
     assert int(tensor_loop._tensor_peer_trip_count) == 4
     assert capacity_calls == 0
-    assert tensor_loop._tensor_symbolic_iterations == tensor_loop.symbolicOrder
+    assert tensor_loop._tensor_symbolic_iterations == tensor_loop.concept_order_limit
     assert all(
         value is None or not torch.is_tensor(value)
         or bool(torch.isfinite(value).all())

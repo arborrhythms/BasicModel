@@ -1,0 +1,32 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+         642958 function calls (577606 primitive calls) in 0.395 seconds
+
+   Ordered by: cumulative time
+   List reduced from 1392 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.396    0.396 /Users/arogers/github/WikiOracle/basicmodel/test/test_output_walk.py:17(_model)
+        1    0.000    0.000    0.395    0.395 /Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py:450(_build_ladder_variant)
+        1    0.000    0.000    0.354    0.354 /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:1801(from_config)
+        1    0.000    0.000    0.354    0.354 /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6592(create_from_config)
+        1    0.000    0.000    0.354    0.354 /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:1826(create_from_config)
+        1    0.000    0.000    0.350    0.350 /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6601(create)
+        1    0.000    0.000    0.350    0.350 /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:15833(_create_per_stage)
+       11    0.000    0.000    0.283    0.026 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:7699(__init__)
+        6    0.000    0.000    0.238    0.040 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:2912(create)
+        6    0.032    0.005    0.238    0.040 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:3562(addVectors)
+        4    0.000    0.000    0.231    0.058 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:19925(__init__)
+        4    0.000    0.000    0.228    0.057 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:20669(_build_what_basis)
+   137450    0.057    0.000    0.197    0.000 /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:118(__torch_function__)
+    20480    0.004    0.000    0.126    0.000 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1713(normalize)
+    20480    0.027    0.000    0.118    0.000 /Users/arogers/github/WikiOracle/basicmodel/bin/embed.py:39(_wrap_unit_ball)
+        1    0.000    0.000    0.050    0.050 /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:6629(_make_perceptual_space)
+        1    0.000    0.000    0.050    0.050 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:10425(__init__)
+        1    0.000    0.000    0.048    0.048 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:10676(_build_what_basis)
+    89/45    0.000    0.000    0.045    0.001 /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:120(decorate_context)
+40960/20480    0.039    0.000    0.043    0.000 {built-in method torch.remainder}
+       36    0.000    0.000    0.035    0.001 /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:2746(set_property_kind)
+       36    0.005    0.000    0.034    0.001 /Users/arogers/github/WikiOracle/basicmodel/bin/PerceptProperties.py:175(teach)
+
+

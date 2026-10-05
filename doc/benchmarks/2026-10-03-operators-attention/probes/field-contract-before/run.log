@@ -1,0 +1,160 @@
+....................FFFFF.                                               [100%]
+=================================== FAILURES ===================================
+_________ test_boolean_field_cannot_be_declared_between_symbols[and-1] _________
+
+operation = 'and', arity = 1
+
+    @pytest.mark.parametrize('operation,arity',[('and',1),('or',1),('not',1)])
+    def test_boolean_field_cannot_be_declared_between_symbols(operation,arity):
+        from Language import Grammar
+>       with pytest.raises(ValueError,match='field'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_one_attention.py:170: Failed
+_________ test_boolean_field_cannot_be_declared_between_symbols[or-1] __________
+
+operation = 'or', arity = 1
+
+    @pytest.mark.parametrize('operation,arity',[('and',1),('or',1),('not',1)])
+    def test_boolean_field_cannot_be_declared_between_symbols(operation,arity):
+        from Language import Grammar
+>       with pytest.raises(ValueError,match='field'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_one_attention.py:170: Failed
+_________ test_boolean_field_cannot_be_declared_between_symbols[not-1] _________
+
+operation = 'not', arity = 1
+
+    @pytest.mark.parametrize('operation,arity',[('and',1),('or',1),('not',1)])
+    def test_boolean_field_cannot_be_declared_between_symbols(operation,arity):
+        from Language import Grammar
+>       with pytest.raises(ValueError,match='field'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_one_attention.py:170: Failed
+_ test_bracket_candidates_are_grammar_declared_field_operations_without_generate _
+
+    def test_bracket_candidates_are_grammar_declared_field_operations_without_generate():
+        from Language import Grammar
+        g=Grammar();rules=[]
+        for name in ('divide','descend','gloss'):
+>           g._fill_rule_list(rules,{'rule':{'_':f'X = {name}.forward(X)','operands':'field'}})
+
+test/test_one_attention.py:178: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x146c4c710>, target = []
+rules_dict = {'rule': {'_': 'X = divide.forward(X)', 'operands': 'field'}}
+space_role = 'SS', face = None
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+    
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                self._check_operator_availability(implementation, face=face)
+                if 'implementation' in attributes:
+                    from Queries import THOUGHT_EXECUTORS
+                    available = set(GRAMMAR_LAYER_CLASSES) | {'sigma', 'pi', 'merge', 'emit_head', 'stop', 'boundary', 'uniform'}
+                    if face == 'thought':
+                        available.update(THOUGHT_EXECUTORS)
+                    if implementation not in available:
+                        raise ValueError(f'unknown rule implementation: {implementation}')
+                rule = self._declared_rule(rule._replace(
+                    surface_name=rule.method_name, method_name=implementation))
+                if 'predicate' in attributes:
+                    rule = rule._replace(predicate_identity=attributes['predicate'])
+                if 'relation' in attributes:
+                    if attributes['relation'] not in ('part', 'whole', 'equal', 'implies', 'operator'):
+                        raise ValueError('relation requires a declared row relation')
+                    rule = rule._replace(relation_kind=attributes['relation'])
+                operands = tuple(part.strip() for part in str(attributes['operands']).split(',')) if 'operands' in attributes else rule.operand_kinds
+                if len(operands) != rule.arity or any(kind not in ('field', 'symbol') for kind in operands):
+                    raise ValueError('operands require a field or symbol kind per input')
+                if 'field' in operands and not rule.field_eligible:
+>                   raise ValueError('order-dependent implementations cannot take a field operand')
+E                   ValueError: order-dependent implementations cannot take a field operand
+
+bin/Language.py:1616: ValueError
+_________ test_shared_meter_cannot_replenish_between_input_and_thought _________
+
+    def test_shared_meter_cannot_replenish_between_input_and_thought():
+        from QueryWork import QueryWorkBudget
+        from Attention import BracketTable
+        table=BracketTable.open(torch.tensor([7]),budget=4)
+        table=table.accept(torch.tensor([0]))
+>       work=QueryWorkBudget.from_brackets(table,row=0)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'QueryWorkBudget' has no attribute 'from_brackets'
+
+test/test_one_attention.py:189: AttributeError
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_boolean_field_cannot_be_declared_between_symbols[and-1]
+FAILED test/test_one_attention.py::test_boolean_field_cannot_be_declared_between_symbols[or-1]
+FAILED test/test_one_attention.py::test_boolean_field_cannot_be_declared_between_symbols[not-1]
+FAILED test/test_one_attention.py::test_bracket_candidates_are_grammar_declared_field_operations_without_generate
+FAILED test/test_one_attention.py::test_shared_meter_cannot_replenish_between_input_and_thought
+5 failed, 21 passed, 1 warning in 6.24s

@@ -152,7 +152,7 @@ def _score_head(head, values, masks, targets, root=False, target_masks=None):
 
 
 def synthetic_benchmark(seeds=(0, 1, 2), updates=300, batch_size=128):
-    from Layers import SentenceExpectation, InterSentenceLayer
+    from Layers import SentenceExpectation, BracketExpectation
     from util import init_device
     init_device("cpu")
     report = {"workload": "fixed synthetic meanings", "device": "cpu",
@@ -168,7 +168,7 @@ def synthetic_benchmark(seeds=(0, 1, 2), updates=300, batch_size=128):
         for control in ("ordered", "shuffled", "context_free", "root"):
             torch.manual_seed(seed)
             if control == "root":
-                head = InterSentenceLayer(4, 8, 8, concept_dim=8,
+                head = BracketExpectation(4, 8, 8, concept_dim=8,
                                           ltm_capacity=4, expectation_scope="root")._inter_predictor
             else:
                 head = SentenceExpectation(8, 4)
@@ -382,7 +382,7 @@ def native_benchmark(config, *, device="cpu", backend="eager", docs=24,
     model.checkpoint_every_batches = 0
     model.enable_compiled_step()
     assert bool(model.inputSpace.data.has_supervised_outputs) == bool(answers)
-    discourse = model.symbolSpace.discourse
+    discourse = model.symbolSpace.expectation
     if discourse is None:
         raise ValueError("this benchmark requires explicit sentence expectation")
     assert discourse.expectation_scope == "structured"

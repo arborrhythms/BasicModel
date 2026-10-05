@@ -1,0 +1,45 @@
+......F................................................................. [ 84%]
+.............                                                            [100%]
+=================================== FAILURES ===================================
+______ test_single_departure_replays_prefix_and_is_greedy_after_it[False] ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1109c1d90>
+compiled = False
+
+    @pytest.mark.parametrize('compiled', [False, True])
+    def test_single_departure_replays_prefix_and_is_greedy_after_it(monkeypatch, compiled):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, policy = decoder()
+        event = torch.tensor([[[1., 2.], [3., 4.], [0., 0.]],
+                              [[1., 2.], [3., 4.], [0., 0.]]], requires_grad=True)
+        def pair(event):
+            greedy = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, return_candidates=True)
+            explore = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, exploit_actions=greedy[4], departure=torch.tensor([0, 1]))
+            return greedy, explore
+        fn = torch.compile(pair, backend='inductor', fullgraph=True) if compiled else pair
+        greedy, explore = fn(event)
+        assert greedy[1].tolist() == [2, 2]
+>       assert explore[1].tolist() == [3, 3]
+E       assert [2, 2] == [3, 3]
+E         
+E         At index 0 diff: 2 != 3
+E         Use -v to get more diff
+
+test/test_decoder_exploration.py:44: AssertionError
+=============================== warnings summary ===============================
+test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[False]
+1 failed, 84 passed, 2 warnings in 17.89s

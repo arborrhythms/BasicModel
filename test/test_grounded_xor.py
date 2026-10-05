@@ -26,8 +26,8 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slot
     root = tree.getroot()
     slots = 2 * pool if field_slots is None else field_slots
     values = {
-        'architecture/serial': False, 'architecture/symbolicOrder': 1,
-        'architecture/subsymbolicOrder': 2, 'architecture/conceptualPi': True,
+        'architecture/conceptLayers': 2,
+        'architecture/bindingDepth': 2, 'architecture/conceptualPi': True,
         'architecture/symbolTower': True, 'architecture/conceptBinding': 'aligned',
         'architecture/attentionPromotion': True, 'architecture/conceptPoolSize': pool,
         'architecture/training/autoload': False, 'architecture/training/maskRate': 0.,
@@ -76,13 +76,13 @@ def learn_grounded_xor(tmp_path, pool):
     prior = ws.subspace.what.primitive_properties
     # Teach primitive memberships, then the name's feature definition.
     # No conceptual truth table is installed as an activation.
-    for row, targets in ((8, [0., 1.]), (9, [1., 0.])):
+    for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
         before, after = prior.teach(row, [48, 49], targets)
         assert before > .1 and after < 1e-12
     assert cs._csw_concept_row(0, 10001) == 0
-    cs.add_concept_feature(0, 'ws', 8, 1.)
+    cs.add_concept_feature(0, 'ws', 9, 1.)
     for negative in (False, True):
-        cs.add_concept_feature(0, 'ws', 9, 0., negated=negative)
+        cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
     native = torch.zeros(3, 1, x.shape[-1], dtype=x.dtype, device=x.device)
     native[:, 0, 0] = torch.tensor([48, 49, 65])
     store = Spaces._concept_alloc_of(cs).layer()
@@ -104,7 +104,7 @@ def learn_grounded_xor(tmp_path, pool):
     torch.testing.assert_close(cs._cs_field_where, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
     # Before conceptual folds, the native property events still discriminate
     # both byte positions. Concepts themselves retain only the bracket pool.
-    events = cs._percept_field.event_evidence([('ws', 8)])[0, :, 0]
+    events = cs._percept_field.event_evidence([('ws', 9)])[0, :, 0]
     spans = cs._percept_field.spans
     located = []
     for start in (0, 1):
@@ -179,7 +179,7 @@ def learn_grounded_xor(tmp_path, pool):
     assert not torch.equal(initial, store.values)
     learned = [(r, weight) for r, weight in cs.concept_weights(xor) if weight > 0]
     assert len(learned) == 2
-    assert store.features.values[store.features._index[0, 4 * 8 + 2]] > 0
+    assert store.features.values[store.features._index[0, 4 * 9 + 2]] > 0
     # Pi was performed on retained order-0 positions, before symbolization.
     # The higher-order XOR row contains only sigma edges to those cases.
     assert all(cs._order0_inventory_row(r) and cs._order0_inventory_row(c % (store.nOutput + 1))

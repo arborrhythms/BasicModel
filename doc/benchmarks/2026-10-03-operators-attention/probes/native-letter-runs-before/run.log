@@ -1,0 +1,31 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_native_attention_keeps_every_complete_letter_run _____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1548/test_native_attention_keeps_ev0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110d068d0>
+
+    def test_native_attention_keeps_every_complete_letter_run(tmp_path,monkeypatch):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        model=_tiny_canonical_model(tmp_path,monkeypatch,word_buckets='8')
+        model._tensor_peer_while_eager=True
+        model._chart_compose_per_word=lambda:None
+        raw=model.inputSpace.prepInput(['wheels belong to bicycles','bicycles are equal to wheels'])
+        model._lex_embed_stem(raw)
+        reading=model._attention_words
+>       assert reading.accepted.sum(-1).tolist() == [4,5], {
+            'forms':model._attention_forms[0], 'table':reading.table.intervals,
+            'accepted':reading.accepted,'spent':reading.table.spent,
+            'actions':reading.actions,
+            'offsets':getattr(model.inputSpace,'_ar_word_part_offsets',None)}
+E       AssertionError: {'forms': [['wheels', 'belong', 'to', '', '', '', ...], ['bicycles', 'are', 'equal', 'to', '', '', ...]], 'table': ten...lse, False, False],
+E                 [ True,  True,  True,  True, False, False, False, False]]), 'spent': tensor([ 8, 11]), ...}
+E       assert [3, 4] == [4, 5]
+E         
+E         At index 0 diff: 3 != 4
+E         Use -v to get more diff
+
+test/test_one_attention.py:214: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_native_attention_keeps_every_complete_letter_run
+1 failed in 2.10s

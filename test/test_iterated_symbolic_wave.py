@@ -8,7 +8,7 @@ from test_cs_sparse_weights import _evidence
 _D = 8
 
 
-def _cs(nS=64, order=3, serial=False):
+def _cs(nS=64, order=3, word_brackets=False):
     nP = 4
     _populate_test_config(
         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
@@ -18,7 +18,6 @@ def _cs(nS=64, order=3, serial=False):
     )
     cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
     object.__setattr__(cs, "_symbolic_order", order)
-    object.__setattr__(cs, "_serial", serial)
     from definition_fixtures import with_definitions
     return with_definitions(cs)
 

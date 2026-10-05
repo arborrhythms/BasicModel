@@ -1,0 +1,3526 @@
+......F...sF.F......s..s.........FFF........................ss....s..... [ 24%]
+.....FF...........................FF...FFF......................FFF..... [ 48%]
+................s.....FFFF.....FF...F................................... [ 72%]
+..............................FF...F.......ssssssF...................... [ 96%]
+..F.........                                                             [100%]
+=================================== FAILURES ===================================
+________ test_omitted_enabled_and_disabled_model_settings[false-False] _________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1558/test_omitted_enabled_and_disab2')
+setting = 'false', enabled = False
+
+    @pytest.mark.parametrize("setting,enabled", [(None, True), ("true", True), ("false", False)])
+    def test_omitted_enabled_and_disabled_model_settings(tmp_path, setting, enabled):
+        from test_meronomy_ladder import _build_ladder_variant
+        source = (Path(__file__).resolve().parents[1] / "data/MM_ladder.xml").read_text()
+        replacement = "" if setting is None else f"<sentenceExpectation>{setting}</sentenceExpectation>"
+        model = _build_ladder_variant(tmp_path, "expectation_default", [
+            (re.search(r"<sentenceExpectation>.*?</sentenceExpectation>", source).group(), replacement),
+            (re.search(r"<sentenceExpectationLossWeight>.*?</sentenceExpectationLossWeight>", source).group(), ""),
+            (re.search(r"<sentenceExpectationArmaScale>.*?</sentenceExpectationArmaScale>", source).group(), ""),
+        ])
+        try:
+>           assert (model.symbolSpace.expectation is not None) == enabled
+E           assert (BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) is not None) == False
+E            +  where BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) = SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n).expectation
+E            +    where SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).symbolSpace
+
+test/test_expectation_defaults.py:85: AssertionError
+__________ test_expectation_off_keeps_every_packed_observation_in_ltm __________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1558/test_expectation_off_keeps_eve0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12aeb00e0>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_expectation_off_keeps_every_packed_observation_in_ltm(tmp_path, monkeypatch):
+        from test_meronomy_ladder import _build_ladder_variant
+        monkeypatch.setenv("MODEL_COMPILE", "none")
+        model = _build_ladder_variant(tmp_path, "off_packed_memory", [
+            ("<architecture>", "<architecture><ltmConsolidation>true</ltmConsolidation>"),
+            ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+            ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+        ])
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model._install_unit_span_fn()
+>       assert model.symbolSpace.expectation is None
+E       assert BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) is None
+E        +  where BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) = SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n).expectation
+E        +    where SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).symbolSpace
+
+test/test_expectation_defaults.py:228: AssertionError
+________ test_enabling_expectation_preserves_the_callers_random_stream _________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1558/test_enabling_expectation_pres0')
+
+    def test_enabling_expectation_preserves_the_callers_random_stream(tmp_path):
+        from test_meronomy_ladder import _build_ladder_variant
+        model = _build_ladder_variant(tmp_path, "expectation_rng", [])
+>       assert model.symbolSpace.expectation is None
+E       assert BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) is None
+E        +  where BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) = SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n).expectation
+E        +    where SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).symbolSpace
+
+test/test_expectation_defaults.py:268: AssertionError
+_ test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12ae10380>
+config_name = 'MM_xor_loopback.xml', expected = ['exploit', 'explore', 'batch']
+
+    @pytest.mark.usefixtures('eager_reading')
+    @pytest.mark.parametrize('config_name, expected', [
+        ('MM_xor.xml', ['batch']),
+        ('MM_xor_loopback.xml', ['exploit', 'explore', 'batch']),
+    ])
+    def test_real_runbatch_steps_sentence_trials_then_batch_only_objectives(monkeypatch, config_name, expected):
+        import Models
+        from data import TheData
+        from util import init_config
+    
+        monkeypatch.setenv("MODEL_COMPILE", "none")
+        project = os.path.dirname(os.path.dirname(__file__))
+        config = os.path.join(project, "data", config_name)
+        init_config(path=config, defaults_path=os.path.join(project, "data", "model.xml"))
+        TheData.load("xor")
+        model, _ = Models.BaseModel.from_config(config, data=TheData)
+        model.train()
+        model.loss.reconstruction_scale = 0.25
+        optimizer = model.getOptimizer(lr=1e-5)
+        original_backward = model._backward_training_loss
+        original_step = optimizer.step
+        calls = []
+        steps = []
+    
+        def inspect_backward(total, *args, **kwargs):
+            assert total.requires_grad
+            calls.append(model._sentence_trial if getattr(model, '_sentence_backward', False) else 'batch')
+            return original_backward(total, *args, **kwargs)
+    
+        def inspect_step(*args, **kwargs):
+            steps.append(getattr(model, '_sentence_trial', None) or 'batch')
+            return original_step(*args, **kwargs)
+    
+        monkeypatch.setattr(model, "_backward_training_loss", inspect_backward)
+        monkeypatch.setattr(optimizer, "step", inspect_step)
+        for _ in range(2):
+            loader = model.inputSpace.data.data_loader(split="train", num_streams=2)
+            inputs, outputs = next(iter(loader))
+            batch = (model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(outputs))
+>           result, _ = model.runBatch(
+                train=True, batchSize=2, split="train", optimizer=optimizer,
+                batch_override=batch)
+
+test/test_joint_objectives.py:264: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13607: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13734: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14101: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8800: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10280: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8485: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8296: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22955: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13178: in _lex_embed_stem
+    self._validate_reconstruction_bank()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...    (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+  (answer_record_reader): SentenceRecordReader()
+)
+
+    def _validate_reconstruction_bank(self):
+        """Check sentence coverage at the eager boundary, after admission.
+    
+        The bank is a snapshot of admitted WORD/OBJECT concepts, not an
+        independently growing vocabulary. A missing snapshot is an error;
+        a sentence with no admitted surfaces contributes no reconstruction.
+        Tensor invariants stay on device; only structural metadata is read
+        by Python. Accelerator assertion failures surface asynchronously.
+        """
+        isp = self.inputSpace
+        active = getattr(isp, "_word_active_mask", None)
+        ids = getattr(isp, "_packed_sentence_ids", None)
+        rows = getattr(isp, "_ar_concept_lookup_rows", None)
+        atoms = getattr(isp, "_ar_concept_lookup_atoms", None)
+        owners = getattr(isp, "_ar_concept_lookup_sentence_ids", None)
+        surfaces = getattr(isp, "_ar_bank_bytes", None)
+        valid = getattr(isp, "_ar_bank_valid", None)
+        if not (torch.is_tensor(active) and active.ndim == 2
+                and torch.is_tensor(ids) and ids.shape == active.shape):
+            raise RuntimeError("tied reconstruction bank requires staged word and sentence masks")
+        B, W = active.shape
+        if not (torch.is_tensor(rows) and rows.ndim == 2 and rows.shape[0] == B
+                and rows.shape[1] > 0 and torch.is_tensor(atoms) and atoms.ndim == 3
+                and atoms.shape[:2] == rows.shape):
+>           raise RuntimeError("tied reconstruction bank was not staged after concept admission")
+E           RuntimeError: tied reconstruction bank was not staged after concept admission
+
+bin/Models.py:11779: RuntimeError
+_____ test_answer_path_operators_are_independently_owned_and_keep_learning _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12b201940>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1558/test_answer_path_operators_are0')
+
+    def test_answer_path_operators_are_independently_owned_and_keep_learning(monkeypatch, tmp_path):
+        """Dedicated output parameters learn from their own branch. Shared
+        operator diagnostics exclude these independent heads."""
+        import Models
+        from data import TheData
+        from util import init_config
+        from What import What
+    
+        monkeypatch.setenv("MODEL_COMPILE", "none")
+        project = os.path.dirname(os.path.dirname(__file__))
+        src = open(os.path.join(project, "data", "MM_xor.xml")).read()
+        assert src.count("<architecture>") == 1
+        config = tmp_path / "MM_xor_synthesis_ownership.xml"
+        config.write_text(src.replace(
+            "<architecture>", "<architecture>\n    <answerSynthesis>true</answerSynthesis>", 1))
+        init_config(path=str(config), defaults_path=os.path.join(project, "data", "model.xml"))
+        TheData.load("xor")
+        torch.manual_seed(0)
+        model, _ = Models.BaseModel.from_config(str(config), data=TheData)
+        loader = model.inputSpace.data.data_loader(split="train", num_streams=2)
+        inputs, outputs = next(iter(loader))
+        batch = (model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(outputs))
+        model.eval()
+        with torch.no_grad():
+            model.what((What.supervised(0), What.supervised(1)), batch[0])   # builds the answer path
+        model.train()
+        optimizer = model.getOptimizer(lr=1e-2)
+        answer_only = list(model.synthesis_parameters())
+        assert answer_only
+        before = [p.detach().clone() for p in answer_only]
+        result, _ = model.runBatch(train=True, batchSize=2, split="train",
+                                   optimizer=optimizer, batch_override=batch)
+        assert result is not None
+        shared = {p.data_ptr() for p in model.objective_parameter_groups(optimizer)['reconstruction']}
+        assert shared                                            # shared forward parameters
+>       assert not shared & {p.data_ptr() for p in answer_only}  # answer path exempt
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert not ({503158470400, 503159947264, 503159951360, 503159955456, 503159986688, 503160160256, ...} & {503159986688, 503160698880, 503497560000, 503497590784, 503497594240, 503497595264, ...})
+
+test/test_joint_objectives.py:306: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+_______ test_real_intermediate_and_final_ends_have_same_canonical_roles ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1558/test_real_intermediate_and_fin0')
+eager_reading = None
+
+    def test_real_intermediate_and_final_ends_have_same_canonical_roles(tmp_path, eager_reading):
+        from test_meronomy_ladder import _build_ladder_variant
+        from test_reverse_traversal import _stage_packed
+        meanings = []
+        for i, rows in enumerate(([["1 plus 2", "3 plus 4"]], [["1 plus 2 "]])):
+            model = _build_ladder_variant(tmp_path, f"closing_layout_{i}", [
+                ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+                ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+                ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
+            ])
+            # This probes the closing layout on a completed derivation. Select one
+            # known binary operation and STOP when eligible; random unary loops
+            # can exhaust the budget and correctly leave an incomplete forest.
+            chooser = model.symbolSpace.languageLayer.operation_layer.chooser
+            def binary(x, candidates, *_args, **_kwargs):
+                scores = x.new_full(candidates.shape[:-1], -1e6)
+                scores[..., 0] = 0.
+                return x.new_full((*x.shape[:2], 1), 1e6), scores
+            def unary(x, candidates, *_args, **_kwargs):
+                return (x.new_full((*x.shape[:2], 1), 1e6),
+                        x.new_full(candidates.shape[:-1], -1e6))
+            chooser.score_binary, chooser.score_unary = binary, unary
+            model._tensor_peer_while_eager = True
+            model._chart_compose_per_word = lambda: None
+            model._install_unit_span_fn()
+            try:
+                with torch.no_grad():
+>                   model(model.inputSpace.prepPackedInput(rows))
+
+test/test_joint_objectives.py:339: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8296: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22955: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13160: in _lex_embed_stem
+    self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+bin/Spaces.py:9873: in finalize_stem
+    return self._finalize_serial_word_stem(sub, ps)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9772: in _finalize_serial_word_stem
+    self._finalize_sentence_word_layout(active)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = InputSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+    (whe...yers): ModuleList(
+      (0-1): 2 x LinearLayer()
+    )
+    (linear1): LinearLayer()
+    (linear2): LinearLayer()
+  )
+)
+active = tensor([[ True,  True,  True,  True,  True, False, False, False, False, False,
+         False, False, False, False, False, False]])
+
+    def _finalize_sentence_word_layout(self, active):
+        """Validate/install the fixed sentence-boundary tensor layout."""
+        B, W = int(active.shape[0]), int(active.shape[1])
+        dev = active.device
+        if self._sentence_pack_enabled:
+            required = (
+                self._packed_sentence_start_mask,
+                self._packed_sentence_end_mask,
+                self._packed_sentence_intermediate_end_mask,
+                self._packed_sentence_ids,
+                self._packed_sentence_word_positions,
+                self._packed_sentence_end_for_word,
+            )
+            if (not all(torch.is_tensor(value) for value in required)
+                    or any(tuple(value.shape) != (B, W)
+                           for value in required)):
+                raise RuntimeError(
+                    "packed sentence metadata is missing or shape-misaligned "
+                    f"with staged words {(B, W)}")
+            expected_active = self._packed_sentence_ids >= 0
+            if not torch.equal(
+                    expected_active.detach().to("cpu"),
+                    active.detach().to("cpu")):
+>               raise RuntimeError(
+                    "packed surface word layout differs from the staged "
+                    "sentence boundaries; refusing to train misaligned roots")
+E               RuntimeError: packed surface word layout differs from the staged sentence boundaries; refusing to train misaligned roots
+
+bin/Spaces.py:9811: RuntimeError
+______________ TestSimpleModelCreation.test_simple_model_ergodic _______________
+
+self = <test_basicmodel.TestSimpleModelCreation testMethod=test_simple_model_ergodic>
+
+    def test_simple_model_ergodic(self):
+        """BasicModel (simple path) with ergodic=True uses SigmaLayer path."""
+        N = 16
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, certainty=True, flatten=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:455: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+____________ TestSimpleModelCreation.test_simple_model_traditional _____________
+
+self = <test_basicmodel.TestSimpleModelCreation testMethod=test_simple_model_traditional>
+
+    def test_simple_model_traditional(self):
+        """BasicModel (simple path) with ergodic=False produces valid output.
+    
+        Stage 1.C+ architecture: the CS forward is STM bookkeeping
+        (no atomic ``sigma_percept`` lift), so the per-space_role N counts
+        must match: nInput == nPercepts == nConcepts == nSymbols.
+        The OutputSpace performs the final aggregation to nOutput.
+        """
+        N = 16
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:441: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+_______________ TestSimpleModel.test_simple_model_ergodic_shapes _______________
+
+self = <test_basicmodel.TestSimpleModel testMethod=test_simple_model_ergodic_shapes>
+
+    def test_simple_model_ergodic_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, flatten=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:797: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+_____________ TestSimpleModel.test_simple_model_traditional_shapes _____________
+
+self = <test_basicmodel.TestSimpleModel testMethod=test_simple_model_traditional_shapes>
+
+    def test_simple_model_traditional_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            flatten=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:812: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+______________ TestModelEndToEnd.test_simple_model_ergodic_shapes ______________
+
+self = <test_basicmodel.TestModelEndToEnd testMethod=test_simple_model_ergodic_shapes>
+
+    def test_simple_model_ergodic_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, flatten=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:865: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+________________ TestModelEndToEnd.test_simple_model_loss_runs _________________
+
+self = <test_basicmodel.TestModelEndToEnd testMethod=test_simple_model_loss_runs>
+
+    def test_simple_model_loss_runs(self):
+        """Verify forward + loss + backward doesn't crash."""
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, certainty=True, flatten=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:898: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+____________ TestModelEndToEnd.test_simple_model_traditional_shapes ____________
+
+self = <test_basicmodel.TestModelEndToEnd testMethod=test_simple_model_traditional_shapes>
+
+    def test_simple_model_traditional_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            flatten=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:880: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+____________ TestBaseModelFactory.test_factory_creates_basic_model _____________
+
+self = <test_basicmodel.TestBaseModelFactory testMethod=test_factory_creates_basic_model>
+
+        def test_factory_creates_basic_model(self):
+            # nSymbols must equal nConcepts (WholeSpace 1:1 mapping constraint),
+            # and nPercepts must be 2*nConcepts (PiLayer invertibility).
+            # symbol_dim must equal concept_dim (WholeSpace owns no
+            # SigmaLayer/PiLayer post 2026-05 ownership rule).
+            xml = """<model>
+      <architecture>
+        <bindingDepth>2</bindingDepth>    <training><autoload>false</autoload></training>
+      </architecture>
+      <InputSpace><nOutput>32</nOutput><nDim>10</nDim></InputSpace>
+      <PartSpace><nOutput>4</nOutput><nDim>10</nDim><nVectors>4</nVectors></PartSpace>
+      <ConceptualSpace><nOutput>2</nOutput><nDim>10</nDim><nVectors>2</nVectors></ConceptualSpace>
+      <WholeSpace><nOutput>2</nOutput></WholeSpace>
+      <OutputSpace><nOutput>2</nOutput><nDim>4</nDim></OutputSpace>
+    </model>"""
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+                f.write(xml)
+                path = f.name
+            try:
+>               model, cfg = Models.BaseModel.from_config(path)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1224: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6560: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+____________ TestBaseModelFactory.test_factory_creates_mental_model ____________
+
+self = <test_basicmodel.TestBaseModelFactory testMethod=test_factory_creates_mental_model>
+
+        def test_factory_creates_mental_model(self):
+            xml = """<model>
+      <architecture>    <training><autoload>false</autoload></training>
+      </architecture>
+    </model>"""
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+                f.write(xml)
+                path = f.name
+            try:
+>               model, cfg = Models.BaseModel.from_config(path)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6560: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+____________ TestBaseModelFactory.test_factory_creates_simple_model ____________
+
+self = <test_basicmodel.TestBaseModelFactory testMethod=test_factory_creates_simple_model>
+
+        def test_factory_creates_simple_model(self):
+            xml = """<model>
+      <architecture>
+        <training><autoload>false</autoload></training>
+      </architecture>
+      <InputSpace><nInput>16</nInput><nOutput>4</nOutput></InputSpace>
+    </model>"""
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+                f.write(xml)
+                path = f.name
+            try:
+>               model, cfg = Models.BaseModel.from_config(path)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1199: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6560: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+______________ TestModelTypeVariants.test_concept_with_attention _______________
+
+self = <test_basicmodel.TestModelTypeVariants testMethod=test_concept_with_attention>
+
+    def test_concept_with_attention(self):
+        """conceptHasAttention=True -- forward only."""
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            conceptHasAttention=True,
+            perceptPassThrough=True, symbolPassThrough=True,
+            flatten=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:1820: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+________________ TestModelTypeVariants.test_conceptual_order_1 _________________
+
+self = <test_basicmodel.TestModelTypeVariants testMethod=test_conceptual_order_1>
+
+    def test_conceptual_order_1(self):
+        """bindingDepth=1 with non-passthrough symbolic -- forward only.
+    
+        After the 2026-05-05 BasicModel/BasicModel merger, the
+        per-stage path is the only construction path and
+        ``bindingDepth`` literally drives the per-stage iteration.
+        """
+        # symbolDim is the SS EVENT nDim (not band-adjusted by the fixture);
+        # under the uniform (4,4) band SS content = symbolDim - 8, which must
+        # be >= 0 AND match CS.nWhat (conceptDim=1 -> CS content 1). So
+        # symbolDim=9 -> SS content 1 == CS.nWhat. (2026-07-04 encoding pass
+        # widened (2,2)->(2,4), symbolDim 5 -> 7; 2026-07-09 multi-rung pass
+        # widened (2,4)->(4,4), symbolDim 7 -> 9.)
+        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=9,
+                              wordDim=1, outputDim=1,
+                              nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                              perceptPassThrough=True, symbolPassThrough=False,
+                              flatten=True)
+        model = Models.BasicModel()
+>       model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                     bindingDepth=1)
+
+test/test_basicmodel.py:1786: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+_______________ TestModelTypeVariants.test_percept_no_attention ________________
+
+self = <test_basicmodel.TestModelTypeVariants testMethod=test_percept_no_attention>
+
+    def test_percept_no_attention(self):
+        """perceptHasAttention=False, perceptPassThrough=False -- forward only."""
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptHasAttention=False,
+            perceptPassThrough=False, symbolPassThrough=True,
+            flatten=True, naive=True)
+        model = Models.BasicModel()
+>       model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
+
+test/test_basicmodel.py:1804: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+________ TestReconstructionSymbols.test_forward_output_shape_unchanged _________
+
+self = <test_basicmodel.TestReconstructionSymbols testMethod=test_forward_output_shape_unchanged>
+
+    def test_forward_output_shape_unchanged(self):
+        """Forward pass output shape is [batch, nOutput] regardless of nSymbols.
+    
+        The flat-slab invariant (post Stage 1.C) requires IS.nOutput
+        == PS.nOutput == CS.nOutput == SS.nOutput. This fixture sets all
+        peers to eight slots before varying the output geometry.
+        """
+>       m = self._create_xor_model(nSymbols=8, nOutput=1)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1927: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_basicmodel.py:1916: in _create_xor_model
+    m.create_from_config(tmp.name, data=Models.TheData)
+bin/Models.py:6560: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+________________ TestVocabSaveRestore.test_save_load_with_vocab ________________
+
+self = <test_basicmodel.TestVocabSaveRestore testMethod=test_save_load_with_vocab>
+
+    def test_save_load_with_vocab(self):
+        """Vocabulary round-trips through the integrated .ckpt bundle.
+    
+        Post-2026-05-12 the .kv embedding artifact was retired; vocab
+        mappings + embedding vectors + BPE state all ride inside the
+        single ``save_weights`` bundle alongside model parameters.
+        """
+    
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
+        Models.TheData.load("xor")
+    
+        m1 = Models.BasicModel()
+>       m1.create_from_config(xml_path, data=Models.TheData)
+
+test/test_basicmodel.py:2073: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6560: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+______ TestTrainingUpdatesWeights.test_xor_weights_change_after_one_epoch ______
+
+self = <test_basicmodel.TestTrainingUpdatesWeights testMethod=test_xor_weights_change_after_one_epoch>
+
+    def test_xor_weights_change_after_one_epoch(self):
+        """XOR model weights must differ after 1 epoch of training."""
+    
+        # XOR_exact.xml has autoload=false, autosave=false
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        Models.init_config(path=xml_path, defaults_path=os.path.join(os.path.dirname(_BIN), "data", "model.xml"))
+        Models.TheData.load("inline", dat=Models.TheXMLConfig.get("architecture.data"))
+    
+        m = Models.BasicModel()
+>       m.create_from_config(xml_path, data=Models.TheData)
+
+test/test_basicmodel.py:2122: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6560: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+_________ TestRuntimeDataLoader.test_runtime_data_loader_returns_batch _________
+
+self = <test_basicmodel.TestRuntimeDataLoader testMethod=test_runtime_data_loader_returns_batch>
+
+    def test_runtime_data_loader_returns_batch(self):
+        import tempfile
+        import xml.etree.ElementTree as ET
+    
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        _tr = root.find("architecture/training")
+        if _tr is None:
+            _tr = ET.SubElement(root.find("architecture"), "training")
+        auto = _tr.find("autoload")
+        if auto is None:
+            auto = ET.SubElement(_tr, "autoload")
+        auto.text = "false"
+    
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+    
+        Models.TheData.load("xor")
+        m = Models.BasicModel()
+>       m.create_from_config(tmp.name, data=Models.TheData)
+
+test/test_basicmodel.py:2188: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6560: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+_____ TestSubspaceActivationPipeline.test_simple_model_subspace_activation _____
+
+self = <test_basicmodel.TestSubspaceActivationPipeline testMethod=test_simple_model_subspace_activation>
+
+    def test_simple_model_subspace_activation(self):
+        """BasicModel with useSubspaceActivation=True produces valid output shapes."""
+        N = 16
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:2905: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+________ TestSubspaceActivationPipeline.test_subspace_activation_stored ________
+
+self = <test_basicmodel.TestSubspaceActivationPipeline testMethod=test_subspace_activation_stored>
+
+    def test_subspace_activation_stored(self):
+        """After forward with useSubspaceActivation, spaces have activations."""
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=True)
+        model = Models.BasicModel()
+>       model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+
+test/test_basicmodel.py:2919: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+________________ TestBasicModelDemuxed.test_create_from_config _________________
+
+self = <test_basicmodel.TestBasicModelDemuxed testMethod=test_create_from_config>
+
+    def test_create_from_config(self):
+        """BasicModel with demuxed=True creates InputSpace(demuxed) + ModalSpace."""
+        Models.TheData.load("xor")
+        _populate_test_config(
+            inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0,
+            outputDim=4,
+            nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nWords=4, nOutput=4,
+            nWhere=2, nWhen=2,
+            demuxed=True,
+            flatten=True, perceptPassThrough=True)
+        model = Models.BasicModel()
+>       model.create(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nOutput=4,
+                     model_type="numeric")
+
+test/test_basicmodel.py:3032: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6580: in create
+    return self._create_per_stage(
+bin/Models.py:16551: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13935: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LanguageSpace(
+  (clause_scope): ClauseScope()
+)
+symbol_space = SymbolSpace(
+  (subspace): SymbolSubSpace(
+    (layers): ModuleList(
+      (0): LanguageLayer(
+        (operation_laye...hereEncoding): WhereEncoding()
+    (whenEncoding): WhenStartDurationEncoding()
+    (wordEncoding): WordEncoding()
+  )
+)
+
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+    
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+>               raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E               ValueError: unresolved generate rule: P -> sigma.reverse(P)
+
+bin/Language.py:12478: ValueError
+_ test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s _
+
+    def test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s():
+        policy, binary, _ = scope()
+        state = policy.empty(torch.zeros(1, 8, 8))
+        for ref in (10, 11, 12, 13):  # he said cats animals
+            state = policy.push(state, torch.tensor([True]), torch.tensor([ref]))
+        state, ended = policy.apply(state, choice(binary, 'part'), torch.tensor(0))
+        assert ended.tolist() == [3]
+        assert int(state[0, 0, 1]) == -2  # trial-local reference; no durable ID was minted
+        state, ended = policy.apply(state, choice(binary, 'verb'), torch.tensor(1))
+        assert ended.tolist() == [0]
+        assert policy.slots(state, torch.tensor([2])).tolist() == [1]
+>       assert int(state[0, 0, 0]) & policy.RELATIVE
+E       assert (8 & 1)
+E        +  where 8 = int(tensor(8))
+E        +  and   1 = ClauseScope().RELATIVE
+
+test/test_clause_scope.py:35: AssertionError
+_______ test_every_shipped_rule_has_exhaustive_effects_and_operand_kinds _______
+
+    def test_every_shipped_rule_has_exhaustive_effects_and_operand_kinds():
+        from Language import Grammar
+        from AccessibleMind import OperatorEffects
+        grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
+        for rule in grammar.rules + grammar.thought_rules + grammar.ps_rules:
+            assert len(rule.operand_kinds) == rule.arity
+            assert set(rule.operand_kinds) <= {'field','symbol'}
+            effects=OperatorEffects(rule.effect_reads, rule.effect_writes)
+            if rule.method_name:
+>               assert effects.writes, rule.canonical
+E               AssertionError: F -> divide.forward(F)
+E               assert ()
+E                +  where () = OperatorEffects(reads=(<Subsystem.PERCEPT: 'perceptual knowing'>,), writes=()).writes
+
+test/test_operator_effects.py:14: AssertionError
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[false-False]
+FAILED test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm
+FAILED test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream
+FAILED test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]
+FAILED test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning
+FAILED test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_basic_model
+FAILED test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_mental_model
+FAILED test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_simple_model
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_concept_with_attention
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention
+FAILED test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+FAILED test/test_basicmodel.py::TestVocabSaveRestore::test_save_load_with_vocab
+FAILED test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+FAILED test/test_basicmodel.py::TestRuntimeDataLoader::test_runtime_data_loader_returns_batch
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored
+FAILED test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+FAILED test/test_clause_scope.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s
+FAILED test/test_operator_effects.py::test_every_shipped_rule_has_exhaustive_effects_and_operand_kinds
+28 failed, 259 passed, 13 skipped, 8 warnings in 20.52s

@@ -1,0 +1,130 @@
+........F.....                                                           [100%]
+=================================== FAILURES ===================================
+____________ test_review15_measurement_wiring_on_one_ordinary_batch ____________
+test/test_review14_contracts.py:157: in test_review15_measurement_wiring_on_one_ordinary_batch
+    assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+E   AssertionError: F                                                                        [100%]
+E     =================================== FAILURES ===================================
+E     ___________ test_margin_and_ownership_observe_the_same_actual_steps ____________
+E     
+E         def test_margin_and_ownership_observe_the_same_actual_steps():
+E             from test_mm_xor import _fresh_model
+E             import review15_gate_observer
+E             model, _, data = _fresh_model('data/XOR_grammar.xml')
+E             optimizer = model.getOptimizer(lr=.01)
+E             raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+E             batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+E             from review15_run_audit import observe_run, json_value
+E             with observe_run() as run_audit:
+E     >           model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py:16: 
+E     _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+E     doc/benchmarks/2026-10-03-operators-attention/review15_run_audit.py:73: in observed_epoch
+E         value=epoch(model,*args,**kwargs)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     test/objective_conflicts_probe.py:710: in observed_run_epoch
+E         return original_run_epoch(model,*args,**kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:15730: in runEpoch
+E         result, _ = self.runBatch(
+E     bin/Models.py:13654: in runBatch
+E         return self._run_sentence_batch(*args, **kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:13781: in _run_sentence_batch
+E         return self._run_batch_once(**call)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1816/test_review15_measurement_wiri0/ownership/_run_batch_once.instrumented.py:375: in _run_batch_once
+E         _what_answers = self._what_or_think(
+E     bin/Models.py:8812: in _what_or_think
+E         return self.what(questions, input_data, executor=executor, record=record, score=score)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:10309: in what
+E         execution = self._execute_input_sentence(input_data, executor)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:153: in masked
+E         return method(self, *args, **kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:8497: in _execute_input_sentence
+E         return (executor or self.forward)(input_data)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:153: in masked
+E         return method(self, *args, **kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:8308: in forward
+E         return self._forward_per_stage(inputData)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:23093: in _forward_per_stage
+E         body_result = self._forward_body(
+E     bin/Models.py:17250: in _forward_body
+E         return self._forward_body_per_word(
+E     bin/Models.py:21628: in _forward_body_per_word
+E         self._run_tensor_peer_word_pipeline(N_words))
+E         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/Models.py:21187: in _run_tensor_peer_word_pipeline
+E         feedback, trip_count) = self._run_sentence_word_bricks(
+E     bin/Models.py:20317: in _run_sentence_word_bricks
+E         (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+E     test/objective_conflicts_probe.py:680: in paired
+E         value=original_pair(cache,compose,observed_score,step,active=active,training=training,before_step=before_step)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     bin/SentenceCompose.py:159: in sentence_pair
+E         step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+E     bin/Models.py:20315: in train_trial
+E         self._sentence_train_step(loss)
+E     doc/benchmarks/2026-10-03-operators-attention/review15_preference_probe.py:74: in stepped
+E         for entry in selected:entry['before']=scores(entry)
+E                                               ^^^^^^^^^^^^^
+E     .venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+E         return func(*args, **kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^
+E     _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+E     
+E     entry = {'module': OperationSelectionLayer(
+E       (ops): ModuleList(
+E         (0): _BinaryGrammarOpAdapter(
+E           (gl): ConjunctionLaye...horDotTransformChooser()
+E     ), 'forced': tensor([True, True, True, True]), 'depth': tensor([2, 2, 2, 2]), 'width': 2, ...}
+E     
+E         @torch.no_grad()
+E         def scores(entry):
+E             chooser=entry['module'].chooser
+E     >       bargs,bkwargs=entry['score_binary'];uargs,ukwargs=entry['score_unary']
+E                           ^^^^^^^^^^^^^^^^^^^^^
+E     E       KeyError: 'score_binary'
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_preference_probe.py:52: KeyError
+E     ----------------------------- Captured stdout call -----------------------------
+E     [AMP] off (fp32, MODEL_AMP unset or =off)
+E     =============================== warnings summary ===============================
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+E         return func(*args, **kwargs)
+E     
+E     -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+E     =========================== short test summary info ============================
+E     FAILED doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E     1 failed, 4 warnings in 1.71s
+E     
+E   assert 1 == 0
+=============================== warnings summary ===============================
+test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review14_contracts.py::test_review15_measurement_wiring_on_one_ordinary_batch
+1 failed, 13 passed, 1 warning in 41.00s

@@ -144,10 +144,10 @@ def test_live_description_owns_values_but_fact_storage_detaches():
 @pytest.mark.parametrize("depth", [1, 2, 3])
 def test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles(depth):
     from Meaning import ConceptualMeaning
-    from Layers import InterSentenceLayer
+    from Layers import BracketExpectation
     payload = torch.eye(6)[:depth]
     meaning = ConceptualMeaning.from_payload(payload, depth=depth, layout="stm")
-    expected, mask = InterSentenceLayer._canonical_meaning(
+    expected, mask = BracketExpectation._canonical_meaning(
         SimpleNamespace(concept_dim=6), payload, depth, "stm")
     torch.testing.assert_close(meaning.roles, expected)
     torch.testing.assert_close(meaning.role_mask, mask)

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_walk_trials.py",
+    "test/test_decoder_exploration.py",
+    "test/test_compiled_word_chunk.py::test_normal_batch_trains_supplied_grammar_lessons"
+  ],
+  "pid": 97300,
+  "exit_code": 4,
+  "reason": "exit",
+  "peak_memory_bytes": 493847776,
+  "elapsed_seconds": 3.851979500002926,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/output-pair-after/run.log"
+}

@@ -158,6 +158,7 @@ def test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook(
     """The canonical staged sparse bank remains strict/fullgraph-clean."""
     previous_device = str(TheDevice.get())
     init_device("cpu")
+    monkeypatch.setattr(util,"TheCompileBackend","eager")
     try:
         model = BasicModel()
         codebook = Codebook()
@@ -167,7 +168,7 @@ def test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook(
         model.conceptualSpace = model.conceptualSpaces[0]
         if staged_serial_bank:
             model.inputSpace = types.SimpleNamespace(_per_word_enabled=True)
-            model.serial = True
+            model.word_brackets = True
             model.serial_object_meta = True
             model.concept_binding = "aligned"
             model.perceptualSpace = types.SimpleNamespace(
@@ -221,7 +222,7 @@ def test_compile_none_preserves_legacy_sentence_loop(monkeypatch):
         model.conceptualSpaces = [space]
         model.conceptualSpace = space
         model.inputSpace = types.SimpleNamespace(_per_word_enabled=True)
-        model.serial = True
+        model.word_brackets = True
         model.serial_object_meta = True
         model.concept_binding = "aligned"
         model._prewarm_checkpoint_shapes = lambda: None

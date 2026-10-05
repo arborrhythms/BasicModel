@@ -1,0 +1,18 @@
+..F.......                                                               [100%]
+=================================== FAILURES ===================================
+______ test_aligned_property_folds_share_one_physical_concept_dictionary _______
+test/test_wholespace_property_migration.py:142: in test_aligned_property_folds_share_one_physical_concept_dictionary
+    assert sum(
+E   assert 0 == 1
+E    +  where 0 = sum(<generator object test_aligned_property_folds_share_one_physical_concept_dictionary.<locals>.<genexpr> at 0x11f887a00>)
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Activated aligned codebook prefix 4 -> 8 rows (physical capacity 16; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)
+=============================== warnings summary ===============================
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:394: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary
+1 failed, 9 passed, 1 warning in 2.72s

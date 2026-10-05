@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_output_operand_preserves_live_slots_after_exclusion ___________
+
+    def test_output_operand_preserves_live_slots_after_exclusion():
+        from types import SimpleNamespace
+        from Models import BasicModel
+        owner=SimpleNamespace(conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=4)))
+        idea=torch.tensor([[[0.,0.],[1.,0.],[0.,2.]], [[3.,0.],[0.,0.],[0.,4.]]])
+        stacked=BasicModel._walk_operand(owner,idea)
+>       torch.testing.assert_close(stacked[:,:2], torch.tensor([[[0.,2.],[1.,0.]],[[0.,4.],[3.,0.]]]))
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 4 / 8 (50.0%)
+E       Greatest absolute difference: 4.0 at index (1, 0, 1) (up to 1e-05 allowed)
+E       Greatest relative difference: inf at index (0, 0, 0) (up to 1.3e-06 allowed)
+
+test/test_operator_catalogue.py:185: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_output_operand_preserves_live_slots_after_exclusion
+1 failed in 2.00s

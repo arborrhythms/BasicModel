@@ -1,0 +1,162 @@
+[
+  {
+    "batch_row": 0,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      1
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.5925,
+    "distinct_derivations": 2,
+    "modal_derivation": [
+      [
+        2,
+        2,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 163
+      },
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 237
+      }
+    ]
+  },
+  {
+    "batch_row": 1,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      2
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.895,
+    "distinct_derivations": 2,
+    "modal_derivation": [
+      [
+        2,
+        1,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 358
+      },
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 42
+      }
+    ]
+  },
+  {
+    "batch_row": 2,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      1
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.945,
+    "distinct_derivations": 2,
+    "modal_derivation": [
+      [
+        2,
+        2,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 378
+      },
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 22
+      }
+    ]
+  },
+  {
+    "batch_row": 3,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      2
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.895,
+    "distinct_derivations": 2,
+    "modal_derivation": [
+      [
+        2,
+        1,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 358
+      },
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 42
+      }
+    ]
+  }
+]

@@ -1,0 +1,96 @@
+........................ss.FFsssss....F..........sssss.s..s..ssss.s.s... [ 57%]
+.F................................s..................                    [100%]
+=================================== FAILURES ===================================
+_________________________ test_run_record_schema_smoke _________________________
+test/test_recon_bench.py:18: in test_run_record_schema_smoke
+    rec = run_config("data/MM_xor_fixture.xml", epochs=1, seed=0,
+bin/recon_bench.py:215: in run_config
+    _epoch_loop()
+bin/recon_bench.py:199: in _epoch_loop
+    out_loss, rec_loss, _, _ = model.runEpoch(
+bin/Models.py:15688: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:14973: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:14188: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:14290: in _commit_autobind_from_stash
+    self._maybe_autobind_words(
+bin/Spaces.py:14508: in _maybe_autobind_words
+    return self._autobind_property_concepts(
+bin/Spaces.py:14441: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:62: in lookup_word
+    cs._preflight_concept_row(0)
+bin/Spaces.py:14694: in _preflight_concept_row
+    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E   RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+_________________ test_decode_rows_align_with_last_eval_batch __________________
+test/test_recon_bench.py:55: in test_decode_rows_align_with_last_eval_batch
+    rec = run_config("data/MM_xor_fixture.xml", epochs=1, seed=0,
+bin/recon_bench.py:215: in run_config
+    _epoch_loop()
+bin/recon_bench.py:199: in _epoch_loop
+    out_loss, rec_loss, _, _ = model.runEpoch(
+bin/Models.py:15688: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:14973: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:14188: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:14290: in _commit_autobind_from_stash
+    self._maybe_autobind_words(
+bin/Spaces.py:14508: in _maybe_autobind_words
+    return self._autobind_property_concepts(
+bin/Spaces.py:14441: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:62: in lookup_word
+    cs._preflight_concept_row(0)
+bin/Spaces.py:14694: in _preflight_concept_row
+    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E   RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+____________ test_first_sight_admits_concepts_before_reconstruction ____________
+test/test_reconstruction_bank_contract.py:78: in test_first_sight_admits_concepts_before_reconstruction
+    before = owner._concept_allocator.next_id
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+____ test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction _____
+test/test_reconstruction_scope.py:69: in test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+    assert float(model._recon_sentence_costs[0, 1]) == 0.
+E   assert 6.988933563232422 == 0.0
+E    +  where 6.988933563232422 = float(tensor(6.9889))
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_reasoning.py::TestIsConsistent::test_consistent_truths
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7131: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/idempotent.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 10, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1623/test_missing_packed_sentence_d0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_recon_bench.py::test_run_record_schema_smoke - RuntimeError:...
+FAILED test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch
+FAILED test/test_reconstruction_bank_contract.py::test_first_sight_admits_concepts_before_reconstruction
+FAILED test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+4 failed, 100 passed, 21 skipped, 4 warnings in 31.18s

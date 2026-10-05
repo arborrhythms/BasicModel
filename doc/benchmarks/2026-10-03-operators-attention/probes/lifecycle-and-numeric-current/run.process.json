@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_reading_attention.py",
+    "test/test_interleave_schedule.py",
+    "test/test_interleave_lifecycle.py",
+    "test/test_sentence_protocol.py",
+    "test/test_subsymbolic_loop.py",
+    "test/test_two_mode_dispatch.py",
+    "test/test_grounded_xor.py",
+    "test/test_one_attention.py",
+    "test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch"
+  ],
+  "pid": 99984,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1639860432,
+  "elapsed_seconds": 63.50386433402309,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/lifecycle-and-numeric-current/run.log"
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_derived_concept_codes.py::test_occurrence_context_uses_recency_mean_and_evidence_against_form_prior"
+  ],
+  "pid": 29426,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 430998824,
+  "elapsed_seconds": 3.6026142080081627,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review13-context-amendment-before/run.log"
+}

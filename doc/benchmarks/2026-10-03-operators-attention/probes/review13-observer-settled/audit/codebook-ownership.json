@@ -1,0 +1,78 @@
+[
+  {
+    "stage": 0,
+    "contextual_rotation_only": false,
+    "contextual_learning_rate": 0.0,
+    "parameters": [],
+    "buffers": [
+      {
+        "name": "W",
+        "shape": [
+          262,
+          14
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq._b_norms_sq",
+        "shape": [
+          262
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.active_mask",
+        "shape": [
+          262
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "mereology.basis",
+        "shape": [
+          256,
+          4
+        ],
+        "requires_grad": false
+      }
+    ]
+  },
+  {
+    "stage": 1,
+    "contextual_rotation_only": false,
+    "contextual_learning_rate": 0.0,
+    "parameters": [],
+    "buffers": [
+      {
+        "name": "W",
+        "shape": [
+          262,
+          14
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq._b_norms_sq",
+        "shape": [
+          262
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "vq.active_mask",
+        "shape": [
+          262
+        ],
+        "requires_grad": false
+      },
+      {
+        "name": "mereology.basis",
+        "shape": [
+          256,
+          4
+        ],
+        "requires_grad": false
+      }
+    ]
+  }
+]

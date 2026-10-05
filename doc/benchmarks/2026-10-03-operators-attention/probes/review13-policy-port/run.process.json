@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction",
+    "test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder",
+    "test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit"
+  ],
+  "pid": 29290,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2153679488,
+  "elapsed_seconds": 12.37583687499864,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review13-policy-port/run.log"
+}

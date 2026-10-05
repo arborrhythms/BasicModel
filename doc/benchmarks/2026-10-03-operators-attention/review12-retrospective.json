@@ -1,0 +1,175 @@
+{
+  "source": "saved \u00a711 measurements; no new forward or training",
+  "rule_id_map": {
+    "0": "not",
+    "1": "conjunction",
+    "2": "disjunction"
+  },
+  "frozen_xml_sha256": "034f41e00a98851d25d017d43bb08ff6ee558decab54af6749f2bfc64352253d",
+  "rows": [
+    {
+      "run": 1,
+      "mse": 0.2500248972544372,
+      "band": "at 1/4",
+      "final_greedy_compose": null,
+      "evidence": null,
+      "status": "not recorded in saved observations or logs",
+      "artifact_sha256": {
+        "review11-measurements/xor-01/observations.jsonl": "2c784718f678dbb6c52093191a81db4c8b3bcec1f9fc92fe6d04df22b5637f48",
+        "review11-measurements/xor-01/run.log": "e2a6b01216324ef0405fa4a8030f0335737afea552b35e0b7c1cad15c3497667",
+        "review11-measurements/xor-01/reports.jsonl": "c29c779c30f23d716240a44a892dfb5030b06a8f2e4f5226412b27677786078f"
+      }
+    },
+    {
+      "run": 2,
+      "mse": 2.1169585904701194e-05,
+      "band": "at 0",
+      "final_greedy_compose": null,
+      "evidence": null,
+      "status": "not recorded in saved observations or logs",
+      "artifact_sha256": {
+        "review11-measurements/xor-02/observations.jsonl": "f1422db171f26606ae4db21eb12f807ab55bc8c669b63be3710550c6ce9438a3",
+        "review11-measurements/xor-02/run.log": "6a375bebff6910e37ebfecd114362ae50affeddb820e7bbfa80856d47713cf18",
+        "review11-measurements/xor-02/reports.jsonl": "2ddede2324e3813a8eca67bfe7d28ad0468796d9b393dd617d92bda0e02aa378"
+      }
+    },
+    {
+      "run": 3,
+      "mse": 0.23232146600361103,
+      "band": "at 1/4",
+      "final_greedy_compose": null,
+      "evidence": null,
+      "status": "not recorded in saved observations or logs",
+      "artifact_sha256": {
+        "review11-measurements/xor-03/observations.jsonl": "870688bed87002273e047f84995ad470b1b2a5d389bdf64953b337281bf427ba",
+        "review11-measurements/xor-03/run.log": "9b19db2e49adf205d6847ea1620899ccf0b4e09909852175b3f73cfe2973dfd9",
+        "review11-measurements/xor-03/reports.jsonl": "d647ab426630ddaac5bb7751eb6fec703bd31670e6d989356d27ef65e0baef1e"
+      }
+    },
+    {
+      "run": 4,
+      "mse": 0.2500000871055168,
+      "band": "at 1/4",
+      "final_greedy_compose": null,
+      "evidence": null,
+      "status": "not recorded in saved observations or logs",
+      "artifact_sha256": {
+        "review11-measurements/xor-04/observations.jsonl": "a9709d4a2152056815f4b72296fb214760933036de09268099768264d83bd855",
+        "review11-measurements/xor-04/run.log": "9cbdffb6cf63b95c8db9dbad9dd4e984470892fe17ae003f2eb53f390034f031",
+        "review11-measurements/xor-04/reports.jsonl": "54f12be5d2e5b9b07dca99c1f113e679383c8d0dba0bf1473e5a558f304768c0"
+      }
+    },
+    {
+      "run": 5,
+      "mse": 0.19999332111815216,
+      "band": "between",
+      "final_greedy_compose": null,
+      "evidence": null,
+      "status": "not recorded in saved observations or logs",
+      "artifact_sha256": {
+        "review11-measurements/xor-05/observations.jsonl": "d0fea5dc66817d14189febaa75c57e045adc6b665e9d2be4258e583372a0c2cb",
+        "review11-measurements/xor-05/run.log": "295e313a3837e287544a461182a629297d2c5788d8b08263e2fcc972202fbcdf",
+        "review11-measurements/xor-05/reports.jsonl": "f505d9db64589103ed08e88bc5ee9471fb4cede0791f95c9b3398974dcb4c61f"
+      }
+    },
+    {
+      "run": 6,
+      "mse": 0.25000157747369744,
+      "band": "at 1/4",
+      "final_greedy_compose": null,
+      "evidence": null,
+      "status": "not recorded in saved observations or logs",
+      "artifact_sha256": {
+        "review11-measurements/xor-06/observations.jsonl": "504c245444578cbb64bda52a36a333a115dde98c441083c0b535f43c7348d8d1",
+        "review11-measurements/xor-06/run.log": "10152f5720ea44fc2cd730f3e22ccb7560bf95095f6e96a2adb19f4c452cc2aa",
+        "review11-measurements/xor-06/reports.jsonl": "4be90e63ae5f76573741108a31592ec5010e56bbad2b76147d2959be4c4cb169"
+      }
+    },
+    {
+      "run": 7,
+      "mse": 0.00018962170635816733,
+      "band": "at 0",
+      "final_greedy_compose": null,
+      "evidence": null,
+      "status": "not recorded in saved observations or logs",
+      "artifact_sha256": {
+        "review11-measurements/xor-07/observations.jsonl": "3baa31416969450c347403155b322e03956940536644c3105f45de60e22c82bc",
+        "review11-measurements/xor-07/run.log": "24c10abe52e29882dccf710eeba50bc9885d8453d93fde35379bf5821c77ae7d",
+        "review11-measurements/xor-07/reports.jsonl": "9a948954bfbe924f10fa53ebedd9d6cb647303ac286d8fcf52208e0eca62a659"
+      }
+    },
+    {
+      "run": 8,
+      "mse": 0.20195397339684362,
+      "band": "between",
+      "final_greedy_compose": null,
+      "evidence": null,
+      "status": "not recorded in saved observations or logs",
+      "artifact_sha256": {
+        "review11-measurements/xor-08/observations.jsonl": "9aa73903b004724c96a6cdebb823da0a0106814b0e2a5c05018434d205374132",
+        "review11-measurements/xor-08/run.log": "425c9ab428f067bfd49e2c2c91627242fb19e8cf7395be6220092d645b443076",
+        "review11-measurements/xor-08/reports.jsonl": "c5b8db717d389a2f190d9e6080208dae2511443895b3fd4cc2809af30b954a99"
+      }
+    },
+    {
+      "run": 9,
+      "mse": 0.12566354814218905,
+      "band": "between",
+      "final_greedy_compose": null,
+      "evidence": null,
+      "status": "not recorded in saved observations or logs",
+      "artifact_sha256": {
+        "review11-measurements/xor-09/observations.jsonl": "4b2366b52140641b5cc47d1a53ab99fd350ca1269679edcac7a40a358cf15cf4",
+        "review11-measurements/xor-09/run.log": "42ea721510799cbb0ea7ca75086a1e5e391938921babf0ee10b5f9bef7055e90",
+        "review11-measurements/xor-09/reports.jsonl": "81b14b8a8d91c1a1774e78f1d40ceaaf7f381179d1800b7749bb15bad8ddcd0f"
+      }
+    },
+    {
+      "run": 10,
+      "mse": 0.2500786545768352,
+      "band": "at 1/4",
+      "final_greedy_compose": [
+        [
+          {
+            "rule_id": 2,
+            "rule_name": "disjunction",
+            "arity": 2
+          }
+        ],
+        [
+          {
+            "rule_id": 2,
+            "rule_name": "disjunction",
+            "arity": 2
+          }
+        ],
+        [
+          {
+            "rule_id": 2,
+            "rule_name": "disjunction",
+            "arity": 2
+          }
+        ],
+        [
+          {
+            "rule_id": 2,
+            "rule_name": "disjunction",
+            "arity": 2
+          }
+        ]
+      ],
+      "evidence": "review11-measurements/xor-10/ownership/events.jsonl",
+      "status": "observed",
+      "artifact_sha256": {
+        "review11-measurements/xor-10/observations.jsonl": "5bd5b7086c243a32cf034072b6e518e2f33de8d357105452b96adb98f54ad29a",
+        "review11-measurements/xor-10/run.log": "a441dad96111b6044b21e0c75cb16617bd3b2affe14bd0c88383f98a35b9b128",
+        "review11-measurements/xor-10/reports.jsonl": "d21a94c3c491a8c183fb1d12f1d91ee9c20399f8b12b3731956e7ae4463c5a93",
+        "review11-measurements/xor-10/ownership/events.jsonl": "07f16cd8fbdf57034493965a4292ee2d5900e4b072f16058c3f7310d9e877a67"
+      }
+    }
+  ],
+  "recorded_runs": [
+    10
+  ],
+  "conclusion": "Run 10 supports the mean hypothesis: all four final greedy compositions used rule 2, then mean disjunction, at MSE .250079. The other nine runs lack final compose observations, so the claim about all five quarter-band runs is unconfirmed. Run 3 is .232321, in the unchanged quarter band, not exactly at the additive floor."
+}

@@ -31,7 +31,7 @@ def test_unaddressed_driver_rows_form_independent_streams():
     host = SimpleNamespace(
         inputSpace=SimpleNamespace(data=SimpleNamespace(
             source_addresses={"train": [{"document": "a"}]})),
-        symbolSpace=SimpleNamespace(discourse=disc))
+        symbolSpace=SimpleNamespace(expectation=disc))
     for sources in ([[7, 8], [-1, None]], [[9, 10], [11, 12]]):
         BasicModel._stage_expectation_documents(host, "train", sources, 2)
         assert host._expectation_documents == ((None, None), (None, None))
@@ -56,8 +56,8 @@ def test_one_interaction_owner_even_when_expectation_is_enabled(tmp_path):
     try:
         assert isinstance(model.symbolSpace.what_memory, WhatInteractionMemory)
         assert model._what_memory() is model.symbolSpace.what_memory
-        assert not hasattr(model.symbolSpace.discourse, "what_memory")
-        assert not hasattr(model.symbolSpace.discourse, "append_what_slot")
+        assert not hasattr(model.symbolSpace.expectation, "what_memory")
+        assert not hasattr(model.symbolSpace.expectation, "append_what_slot")
     finally:
         model.End()
 
@@ -71,7 +71,7 @@ def test_expectation_names_and_production_defaults():
     for name in ("model.xml", "BasicModel.xml"):
         training = ET.parse(root / "data" / name).getroot().find("architecture/training")
         assert training.findtext("sentenceExpectation") == "true"
-        assert float(training.findtext("interLossWeight")) == .1
+        assert float(training.findtext("sentenceExpectationLossWeight")) == .1
 
 
 @pytest.mark.usefixtures('eager_reading')
@@ -97,7 +97,7 @@ def test_real_packed_bricks_share_one_document_stream(tmp_path, monkeypatch):
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
         ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
-        ("<interLossWeight>0.0</interLossWeight>", "<interLossWeight>0.1</interLossWeight>"),
+        ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
     ])
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
@@ -106,7 +106,7 @@ def test_real_packed_bricks_share_one_document_stream(tmp_path, monkeypatch):
     data = model.inputSpace.data
     monkeypatch.setattr(data, "has_supervised_outputs", False)
     optimizer = model.getOptimizer(lr=1e-5)
-    disc = model.symbolSpace.discourse
+    disc = model.symbolSpace.expectation
     observe_meanings = disc._observe_meanings
     pairs = []
     def capture(*args, **kwargs):

@@ -1,0 +1,69 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_frozen_control_scoring_disables_autograd _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107d25640>
+
+    def test_frozen_control_scoring_disables_autograd(monkeypatch):
+        from test_mm_xor import _fresh_model
+        model, _, data = _fresh_model('data/XOR_grammar.xml')
+        model.eval()
+        owner = model.symbolSpace.expectation
+        expect = owner.expect
+        calls = []
+        def inference(*args, **kwargs):
+            calls.append(torch.is_grad_enabled())
+            assert not torch.is_grad_enabled(), 'held-out candidate scoring retained a backward graph'
+            return expect(*args, **kwargs)
+        monkeypatch.setattr(owner, 'expect', inference)
+        item = dict(prefix='hello ', candidates=['world', 'there'])
+        with gate.frozen_online_learning(model):
+>           gate._score_control_batch(model, data, [item], 'intact', 2)
+
+doc/benchmarks/2026-10-03-operators-attention/nanochat_grad_probe.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/eval_nanochat_grammar.py:621: in _score_control_batch
+    result = word_candidate_scores(model, choices=choices)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/eval_nanochat_grammar.py:377: in word_candidate_scores
+    expected=owner.expect('word',words,bank,valid,targets,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = ('word', tensor([[[-0.3134,  0.4987, -0.2071,  0.1880,  0.3065, -0.1116,  0.4101,
+          -0.0319,  0.3208,  0.4431]...]), tensor([[True, True],
+        [True, True]]), tensor([[-1, -1,  0, -1, -1, -1],
+        [-1, -1,  1, -1, -1, -1]]))
+kwargs = {'teacher_forcing': False, 'observed_prefix': tensor([[ True, False, False, False, False, False],
+        [ True, Fals...]), 'active': tensor([[ True, False,  True, False, False, False],
+        [ True, False,  True, False, False, False]])}
+
+    def inference(*args, **kwargs):
+        calls.append(torch.is_grad_enabled())
+>       assert not torch.is_grad_enabled(), 'held-out candidate scoring retained a backward graph'
+E       AssertionError: held-out candidate scoring retained a backward graph
+E       assert not True
+E        +  where True = <built-in function is_grad_enabled>()
+E        +    where <built-in function is_grad_enabled> = torch.is_grad_enabled
+
+doc/benchmarks/2026-10-03-operators-attention/nanochat_grad_probe.py:15: AssertionError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-operators-attention/nanochat_grad_probe.py::test_frozen_control_scoring_disables_autograd
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/nanochat_grad_probe.py::test_frozen_control_scoring_disables_autograd
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/nanochat_grad_probe.py::test_frozen_control_scoring_disables_autograd
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.slow
+
+doc/benchmarks/2026-10-03-operators-attention/nanochat_grad_probe.py::test_frozen_control_scoring_disables_autograd
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-03-operators-attention/nanochat_grad_probe.py::test_frozen_control_scoring_disables_autograd
+1 failed, 4 warnings in 2.12s

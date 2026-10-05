@@ -1,0 +1,133 @@
+..F.......s................................sssssss.F....FFF............. [ 52%]
+...F............................................................         [100%]
+=================================== FAILURES ===================================
+______ test_prepared_answer_generates_more_words_than_the_captured_input _______
+test/test_prepared_answer_boundary.py:80: in test_prepared_answer_generates_more_words_than_the_captured_input
+    assert lengths.tolist() == [4, 1]
+E   assert [16, 1] == [4, 1]
+E     
+E     At index 0 diff: 16 != 4
+E     Use -v to get more diff
+__________ test_live_property_membership_is_a_learned_byte_definition __________
+test/test_primitive_properties.py:23: in test_live_property_membership_is_a_learned_byte_definition
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_live_property_membership_0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_live_property_membership_0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_live_property_membership_0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______ test_word_read_trains_definitions_and_preserves_ordered_witness ________
+test/test_primitive_properties.py:85: in test_word_read_trains_definitions_and_preserves_ordered_witness
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_word_read_trains_definiti0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_word_read_trains_definiti0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_word_read_trains_definiti0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______ test_property_definition_has_one_optimizer_and_checkpoint_owner ________
+test/test_primitive_properties.py:100: in test_property_definition_has_one_optimizer_and_checkpoint_owner
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_property_definition_has_o0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_property_definition_has_o0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_property_definition_has_o0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+________ test_old_acquired_predicate_migrates_into_primitive_parameters ________
+test/test_primitive_properties.py:119: in test_old_acquired_predicate_migrates_into_primitive_parameters
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_old_acquired_predicate_mi0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_old_acquired_predicate_mi0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_old_acquired_predicate_mi0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+___________ test_property_diagnostic_releases_its_graph_at_tick_end ____________
+test/test_property_read.py:7: in test_property_diagnostic_releases_its_graph_at_tick_end
+    model = _small_property_model(tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_wholespace_property_migration.py:80: in _small_property_model
+    init_config(path=str(path), defaults_path=str(ROOT / "data" / "model.xml"))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_property_diagnostic_relea0/unequal_property_inventory.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_property_diagnostic_relea0/unequal_property_inventory.xml:20: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1583/test_property_diagnostic_relea0/unequal_property_inventory.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+=============================== warnings summary ===============================
+test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_property_configuration.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:5016: UserWarning: Shared ConceptualSpace checkpoint migration: selected the stage-0 similarity dictionary as canonical and replaced 21 divergent stage/alias tensor(s).
+    self._canonicalize_shared_concept_checkpoint_state(state, model_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input
+FAILED test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition
+FAILED test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness
+FAILED test/test_primitive_properties.py::test_property_definition_has_one_optimizer_and_checkpoint_owner
+FAILED test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters
+FAILED test/test_property_read.py::test_property_diagnostic_releases_its_graph_at_tick_end
+6 failed, 122 passed, 8 skipped, 3 warnings in 13.52s

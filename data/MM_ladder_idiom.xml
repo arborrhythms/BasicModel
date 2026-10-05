@@ -52,14 +52,14 @@
   -->
   <architecture>
     <!-- Keep traversal separate from the symbolic iteration budget. -->
-    <serial>true</serial>
-    <subsymbolicOrder>4</subsymbolicOrder>
+
+    <bindingDepth>4</bindingDepth>
     <!-- Four native perceptual passes retain part and property codes in one
          cube. CS guides later attention through membership attribution;
          perceptual towers contain no learned fold layers. Aligned serial
          binding retains the native PS and WS sources for reconstruction. -->
     <conceptBinding>aligned</conceptBinding>
-    <symbolicOrder>4</symbolicOrder>
+    <conceptLayers>5</conceptLayers>
     <!-- Let sentence length, rather than an arbitrary cap, determine parse
          depth during the pilot.  This knob adds no parameters. -->
     <syntacticOrder>0</syntacticOrder>
@@ -140,10 +140,10 @@
            Future/past What queries will vary objective input availability
            rather than paying for a second predictive faculty. -->
       <sentenceExpectation>false</sentenceExpectation>
-      <armaScale>0.0</armaScale>
+      <sentenceExpectationArmaScale>0.0</sentenceExpectationArmaScale>
       <intraLossWeight>0.0</intraLossWeight>
-      <interLossWeight>0.0</interLossWeight>
-      <interContrastiveWeight>0.0</interContrastiveWeight>
+      <sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>
+      <sentenceExpectationContrastiveWeight>0.0</sentenceExpectationContrastiveWeight>
       <interContrastiveTemp>0.1</interContrastiveTemp>
 
       <autoload>false</autoload>

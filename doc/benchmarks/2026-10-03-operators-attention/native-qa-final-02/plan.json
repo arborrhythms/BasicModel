@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/native_config_probe.py"
+  ],
+  "seed": null,
+  "memory_bytes": 8589934592,
+  "timeout": 1800,
+  "additional_training_runs": 0
+}

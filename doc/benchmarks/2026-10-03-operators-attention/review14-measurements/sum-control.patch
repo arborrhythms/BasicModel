@@ -1,0 +1,22 @@
+--- data/XOR_grammar.xml
++++ receipt/XOR_grammar_sum_control.xml
+@@ -87,7 +87,7 @@
+   </WholeSpace>
+ 
+   <OutputSpace>
+-    <unitRootRead>true</unitRootRead>
++    <unitRootRead>false</unitRootRead>
+     <nOutput>1</nOutput>
+     <nVectors>1</nVectors>
+   </OutputSpace>
+@@ -111,9 +111,7 @@
+       <rule operands="field">F = or.forward(F)</rule>
+ 
+           <symbols>
+-            <rule>S = not.forward(S)</rule>
+-            <rule>S = conjunction.forward(S, S)</rule>
+-            <rule>S = disjunction.forward(S, S)</rule>
++            <rule>S = sum.forward(S, S)</rule>
+           </symbols>
+         </compose>
+       </grammar>

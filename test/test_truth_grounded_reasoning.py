@@ -244,7 +244,7 @@ class TestSoftRead(unittest.TestCase):
     """The retained numerical attention reader returns real stored keys."""
 
     def _spaces(self, store, D=8):
-        from Spaces import GlobalAttention as GA
+        from Attention import PrimedSymbolReader as GA
         n = int(store.count.item())
         ltm = (store.slots[:n].mean(dim=1).detach() if n > 0
                else torch.zeros(1, D))
@@ -255,16 +255,16 @@ class TestSoftRead(unittest.TestCase):
         ]
 
     def test_where_read_grounds_in_real_keys(self):
-        from Spaces import GlobalAttention
+        from Attention import PrimedSymbolReader
         store = _store(rows_ideas=[(IDEA_A, 0.9), (IDEA_C, 0.8)])
         spaces = self._spaces(store)
         read = TruthGroundedReasoner.where_read(
-            IDEA_A, spaces, ga=GlobalAttention(), top_k=3)
+            IDEA_A, spaces, ga=PrimedSymbolReader(), top_k=3)
         self.assertIsNotNone(read)
         self.assertEqual(int(read["idea"].shape[-1]), 8)
         self.assertLessEqual(len(read["candidates"]), 3)
         self.assertIn(read["space_id"],
-                      {GlobalAttention.SPACE_LTM, GlobalAttention.SPACE_WHOLE})
+                      {PrimedSymbolReader.SPACE_LTM, PrimedSymbolReader.SPACE_WHOLE})
 
 
 if __name__ == "__main__":

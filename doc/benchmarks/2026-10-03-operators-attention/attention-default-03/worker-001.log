@@ -1,0 +1,293 @@
+..........FF...........................FF...FFF......................... [ 28%]
+.....................s.....FFF.......................................... [ 56%]
+...................................FF.............ssssss................ [ 84%]
+................................sss.....                                 [100%]
+=================================== FAILURES ===================================
+______________ TestSimpleModelCreation.test_simple_model_ergodic _______________
+test/test_basicmodel.py:457: in test_simple_model_ergodic
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+____________ TestSimpleModelCreation.test_simple_model_traditional _____________
+test/test_basicmodel.py:443: in test_simple_model_traditional
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+_______________ TestSimpleModel.test_simple_model_ergodic_shapes _______________
+test/test_basicmodel.py:799: in test_simple_model_ergodic_shapes
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+_____________ TestSimpleModel.test_simple_model_traditional_shapes _____________
+test/test_basicmodel.py:814: in test_simple_model_traditional_shapes
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+______________ TestModelEndToEnd.test_simple_model_ergodic_shapes ______________
+test/test_basicmodel.py:867: in test_simple_model_ergodic_shapes
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+________________ TestModelEndToEnd.test_simple_model_loss_runs _________________
+test/test_basicmodel.py:901: in test_simple_model_loss_runs
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+____________ TestModelEndToEnd.test_simple_model_traditional_shapes ____________
+test/test_basicmodel.py:882: in test_simple_model_traditional_shapes
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+______________ TestModelTypeVariants.test_concept_with_attention _______________
+test/test_basicmodel.py:1822: in test_concept_with_attention
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+________________ TestModelTypeVariants.test_conceptual_order_1 _________________
+test/test_basicmodel.py:1789: in test_conceptual_order_1
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+_______________ TestModelTypeVariants.test_percept_no_attention ________________
+test/test_basicmodel.py:1806: in test_percept_no_attention
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+_____ TestSubspaceActivationPipeline.test_simple_model_subspace_activation _____
+test/test_basicmodel.py:2907: in test_simple_model_subspace_activation
+    _, end_state, out, _ = model.forward(x)
+                           ^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+________ TestSubspaceActivationPipeline.test_subspace_activation_stored ________
+test/test_basicmodel.py:2923: in test_subspace_activation_stored
+    model.forward(x)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13143: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:41: in stage_input
+    surface=bytes(raw_rows[b]);end=0;row=[]
+            ^^^^^^^^^^^^^^^^^^
+E   ValueError: bytes must be in range(0, 256)
+=============================== warnings summary ===============================
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16617: RuntimeWarning: concept pool order 0 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 16, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector
+test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector
+test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_concept_with_attention
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored
+12 failed, 234 passed, 10 skipped, 14 warnings in 119.68s (0:01:59)

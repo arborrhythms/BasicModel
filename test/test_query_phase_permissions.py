@@ -226,10 +226,10 @@ def test_operand_occurrence_reads_require_permission_before_preparation(monkeypa
     model = _model()
     grammar = __import__('Language').Grammar()
     grammar.configure({'compose': {'rule': [
-        'exist_O1 = exist.forward(exist_I1)']},
-        'thought': {'rule': ['exist_O1 = exist.thought(exist_I1)']}})
+        'what_O1 = what.forward(what_I1)']},
+        'thought': {'rule': ['what_O1 = what.thought(what_I1)']}})
     registry = GrammaticalThoughtRegistry.install(model.conceptualSpace, grammar)
-    vp = registry._reference(("ltm-facts", "exist"))
+    vp = registry._reference(("conceptual-subgoal", "what"))
     meaning = ConceptualMeaning(
         torch.ones(3, 8), torch.tensor([True, True, False]),
         mode="interrogative", role_refs=(("ltm", "missing", 0), vp, None),

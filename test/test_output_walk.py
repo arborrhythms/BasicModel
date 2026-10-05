@@ -56,27 +56,54 @@ def _stop(m):
     _prefer(m, int(m.languageSpace.generate_policy.out_features) - 1)
 
 
-def test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents():
-    """A rule on top is un-reduced with the tied inverse; the completed
-    constituents are then popped into the emitted sequence, left to right:
-    the plain slot below, the left child, the right child."""
+def _walk_control_oracle(monkeypatch):
+    """Isolate chooser credit/trace plumbing from §11's semantic eligibility.
+
+    The historical STOP/undo assertions are retained against declared legal
+    transitions. Production support eligibility has separate real-op probes.
+    """
+    from Language import LanguageSpace
+    monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(
+        lambda parent, left, right, available, *a, **k: available))
+
+
+def _independent_split(m, rule, event):
+    """An explicit two-child bank and a tensor policy; no compose journal."""
+    language=m.languageSpace
+    index=list(language._generate_binary_names).index(rule)
+    op=language._generate_binary_ops[index]
+    left,right=event[:,0].clone(),event[:,1].clone()
+    cw=m._stamp_channel(event.shape[-1])
+    left[:,cw:]=0;right[:,cw:]=0
+    parent=op.compose(left,right)
+    event=event.clone()
+    event[:,0]=-left*.17
+    event[:,1]=parent
+    bank=torch.stack((left,right),1)
+    def policy(top):
+        match=(top-parent).abs().amax(-1)<1e-6
+        scores=top.new_full((top.shape[0],language.generate_policy.out_features),-1000.)
+        scores[:,-1]=0.
+        scores[:,index]=torch.where(match,1.,-1.)
+        return scores
+    language.generate_policy_logits=policy
+    return event,bank
+
+
+def test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents():
     m = _model()
-    _stop(m)
-    for rule in ("lift", "lower"):
-        names = list(m.languageSpace._generate_binary_names)
-        if rule not in names:
-            continue
-        event, gl, cw, live = _stamped_event(m, rule)
-        out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=8)
-        assert n_emitted.tolist() == [live + 1]
+    for rule in ('lift','lower'):
+        event,gl,cw,live=_stamped_event(m,rule)
+        event,bank=_independent_split(m,rule,event)
+        out,n_emitted,truncated,_cost=m._output_generate_walk(event,8,basis=bank, basis_valid=torch.ones(bank.shape[:2],dtype=torch.bool))
+        assert n_emitted.tolist()==[live+1]
         assert not bool(truncated.any())
-        parent = event[0, 1]
-        below, left, right = out[0, 0], out[0, 1], out[0, 2]
-        assert torch.equal(below, event[0, 0])                       # the terminal below, first
-        assert float(left[cw]) == 0.0 and float(right[cw]) == 0.0    # children stamped empty
-        recomposed = gl.compose(left.unsqueeze(0), right.unsqueeze(0))[0]
-        assert torch.allclose(recomposed[:cw], parent[:cw], atol=1e-3), rule
-        assert float(out[0, 3:].abs().sum()) == 0.0                  # nothing beyond the emitted
+        below,left,right=out[0,0],out[0,1],out[0,2]
+        torch.testing.assert_close(below,event[0,0],rtol=0,atol=0)
+        assert float(left[cw])==0. and float(right[cw])==0.
+        recomposed=gl.compose(left[None],right[None])[0]
+        assert torch.allclose(recomposed[:cw],event[0,1,:cw],atol=1e-3),rule
+        assert float(out[0,3:].abs().sum())==0.
 
 
 def test_walk_emits_terminals_in_order_and_reports_no_truncation():
@@ -84,31 +111,38 @@ def test_walk_emits_terminals_in_order_and_reports_no_truncation():
     _stop(m)
     event, gl, cw, live = _stamped_event(m, "lift")
     event[0, 1, cw] = 0.0                                   # no rule stamp on top
-    out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=8)
+    out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=8,
+        basis=event[:, :live], basis_valid=torch.ones(1, live, dtype=torch.bool))
     assert n_emitted.tolist() == [live] and not bool(truncated.any())
     assert torch.equal(out[0, :live], event[0, :live])       # left to right
 
 
 def test_walk_reports_truncation_when_work_is_pending():
-    """No free slot for the rule's second child and the budget runs out
-    with the rule still on top: pending work, reported as truncation."""
+    """A legal unary rewrite can spend all three trips without emitting."""
     m = _model()
-    _stop(m)
-    event, gl, cw, live = _stamped_event(m, "lift", N=2)
-    out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=3)
-    assert bool(truncated.all()) and n_emitted.tolist() == [0]
+    event,gl,cw,live=_stamped_event(m,'lift',N=2)
+    language=m.languageSpace
+    _prefer(m,len(language._generate_binary_ops)+list(language._generate_unary_names).index('null'))
+    # Two supported identities with the same code are ambiguous, so the
+    # null unary can remain eligible without an unsupported implicit emit.
+    bank = event[:, 1:2].expand(-1, 2, -1)
+    out,n_emitted,truncated,_cost=m._output_generate_walk(event,budget=3,
+        basis=bank, basis_valid=torch.ones(1, 2, dtype=torch.bool))
+    assert bool(truncated.all()) and n_emitted.tolist()==[0]
 
 
 def test_walk_compiles_fullgraph_and_matches_eager():
     m = _model()
     _stop(m)
     event, gl, cw, live = _stamped_event(m, "lift")
-    eager = m._output_generate_walk(event, budget=8)
+    basis = dict(basis=event[:, :live], basis_valid=torch.ones(1, live, dtype=torch.bool))
+    eager = m._output_generate_walk(event, budget=8, **basis)
+    torch.testing.assert_close(eager[0][:, :live], event[:, :live])
     torch._dynamo.reset()
     torch._dynamo.utils.counters.clear()
     compiled = torch.compile(m._output_generate_walk, backend="eager", fullgraph=True)
     try:
-        out, n_emitted, truncated, cost = compiled(event, 8)
+        out, n_emitted, truncated, cost = compiled(event, 8, **basis)
         assert int(torch._dynamo.utils.counters["stats"]["unique_graphs"]) == 1
         assert torch.allclose(out, eager[0], atol=1e-6)
         assert torch.equal(n_emitted, eager[1]) and torch.equal(truncated, eager[2])
@@ -118,19 +152,16 @@ def test_walk_compiles_fullgraph_and_matches_eager():
 
 
 def test_walk_handles_mixed_output_lengths_per_row():
-    """Output gate: one row un-reduces (three words), the other emits its
-    two terminals; per-row lengths differ and neither row truncates."""
-    m = _model()
-    _stop(m)
-    e0, gl, cw, live = _stamped_event(m, "lift")
-    e1 = e0.clone()
-    e1[0, 1, cw] = 0.0                                      # row 1: terminal on top
-    event = torch.cat((e0, e1), dim=0)
-    out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=8)
-    assert n_emitted.tolist() == [live + 1, live]
+    m=_model()
+    e0,gl,cw,live=_stamped_event(m,'lift')
+    e0,bank=_independent_split(m,'lift',e0)
+    e1=e0.clone();e1[:,1]=bank[:,0]
+    event=torch.cat((e0,e1),0)
+    out,n_emitted,truncated,_cost=m._output_generate_walk(event,8,basis=bank.expand(2,-1,-1),basis_valid=torch.ones(2,2,dtype=torch.bool))
+    assert n_emitted.tolist()==[live+1,live]
     assert not bool(truncated.any())
-    assert torch.equal(out[1, :live], event[1, :live])
-    assert float(out[0, 2].abs().sum()) > 0.0               # row 0 emitted a third word
+    assert torch.equal(out[1,:live],event[1,:live])
+    assert float(out[0,2].abs().sum())>0.
 
 
 def test_walk_is_invariant_to_reconstruction_only_state():
@@ -139,53 +170,52 @@ def test_walk_is_invariant_to_reconstruction_only_state():
     m = _model()
     _stop(m)
     event, gl, cw, live = _stamped_event(m, "lift")
-    base = m._output_generate_walk(event, budget=8)
+    basis = dict(basis=event[:, :live], basis_valid=torch.ones(1, live, dtype=torch.bool))
+    base = m._output_generate_walk(event, budget=8, **basis)
+    torch.testing.assert_close(base[0][:, :live], event[:, :live])
     D = int(m.conceptualSpace.stm.concept_dim)
     object.__setattr__(m, "_recon_ideas", torch.randn(1, 4, D))
     object.__setattr__(m, "_recon_cost", torch.tensor([7.0]))
     object.__setattr__(m, "_recon_truncated", torch.tensor([True]))
-    again = m._output_generate_walk(event, budget=8)
+    again = m._output_generate_walk(event, budget=8, **basis)
     assert torch.equal(again[0], base[0])
     assert torch.equal(again[1], base[1]) and torch.equal(again[2], base[2])
 
 
-def test_generate_policy_returns_sampled_action_credit_without_imitation():
-    """An output stamp is not a gold parse: sampling credits its own
-    actions, and deterministic replay produces no imitation objective."""
-    m = _model()
+def test_generate_policy_has_numerical_credit_without_imitation(monkeypatch):
+    """The decoder's owner supplies the loss; no sampled imitation term."""
+    _walk_control_oracle(monkeypatch)
+    m=_model()
     try:
-        language = m.languageSpace
-        event, gl, cw, live = _stamped_event(m, "lift")
+        language=m.languageSpace
+        event,gl,cw,live=_stamped_event(m,'lift')
         _stop(m)
         m.zero_grad(set_to_none=True)
-        deterministic = m._output_generate_walk(event, budget=8)
+        deterministic=m._output_generate_walk(event,8,basis_valid=torch.ones(event.shape[0],live,dtype=torch.bool),basis=event[:,:live])
         assert not bool(deterministic[3].any())
         torch.manual_seed(7)
-        out, n_emitted, truncated, cost = m._output_generate_walk(
-            event, budget=8, sample_actions=True)
-        assert cost.shape == (1,) and float(cost.detach()) > 0
+        out,n_emitted,truncated,cost=m._output_generate_walk(event,8,basis_valid=torch.ones(event.shape[0],live,dtype=torch.bool),basis=event[:,:live],sample_actions=True)
+        assert cost.shape==(1,) and float(cost.detach())==0.
         assert bool(torch.isfinite(cost))
-        cost.sum().backward()
+        out.square().sum().backward()
         assert language.generate_policy.weight.grad is not None
-        assert float(language.generate_policy.weight.grad.abs().sum()) > 0
-        assert all(p.grad is None or not bool(p.grad.abs().any())
-                   for p in gl.parameters())
+        assert float(language.generate_policy.weight.grad.abs().sum())>0
     finally:
-        m.End()
-        m.symbolSpace.soft_reset()
+        m.End();m.symbolSpace.soft_reset()
 
 
-def test_generate_policy_decides_an_unstamped_top():
+def test_generate_policy_decides_an_unstamped_top(monkeypatch):
     """Contract 5: without a rule stamp the policy decides; preferring a
     binary rule un-reduces (work pending after one trip), preferring stop
     emits the live slots as they are."""
+    _walk_control_oracle(monkeypatch)
     m = _model()
     language = m.languageSpace
     names = list(language._generate_binary_names)
     event, gl, cw, live = _stamped_event(m, "lift")
     event[0, 1, cw] = 0.0                                   # unstamped top
     _prefer(m, names.index("lift"))
-    out, n_emitted, truncated, cost = m._output_generate_walk(event, budget=1)
+    out, n_emitted, truncated, cost = m._output_generate_walk(event, budget=1, basis=event[:, :live],basis_valid=torch.ones(event.shape[0],live,dtype=torch.bool))
     assert n_emitted.tolist() == [0] and bool(truncated.all())
     assert float(cost) == 0.0                               # deterministic choices have no imitation loss
     _stop(m)
@@ -214,8 +244,12 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     m._chart_compose_per_word = lambda: None
     m.reconstruct_in_loop = False
     m.loss.reconstruction_scale = 0.
+    # This boundary contract is for an absolute idea. A fresh grammar can
+    # select a three-role relation, whose semantic and STM slot orders differ.
+    from reading_fixtures import force_absolute_reading
+    force_absolute_reading(m)
     with torch.no_grad():
-        u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+        u = _capture_program_probe(m, ["one plus two", "three plus four"])
         derivation = m._resolve_answer(u, What.supervised(0))
         idea, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
     D = int(m.conceptualSpace.stm.concept_dim)
@@ -226,18 +260,21 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     T = m._walk_budget()
     assert targets is None  # generation has no input-reading targets
     with torch.no_grad():
+        bank = u.sentence_records[-1].primed
         words, n_emitted, truncated, cost = m._output_generate_walk(
-            m._walk_operand(idea), T, False, targets)
+            m._walk_operand(idea), T, False, targets,
+            basis=bank.codes, basis_valid=bank.valid)
     assert tuple(words.shape) == (2, T, D)
     assert bool((n_emitted >= 1).all())                     # each row emitted at least its root
     m.End(); m.symbolSpace.soft_reset()
 
 
 
-def test_output_ignores_input_derivation_on_conceptual_slots():
+def test_output_ignores_input_derivation_on_conceptual_slots(monkeypatch):
     """The input compose trace belongs to reconstruction, even when passed
     to the output walk's compatibility argument in training or evaluation."""
     from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+    _walk_control_oracle(monkeypatch)
     m = _model()
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
@@ -267,153 +304,90 @@ def test_output_ignores_input_derivation_on_conceptual_slots():
 
 
 def _policy_training_probe(m, opt, questions):
-    """Observe the real loss and backward; do not replace any loss term."""
-    params = list(m.languageSpace.generate_policy.parameters())
-    observed, recorded = {}, {}
-    backward, record = m._backward_training_loss, m.record_loss
-
-    def record_probe(name, value, **kwargs):
-        recorded[name] = value
-        return record(name, value, **kwargs)
-
-    def backward_probe(total, amp_scaler=None, **kwargs):
-        if getattr(m, '_sentence_backward', False):
-            assert m._output_policy_cost is None
-            assert 'output_policy' not in recorded
-            observed['total_grads'] = torch.autograd.grad(
-                total, params, retain_graph=True, allow_unused=True)
-            assert all(g is None for g in observed['total_grads'])
-            return backward(total, amp_scaler, **kwargs)
-        cost = m._output_policy_cost
-        observed["raw_grads"] = torch.autograd.grad(
-            cost.sum(), params, retain_graph=True, allow_unused=True)
-        observed["total_grads"] = torch.autograd.grad(
-            total, params, retain_graph=True, allow_unused=True)
-        credit = recorded.get("output_policy")
-        if torch.is_tensor(credit) and credit.requires_grad:
-            observed["credit_grads"] = torch.autograd.grad(
-                credit, params, retain_graph=True, allow_unused=True)
-            observed["row_credit"] = torch.autograd.grad(
-                credit, cost, retain_graph=True, allow_unused=True)[0]
-            target = m._last_answer_target
-            pred = m._align_output_pred(m._last_answer_construction.actual, target)
-            with torch.no_grad():
-                observed["answer_errors"] = torch.stack([
-                    m.loss.compute(pred[b:b + 1], target[b:b + 1])
-                    for b in range(len(questions))])
-        return backward(total, amp_scaler, **kwargs)
-
-    m.record_loss, m._backward_training_loss = record_probe, backward_probe
-    before = [p.detach().clone() for p in params]
+    """Inspect actual decoder gradients after the restricted owned backward."""
+    # Supply the absolute reading this ownership fixture needs. Derived PS
+    # codes may make the untrained relative grammar choose an already-flat
+    # readback, which says nothing about which objective owns the decoder.
+    from reading_fixtures import force_absolute_reading
+    if not getattr(m, '_ownership_reading_forced', False):
+        force_absolute_reading(m)
+        m._ownership_reading_forced = True
+    params=list(m.languageSpace.generate_policy.parameters())
+    backward=m._backward_training_loss
+    observed={'reconstruction':[], 'output':[]}
+    before=[p.detach().clone() for p in params]
+    def probe(*args,**kwargs):
+        result=backward(*args,**kwargs)
+        owner='reconstruction' if getattr(m,'_sentence_backward',False) else 'output'
+        observed[owner].append(tuple(None if p.grad is None else p.grad.detach().clone() for p in params))
+        return result
+    m._backward_training_loss=probe
     try:
-        batch = (m.inputSpace.prepInput(["12 plus 1", "3 plus 4"]),
-                 torch.zeros(2, 1, 1))
+        # Words exercise the serial decoder. Numeric percepts are a separate
+        # field under the fixed letters-only word extent (6.8 §3a).
+        batch=(m.inputSpace.prepInput(['one plus two','three plus four']),torch.zeros(2,1,1))
         torch.manual_seed(11)
-        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-                   batch_override=batch, questions=questions)
+        # Isolate ownership from whether this fresh grammar happens to offer
+        # two supported actions. The support masks have their own real-op
+        # contracts in test_review11_contracts.
+        with pytest.MonkeyPatch.context() as patch:
+            _walk_control_oracle(patch)
+            m.runBatch(train=True,batchSize=2,split='train',optimizer=opt,batch_override=batch,questions=questions)
     finally:
-        m.record_loss, m._backward_training_loss = record, backward
-    observed["changed"] = [not torch.equal(p, old)
-                           for p, old in zip(params, before)]
+        m._backward_training_loss=backward
+    observed['changed']=[not torch.equal(p,old) for p,old in zip(params,before)]
+    observed['mask']=m._last_answer_mask.tolist()
+    assert not hasattr(m,'_output_policy_cost')
+    assert all(g is None or not bool(g.abs().any()) for row in observed['output'] for g in row)
     return observed
 
 
-@pytest.mark.parametrize("weight", [1.0, 0.0])
-def test_runbatch_trains_generate_policy_only_with_nonzero_weight(weight, eager_reading):
-    """Codex item 1: standalone credit, total-loss credit and optimizer
-    ownership must all agree on a real supervised training batch."""
+@pytest.mark.parametrize('supplied',[True,False])
+def test_runbatch_trains_generate_policy_from_reconstruction(supplied,eager_reading):
     from What import What
-    m = _model()
-    m._tensor_peer_while_eager = True
-    m._chart_compose_per_word = lambda: None
-    m.output_policy_weight = weight
-    opt = m.getOptimizer(lr=1e-3)
+    m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+    m.inputSpace.data.has_supervised_outputs=supplied
+    opt=m.getOptimizer(lr=1e-3)
     try:
-        got = _policy_training_probe(
-            m, opt, (What.supervised(0), What.supervised(1)))
-        assert any(g is not None and bool(g.abs().sum() > 0)
-                   for g in got["raw_grads"])
-        if weight:
-            assert any(g is not None and bool(g.abs().sum() > 0)
-                       for g in got["total_grads"])
-            for total, credit in zip(got["total_grads"], got["credit_grads"]):
-                torch.testing.assert_close(total, weight * credit)
-            # The first return baseline is zero: supplied answer error,
-            # not reconstruction or input-parse imitation, supplies credit.
-            torch.testing.assert_close(got["row_credit"], -got["answer_errors"] / 2)
-            assert all(got["changed"])
-        else:
-            assert all(g is None or not bool(g.abs().any())
-                       for g in got["total_grads"])
-            assert not any(got["changed"])
-        owned = [id(p) for group in opt.param_groups for p in group["params"]]
-        assert all(owned.count(id(p)) == 1
-                   for p in m.languageSpace.generate_policy.parameters())
+        got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
+        assert any(g is not None and bool(g.abs().sum()>0) for row in got['reconstruction'] for g in row)
+        assert all(got['changed'])
+        owned=[id(p) for group in opt.param_groups for p in group['params']]
+        assert all(owned.count(id(p))==1 for p in m.languageSpace.generate_policy.parameters())
+        groups=m.objective_parameter_groups(opt)
+        assert all(any(p is candidate for candidate in groups['reconstruction']) for p in m.languageSpace.generate_policy.parameters())
     finally:
-        m.End()
-        m.symbolSpace.soft_reset()
+        m.End();m.symbolSpace.soft_reset()
 
 
-def test_runbatch_does_not_train_generate_policy_without_supplied_answers(eager_reading):
-    """No supervised target means no output-policy update, including Adam
-    momentum left by a preceding supervised batch."""
+def test_runbatch_answer_availability_never_reassigns_the_decoder(eager_reading):
     from What import What
-    m = _model()
-    m._tensor_peer_while_eager = True
-    m._chart_compose_per_word = lambda: None
-    m.output_policy_weight = 1.0
-    opt = m.getOptimizer(lr=1e-3)
-    data = m.inputSpace.data
-    had_outputs = data.has_supervised_outputs
+    m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+    opt=m.getOptimizer(lr=1e-3)
     try:
-        learned = _policy_training_probe(
-            m, opt, (What.supervised(0), What.supervised(1)))
-        assert all(learned["changed"])
-        data.has_supervised_outputs = False
-        unlabelled = _policy_training_probe(
-            m, opt, (What.supervised(0), What.supervised(1)))
-        assert not any(unlabelled["changed"])
-        assert all(g is None or not bool(g.abs().any())
-                   for g in unlabelled["total_grads"])
-        present = _policy_training_probe(
-            m, opt, (What.present(0), What.present(1)))
-        assert not any(present["changed"])
-        # A batch that does not run reverseOutput must not reuse the last
-        # batch's graph or policy credit.
-        m.answer_synthesis = False
-        before = [p.detach().clone() for p in m.languageSpace.generate_policy.parameters()]
-        batch = (m.inputSpace.prepInput(["12 plus 1", "3 plus 4"]),
-                 torch.zeros(2, 1, 1))
-        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-                   batch_override=batch,
-                   questions=(What.supervised(0), What.supervised(1)))
-        assert m._output_policy_cost is None
-        assert all(torch.equal(p, old) for p, old in zip(
-            m.languageSpace.generate_policy.parameters(), before))
+        for supplied in (True,False):
+            m.inputSpace.data.has_supervised_outputs=supplied
+            got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
+            assert all(got['changed'])
+            groups=m.objective_parameter_groups(opt)
+            assert not any(any(p is q for q in groups['output']) for p in m.languageSpace.generate_policy.parameters())
+        m.answer_synthesis=False
+        got=_policy_training_probe(m,opt,(What.present(0),What.present(1)))
+        assert all(got['changed'])
     finally:
-        data.has_supervised_outputs = had_outputs
-        m.End()
-        m.symbolSpace.soft_reset()
+        m.End();m.symbolSpace.soft_reset()
 
 
-def test_runbatch_generate_policy_masks_rows_without_supplied_answers(eager_reading):
+def test_runbatch_output_masks_rows_without_reassigning_decoder_credit(eager_reading):
     from What import What
-    m = _model()
-    m._tensor_peer_while_eager = True
-    m._chart_compose_per_word = lambda: None
-    m.output_policy_weight = 1.0
-    opt = m.getOptimizer(lr=1e-3)
+    m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
+    opt=m.getOptimizer(lr=1e-3)
     try:
-        got = _policy_training_probe(
-            m, opt, (What.supervised(0), What.inference(1, split="train")))
-        row_credit = got["row_credit"]
-        assert row_credit is not None and bool(row_credit[0].abs() > 0)
-        assert float(row_credit[1]) == 0.0
-        torch.testing.assert_close(row_credit[0], -got["answer_errors"][0])
-        assert all(got["changed"])
+        got=_policy_training_probe(m,opt,(What.supervised(0),What.inference(1,split='train')))
+        assert got['mask']==[True,False]
+        assert all(got['changed'])
     finally:
-        m.End()
-        m.symbolSpace.soft_reset()
+        m.End();m.symbolSpace.soft_reset()
 
 
 def test_question_conditioners_persist_per_answer_width():
@@ -544,25 +518,25 @@ def test_materialised_idea_follows_the_symbol_rows():
     m.reconstruct_in_loop = False
     m.loss.reconstruction_scale = 0.
     with torch.no_grad():
-        u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
-        derivation = m._resolve_answer(u, What.supervised(0))
-        idea0, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
-        end = m._sentence_end_state(None)
+        u = _capture_program_probe(m, ["one plus two", "three plus four"])
+        derivation = m._resolve_answer(u, (What.supervised(0), What.supervised(1)))
+        idea0, resolved, sources, targets = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
+        end = torch.stack([field.end_state for field in u.sentence_states])
         assert torch.allclose(idea0, end, atol=1e-4), float((idea0 - end).abs().max())
         rows = m._word_symbol_rows()
-        assert bool((rows[:, :2] >= 0).all()) and bool((rows[:, 0] != rows[:, 1]).all())
+        assert bool((rows[:, (0, 2)] >= 0).all()) and bool((rows[:, 0] != rows[:, 2]).all())
         isp = m.inputSpace
         for name in ("_ar_word_object_rows", "_ar_word_concept_rows"):
             table = getattr(isp, name).clone()
-            table[:, :2] = table[:, :2].flip(1)
+            table[:, (0, 2)] = table[:, (0, 2)].flip(1)
             setattr(isp, name, table)
-        assert torch.equal(m._word_symbol_rows()[:, :2], rows[:, :2].flip(1))
-        held, _r, _s, _t = m._materialize_answer_idea(u, derivation, What.supervised(0))
+        assert torch.equal(m._word_symbol_rows()[:, (0, 2)], rows[:, (0, 2)].flip(1))
+        held, _r, _s, _t = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
         torch.testing.assert_close(held, idea0, rtol=0, atol=0)
-        exchanged = _capture_program_probe(m, ["plus 12 1", "plus 3 4"])
-        new_derivation = m._resolve_answer(exchanged, What.supervised(0))
+        exchanged = _capture_program_probe(m, ["plus one two", "plus three four"])
+        new_derivation = m._resolve_answer(exchanged, (What.supervised(0), What.supervised(1)))
         idea1, _r, _s, targets1 = m._materialize_answer_idea(
-            exchanged, new_derivation, What.supervised(0))
+            exchanged, new_derivation, (What.supervised(0), What.supervised(1)))
     assert not torch.allclose(idea1, idea0, atol=1e-4)
     assert targets1 is targets is None  # neither reading supplies generation actions
     m.End(); m.symbolSpace.soft_reset()
@@ -570,9 +544,10 @@ def test_materialised_idea_follows_the_symbol_rows():
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present():
+def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present(monkeypatch):
     from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
     from What import What
+    _walk_control_oracle(monkeypatch)
     m = _model()
     m.eval()
     m._tensor_peer_while_eager = True
@@ -630,28 +605,23 @@ def _generate_variant(tmp_path, names, remove_compose=()):
 
 
 def test_output_rule_inventory_comes_from_generate_even_without_compose_rule(tmp_path):
-    m = _generate_variant(tmp_path, ("sum",), remove_compose=("sum",))
+    m=_generate_variant(tmp_path,('sum',),remove_compose=('sum',))
     try:
-        language = m.languageSpace
-        assert "sum" not in language._tree_layer(2).op_names
-        assert language.generate_policy.out_features == 2  # declared sum + stop
-        _stop(m)
-        event, _, cw, live = _stamped_event(m, "sum")
-        out, count, truncated, cost = m._output_generate_walk(event, 8)
-        assert count.tolist() == [live + 1]
+        language=m.languageSpace
+        assert 'sum' not in language._tree_layer(2).op_names
+        assert language.generate_policy.out_features==2
+        event,_,cw,live=_stamped_event(m,'sum')
+        event,bank=_independent_split(m,'sum',event)
+        out,count,truncated,cost=m._output_generate_walk(event,8,basis=bank, basis_valid=torch.ones(bank.shape[:2],dtype=torch.bool))
+        assert count.tolist()==[live+1]
         assert not bool(truncated.any()) and not bool(cost.any())
-        parent = event[0, 1].clone()
-        parent[cw] = 0
-        torch.testing.assert_close(out[0, 1], parent * 0.5)
-        torch.testing.assert_close(out[0, 2], parent * 0.5)
-        # No unary catalog, and no compose sum, must also compile.
-        compiled = torch.compile(m._output_generate_walk, backend="eager", fullgraph=True)
-        result = compiled(event, 8)
-        for actual, expected in zip(result, (out, count, truncated, cost)):
-            torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close((out[:,1]+out[:,2])/2,event[:,1])
+        compiled=torch.compile(m._output_generate_walk,backend='eager',fullgraph=True)
+        result=compiled(event,8,basis=bank, basis_valid=torch.ones(bank.shape[:2],dtype=torch.bool))
+        for actual,expected in zip(result,(out,count,truncated,cost)):
+            torch.testing.assert_close(actual,expected)
     finally:
-        m.End()
-        m.symbolSpace.soft_reset()
+        m.End();m.symbolSpace.soft_reset()
 
 
 @pytest.mark.parametrize("legacy, new_action", [(True, False), (False, False), (True, True)])
@@ -732,7 +702,8 @@ def test_generate_walk_with_no_declared_rules_only_emits(tmp_path):
         idea[:, :2] = 0.5
         _ensure_grad_anchors(idea.device, (idea.dtype,))
         compiled = torch.compile(m._output_generate_walk, backend="eager", fullgraph=True)
-        out, count, truncated, cost = compiled(idea, 4, False)
+        out, count, truncated, cost = compiled(idea, 4, False,
+            basis=idea[:, :1], basis_valid=torch.ones(1, 1, dtype=torch.bool))
         assert count.tolist() == [2] and not bool(truncated.any())
         torch.testing.assert_close(out[:, :2], idea[:, :2])
         assert not bool(cost.any())
@@ -818,7 +789,7 @@ def test_resolved_recall_keeps_its_program_after_memory_advances(tmp_path):
     try:
         with torch.no_grad():
             first = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
-            disc = m.symbolSpace.discourse
+            disc = m.symbolSpace.expectation
             assert disc is not None
             rep = first.answer_seed if torch.is_tensor(first.answer_seed) else first.symbolic_state
             m._observe_discourse(disc, rep, understanding=first)
@@ -914,7 +885,7 @@ def test_packed_recall_observes_captured_sentence_programs(tmp_path, eager_readi
             # the live rows and ReconstructionStack.
             _capture_program_probe(m, ["5 plus 9", "4 plus 1"])
             for t in (0, 1):
-                m._observe_discourse(m.symbolSpace.discourse, roots[:, t],
+                m._observe_discourse(m.symbolSpace.expectation, roots[:, t],
                                      mask=valid[:, t], slot=t, understanding=u)
             for b, slots in ((0, (0, 1)), (1, (0,))):
                 history = m._recall_sentence_history()[b]

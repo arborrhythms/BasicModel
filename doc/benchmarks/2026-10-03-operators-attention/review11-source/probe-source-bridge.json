@@ -1,0 +1,18 @@
+{
+  "review11-focused": {
+    "source_differences": [
+      "test/test_global_consume.py"
+    ],
+    "production_source_matched": true
+  },
+  "review11-reader-ported": {
+    "source_differences": [],
+    "production_source_matched": true
+  },
+  "review11-observer": {
+    "source_differences": [
+      "test/test_global_consume.py"
+    ],
+    "production_source_matched": true
+  }
+}

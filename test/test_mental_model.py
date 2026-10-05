@@ -69,7 +69,7 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         self.assertNotIn('isEqual', Language.TheGrammar.s_methods)
         self.assertIn('conjunction', Language.TheGrammar.s_methods)
         self.assertIn('disjunction', Language.TheGrammar.s_methods)
-        self.assertIn('exist', Language.TheGrammar.s_methods)
+        self.assertNotIn('exist', Language.TheGrammar.s_methods)
 
     def test_subspace_words_clearable(self):
         """SubSpace word lists can be cleared on all space_roles."""
@@ -115,7 +115,6 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         'conjunction', 'disjunction',
         'intersection', 'union',
         'lift', 'lower',
-        'exist',
     }
 
     def setUp(self):

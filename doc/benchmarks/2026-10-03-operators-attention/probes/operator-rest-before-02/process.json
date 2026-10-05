@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_accessible_mind.py",
+    "test/test_grammar_fixtures.py",
+    "test/test_grammar_binary_ops.py",
+    "test/test_grammar_start_rule.py",
+    "test/test_grammar_space_scoped_starts.py",
+    "test/test_verb_adverb_grammar_ops.py",
+    "test/test_adverb_eig_edit.py",
+    "test/test_lift_lower_binary_grammar_ops.py",
+    "test/test_thought_model_fixture.py",
+    "test/test_ispart_query_dispatch.py",
+    "test/test_selected_query_compose.py",
+    "test/test_selected_relation_meaning.py",
+    "test/test_concept_binding_operators.py"
+  ],
+  "pid": 84421,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 531285456,
+  "elapsed_seconds": 6.4584992910095025,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/operator-rest-before-02/run.log"
+}

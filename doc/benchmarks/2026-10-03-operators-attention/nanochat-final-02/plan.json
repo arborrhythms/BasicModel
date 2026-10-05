@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "bin/eval_nanochat_grammar.py",
+    "score",
+    "--fresh",
+    "--device",
+    "cpu",
+    "--output",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/nanochat-final-02/measurement.json"
+  ],
+  "seed": "existing XML evaluator seed",
+  "memory_bytes": 8589934592,
+  "timeout": 1800,
+  "additional_training_runs": 0
+}

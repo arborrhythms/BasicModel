@@ -18,7 +18,7 @@ def _meaning():
                              scope={"place": "workshop"})
 
 
-def test_exist_executor_keeps_all_roles_and_conflicting_fact_sources():
+def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
     cs = _cs()
     refs = tuple(('sym', cs.new_concept()) for _ in range(3))
     for ref in refs:
@@ -31,14 +31,14 @@ def test_exist_executor_keeps_all_roles_and_conflicting_fact_sources():
     second = store.append_meaning(idea, kind="fact", trust=-0.4)
     store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher")
     store.set_origin(second, store.ORIGIN_USER, text="witness")
-    result = _signature('exist', 'I1').invoke(_context(cs, store=store), idea)
-    assert result["support_true"] == pytest.approx(0.6)
-    assert result["support_false"] == pytest.approx(0.4)
-    torch.testing.assert_close(result["meaning"].roles, idea.roles)
-    assert {item["text"] for item in result["candidates"]} == {"teacher", "witness"}
-    assert {item['occurrence'] for item in result['candidates']} == {
+    result = _signature('what', 'I1').invoke(
+        _context(cs, store=store), replace(idea, mode='interrogative'))
+    assert sorted(item['trust'] for item in result['value']) == pytest.approx([-.4, .6])
+    for item in result['value']:
+        torch.testing.assert_close(item['meaning'].roles, idea.roles)
+    assert {item["text"] for item in result["value"]} == {"teacher", "witness"}
+    assert {item['occurrence'] for item in result['value']} == {
         store.occurrence_of(first), store.occurrence_of(second)}
-    assert all('meaning' not in item for item in result['candidates'])
     assert len(store) == 2
 
 
@@ -139,7 +139,7 @@ def test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_predi
     marker = object()
     layer._inter_last_meaning[0] = marker
     space = SimpleNamespace(outputShape=(1, layer.concept_dim))
-    model = SimpleNamespace(symbolSpace=SimpleNamespace(discourse=layer))
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(expectation=layer))
     result = _signature('arma', 'I1').invoke(
         _context(space, model=model, discourse=layer),
         ConceptualMeaning.from_description(roles))

@@ -70,7 +70,7 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
     ss = model.symbolSpace
     language = model.languageSpace
     stm = cs.stm
-    symbolic_passes = tuple(range(max(0, int(model.symbolicOrder))))
+    symbolic_passes = tuple(range(max(0, int(model.concept_order_limit))))
     batch = int(isp._ar_embedded_N.shape[0])
 
     part_ids = isp._ar_word_part_ids[:, :1, :]
@@ -376,7 +376,7 @@ def main(argv=None):
             dataset = loader.dataset
 
             def word_count(sentence):
-                return len(Meronomy.word_spans(
+                return len(Meronomy.percept_spans(
                     str(sentence).encode("ascii", errors="replace")))
 
             while not dataset.packed_done():
@@ -399,7 +399,7 @@ def main(argv=None):
                 texts = list(texts)
                 corpus_batches.append(texts)
                 corpus_batch_max_words.append(max(
-                    len(Meronomy.word_spans(str(sentence).encode("utf-8")))
+                    len(Meronomy.percept_spans(str(sentence).encode("utf-8")))
                     for sentence in texts))
                 corpus_sentence_counts.append(len(texts))
                 corpus_hard_eos.append([True] * len(texts))

@@ -55,8 +55,9 @@ def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path, 
                 understanding, (What.supervised(0), What.supervised(1)))
             # Make an explicit concluded idea. A semantic input to generation
             # can differ from the input sentence; its direction comes from the
-            # actual understood first row, rather than an input surface witness.
-            direction = held.conceptual_answer[0].sum(0)
+            # actual retained first word form. A randomly composed root may
+            # legitimately be erased by non; this probe supplies its own idea.
+            direction = understanding.sentence_records[-1].word_values[0, 0]
             direction = torch.nn.functional.normalize(direction, dim=0)
             assert bool(direction.abs().sum() > 0)
             ideas = torch.zeros_like(held.conceptual_answer)
@@ -65,14 +66,20 @@ def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path, 
             held = replace(held, conceptual_answer=ideas)
             language = model.languageSpace
             policy = language.generate_policy
-            choice = list(language._generate_binary_names).index("sum")
-            # Sum's witness-free inverse halves its parent. Expand values of
+            choice = list(language._generate_binary_names).index("chunk")
+            # Chunk is additive; its equal-child inverse halves its parent. Expand values of
             # length 1 and .5, then emit .25: four leaves in row 0, one in row 1.
             policy.weight.zero_()
             policy.bias.fill_(-1000)
             policy.bias[-1] = 0
             policy.weight[choice].copy_(4 * direction[:policy.in_features])
             policy.bias[choice] = -1.5
+            bank=understanding.sentence_records[-1].primed
+            codes=torch.stack((direction*.25,direction*.5,direction),0)[None].expand(2,-1,-1)
+            bank=replace(bank,codes=codes,rows=torch.arange(3)[None].expand(2,-1),
+                         weights=torch.ones(2,3),own=torch.ones(2,3,dtype=torch.bool),
+                         bytes=bank.bytes[:,:1].expand(-1,3,-1),byte_valid=bank.byte_valid[:,:1].expand(-1,3,-1))
+            understanding=replace(understanding,sentence_records=(replace(understanding.sentence_records[-1],primed=bank),))
             construction = model.reverseOutput(understanding, held)
             lengths = (construction.concepts.abs().amax(-1) > 0).sum(-1)
         input_lengths = model.inputSpace._word_active_mask.sum(-1).tolist()

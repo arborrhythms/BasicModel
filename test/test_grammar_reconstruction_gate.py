@@ -1,8 +1,8 @@
-"""Grammar read-back chooses words from the ended state, with soft inverse credit."""
+"""Grammar read-back chooses words from the ended state, with a detached hard inverse."""
 import torch
 
 
-def test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient():
+def test_symmetric_reverse_returns_one_least_residual_pair_without_search_gradient():
     from Language import LanguageSpace, ConjunctionLayer
     operation = ConjunctionLayer()
     basis = torch.tensor([[[.2, 0.], [0., .2]]])
@@ -13,18 +13,8 @@ def test_symmetric_reverse_returns_one_least_residual_pair_with_soft_gradient():
     assert available.tolist() == [True]
     pair = torch.stack((left[0], right[0]))
     assert torch.equal(pair, basis[0]) or torch.equal(pair, basis[0].flip(0))
-    older, newer = basis[:, :, None], basis[:, None, :]
-    folded = operation.compose(older, newer)
-    # Equal bank addresses denote the same reference, so conjunction is
-    # idempotent on the diagonal; equal vectors at distinct addresses are not.
-    folded = torch.where(torch.eye(2,dtype=torch.bool)[None,:,:,None],older,folded)
-    residual = (folded - parent[:, None, None]).square().mean(-1)
-    weights = (-residual / .01).flatten(1).softmax(-1).reshape(1, 2, 2)
-    soft = ((older[..., 0] + 3 * newer[..., 1]) * weights).sum((1, 2))
-    expected = torch.autograd.grad(soft.sum(), parent, retain_graph=True)[0]
-    assert bool(expected.abs().any())
-    actual = torch.autograd.grad((left[..., 0] + 3 * right[..., 1]).sum(), parent)[0]
-    torch.testing.assert_close(actual, expected)
+    assert not left.requires_grad and not right.requires_grad
+    assert parent.grad is None
 
 
 def test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal(monkeypatch):

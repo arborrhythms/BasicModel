@@ -1,0 +1,166 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+Scored 1/500 items
+Scored 2/500 items
+Scored 3/500 items
+Scored 4/500 items
+Scored 5/500 items
+Scored 6/500 items
+Scored 7/500 items
+Scored 8/500 items
+Scored 9/500 items
+Scored 10/500 items
+Scored 11/500 items
+Scored 12/500 items
+Scored 13/500 items
+Scored 14/500 items
+Scored 15/500 items
+Scored 16/500 items
+Scored 17/500 items
+Scored 18/500 items
+Scored 19/500 items
+Scored 20/500 items
+Scored 21/500 items
+Scored 22/500 items
+Scored 23/500 items
+Scored 24/500 items
+Scored 25/500 items
+Scored 26/500 items
+Scored 27/500 items
+Scored 28/500 items
+Scored 29/500 items
+Scored 30/500 items
+Scored 31/500 items
+Scored 32/500 items
+Scored 33/500 items
+Scored 34/500 items
+Scored 35/500 items
+Scored 36/500 items
+Scored 37/500 items
+Scored 38/500 items
+Scored 39/500 items
+Scored 40/500 items
+Scored 41/500 items
+Scored 42/500 items
+Scored 43/500 items
+Scored 44/500 items
+Scored 45/500 items
+Scored 46/500 items
+Scored 47/500 items
+Scored 48/500 items
+Scored 49/500 items
+Scored 50/500 items
+Scored 51/500 items
+Scored 52/500 items
+Scored 53/500 items
+Scored 54/500 items
+Scored 55/500 items
+Scored 56/500 items
+Scored 57/500 items
+Scored 58/500 items
+Scored 59/500 items
+Scored 60/500 items
+Scored 61/500 items
+Scored 62/500 items
+Scored 63/500 items
+Scored 64/500 items
+Scored 65/500 items
+Scored 66/500 items
+Scored 67/500 items
+Scored 68/500 items
+Scored 69/500 items
+Scored 70/500 items
+Scored 71/500 items
+Scored 72/500 items
+Scored 73/500 items
+Scored 74/500 items
+Scored 75/500 items
+Scored 76/500 items
+Scored 77/500 items
+Scored 78/500 items
+Scored 79/500 items
+Scored 80/500 items
+Scored 81/500 items
+Scored 82/500 items
+Scored 83/500 items
+Scored 84/500 items
+Scored 85/500 items
+Scored 86/500 items
+Scored 87/500 items
+Scored 88/500 items
+Scored 89/500 items
+Scored 90/500 items
+Scored 91/500 items
+Scored 92/500 items
+Scored 93/500 items
+Scored 94/500 items
+Scored 95/500 items
+Scored 96/500 items
+Scored 97/500 items
+Scored 98/500 items
+Scored 99/500 items
+Scored 100/500 items
+Scored 101/500 items
+Scored 102/500 items
+Scored 103/500 items
+Scored 104/500 items
+Scored 105/500 items
+Scored 106/500 items
+Scored 107/500 items
+Scored 108/500 items
+Scored 109/500 items
+Scored 110/500 items
+Scored 111/500 items
+Scored 112/500 items
+Scored 113/500 items
+Scored 114/500 items
+Scored 115/500 items
+Scored 116/500 items
+Scored 117/500 items
+Scored 118/500 items
+Scored 119/500 items
+Scored 120/500 items
+Scored 121/500 items
+Scored 122/500 items
+Scored 123/500 items
+Scored 124/500 items
+Scored 125/500 items
+Scored 126/500 items
+Scored 127/500 items
+Scored 128/500 items
+Scored 129/500 items
+Scored 130/500 items
+Scored 131/500 items
+Scored 132/500 items
+Scored 133/500 items
+Scored 134/500 items
+Scored 135/500 items
+Scored 136/500 items
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 829, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 823, in main
+    return run_score(args) if args.command == "score" else run_trace(args)
+           ^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 726, in run_score
+    result = score_manifest(
+             ^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 670, in score_manifest
+    intact = _score_control_batch(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/eval_nanochat_grammar.py", line 619, in _score_control_batch
+    model._lex_embed_stem(input_tensor)
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13176, in _lex_embed_stem
+    self._stage_serial_concept_rows()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 11372, in _stage_serial_concept_rows
+    triple = owner.interpret_word(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py", line 16919, in interpret_word
+    word = self.interpret.lookup_word(word_parts, word_whole, form=key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py", line 127, in lookup_word
+    self._preflight()
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py", line 30, in _preflight
+    raise RuntimeError('definition store capacity exhausted; no word was admitted')
+RuntimeError: definition store capacity exhausted; no word was admitted

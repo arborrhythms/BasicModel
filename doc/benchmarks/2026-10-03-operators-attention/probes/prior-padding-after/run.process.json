@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py",
+    "test/test_nanochat_grammar_eval.py"
+  ],
+  "pid": 10529,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 744163392,
+  "elapsed_seconds": 12.41248483301024,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/prior-padding-after/run.log"
+}

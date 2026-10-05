@@ -24,37 +24,20 @@ def test_saved_roots_follow_operand_unaries(monkeypatch, compiled):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
     language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
     language.local_op_from_rule_ids = LanguageSpace.local_op_from_rule_ids
-    binary = SimpleNamespace(ops=[conjunction])
-    unary = SimpleNamespace(unary_ops=[negation])
-    language._tree_layer = lambda arity: binary if arity == 2 else unary
-    B, W, D, cap = 4, 2, 10, 3
-    steps = W*3+(W+1)*2*cap
-    rule_ids = torch.zeros(B, steps, dtype=torch.long)
-    arities = torch.zeros_like(rule_ids)
-    arities[:, 3] = 2
-    arities[2:, 0] = 1
-    arities[[1,3], 4] = 1
-    rule_ids[arities == 1] = 1
-    trace = SimpleNamespace(choices=lambda: (rule_ids, arities, arities > 0),
-        _choice_positions=torch.zeros_like(rule_ids),
-        rule_map=lambda arity: torch.tensor([0 if arity == 2 else 1]))
-    owner = SimpleNamespace(inputSpace=SimpleNamespace(_word_active_mask=torch.ones(B,W,dtype=torch.bool)),
-        languageSpace=language, conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=cap)),
-        _reconstruction_stack=lambda: trace, reconstruction_basis_limit=2)
-    owner._byte_word_cost = MethodType(Models.BasicModel._byte_word_cost, owner)
-    owner._tensor_write_word_column = Models.BasicModel._tensor_write_word_column
-    def eager_loop(condition, body, values):
-        while bool(condition(*values)):
-            values = body(*values)
-        return values
-    if not compiled:
-        monkeypatch.setattr(Models, '_reconstruction_while_loop', eager_loop)
-    def reconstruct(root, candidates):
-        return Models.BasicModel._reconstruct_sentences(
-            owner, root, candidates, root[:, None],
-            end_slots=torch.cat((root[:,None],root.new_zeros(B,2,D)),1),
-            end_depth=torch.ones(B,dtype=torch.long),
-            candidate_basis=(candidates,torch.ones(B,2,dtype=torch.bool)), keep_ideas=True)
+    # The saved roots encode two independent negation choices. Check the
+    # exact inverse law from the same saved candidate bank; the decoder no
+    # longer reads a compose journal to discover these choices.
+    left_neg=torch.tensor([False,False,True,True])[:,None]
+    root_neg=torch.tensor([False,True,False,True])[:,None]
+    def reconstruct(root,candidates):
+        parent=torch.where(root_neg,-root,root)
+        left=torch.where(left_neg,-candidates[:,0],candidates[:,0])
+        bank=torch.stack((left,candidates[:,1]),1)
+        a,b,missing=language.reverse_binary_step(parent,torch.zeros(4,dtype=torch.long),
+            torch.ones(4,dtype=torch.bool),ops=[conjunction],basis=bank,
+            basis_valid=torch.ones(4,2,dtype=torch.bool),free=True,return_status=True)
+        recovered=torch.stack((torch.where(left_neg,-a,a),b),1)
+        return recovered,None,None,missing,None
     inverse = torch.compile(reconstruct, backend='inductor', fullgraph=True) if compiled else reconstruct
     recovered, _, _, unavailable, _ = inverse(roots, basis)
     assert not unavailable.any()

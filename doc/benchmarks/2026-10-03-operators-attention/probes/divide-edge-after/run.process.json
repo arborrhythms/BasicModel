@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "doc/benchmarks/2026-10-03-operators-attention/nanochat_acceptance_probe.py",
+    "test/test_one_attention.py",
+    "test/test_nanochat_grammar_eval.py"
+  ],
+  "pid": 10943,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 3877294040,
+  "elapsed_seconds": 22.03414662499563,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/divide-edge-after/run.log"
+}

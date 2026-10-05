@@ -1,0 +1,76 @@
+..............................FFF.............................F....F.... [ 53%]
+..................................F............................          [100%]
+=================================== FAILURES ===================================
+__________ test_temporary_category_config_preserves_validated_source ___________
+test/test_category_em_smoke.py:92: in test_temporary_category_config_preserves_validated_source
+    path = _write_category_config()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_category_em_smoke.py:59: in _write_category_config
+    assert needle in text, "POS_smoke.xml shape changed"
+E   AssertionError: POS_smoke.xml shape changed
+E   assert '<symbolicOrder>1</symbolicOrder>' in '<?xml version="1.0" ?>\n<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n       xsi:noNamespaceSchemaLoc...  </WholeSpace>\n\n  <OutputSpace>\n    <nOutput>1</nOutput>\n    <nVectors>1</nVectors>\n  </OutputSpace>\n</model>\n'
+_____________ test_codebook_enables_and_em_populates_on_real_model _____________
+test/test_category_em_smoke.py:128: in test_codebook_enables_and_em_populates_on_real_model
+    path = _write_category_config()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_category_em_smoke.py:59: in _write_category_config
+    assert needle in text, "POS_smoke.xml shape changed"
+E   AssertionError: POS_smoke.xml shape changed
+E   assert '<symbolicOrder>1</symbolicOrder>' in '<?xml version="1.0" ?>\n<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n       xsi:noNamespaceSchemaLoc...  </WholeSpace>\n\n  <OutputSpace>\n    <nOutput>1</nOutput>\n    <nVectors>1</nVectors>\n  </OutputSpace>\n</model>\n'
+___________________ test_mlp_chooser_sized_and_context_built ___________________
+test/test_category_em_smoke.py:155: in test_mlp_chooser_sized_and_context_built
+    path = _write_category_config(mlp=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_category_em_smoke.py:59: in _write_category_config
+    assert needle in text, "POS_smoke.xml shape changed"
+E   AssertionError: POS_smoke.xml shape changed
+E   assert '<symbolicOrder>1</symbolicOrder>' in '<?xml version="1.0" ?>\n<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n       xsi:noNamespaceSchemaLoc...  </WholeSpace>\n\n  <OutputSpace>\n    <nOutput>1</nOutput>\n    <nVectors>1</nVectors>\n  </OutputSpace>\n</model>\n'
+____________ test_canonical_xml_defaults_pin_existing_architectures ____________
+test/test_chooser_architecture.py:190: in test_canonical_xml_defaults_pin_existing_architectures
+    assert config.get(f"architecture.{name}") == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1533: in get
+    raise KeyError(
+E   KeyError: "Config key not found: 'architecture.selectedThoughtBudget' (missing at 'selectedThoughtBudget')"
+_ test_xml_schema_rejects_invalid_capacity[architecture/selectedThoughtBudget--1] _
+test/test_chooser_architecture.py:210: in test_xml_schema_rejects_invalid_capacity
+    assert element is not None
+E   assert None is not None
+_ test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s _
+test/test_clause_scope.py:35: in test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s
+    assert int(state[0, 0, 0]) & policy.RELATIVE
+E   assert (8 & 1)
+E    +  where 8 = int(tensor(8))
+E    +  and   1 = ClauseScope().RELATIVE
+=============================== warnings summary ===============================
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_category_em_smoke.py::test_temporary_category_config_preserves_validated_source
+FAILED test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+FAILED test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+FAILED test/test_chooser_architecture.py::test_canonical_xml_defaults_pin_existing_architectures
+FAILED test/test_chooser_architecture.py::test_xml_schema_rejects_invalid_capacity[architecture/selectedThoughtBudget--1]
+FAILED test/test_clause_scope.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s
+6 failed, 129 passed, 13 warnings in 5.51s

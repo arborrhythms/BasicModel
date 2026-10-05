@@ -1,0 +1,101 @@
+{
+  "source_matched": true,
+  "measurement_harness_matched": true,
+  "trainings": 30,
+  "retries": 0,
+  "shared_xor_trainings": 10,
+  "named_final_xor_sentences": 40,
+  "named_final_sum_sentences": 40,
+  "named_compose_steps_in_audit": 3204,
+  "ownership_conflicts": 0,
+  "guards_unchanged": true,
+  "sum_read_first": true,
+  "word_perceptual_support": {
+    "start": [
+      {
+        "row": 0,
+        "word": "hello",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.008912566117942333,
+        "minimum_nonzero_absolute_value": 0.008912566117942333
+      },
+      {
+        "row": 5,
+        "word": "world",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 5,
+        "nonzero_fraction": 0.8333333333333334,
+        "minimum_absolute_value": 0.0,
+        "minimum_nonzero_absolute_value": 0.009678640402853489
+      },
+      {
+        "row": 12,
+        "word": "there",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 5,
+        "nonzero_fraction": 0.8333333333333334,
+        "minimum_absolute_value": 0.0,
+        "minimum_nonzero_absolute_value": 0.025749776512384415
+      },
+      {
+        "row": 14,
+        "word": "loving",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.012109532952308655,
+        "minimum_nonzero_absolute_value": 0.012109532952308655
+      }
+    ],
+    "end": [
+      {
+        "row": 0,
+        "word": "hello",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.0206371508538723,
+        "minimum_nonzero_absolute_value": 0.0206371508538723
+      },
+      {
+        "row": 5,
+        "word": "world",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.04581686854362488,
+        "minimum_nonzero_absolute_value": 0.04581686854362488
+      },
+      {
+        "row": 12,
+        "word": "there",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.04592128470540047,
+        "minimum_nonzero_absolute_value": 0.04592128470540047
+      },
+      {
+        "row": 14,
+        "word": "loving",
+        "dimension": 6,
+        "percept_event_width": 14,
+        "nonzero_coordinates": 6,
+        "nonzero_fraction": 1.0,
+        "minimum_absolute_value": 0.054282840341329575,
+        "minimum_nonzero_absolute_value": 0.054282840341329575
+      }
+    ]
+  },
+  "bootstrap_learning": "deferred to operators update",
+  "antipode_training": false
+}

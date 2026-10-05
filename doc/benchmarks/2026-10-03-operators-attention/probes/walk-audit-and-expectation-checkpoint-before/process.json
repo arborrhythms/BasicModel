@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_walk_trials.py",
+    "test/test_one_attention.py::test_old_sentence_expectation_checkpoint_keeps_sentence_weights"
+  ],
+  "pid": 340,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 435979560,
+  "elapsed_seconds": 3.8651158749999013,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/walk-audit-and-expectation-checkpoint-before/run.log"
+}

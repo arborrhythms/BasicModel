@@ -273,7 +273,7 @@ def test_conceptual_checkpoint_metadata_and_tensor_state_roundtrip_together():
 def test_autoload_capacity_preflight_expands_all_readout_aliases_in_place():
     from Models import BaseModel
     model = BaseModel()
-    model.name, model.concept_binding, model.serial = "ReadoutCheckpoint", "aligned", True
+    model.name, model.concept_binding, model.word_brackets = "ReadoutCheckpoint", "aligned", True
     model.nConceptCodes = model.nSymbols = 16
     cs = _checkpoint_space()
     model.conceptualSpaces = nn.ModuleList([cs])

@@ -1,18 +1,19 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_grammar: MentalModel on XOR via non-default grammar-directed
-       composition (derived from the grammar block). Codebook training
+  <!-- MM_grammar: MentalModel composition mechanism fixture. Its
+       default.grammar rules use product conjunction and probabilistic-sum
+       disjunction (6.8 §12), with their free searched inverses. Codebook training
        is implicit when <codebook>quantize</codebook> is set
        (the <useVQVAE> knob was retired 2026-05-29). -->
   <architecture>
-    <subsymbolicOrder>3</subsymbolicOrder>
+    <bindingDepth>3</bindingDepth>
     <data>
       <dataType>embedding</dataType>
     </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <symbolicOrder>1</symbolicOrder>
+    <conceptLayers>2</conceptLayers>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -41,6 +42,7 @@
   <ConceptualSpace>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
+    <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
     <nVectors>8</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -55,7 +57,7 @@
     <!-- WholeSpace is the upstream eight-class property inventory. Word,
          object, and META concepts are relation-only state owned downstream by
          ConceptualSpace; this fixture must not consume WS rows while parsing. -->
-    <nVectors>8</nVectors>
+    <nVectors>9</nVectors>
   </WholeSpace>
 
   <OutputSpace>

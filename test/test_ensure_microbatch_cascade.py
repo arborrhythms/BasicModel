@@ -67,8 +67,8 @@ def test_ensure_microbatch_cascades_to_discourse():
     ``_prev_centroids`` contrastive buffers; the per-batch leading
     dim contract is unchanged.
     """
-    from Layers import InterSentenceLayer
-    layer = InterSentenceLayer(n_symbols=2, max_depth=2, n_dim=8, batch=1)
+    from Layers import BracketExpectation
+    layer = BracketExpectation(n_symbols=2, max_depth=2, n_dim=8, batch=1)
     assert layer._batch == 1
     layer.ensure_batch(6)
     assert layer._batch == 6
@@ -95,9 +95,9 @@ def test_ensure_microbatch_method_explicit_BK():
     assert model.symbolSpace.batch == 10
     assert len(model.symbolSpace._sentence_completed) == 2
     assert model.symbolSpace._last_svo.shape[0] == 10
-    if model.symbolSpace.discourse is not None:
-        assert model.symbolSpace.discourse._batch == 2, (
-            f"discourse must stay at B=2, got {model.symbolSpace.discourse._batch}")
+    if model.symbolSpace.expectation is not None:
+        assert model.symbolSpace.expectation._batch == 2, (
+            f"discourse must stay at B=2, got {model.symbolSpace.expectation._batch}")
 
 
 def test_sentence_completed_survives_K_change():

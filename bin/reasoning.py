@@ -259,7 +259,7 @@ class TruthGroundedReasoner:
 
     def arma(self, X=None):
         """``arma(X)``: the ARMA next-step prediction in conceptual space -- the
-        ``InterSentenceLayer``'s predicted next idea (the statistical discourse
+        ``BracketExpectation``'s predicted next idea (the statistical discourse
         trajectory). ``X`` is the current trajectory point (nominal; the ARMA
         reads its OWN observed end-state chain, the autoregressive history).
         Returns the predicted next-idea vector, or ``None`` when no warm
@@ -269,7 +269,7 @@ class TruthGroundedReasoner:
         truth-space retrieval/deduction, is the relevant signal for the next
         idea (this is the soft/hard split applied to next-sentence prediction)."""
         m = self.model
-        disc = (getattr(getattr(m, "symbolSpace", None), "discourse", None)
+        disc = (getattr(getattr(m, "symbolSpace", None), "expectation", None)
                 if m is not None else None)
         if disc is None or getattr(disc, "_inter_predictor", None) is None:
             return None

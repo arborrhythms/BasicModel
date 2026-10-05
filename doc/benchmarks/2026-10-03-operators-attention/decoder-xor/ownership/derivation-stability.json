@@ -1,0 +1,407 @@
+[
+  {
+    "batch_row": 0,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      1
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.885,
+    "distinct_derivations": 5,
+    "modal_derivation": [
+      [
+        2,
+        1,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 354
+      },
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 13
+      },
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 3
+      },
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 23
+      },
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 7
+      }
+    ]
+  },
+  {
+    "batch_row": 1,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      2
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.6075,
+    "distinct_derivations": 4,
+    "modal_derivation": [
+      [
+        2,
+        1,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 2
+      },
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 243
+      },
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 1
+      },
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 154
+      }
+    ]
+  },
+  {
+    "batch_row": 2,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      1
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.7475,
+    "distinct_derivations": 7,
+    "modal_derivation": [
+      [
+        2,
+        1,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 17
+      },
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 7
+      },
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 8
+      },
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 1
+      },
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 22
+      },
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 46
+      },
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 299
+      }
+    ]
+  },
+  {
+    "batch_row": 3,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      2
+    ],
+    "epochs": 400,
+    "modal_fraction": 0.4425,
+    "distinct_derivations": 7,
+    "modal_derivation": [
+      [
+        2,
+        1,
+        1
+      ]
+    ],
+    "derivations": [
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "epochs": 47
+      },
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 3
+      },
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 18
+      },
+      {
+        "sequence": [
+          [
+            2,
+            2,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 12
+      },
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 137
+      },
+      {
+        "sequence": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "epochs": 6
+      },
+      {
+        "sequence": [
+          [
+            2,
+            1,
+            1
+          ]
+        ],
+        "epochs": 177
+      }
+    ]
+  }
+]

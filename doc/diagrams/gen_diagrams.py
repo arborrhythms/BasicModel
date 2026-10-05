@@ -656,7 +656,7 @@ def make_mm5m():
 # Data for doc/specs/2026-09-20-accessible-mind-subsystems.md. Monochrome and
 # sans-serif so the sheet prints and takes ink; the blank rows are for the pen.
 
-GO_REV = "2026-09-27 (rev 11)"
+GO_REV = "2026-10-03 (operators candidate; awaiting review)"
 
 # (id, title, three body lines, dashed = reducible or derived)
 GO_SUBSYSTEMS = [
@@ -733,162 +733,54 @@ GO_GRAMMAR_NOTE = (
 # Section D's inverses are read from Language.reverse_binary_step /
 # reverse_unary_step and Layers._binary_op_inverse_impl, not from the prose.
 GO_OPERATORS = [
-    ("field operands — order-independent, over a whole bracket at once (compose + generate)", [
-        ("not / non", "C G", "F", "I1→O1", {"2": "RW", "3": "RW", "4": "RW"},
-         "not = sign reversal, order 1+ (expectation's image); non = withdrawal, any order "
-         "(attention's exclusion)"),
-        ("conjunction / disjunction", "C G", "F", "I1,I2→O1", {"2": "R", "3": "RW", "4": "RW"},
-         "symbolic tier; a plural bracket is aggregated directly — no multi-argument operator "
-         "is declared for it"),
-        ("intersection / union", "C G", "F", "I1,I2→O1", {"2": "RW", "4": "RW"},
-         "subsymbolic tier"),
+    ("concept and symbol folds — declarations specify operand kinds and all effects", [
+        ("not", "C T G", "F/S", "I1→O1", {"4": "RW"}, "exchange evidence poles; self-inverse; trust is unchanged"),
+        ("non", "C – –", "F/S", "I1→O1", {"4": "RW"}, "exclude the expressed pole; no affirmation and no inverse"),
+        ("intersection / union", "C G", "S", "I1,I2→O1", {"2": "R", "4": "RW"}, "intersection: signed coordinate minimum, zero is silent; union: log-odds sum"),
+        ("conjunction / disjunction", "C G", "S", "I1,I2→O1", {"3": "R", "4": "RW"}, "product binding / mean bundling of symbol codes; inverse searches primed operands"),
+        ("sum / chunk / product", "C G", "S", "I1,I2→O1", {"4": "RW"}, "sum is the mean; chunk is additive; product is coordinate multiplication"),
+        ("compound", "C G", "S", "modifier,head→O1", {"2": "R", "3": "R", "4": "RW"}, "reverse the head's sigma, select cases by modifier, refold; no new parameters"),
+        ("verb / adverb", "C G", "S", "I1,I2→O1", {"4": "RW"}, "verb head is I1; multiplicative spectral gain; the right operand witnesses the inverse"),
+        ("lift / lower / generic", "C G", "S", "declared roles", {"4": "RW"}, "declared order and head properties; generic is independent of retired exist"),
+        ("surface / preposition / bind", "C G", "S", "I1,I2→O1", {"4": "RW"}, "declared witness and reference policies; surface renames are deferred"),
+        ("tense / morphology / aspect / null", "C G", "S", "I1→O1", {"4": "RW"}, "surface carriers; their planned dimensional rewrite remains future work"),
+        ("interpret", "C G", "S", "word→object", {"2": "RW", "3": "RW", "4": "RW"}, "native definition replaces the word; admission uses the existing owner"),
     ]),
-    ("symbol operands — order-dependent, between brackets (compose + generate)", [
-        ("surface", "C G", "S", "I1,I2→O1", {"1": "R", "2": "RW", "4": "RW"},
-         "the per-word marker fold: the word's own code carried into the concept"),
-        ("sum / chunk", "C G", "S", "I1,I2→O1", {"2": "RW", "4": "RW"},
-         "additive concept ops"),
-        ("product", "C G", "S", "I1,I2→O1", {"2": "RW", "4": "RW"},
-         "multiplicative concept op"),
-        ("lift / lower", "C G", "S", "I1,I2→O1", {"2": "RW", "3": "RW", "4": "RW"},
-         "the ladder: lift raises order (and makes a PP of a preposition), lower applies "
-         "a modifier to a head"),
-        ("verb / adverb", "C G", "S", "I1,I2→O1", {"2": "RW", "4": "RW", "5": "R"},
-         "VP application: a sparse eigenvalue edit δ_v over the composed phrase"),
-        ("preposition · bind", "C G", "S", "I1,I2→O1", {"1": "R", "2": "RW", "4": "RW"},
-         "bind: referents from the serial stream"),
-        ("tense · morphology · aspect · null", "C G", "S", "I1→O1",
-         {"1": "R", "2": "R", "4": "RW"},
-         "surface-token analysis that leaves the concept value untouched"),
-        ("interpret", "C G", "S", "I1→O1 (word → object)",
-         {"1": "R", "2": "RW", "4": "W", "7": "R"},
-         "the word→object operator: mints on a new word, returns the seen one, resolves "
-         "ambiguity only from the chain — set logic outside autograd until 6.5"),
+    ("checked thought — permission masks the same exhaustive effect declaration", [
+        ("part / whole", "C T G", "S", "I1,I2→O1; open sides", {"4": "RW", "9": "R", "10": "R"}, "full conceptual content and paired evidence; native taxonomy at higher order"),
+        ("equal", "C T G", "S", "I1,I2→O1", {"4": "RW"}, "stable question-formula identity; closing still writes two part rows"),
+        ("what (query content)", "C T G", "S", "description→content", {"4": "RW", "7": "R"}, "one retrieval for what, where and when cues; lookup is retired; rename is deferred"),
+        ("quantize / arma", "– T –", "S", "I1→O1", {"3": "RW", "6": "RW"}, "codebook projection / expectation content; structural identity carriers retired"),
     ]),
-    ("two-faced (compose + thought + generate)", [
-        ("part / whole (one family, I2,I1)", "C T G", "S",
-         "I1,I2→O1; open I1=parts, I2=wholes",
-         {"2": "R", "3": "R", "4": "RW", "8": "W", "9": "R", "10": "R"},
-         "effect = idea-vector residual left in 4 (9); scalar truth derived; "
-         "higher order → symbolic value via 10"),
-        ("equal", "C T G", "S", "I1,I2→O1", {"2": "R", "3": "R", "4": "RW", "8": "W"},
-         "mutual parthood on payloads"),
-        ("exist", "C T G", "S", "I1→O1", {"2": "R", "4": "RW", "7": "R", "8": "W"},
-         "T reads facts among frames in STM"),
-        ("quantize", "C T G", "S", "I1→O1", {"2": "R", "3": "W", "8": "W"},
-         "snap to the codebook; keeps ideas on-manifold; > 6.8's gloss is this projection "
-         "taken at a bracket"),
-        ("arma", "C T G", "S", "I1→O1", {"4": "R", "6": "W", "8": "W"},
-         "reads the recency buffer; its estimate, sign-reversed, is the NEGATIVE IMAGE the closing "
-         "adds; positive as the <generate> seed; never a fact"),
-        ("what (Q)", "C T G", "S", "I1→O1",
-         {"2": "W*", "3": "W*", "4": "RW", "7": "R", "8": "W"},
-         "what(Q, where?, when?): wh-word = open role; cue → code postings → rank → frames; "
-         "episodes return frame by frame  (* FutureWork §7)"),
+    ("retired / pending", [
+        ("exist / true / binary symbolize", "– – –", "—", "—", {}, "no scalar truth output, no unused binary carrier"),
+        ("legacy query / queryPart / queryEqual", "– – –", "—", "—", {}, "geometric scalar experiments retired; the content operator above remains"),
+        ("divide / descend / gloss (6.8)", "C – –", "F", "bracket→brackets/symbol", {"8": "W"}, "same candidate softmax; typed bracket and shared perceptual budget"),
+        ("STOP / closing", "C T G", "—", "eligible stop / commit", {"7": "W"}, "cost greedy and one-departure paths before training; strict improvement selects explore"),
     ]),
-    ("asymmetric / deferred / planned", [
-        ("lookup", "C T –", "S", "I1,I2→O1", {"4": "W", "7": "R", "8": "W"},
-         "same retrieval as what / parts / wholes — one mechanism; no generate face?"),
-        ("true", "– T –", "S", "I1→O1 (ended clause NP→REF(S))", {"7": "R", "10": "R"},
-         "> item 7, next: declared in <thought> and executable over the clause the closing "
-         "stored as (c+, c−)"),
-        ("(subsymbolic LM operator)", "C   G", "S", "I1..In→O1",
-         {"1": "R", "2": "RW", "4": "RW", "5": "R"}, "SAME row as structural faces; nothing more"),
-    ]),
-    ("> further candidates in the SAME 7.5 softmax (specified, not yet landed)", [
-        ("divide · descend · gloss    (6.8)", "C – –", "F", "bracket → brackets / one symbol",
-         {"1": "R", "2": "R", "3": "R", "8": "W"},
-         "narrowing: both → divide, neither → descend and let interpret mint; gloss projects a "
-         "bracket that is pure and singular"),
-        ("STOP    (7.5)", "C – G", "—", "— (ends the rounds)", {"7": "R"},
-         "no no-operation candidate exists while the sequence is longer than its LTM row's slots"),
-        ("bind to a column · mint    (6.5)", "C T –", "S", "I1→O1 (identity)",
-         {"2": "R", "4": "RW", "6": "R", "7": "R"},
-         "frame = A·a: an individual is a column of A, identity is its fixedness over the "
-         "chain; credited by surprise through the closing"),
-    ]),
-    ("not operators", [
-        ("the selection layer  (7.5)", "C T G", "—",
-         "one softmax over candidates × locations | STOP",
-         {"2": "R", "3": "R", "4": "R", "6": "R", "7": "R", "8": "R"},
-         "ONE object for compose, the STM reducer, thought's chooser and generate's policy; "
-         "context = recency buffer + cued LTM frames; policy credit only"),
-        ("the closing", "– – –", "—", "o → c = o − g·(1 − m)·κ·ê",
-         {"4": "R", "6": "RW", "7": "W"},
-         "AFTER composition (purity); κ = predicted presence; m = open roles; and the "
-         "transaction point: per sentence, the better derivation commits here"),
-    ]),
-    ("… (add)", [("", "", "", "", {}, "")] * 3),
 ]
 
 # group -> rows of (operator, form, what the reverse program does, what it needs / loses)
 GO_INVERSES = [
-    ("exact — a closed form, given the witness the forward retained", [
-        ("not / non", "self",
-         "reverse() applies the same sign reversal or withdrawal again",
-         "nothing: the only unary that truly inverts (not = order 1+, non = any order)"),
-        ("surface", "affine",
-         "W^-1 · (parent − witness − marker bias) returns the other child",
-         "free generation has no witness and falls back to the operator's learned marker "
-         "prior — a guess about the word, not a recovery"),
-        ("sum / chunk", "residual",
-         "parent − witness is the other child, exactly",
-         "with no witness it splits the parent in half: a placeholder, not a recovery"),
-        ("product", "residual",
-         "elementwise parent / witness wherever |witness| > 1e-8",
-         "coordinates where the witness is zero are unrecoverable and fall to the search"),
-        ("part · preposition  (assertPart, isPart)", "discard",
-         "the marker IS the discarded left operand: left = witness, right = parent",
-         "needs the witness on the LEFT; a missing one falls through to the search"),
-        ("whole · bind", "discard",
-         "the fold passed its left operand through, so right = witness",
-         "needs the witness on the RIGHT; no binding context from a LATER sentence may "
-         "enter the inverse"),
+    ("exact with the declared witness", [
+        ("not", "self", "exchange the poles again", "no witness; evidence only"),
+        ("sum / chunk", "residual", "2 × parent − witness / parent − witness", "free decoding searches the primed bank"),
+        ("verb / adverb", "gain", "divide by the same positive multiplicative gain", "right operand witness; no iterative inverse"),
+        ("surface / product / part / whole", "declared", "use the declared witness and inverse contract", "missing witnesses mask unavailable candidates"),
     ]),
-    ("tied — the compose weights' own inverse, so the operator is checked against itself", [
-        ("lift / lower", "W^-1 (LDU)",
-         "the layer's functional_Winverse, replayed as generate's balanced split",
-         "reference-free it returns children about 65% of the way from their codes at "
-         "depth 1, and they project to the wrong code — item 6's open measurement"),
-        ("verb", "spectral",
-         "unapply_verb undoes the eigenvalue edit against the verb",
-         "it NEEDS the verb as the right operand; a missing one is reported, never "
-         "substituted by the parent's inherited Sigma"),
-        ("adverb", "fixed point",
-         "eight bounded corrections in the adverb's own chart",
-         "an approximation, not a bijection — the only iterative inverse in the set"),
+    ("bounded search through the same forward face", [
+        ("compound", "case search", "primed native modifier/head pairs, conditioned sigma cases", "both poles retained; no occurrence trace or fabricated split"),
+        ("conjunction / disjunction / intersection / union / equal", "search", "cost the recomposed primed pairs", "shared fixed reconstruction basis limit"),
+        ("lift / lower", "tied + search", "the forward map's own inverse and bounded operands", "no stored derivation is replayed"),
     ]),
-    ("search — no closed form: the lossy folds", [
-        ("conjunction / disjunction", "candidates",
-         "≤16 prototypes a side, K² pairs recomposed through the FORWARD kernel and "
-         "scored by a residual softmax",
-         "a soft blend of candidates, not the original pair; with no active candidate it "
-         "reports UNAVAILABLE, never an identity pseudo-inverse"),
-        ("intersection / union / equal", "candidates",
-         "the same bounded reconstruction",
-         "approximate: recomposition and child fidelity must be measured separately"),
+    ("identity or unavailable", [
+        ("non", "unavailable", "the expressed evidence was discarded", "never presented as its own inverse"),
+        ("generic / tense / morphology / aspect / null", "identity", "the declared carrier preserves the conceptual value", "surface revisions remain future work"),
+        ("interpret", "native index", "read the existing definition's word", "same symbol/concept owner"),
+        ("quantize / arma", "no generate face", "thought-only content", "no identity pseudo-operator"),
     ]),
-    ("identity / none — nothing to invert", [
-        ("tense · morphology · aspect · exist · null", "identity",
-         "declared tensor identities on the CS value, so replay preserves it",
-         "morphology's surface analysis must not read a later token during replay"),
-        ("quantize", "none",
-         "the snap IS a projection; only the code survives it",
-         "the residual it discards is exactly what a reverse would need — > 6.8's gloss "
-         "inherits this"),
-        ("interpret", "index",
-         "inverts by the shared symbol / concept row index, not by a kernel",
-         "no learned inverse, so nothing to measure; > 6.5 gives the binding a gradient"),
-        ("arma · what · lookup", "none",
-         "an estimate or a retrieval, not a fold",
-         "they leave effects, not a program step; nothing is reconstructed from them"),
-        ("(subsymbolic LM operator)", "opaque",
-         "whatever the model learned",
-         "no structural inverse to check — the reason the structural face is preferred "
-         "at equal fit (item 8)"),
-    ]),
-    ("… (add)", [("", "", "", "")] * 3),
 ]
+
 
 GO_INVERSE_NOTE = [
     "every reverse step reports availability, and a missing inverse is explicit: the "

@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_occurrence_context_uses_recency_mean_and_evidence_against_form_prior ___
+
+    def test_occurrence_context_uses_recency_mean_and_evidence_against_form_prior():
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+        cs, cb, _ = fixture()
+        a, b = word(cs, [(4, 1.)]), word(cs, [(7, 1.)])
+        store = TernaryTruthStore(3, capacity=8)
+        cs.symbolSpace = SimpleNamespace(ltm_store=store)
+        root = torch.tensor([2., 4., 6.], requires_grad=True)
+        roles = torch.stack((root, root*0, root*0))
+        row = store.append_meaning(ConceptualMeaning(roles, torch.tensor([True,False,False]),
+            mode='assertive', sentence_kind='idea'), evidence=(0.,0.))
+        store._append_leaf_terms(row, ((a,b),(),()), (True,True,True))
+        initial = cb.mereology.locations[:2].detach().clone()
+        codes = cb.lookup_rows(torch.tensor([a,b]))
+>       torch.testing.assert_close(codes, (initial+root.detach())/2)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 6 / 6 (100.0%)
+E       Greatest absolute difference: 2.990000009536743 at index (0, 2) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (0, 0) (up to 1.3e-06 allowed)
+
+test/test_derived_concept_codes.py:76: AssertionError
+=============================== warnings summary ===============================
+test/test_derived_concept_codes.py::test_occurrence_context_uses_recency_mean_and_evidence_against_form_prior
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_derived_concept_codes.py::test_occurrence_context_uses_recency_mean_and_evidence_against_form_prior
+1 failed, 1 warning in 2.01s

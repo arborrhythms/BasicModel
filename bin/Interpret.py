@@ -38,6 +38,10 @@ class InterpretLayer(GrammarLayer):
         alloc, index = _concept_alloc_of(cs), cs.definitions
         parts = tuple(map(int, parts))
         wholes = (int(wholes),) if isinstance(wholes, int) else tuple(map(int, wholes or ()))
+        if getattr(cs, '_online_learning_frozen', False):
+            # Held-out reads may resolve existing definitions, but cannot
+            # reserve identities, add decompositions or finish pending words.
+            return index.word(unit=parts, form=form)
         model = getattr(cs, '_model', None)
         ps = getattr(model, 'perceptualSpace', None)
         native = getattr(ps, 'percept_store', None)
@@ -59,7 +63,17 @@ class InterpretLayer(GrammarLayer):
             # alternative witnessed definition of this word's object.
             obj = index.deref(word)
             if word not in self._field_pending:
-                cs._preflight_concept_row(0)
+                try:
+                    cs._preflight_concept_row(0)
+                except RuntimeError:
+                    if not word_reading:
+                        raise
+                    # An optional new decomposition cannot evict a known
+                    # word or partially amend its admitted definition.
+                    drops = cs.__dict__.setdefault('_concept_admission_drops', {})
+                    reason = 'word alternative'
+                    drops[reason] = drops.get(reason, 0) + 1
+                    return word
                 cs._populate_concept_weights(obj if obj is not None else word,
                     witness=(parts, wholes), word_reading=word_reading)
             for part in parts:
@@ -141,6 +155,8 @@ class InterpretLayer(GrammarLayer):
         cs, word, obj = self.owner, int(word), int(obj)
         alloc, index = _concept_alloc_of(cs), cs.definitions
         store = index._store()
+        if getattr(cs, '_online_learning_frozen', False):
+            return index.row(word, obj)
         if word == obj or any(cid not in alloc.placement or cid in alloc.retired for cid in (word, obj)):
             raise ValueError('DEF requires distinct, live native identities')
         row = index.row(word, obj)
@@ -187,6 +203,9 @@ class InterpretLayer(GrammarLayer):
         cs, word = self.owner, int(word)
         alloc, index = _concept_alloc_of(cs), cs.definitions
         candidates = index.objects(word)
+        frozen = getattr(cs, '_online_learning_frozen', False)
+        if frozen and not candidates:
+            return None
         if word in self._field_pending:
             return self.admit_discovered(word)
         if selected is not None:
@@ -218,6 +237,8 @@ class InterpretLayer(GrammarLayer):
                 alloc.add(obj, role, ref)
             alloc.singletons.add(obj)
             alloc.reference_orders[obj] = cs._concept_source_order(word)
+        if frozen:
+            return obj
         self.define(word, obj)
         if occurrence is not None:
             seen = alloc.testimony_seen.setdefault(obj, set())
@@ -238,6 +259,8 @@ class InterpretLayer(GrammarLayer):
         """Finish reserved definitions when the field's cases receive IDs."""
         from Spaces import _concept_alloc_of
         cs = self.owner
+        if getattr(cs, '_online_learning_frozen', False):
+            return None
         model = getattr(cs, '_model', None)
         ps = getattr(model, 'perceptualSpace', None)
         layer = _concept_alloc_of(cs).layer()

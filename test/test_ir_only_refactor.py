@@ -10,9 +10,9 @@ Covers the new-test items from
   * C3 (spec sec 7): the legacy input reverse is concepts-seeded, with no
     ``<reconstruct>`` enum (retired in A1). Its ``reconstruction_reverse``
     diagnostic remains separate from the tied completed-input objective.
-  * ``InterSentenceLayer.predict_next()`` returns the right shape
+  * ``BracketExpectation.predict_next()`` returns the right shape
     after ``armaP`` observations.
-  * ``InterSentenceLayer.observe(s_t)`` accumulates a non-zero ARMA
+  * ``BracketExpectation.observe(s_t)`` accumulates a non-zero ARMA
     loss after the ring has been primed.
   * ``BasicModel.generate_sentence(...)`` produces a non-empty
     decode list after one warm-up sentence.
@@ -289,7 +289,7 @@ class TestArmaPredictAndObserve(unittest.TestCase):
 
     def test_predict_next_shape_after_p_observations(self):
         p, q = 5, 2
-        layer = Layers.InterSentenceLayer(
+        layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=2, n_dim=6, p=p, q=q, batch=3)
         for _ in range(p):
             layer.observe(torch.randn(3, 4, 6))
@@ -297,7 +297,7 @@ class TestArmaPredictAndObserve(unittest.TestCase):
         self.assertEqual(tuple(pred.shape), (3, 6))
 
     def test_observe_accumulates_nonzero_loss(self):
-        layer = Layers.InterSentenceLayer(
+        layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=2, n_dim=6, p=5, q=2, batch=2)
         layer.observe(torch.randn(2, 4, 6))  # primes
         loss = layer.observe(torch.randn(2, 4, 6))

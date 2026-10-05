@@ -1,0 +1,594 @@
+.........FF.....................F......................FFFFF............ [ 52%]
+...........................................FF..................F         [100%]
+=================================== FAILURES ===================================
+_______ test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm _______
+
+    def test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm():
+        from dataclasses import replace
+        from test_cs_symbol_table import _cs
+        from test_query_vp_boundaries import _context, _signature
+        store = TernaryTruthStore(8, capacity=32)
+        store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, unfold=one_hot_unfold)
+        fact = _meaning()
+        oldest = store.append_meaning(fact, trust=.2)
+        for _ in range(20):
+            store.append_meaning(_meaning(4, 5), trust=.9)
+        context = _context(_cs(), store=store)
+>       first = _signature('exist', 'I1').invoke(context, fact)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_accessible_mind.py:186: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'exist', roles = ('I1',)
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'exist'
+
+test/test_query_vp_boundaries.py:62: KeyError
+________ test_higher_order_missing_edge_is_symbolic_zero_not_a_residual ________
+
+    def test_higher_order_missing_edge_is_symbolic_zero_not_a_residual():
+        from test_cs_symbol_table import _cs
+        from test_query_vp_boundaries import _context, _signature
+        cs = _cs()
+        a, b = cs.new_concept(), cs.new_concept()
+        higher = cs.synthesize_higher_order([('sym', a)])
+        for cid in (a, b, higher):
+            cs._csw_concept_row(0, cid)
+        result = _signature('part', 'I1', 'I2').invoke(_context(cs), ('sym', higher), ('sym', b))
+>       assert result['symbolic_value'] == 0.
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'symbolic_value'
+
+test/test_accessible_mind.py:212: KeyError
+________ TestUnaryGrammarLayers.test_non_compose_decompose_self_inverse ________
+
+self = <test_grammar_binary_ops.TestUnaryGrammarLayers testMethod=test_non_compose_decompose_self_inverse>
+
+    def test_non_compose_decompose_self_inverse(self):
+        """NonLayer: per-pole bivector complement [1-pos, 1-neg].
+        Self-inverse on each pole, where/when channels pass through."""
+        layer = NonLayer()
+        x = torch.rand(4, 3, 6)        # bivector poles in [0, 1] domain
+        y = layer.compose(x)
+        self.assertEqual(y.shape, x.shape)
+        # Bivector poles complemented at [..., :2]; rest unchanged.
+>       self.assertTrue(torch.allclose(y[..., :2], 1.0 - x[..., :2], atol=1e-5))
+E       AssertionError: False is not true
+
+test/test_grammar_binary_ops.py:59: AssertionError
+___________________ test_ps_start_scoped_to_perceptual_space ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f24b230>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1410/test_ps_start_scoped_to_percep0')
+
+    def test_ps_start_scoped_to_perceptual_space(monkeypatch, tmp_path):
+        """``<start>U</start>`` under ``<PartSpace>`` configures PS starts."""
+>       g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammar_space_scoped_starts.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grammar_space_scoped_starts.py:77: in _load_grammar_text
+    g.load_from_grammar_file("probe.grammar")
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x108171d30>
+target = [RuleDef(space_role='SS', canonical='isEqual_O1 -> isEqual_O1', arity=1, method_name=None, lhs='isEqual_O1', rhs_symbo...relation_kind=None, scope_transparent=False, polarity_effect=None, meaning_mode=None, same_reference_idempotent=False)]
+rules_dict = {'rule': ['isEqual_O1 = isEqual_O1', 'isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)', 'exist_O1 = exist.forward(exist_I1)']}
+space_role = 'SS', face = None
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+    
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                if implementation in ('exist', 'true', 'lookup'):
+>                   raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E                   ValueError: exist is retired; query conceptual content with what
+
+bin/Language.py:1583: ValueError
+____________________ test_ws_start_scoped_to_symbolic_space ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10832f740>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1410/test_ws_start_scoped_to_symbol0')
+
+    def test_ws_start_scoped_to_symbolic_space(monkeypatch, tmp_path):
+        """``<start>`` under ``<WholeSpace>`` configures SS starts; the PS
+        root ``U`` does NOT leak into the symbolic start set."""
+>       g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammar_space_scoped_starts.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grammar_space_scoped_starts.py:77: in _load_grammar_text
+    g.load_from_grammar_file("probe.grammar")
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x10832e7b0>
+target = [RuleDef(space_role='SS', canonical='isEqual_O1 -> isEqual_O1', arity=1, method_name=None, lhs='isEqual_O1', rhs_symbo...relation_kind=None, scope_transparent=False, polarity_effect=None, meaning_mode=None, same_reference_idempotent=False)]
+rules_dict = {'rule': ['isEqual_O1 = isEqual_O1', 'isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)', 'exist_O1 = exist.forward(exist_I1)']}
+space_role = 'SS', face = None
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+    
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                if implementation in ('exist', 'true', 'lookup'):
+>                   raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E                   ValueError: exist is retired; query conceptual content with what
+
+bin/Language.py:1583: ValueError
+___________________ test_global_start_aliases_symbolic_space ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108359070>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1410/test_global_start_aliases_symb0')
+
+    def test_global_start_aliases_symbolic_space(monkeypatch, tmp_path):
+        """The back-compat global ``start_symbol`` / ``start_patterns`` mirror
+        the WholeSpace starts (the symbolic parse), not the PS root."""
+>       g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammar_space_scoped_starts.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grammar_space_scoped_starts.py:77: in _load_grammar_text
+    g.load_from_grammar_file("probe.grammar")
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x1083581a0>
+target = [RuleDef(space_role='SS', canonical='isEqual_O1 -> isEqual_O1', arity=1, method_name=None, lhs='isEqual_O1', rhs_symbo...relation_kind=None, scope_transparent=False, polarity_effect=None, meaning_mode=None, same_reference_idempotent=False)]
+rules_dict = {'rule': ['isEqual_O1 = isEqual_O1', 'isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)', 'exist_O1 = exist.forward(exist_I1)']}
+space_role = 'SS', face = None
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+    
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                if implementation in ('exist', 'true', 'lookup'):
+>                   raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E                   ValueError: exist is retired; query conceptual content with what
+
+bin/Language.py:1583: ValueError
+____________ test_relative_and_absolute_starts_from_name_attribute _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108359ac0>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1410/test_relative_and_absolute_sta0')
+
+    def test_relative_and_absolute_starts_from_name_attribute(monkeypatch, tmp_path):
+        """The ``name`` attribute distinguishes relative-truth from
+        absolute-truth SS starts (used by relative-rule detection, R1.3)."""
+>       g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammar_space_scoped_starts.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grammar_space_scoped_starts.py:77: in _load_grammar_text
+    g.load_from_grammar_file("probe.grammar")
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x10835af60>
+target = [RuleDef(space_role='SS', canonical='isEqual_O1 -> isEqual_O1', arity=1, method_name=None, lhs='isEqual_O1', rhs_symbo...relation_kind=None, scope_transparent=False, polarity_effect=None, meaning_mode=None, same_reference_idempotent=False)]
+rules_dict = {'rule': ['isEqual_O1 = isEqual_O1', 'isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)', 'exist_O1 = exist.forward(exist_I1)']}
+space_role = 'SS', face = None
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+    
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                if implementation in ('exist', 'true', 'lookup'):
+>                   raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E                   ValueError: exist is retired; query conceptual content with what
+
+bin/Language.py:1583: ValueError
+____________________ test_identity_rule_uses_symbolic_start ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1082a9eb0>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1410/test_identity_rule_uses_symbol0')
+
+    def test_identity_rule_uses_symbolic_start(monkeypatch, tmp_path):
+        """R1.4: the injected identity no-op is on the WholeSpace start, not
+        the PartSpace root ``U``."""
+>       g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammar_space_scoped_starts.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grammar_space_scoped_starts.py:77: in _load_grammar_text
+    g.load_from_grammar_file("probe.grammar")
+bin/Language.py:2083: in load_from_grammar_file
+    self.configure(cfg)
+bin/Language.py:1187: in configure
+    self._fill_section(self.rules_upward,
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x1082aa510>
+target = [RuleDef(space_role='SS', canonical='isEqual_O1 -> isEqual_O1', arity=1, method_name=None, lhs='isEqual_O1', rhs_symbo...relation_kind=None, scope_transparent=False, polarity_effect=None, meaning_mode=None, same_reference_idempotent=False)]
+rules_dict = {'rule': ['isEqual_O1 = isEqual_O1', 'isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)', 'exist_O1 = exist.forward(exist_I1)']}
+space_role = 'SS', face = None
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+    
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                if implementation in ('exist', 'true', 'lookup'):
+>                   raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E                   ValueError: exist is retired; query conceptual content with what
+
+bin/Language.py:1583: ValueError
+_ test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f4ff5c0>
+
+    def test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode(
+            monkeypatch):
+        """A selected unary thought form is not limited to binary relations.
+    
+        ``quantize`` is explicitly declared in ``<thought>`` and accepts one
+        conceptual operand.  Its completed program has no physical middle VP
+        leaf: recovery must obtain the grammar-owned native VP while retaining
+        the actual signed operand leaf, then let the structural ``what`` wrapper
+        supply interrogative mode.  It must not decline the program merely because
+        its selected structural root is unary.
+        """
+        _cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(
+            monkeypatch)
+>       quantize = next(
+            index for index, rule in enumerate(owner._compose_unary_rules)
+            if rule.method_name == "quantize")
+E       StopIteration
+
+test/test_selected_relation_meaning.py:216: StopIteration
+___ test_selected_unary_description_operation_does_not_invent_an_occurrence ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f568dd0>
+
+    def test_selected_unary_description_operation_does_not_invent_an_occurrence(
+            monkeypatch):
+        """A direct word leaf is never reinterpreted as an LTM/thought reference."""
+        _cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(
+            monkeypatch)
+>       arma = next(
+            index for index, rule in enumerate(owner._compose_unary_rules)
+            if rule.method_name == "arma")
+E       StopIteration
+
+test/test_selected_relation_meaning.py:251: StopIteration
+_____ test_conjunction_keeps_the_repeated_reference_for_the_next_operation _____
+
+    def test_conjunction_keeps_the_repeated_reference_for_the_next_operation():
+        from types import SimpleNamespace
+        from ClauseScope import ClauseScope
+        scope=ClauseScope([SimpleNamespace(method_name='conjunction')],[])
+        state=torch.tensor([[[0,7],[0,7],[0,7]]])
+        choice=SimpleNamespace(kind=torch.tensor([1]),local_op=torch.tensor([0]),position=torch.tensor([0]),applied=torch.tensor([True]))
+        once,closing=scope.apply(state,choice,torch.tensor(0))
+>       assert once[0,0,1] == 7 and closing.item() == 0
+E       assert (tensor(-1) == 7)
+
+test/test_concept_binding_operators.py:88: AssertionError
+=============================== warnings summary ===============================
+test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_accessible_mind.py::test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm
+FAILED test/test_accessible_mind.py::test_higher_order_missing_edge_is_symbolic_zero_not_a_residual
+FAILED test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_compose_decompose_self_inverse
+FAILED test/test_grammar_space_scoped_starts.py::test_ps_start_scoped_to_perceptual_space
+FAILED test/test_grammar_space_scoped_starts.py::test_ws_start_scoped_to_symbolic_space
+FAILED test/test_grammar_space_scoped_starts.py::test_global_start_aliases_symbolic_space
+FAILED test/test_grammar_space_scoped_starts.py::test_relative_and_absolute_starts_from_name_attribute
+FAILED test/test_grammar_space_scoped_starts.py::test_identity_rule_uses_symbolic_start
+FAILED test/test_selected_relation_meaning.py::test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode
+FAILED test/test_selected_relation_meaning.py::test_selected_unary_description_operation_does_not_invent_an_occurrence
+FAILED test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation
+11 failed, 125 passed, 2 warnings in 4.67s

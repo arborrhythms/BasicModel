@@ -18,14 +18,11 @@ class ClauseScope(nn.Module):
         def table(rules):
             rows = []
             for rule in rules:
-                name = rule.method_name
                 form = getattr(rule, 'clause_form', None)
-                relative = name in ('part', 'whole', 'equal', 'implies')
-                sentence = relative or form == 'S' or name == 'exist'
-                predicate = form == 'VP' or name == 'verb'
+                relative = bool(getattr(rule, 'relation_kind', None))
+                sentence = relative or form == 'S'
+                predicate = form == 'VP'
                 head = getattr(rule, 'head_role', 0)
-                if not head and name in ('lower', 'bind', 'surface', 'preposition'):
-                    head = 2
                 modes = dict(getattr(rule, 'reference_kinds', ()))
                 generic = any(mode in ('generic', 'kind') for mode in modes.values())
                 particular = any(mode in ('particular', 'name', 'pronoun')
@@ -35,7 +32,8 @@ class ClauseScope(nn.Module):
         self.register_buffer('binary', table(binary), persistent=False)
         self.register_buffer('unary', table(unary), persistent=False)
         self.register_buffer('binary_same_reference', torch.tensor(
-            [rule.method_name == 'conjunction' for rule in binary] or [False]), persistent=False)
+            [getattr(rule, 'same_reference_idempotent', False) for rule in binary]
+            or [False]), persistent=False)
 
     @staticmethod
     def empty(buffer):
@@ -94,7 +92,9 @@ class ClauseScope(nn.Module):
         headed = rule[:, 3] > 0
         head = torch.where((rule[:, 3] == 1)[:, None], left, right)
         inherited = torch.where(headed, head[:, 0], left[:, 0].bitwise_or(right[:, 0]))
-        relative = (inherited.bitwise_and(self.RELATIVE) != 0) | rule[:, 0].bool()
+        # A headed predicate retains the object's scoped clause even though
+        # its numerical value and generic/name status come from the head.
+        relative = (left[:, 0].bitwise_or(right[:, 0]).bitwise_and(self.RELATIVE) != 0) | rule[:, 0].bool()
         relative |= rule[:, 1].bool() & (left[:, 0].bitwise_and(self.GENERIC) != 0)
         predicate = rule[:, 2].bool()
         sentence = rule[:, 1].bool() | (binary & relative & ~predicate & ~headed)

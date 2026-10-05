@@ -200,71 +200,29 @@ def test_unreduced_lexical_converse_uses_its_anchored_grammar_form(
     assert owner.program_meaning(legacy, registry) is None
 
 
-def test_selected_unary_concept_operation_keeps_its_live_leaf_and_question_mode(
-        monkeypatch):
-    """A selected unary thought form is not limited to binary relations.
-
-    ``quantize`` is explicitly declared in ``<thought>`` and accepts one
-    conceptual operand.  Its completed program has no physical middle VP
-    leaf: recovery must obtain the grammar-owned native VP while retaining
-    the actual signed operand leaf, then let the structural ``what`` wrapper
-    supply interrogative mode.  It must not decline the program merely because
-    its selected structural root is unary.
-    """
-    _cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(
-        monkeypatch)
-    quantize = next(
-        index for index, rule in enumerate(owner._compose_unary_rules)
-        if rule.method_name == "quantize")
-    what = next(
-        index for index, rule in enumerate(owner._compose_unary_rules)
-        if rule.method_name == "what")
+def test_selected_unary_thought_keeps_its_live_leaf_and_question_mode(monkeypatch):
+    """A thought-only unary has its own native VP without a compose no-op."""
+    _cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(monkeypatch)
+    assert all(rule.method_name != 'quantize' for rule in owner._compose_unary_rules)
     leaf = leaves[:1].detach().clone().requires_grad_()
-    entry = AnswerProgram(
-        rows=torch.tensor([3]), word_rows=torch.tensor([7]),
-        activations=torch.tensor([-.25]), leaves=leaf,
-        actions=torch.tensor(
-            [[0, -1, 0], [2, quantize, -1], [2, what, -1]],
-            dtype=torch.long),
-        targets=torch.tensor([quantize, what, -1]),
-        end_state=torch.zeros(3, leaf.shape[-1]),
-        concept_ids=torch.tensor([-1]), lexical_forms=(None,))
-
-    meaning = owner.program_meaning(entry, registry)
-
-    canonical = registry.form("quantize", leaf[0], mode="interrogative")
-    assert meaning is not None
-    assert meaning.mode == "interrogative" and meaning.polarity
+    meaning = registry.form('quantize', leaf[0], mode='interrogative')
+    canonical = registry.form('quantize', leaf[0], mode='interrogative')
+    assert meaning.mode == 'interrogative' and meaning.polarity
     assert meaning.role_refs == canonical.role_refs
     assert meaning.role_mask.tolist() == [True, True, False]
     torch.testing.assert_close(meaning.roles[0], leaf[0])
     torch.testing.assert_close(meaning.roles[1], canonical.roles[1])
-    (meaning.roles[0].sum()).backward()
+    meaning.roles[0].sum().backward()
     torch.testing.assert_close(leaf.grad, torch.ones_like(leaf))
 
 
-def test_selected_unary_description_operation_does_not_invent_an_occurrence(
-        monkeypatch):
-    """A direct word leaf is never reinterpreted as an LTM/thought reference."""
-    _cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(
-        monkeypatch)
-    arma = next(
-        index for index, rule in enumerate(owner._compose_unary_rules)
-        if rule.method_name == "arma")
-    what = next(
-        index for index, rule in enumerate(owner._compose_unary_rules)
-        if rule.method_name == "what")
-    entry = AnswerProgram(
-        rows=torch.tensor([3]), word_rows=torch.tensor([7]),
-        activations=torch.tensor([-.25]), leaves=leaves[:1],
-        actions=torch.tensor(
-            [[0, -1, 0], [2, arma, -1], [2, what, -1]], dtype=torch.long),
-        targets=torch.tensor([arma, what, -1]),
-        end_state=torch.zeros(3, leaves.shape[-1]),
-        # This deliberately arbitrary ID must not become a durable occurrence.
-        concept_ids=torch.tensor([917]), lexical_forms=(None,))
-
-    assert owner.program_meaning(entry, registry) is None
+def test_selected_unary_description_does_not_invent_an_occurrence(monkeypatch):
+    """A word ID is never reinterpreted as an LTM or thought occurrence."""
+    from test_query_vp_boundaries import _context
+    cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(monkeypatch)
+    assert all(rule.method_name != 'arma' for rule in owner._compose_unary_rules)
+    with pytest.raises((TypeError, ValueError), match='occurrence|reference'):
+        registry.form('arma', ('sym', 917), context=_context(cs))
 
 
 def test_capture_reads_anchored_form_from_retained_word_rows():
@@ -380,10 +338,10 @@ def test_owned_local_rule_meaning_survives_global_grammar_reconfiguration(
     torch.testing.assert_close(meaning.roles[0], leaves[0])
 
 
-@pytest.mark.parametrize("wrapper, expected", [("not", False), ("non", False)])
+@pytest.mark.parametrize("wrapper, expected", [("not", False), ("non", None)])
 def test_selected_relation_preserves_declared_outer_polarity(
         monkeypatch, wrapper, expected):
-    """A negating compose wrapper changes meaning metadata, not its operands."""
+    """Negation flips polarity; exclusion belongs to the closing evidence."""
     _cs, _grammar, registry, owner, leaves, program, a, b = _program_owner(
         monkeypatch, interrogative=True)
     unary = next(
@@ -393,6 +351,9 @@ def test_selected_relation_preserves_declared_outer_polarity(
     actions = torch.cat((entry.actions, torch.tensor(
         [[2, unary, -1]], dtype=entry.actions.dtype)), dim=0)
     meaning = owner.program_meaning(replace(entry, actions=actions), registry)
+    if expected is None:
+        assert meaning is None
+        return
     assert meaning.mode == "interrogative"
     assert meaning.polarity is expected
     assert meaning.role_refs == registry.form("part", a, b).role_refs
@@ -403,14 +364,14 @@ def test_selected_relation_preserves_declared_outer_polarity(
 @pytest.mark.parametrize("path", ["forward", "packed"])
 def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
         monkeypatch, path):
-    from Layers import InterSentenceLayer, TernaryTruthStore
+    from Layers import BracketExpectation, TernaryTruthStore
     from reading_fixtures import commit_reading
 
     cs, _grammar, registry, owner, leaves, program, _a, _b = _program_owner(
         monkeypatch, interrogative=True)
     entry = program()
     calls = []
-    discourse = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
+    discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
         concept_dim=8, expectation_scope='structured')
     predict = discourse.sentence_prediction_cost
     def capture(depths, payloads, mask, **kwargs):

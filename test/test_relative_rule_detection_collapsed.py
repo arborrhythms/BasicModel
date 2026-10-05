@@ -30,16 +30,16 @@ _COLLAPSED_GRAMMAR = textwrap.dedent("""\
       <Symbolic>
         <start name="relative_truth">equal_O1</start>
         <start name="relative_truth">part_O1</start>
-        <start name="absolute_truth">exist_O1</start>
+        <start name="absolute_truth">S</start>
         <compose>
           <rule>equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
           <rule>part_O1 = part.forward(part_I1, part_I2)</rule>
-          <rule>exist_O1 = exist.forward(exist_I1)</rule>
+          <rule>S = S</rule>
         </compose>
         <generate>
           <rule>equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
           <rule>part_I1, part_I2 = part.reverse(part_O1)</rule>
-          <rule>exist_I1 = exist.reverse(exist_O1)</rule>
+          <rule>S = S</rule>
         </generate>
       </Symbolic>
     </grammar>
@@ -57,10 +57,10 @@ def _load(text, monkeypatch, tmp_path):
     return g
 
 
-def test_relative_op_names_are_canonical_structural_forms():
+def test_relative_relation_kinds_are_canonical_structural_forms():
     """The relative family is structural, not a legacy query alias table."""
     from Language import Grammar
-    assert Grammar._RELATIVE_OP_NAMES == frozenset({"equal", "part", "whole", "implies"})
+    assert Grammar._RELATIVE_RELATION_KINDS == frozenset({"equal", "part", "whole", "implies"})
 
 
 def test_relative_start_categories_from_named_starts(monkeypatch, tmp_path):
@@ -72,17 +72,17 @@ def test_relative_start_categories_from_named_starts(monkeypatch, tmp_path):
 
 def test_equal_and_part_forward_rules_are_relative(monkeypatch, tmp_path):
     """Both relation families' forward rules flag relative; the absolute
-    ``exist`` rule does not."""
+    identity rule does not."""
     g = _load(_COLLAPSED_GRAMMAR, monkeypatch, tmp_path)
     by_lhs = {r.lhs: i for i, r in enumerate(g.rules_upward)}
     assert g.is_relative_rule(by_lhs["equal_O1"])
     assert g.is_relative_rule(by_lhs["part_O1"])
-    assert not g.is_relative_rule(by_lhs["exist_O1"])
+    assert not g.is_relative_rule(by_lhs["S"])
 
 
-def test_part_rule_relative_by_op_name(monkeypatch, tmp_path):
+def test_part_rule_relative_by_declared_relation(monkeypatch, tmp_path):
     """A rule whose lhs is not a relative start is still flagged when its
-    method is ``part`` (the op-name signal)."""
+    declared relation is ``part``."""
     g = _load(_COLLAPSED_GRAMMAR, monkeypatch, tmp_path)
     rel = g._relative_rule_id_set()
     part_reverse = [

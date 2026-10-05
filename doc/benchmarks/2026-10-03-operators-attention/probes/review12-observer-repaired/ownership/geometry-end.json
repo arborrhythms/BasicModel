@@ -1,0 +1,74 @@
+{
+  "dictionary": [
+    {
+      "stage": 0,
+      "rows": 6,
+      "dimension": 10,
+      "cosine_matrix_rows": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "matrix_scope": "all rows",
+      "all_dictionary_pairs": {
+        "count": 30,
+        "mean": -0.010442421611188616,
+        "mean_square": 0.07715478698018524
+      },
+      "norms": {
+        "min": 0.9999999403953552,
+        "max": 1.0,
+        "mean": 1.0
+      },
+      "vq_ema_update": false,
+      "cluster_size_file": "cluster-size-stage-0.pt",
+      "cluster_size": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "stage": 1,
+      "rows": 6,
+      "dimension": 10,
+      "cosine_matrix_rows": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "matrix_scope": "all rows",
+      "all_dictionary_pairs": {
+        "count": 30,
+        "mean": -0.12433633214009834,
+        "mean_square": 0.11996024272395532
+      },
+      "norms": {
+        "min": 0.9993473291397095,
+        "max": 1.001096487045288,
+        "mean": 1.0001424551010132
+      },
+      "vq_ema_update": false,
+      "cluster_size_file": "cluster-size-stage-1.pt",
+      "cluster_size": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "roots": null,
+  "note": "No new forward or optimizer step; roots from the measured first trial and endpoint; dictionary pairs are cosine, not dot products."
+}

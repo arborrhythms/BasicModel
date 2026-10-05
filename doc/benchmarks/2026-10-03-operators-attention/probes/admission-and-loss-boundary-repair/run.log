@@ -1,0 +1,482 @@
+..........................F............F...........FF................... [ 61%]
+..........................F.....F.....s......                            [100%]
+=================================== FAILURES ===================================
+_____________ test_codebook_enables_and_em_populates_on_real_model _____________
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_codebook_enables_and_em_populates_on_real_model():
+        path = _write_category_config()
+        try:
+            model = _build(path)
+            # Roles exist for this grammar (operator methods -> op_I/op_O roles).
+            _r, _i, n_roles = compute_role_vocabulary(Language.TheGrammar)
+            assert n_roles > 0, "operator grammar should declare roles"
+            fired = _run_forwards(model)
+            assert fired > 0, "no forward pass completed"
+            ws = _terminal_ss(model)
+            assert ws is not None
+            # The autobind hook lazily enabled the codebook with the grammar roles.
+            assert ws.category_codebook_enabled(), "codebook never enabled"
+            assert int(ws._category_n_roles) == n_roles
+            # Phase 2 stash: per-position percept ids recorded for compose.
+            assert getattr(ws, "_category_last_pid", None) is not None
+            # The E-step ran: at least one MetaSymbol assigned to a centroid.
+>           assert len(getattr(ws, "_category_assign", {})) > 0, (
+                "no MetaSymbol -> centroid assignment recorded")
+E               AssertionError: no MetaSymbol -> centroid assignment recorded
+E               assert 0 > 0
+E                +  where 0 = len({})
+E                +    where {} = getattr(ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...AttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n  (_category_vq): VectorQuantize()\n), '_category_assign', {})
+
+test/test_category_em_smoke.py:144: AssertionError
+__________ test_native_progress_and_trained_artifact_evaluation_path ___________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1597/test_native_progress_and_train0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1284ad250>
+
+    def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypatch):
+        """Exercise the real small model for plumbing, without a quality assertion."""
+        import Models
+        from data import Data
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from test_packed_reconstruction_parity import reset
+        from reading_fixtures import force_absolute_reading
+        from LearningEvaluation import FINEWEB_CORPUS, checkpoint_readiness
+        from eval_fineweb_learning import load_model, read_validation
+        from What import What
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+    
+        # The same tensor cells, without graph-dispatch startup for this counter test.
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        restore_weights = Models.BaseModel.load_weights
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+            concept_rows=256, part_rows=128,
+            architecture_overrides={'ltmConsolidation': True})
+        monkeypatch.setattr(Models.BaseModel, 'load_weights', restore_weights)
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.reconstruction_placement = 'eager'
+        # This is checkpoint/prediction plumbing with an explicitly supplied
+        # absolute reading, not a measurement of the untrained English parser.
+        force_absolute_reading(model)
+        data = model.inputSpace.data
+        manifest = dict(dataset='text', corpus=FINEWEB_CORPUS,
+                        shards=[dict(path='fixture.parquet', size=123)])
+        monkeypatch.setattr(data, 'source_manifest', manifest)
+        monkeypatch.setattr(data, 'source_addresses', {'train': [
+            dict(split='train', document=0, sentence=i) for i in range(3)]})
+        monkeypatch.setattr(data, 'grammar_lessons', {})
+        optimizer = model.getOptimizer(lr=.0001)
+        raw = model.inputSpace.prepPackedInput([['a b', 'c d'], ['a b']])
+>       model.runBatch(train=True, split='train', batchSize=2, optimizer=optimizer,
+            source_rows=[[0, 1], [2]], batch_override=(raw, torch.empty(2, 0)),
+            questions=(What.present(0), What.present(1)))
+
+test/test_learning_readiness.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13579: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13706: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14081: in _run_batch_once
+    _what_answers = self._what_or_think(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+questions = (WhatQuestion(where=0, relation=<WhatRelation.PRESENT: 'present'>, offset=0, split='train', prompt=None), WhatQuestion(where=1, relation=<WhatRelation.PRESENT: 'present'>, offset=0, split='train', prompt=None))
+input_data = tensor([[[97, 32, 98,  ...,  0,  0,  0]],
+
+        [[97, 32, 98,  ...,  0,  0,  0]]], dtype=torch.int8)
+executor = <bound method BasicModel.forward of BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpa...out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)>
+record = True
+score = <function BasicModel._run_batch_once.<locals>.score_answer at 0x128207c40>
+
+    def _what_or_think(self, questions, input_data, *, executor, record, score=None):
+        """One understanding and answer boundary per batch presentation."""
+>       return self.what(questions, input_data, executor=executor, record=record, score=score)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: BasicModel.what() got an unexpected keyword argument 'score'
+
+bin/Models.py:8776: TypeError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+___ test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser ___
+
+model = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1597/test_neutral_chooser_is_single0')
+
+    def test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser(model, tmp_path):
+        x, _ = _batch(model, rows=2)
+        with torch.no_grad():
+>           result = model.think((What.supervised(0), What.supervised(1)), x)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_what_thinking_episode.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:10477: in think
+    first = self.what(question, input_data, executor=executor, record=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+question = (WhatQuestion(where=0, relation=<WhatRelation.SUPERVISED: 'supervised'>, offset=0, split='train', prompt=None), WhatQuestion(where=1, relation=<WhatRelation.SUPERVISED: 'supervised'>, offset=0, split='train', prompt=None))
+input_data = tensor([[[109,  32, 101,  ...,   0,   0,   0]],
+
+        [[121,  32, 101,  ...,   0,   0,   0]]], dtype=torch.int8)
+executor = None
+execution = (tensor([[[ 0.0000e+00,  3.1596e-02,  2.5739e-02,  0.0000e+00,  0.0000e+00,
+           3.2070e-02,  9.8017e-02,  9.951...      [0.4947],
+         [0.4972],
+         [0.4958],
+         [0.4991],
+         [0.4960],
+         [0.4954]]]), None)
+record = True, iteration = 0, closure_pressure = 0.0
+
+    def what(self, question, input_data=None, *, executor=None,
+             execution=None, record=True, iteration=0,
+             closure_pressure=0.0):
+        """Produce the model's answer through the existing forward path.
+    
+        A sequence of questions shares one batched execution and returns a
+        tuple of answers.  A single question returns one ``WhatAnswer``.  The
+        target is never accepted by this interface.  ``execution`` lets
+        ``runBatch`` or a compatibility test wrap an already-computed clean
+        path without a second model pass.
+        """
+        questions = question_batch(question)
+        if not questions:
+            raise ValueError("Model.what requires at least one question")
+        # Episode bookkeeping for the resolve step (mathematical thinking
+        # spec 6): iteration 0 opens fresh scratchpads / pending referents /
+        # policy records; later iterations reuse them.
+        self._what_current_iteration = int(iteration)
+        self._what_current_closure_pressure = float(closure_pressure)
+        if int(iteration) == 0:
+            self._what_pending = {}
+            self._what_policy_records = []
+            self._what_root_symbols = {}
+            self._what_episode_steps = []          # every iteration's step trace
+            self._begin_referents(questions)
+    
+        if torch.is_tensor(input_data):
+            device = input_data.device
+            dtype = (input_data.dtype if input_data.is_floating_point()
+                     else torch.float32)
+        else:
+            try:
+                parameter = next(self.parameters())
+                device, dtype = parameter.device, parameter.dtype
+            except StopIteration:
+                device, dtype = TheDevice.get(), torch.float32
+        chooser_context, detailed_context = self._what_grammar_context(
+            questions, device=device, dtype=dtype)
+        language = getattr(getattr(self, "symbolSpace", None),
+                           "languageLayer", None)
+        # Install the target-free question context on the LanguageLayer AND
+        # on every grammar layer with a chooser: the STM bounded-reduce pass
+        # calls the grammar layers directly (no ``what_ctx`` threaded), and
+        # its choices are the ones the policy objective credits.
+        holders = [language] if language is not None else []
+        symbol_space = getattr(self, "symbolSpace", None)
+        named_modules = getattr(symbol_space, "named_modules", None)
+        if callable(named_modules):
+            for _name, module in named_modules():
+                if (hasattr(module, "chooser") and hasattr(module, "forward")
+                        and module is not language):
+                    holders.append(module)
+        saved = [(h, getattr(h, "_what_context", None),
+                  getattr(h, "_what_ltm_context", None)) for h in holders]
+        self._active_what_questions = questions
+        for h in holders:
+            h._what_context = chooser_context
+            h._what_ltm_context = detailed_context
+        try:
+            if execution is None:
+                if input_data is None:
+                    raise ValueError(
+                        "Model.what needs input_data or an existing execution")
+                execution = self._execute_input_sentence(input_data, executor)
+        finally:
+            for h, ctx, detail in saved:
+                h._what_context = ctx
+                h._what_ltm_context = detail
+    
+        _forward_input, symbols, produced_all = self._what_execution_parts(
+            execution)
+        if produced_all is None:
+            raise RuntimeError("Model.what received no produced response")
+        previous = getattr(self, "_last_understanding", None)
+        self._last_understanding = (
+            previous if previous is not None and previous.execution is execution
+            else self._capture_understanding(execution))
+        self._last_answer_construction = None
+        selected_thought_rows = {}
+        if getattr(self, "answer_synthesis", False):
+            # Complete conceptual resolution before entering surface generation.
+>           options={} if score is None else {'score':score}
+                          ^^^^^
+E           NameError: name 'score' is not defined
+
+bin/Models.py:10276: NameError
+_________________ test_think_never_consults_the_desired_answer _________________
+
+model = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127f59730>
+
+    def test_think_never_consults_the_desired_answer(model, monkeypatch):
+        data = model.inputSpace.data
+    
+        def forbidden(question):
+            raise AssertionError("Data.what() reached during thinking")
+    
+        monkeypatch.setattr(data, "what", forbidden)
+        x, _ = _batch(model, rows=2)
+        with torch.no_grad():
+>           result = model.think((What.supervised(0), What.supervised(1)), x[1:2])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_what_thinking_episode.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:10477: in think
+    first = self.what(question, input_data, executor=executor, record=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+question = (WhatQuestion(where=0, relation=<WhatRelation.SUPERVISED: 'supervised'>, offset=0, split='train', prompt=None), WhatQuestion(where=1, relation=<WhatRelation.SUPERVISED: 'supervised'>, offset=0, split='train', prompt=None))
+input_data = tensor([[[121,  32, 101,  ...,   0,   0,   0]]], dtype=torch.int8)
+executor = None
+execution = (tensor([[[ 0.0000e+00,  3.1596e-02,  2.5739e-02,  0.0000e+00,  0.0000e+00,
+           3.2070e-02,  9.8017e-02,  9.951...      [0.4949],
+         [0.4972],
+         [0.4959],
+         [0.4989],
+         [0.4961],
+         [0.4960]]]), None)
+record = True, iteration = 0, closure_pressure = 0.0
+
+    def what(self, question, input_data=None, *, executor=None,
+             execution=None, record=True, iteration=0,
+             closure_pressure=0.0):
+        """Produce the model's answer through the existing forward path.
+    
+        A sequence of questions shares one batched execution and returns a
+        tuple of answers.  A single question returns one ``WhatAnswer``.  The
+        target is never accepted by this interface.  ``execution`` lets
+        ``runBatch`` or a compatibility test wrap an already-computed clean
+        path without a second model pass.
+        """
+        questions = question_batch(question)
+        if not questions:
+            raise ValueError("Model.what requires at least one question")
+        # Episode bookkeeping for the resolve step (mathematical thinking
+        # spec 6): iteration 0 opens fresh scratchpads / pending referents /
+        # policy records; later iterations reuse them.
+        self._what_current_iteration = int(iteration)
+        self._what_current_closure_pressure = float(closure_pressure)
+        if int(iteration) == 0:
+            self._what_pending = {}
+            self._what_policy_records = []
+            self._what_root_symbols = {}
+            self._what_episode_steps = []          # every iteration's step trace
+            self._begin_referents(questions)
+    
+        if torch.is_tensor(input_data):
+            device = input_data.device
+            dtype = (input_data.dtype if input_data.is_floating_point()
+                     else torch.float32)
+        else:
+            try:
+                parameter = next(self.parameters())
+                device, dtype = parameter.device, parameter.dtype
+            except StopIteration:
+                device, dtype = TheDevice.get(), torch.float32
+        chooser_context, detailed_context = self._what_grammar_context(
+            questions, device=device, dtype=dtype)
+        language = getattr(getattr(self, "symbolSpace", None),
+                           "languageLayer", None)
+        # Install the target-free question context on the LanguageLayer AND
+        # on every grammar layer with a chooser: the STM bounded-reduce pass
+        # calls the grammar layers directly (no ``what_ctx`` threaded), and
+        # its choices are the ones the policy objective credits.
+        holders = [language] if language is not None else []
+        symbol_space = getattr(self, "symbolSpace", None)
+        named_modules = getattr(symbol_space, "named_modules", None)
+        if callable(named_modules):
+            for _name, module in named_modules():
+                if (hasattr(module, "chooser") and hasattr(module, "forward")
+                        and module is not language):
+                    holders.append(module)
+        saved = [(h, getattr(h, "_what_context", None),
+                  getattr(h, "_what_ltm_context", None)) for h in holders]
+        self._active_what_questions = questions
+        for h in holders:
+            h._what_context = chooser_context
+            h._what_ltm_context = detailed_context
+        try:
+            if execution is None:
+                if input_data is None:
+                    raise ValueError(
+                        "Model.what needs input_data or an existing execution")
+                execution = self._execute_input_sentence(input_data, executor)
+        finally:
+            for h, ctx, detail in saved:
+                h._what_context = ctx
+                h._what_ltm_context = detail
+    
+        _forward_input, symbols, produced_all = self._what_execution_parts(
+            execution)
+        if produced_all is None:
+            raise RuntimeError("Model.what received no produced response")
+        previous = getattr(self, "_last_understanding", None)
+        self._last_understanding = (
+            previous if previous is not None and previous.execution is execution
+            else self._capture_understanding(execution))
+        self._last_answer_construction = None
+        selected_thought_rows = {}
+        if getattr(self, "answer_synthesis", False):
+            # Complete conceptual resolution before entering surface generation.
+>           options={} if score is None else {'score':score}
+                          ^^^^^
+E           NameError: name 'score' is not defined
+
+bin/Models.py:10276: NameError
+________ test_symbolspace_and_grammar_use_conceptual_not_property_width ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1597/test_symbolspace_and_grammar_u0')
+
+    def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
+        """SS state is CS-width even when the upstream property basis is narrow."""
+        model = _small_property_model(
+            tmp_path, native_event=16, concept_event=24,
+            symbol_tower=True, symbolic_lift=True)
+        cs = model.conceptualSpace
+        ws = model.wholeSpace
+        ss = model.symbolSpace
+    
+        # Concepts are opaque codes: no conceptual band, the whole width is
+        # the code (2026-09-14).  Symbols are percepts and keep their band.
+        assert cs.subspace.nWhat == 24 and cs.subspace.muxedSize == 24
+        assert ws.subspace.nWhat == 8
+        assert ws.subspace.muxedSize == 16
+    
+        assert ss.muxedSize == cs.subspace.muxedSize
+        assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen
+        # Grammar consumes opaque concept codes, not the symbol's located-event
+        # content slice. No conceptual coordinate may be truncated here.
+        assert ss.languageLayer.feature_dim == cs.subspace.muxedSize
+        assert ss.truth_layer.nDim == cs.subspace.muxedSize      # ideas are concept codes
+        assert ss.ltm_store.nDim == cs.subspace.muxedSize
+        assert ss._stm_payload_dim == cs.subspace.muxedSize
+        assert ss.what.nDim == ss.nWhat
+    
+>       lift = next(op for rule, op in zip(model.languageSpace._compose_binary_rules,
+                                          model.languageSpace._tree_layer(2).ops)
+                    if rule.method_name == 'lift').gl
+E       StopIteration
+
+test/test_wholespace_property_migration.py:244: StopIteration
+_ TestFlatSlabInvariant.test_aligned_parallel_does_not_receive_sparse_boundary_relaxation _
+
+self = <test_unified_lexicon_codebook.TestFlatSlabInvariant testMethod=test_aligned_parallel_does_not_receive_sparse_boundary_relaxation>
+
+    def test_aligned_parallel_does_not_receive_sparse_boundary_relaxation(self):
+        cfg = self._build_config_dict(
+            is_out=8, is_dim=504,
+            ps_out=8, ps_dim=128,
+            cs_out=8, cs_dim=1024,
+            aligned_word_brackets=True)
+        cfg["architecture"]["serial"] = False
+>       with self.assertRaises((ValueError, AssertionError, KeyError)) as ctx:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: (<class 'ValueError'>, <class 'AssertionError'>, <class 'KeyError'>) not raised
+
+test/test_unified_lexicon_codebook.py:879: AssertionError
+=============================== warnings summary ===============================
+test/test_definition_rows.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_definition_rows.py::test_32_head_meta_checkpoint_migrates_to_definitions
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:394: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+FAILED test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+FAILED test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser
+FAILED test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer
+FAILED test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width
+FAILED test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_parallel_does_not_receive_sparse_boundary_relaxation
+6 failed, 110 passed, 1 skipped, 3 warnings in 57.84s

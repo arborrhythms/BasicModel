@@ -152,13 +152,24 @@ def test_native_packed_unary_preference_still_records_every_sentence(tmp_path, m
     try:
         store = model.symbolSpace.ltm_store
         before = int((store.rel_type[:len(store)] != store.REL_DEF).sum())
+        completed = []
+        write = store.write_clause
+        def observed_write(*args, **kwargs):
+            row = write(*args, **kwargs)
+            completed.append(row)
+            return row
+        monkeypatch.setattr(store, 'write_clause', observed_write)
         inputs = model.inputSpace.prepPackedInput([['1 plus 2', '3 plus 4']])
         from types import SimpleNamespace
         from reading_fixtures import capture_operation_traces
         with capture_operation_traces(model) as traces:
             model.runBatch(train=False, batchSize=1, split='runtime',
                            batch_override=(inputs, torch.zeros(1, 1, 0)))
-        assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) - before == 2
+        # A completed sentence can own embedded clause rows. Count its
+        # two root writes, preserving the nested rows the grammar chose.
+        assert len(completed) == 2 and len(set(completed)) == 2
+        assert all(int(store.rel_type[row]) != store.REL_DEF for row in completed)
+        assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) - before >= 2
         assert (model._tensor_sentence_roots_depth[0, :2] > 0).all()
         # The caller observes the open readings; the completed rows discard
         # their operation records. Retain the same unary-execution assertion.

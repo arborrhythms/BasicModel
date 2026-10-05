@@ -117,7 +117,15 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             asserted unconditionally by
             ``test_rule_probs_requires_grad_on_full_router``.
         """
-        model = _build_model(_ROUTER_CONFIG)
+        # The former not symbol is now a field operation. Declare a legal
+        # non and identity unaries for the same gradient proof. Two legal
+        # candidates keep the normalized rule distribution non-degenerate.
+        import tempfile
+        with open(_ROUTER_CONFIG) as source:
+            text=source.read().replace('S = not(S)', 'S = non(S)</rule><rule>S = null(S)')
+        with tempfile.NamedTemporaryFile(mode='w',suffix='.xml') as config:
+            config.write(text);config.flush()
+            model = _build_model(config.name)
         ss = model.symbolSpace
         ll = ss.languageLayer
         # Space-role-free fold: the grammar collapses to a SINGLE reduction space_role

@@ -91,7 +91,7 @@ def test_parallel_field_never_dispatches_grammar_lift_or_lower(monkeypatch):
 def test_serial_grammar_never_executes_field_sigma_pi_or_not(tmp_path, monkeypatch):
     from test_reverse_traversal import _traversal_model, _run
     model = _traversal_model(tmp_path)
-    assert model.serial
+    assert model.word_brackets
 
     def forbidden(*args, **kwargs):
         raise AssertionError('serial grammar executed a field evidence operation')

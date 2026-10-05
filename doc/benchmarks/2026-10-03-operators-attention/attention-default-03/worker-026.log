@@ -1,0 +1,29 @@
+.......................................................s................ [ 40%]
+........................................................................ [ 80%]
+..............F....F.s.............                                      [100%]
+=================================== FAILURES ===================================
+_______ test_native_trial_reads_the_completed_point_without_state_credit _______
+test/test_supplied_answer_training.py:118: in test_native_trial_reads_the_completed_point_without_state_credit
+    error = BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
+bin/Models.py:19824: in _sentence_answer_error
+    construction = self.reverseOutput(understanding, held,
+E   TypeError: test_native_trial_reads_the_completed_point_without_state_credit.<locals>.realize() got an unexpected keyword argument 'score'
+___________ test_selected_surface_preserves_complete_content_meaning ___________
+test/test_surface_grammar.py:78: in test_selected_surface_preserves_complete_content_meaning
+    assert recovered.metadata() == original.metadata()
+           ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'metadata'
+=============================== warnings summary ===============================
+test/test_stm_substrate.py::test_word_space_params_include_category_embedding
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_stm_substrate.py::test_word_space_params_include_category_embedding
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_without_state_credit
+FAILED test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning
+2 failed, 175 passed, 2 skipped, 2 warnings in 9.43s

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_grounded_xor.py",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction"
+  ],
+  "seed": null,
+  "memory_bytes": 8589934592,
+  "timeout": 1800,
+  "additional_training_runs": "unchanged selected controls"
+}

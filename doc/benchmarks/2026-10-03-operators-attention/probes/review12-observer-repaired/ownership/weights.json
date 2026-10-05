@@ -1,0 +1,199 @@
+{
+  "configuration": "XOR_grammar",
+  "contract": "\u00a715: one objective writer per parameter",
+  "terms": {
+    "output": {
+      "weight": 1.0,
+      "value": 0.1623322069644928,
+      "weighted": 0.1623322069644928,
+      "space": "OutputSpace",
+      "category": "prediction",
+      "count": 1,
+      "kind": "penalty",
+      "objective": "prediction",
+      "trained": false,
+      "context_weight": 1.0
+    },
+    "answer.what": {
+      "weight": 0.7,
+      "value": 0.46380630135536194,
+      "weighted": 0.3246644109487533,
+      "space": null,
+      "category": "prediction",
+      "count": 1,
+      "kind": "relative",
+      "objective": "output",
+      "trained": true,
+      "context_weight": 1.0,
+      "raw": 0.23190315067768097,
+      "baseline": 0.5,
+      "active_entries": 4.0
+    },
+    "reconstruction": {
+      "weight": 1.0,
+      "value": 7.73904275894165,
+      "weighted": 7.73904275894165,
+      "space": "InputSpace",
+      "category": "reconstruction",
+      "count": 1,
+      "kind": "penalty",
+      "objective": "reconstruction",
+      "trained": false,
+      "context_weight": 1.0
+    },
+    "reconstruction.free_bytes": {
+      "weight": 0.1,
+      "value": 1.3956347703933716,
+      "weighted": 0.13956347703933716,
+      "space": null,
+      "category": "reconstruction",
+      "count": 1,
+      "kind": "relative",
+      "objective": "reconstruction",
+      "trained": true,
+      "context_weight": 1.0,
+      "raw": 7.73904275894165,
+      "baseline": 5.545177459716797,
+      "active_entries": 4.0
+    },
+    "reconstruction.antipode": {
+      "weight": 0.1,
+      "value": 0.9164184331893921,
+      "weighted": 0.09164184331893921,
+      "space": null,
+      "category": "reconstruction",
+      "count": 1,
+      "kind": "relative",
+      "objective": "reconstruction",
+      "trained": true,
+      "context_weight": 1.0,
+      "raw": 0.6352128386497498,
+      "baseline": 0.6931471824645996,
+      "active_entries": 4.0
+    },
+    "reconstruction_unavailable_sentences": {
+      "weight": 1.0,
+      "value": 0.0,
+      "weighted": 0.0,
+      "space": null,
+      "category": "count",
+      "count": 1,
+      "kind": "penalty",
+      "objective": "count",
+      "trained": false,
+      "context_weight": 1.0
+    }
+  },
+  "trial_terms": {
+    "reconstruction.free_bytes": {
+      "weight": 0.1,
+      "value": 1.3956348896026611,
+      "weighted": 0.13956348896026613,
+      "space": null,
+      "category": "reconstruction",
+      "count": 1,
+      "kind": "relative",
+      "objective": "reconstruction",
+      "trained": true,
+      "context_weight": 1.0,
+      "row_values": [
+        7.170581906024154e-10,
+        2.8470829249727103e-08,
+        2.24566650390625,
+        3.3368728160858154
+      ],
+      "raw": 7.73904275894165,
+      "baseline": 5.545177459716797,
+      "active_entries": 4.0
+    },
+    "reconstruction.antipode": {
+      "weight": 0.1,
+      "value": 0.9164184331893921,
+      "weighted": 0.09164184331893921,
+      "space": null,
+      "category": "reconstruction",
+      "count": 1,
+      "kind": "relative",
+      "objective": "reconstruction",
+      "trained": true,
+      "context_weight": 1.0,
+      "row_values": [
+        1.0699317455291748,
+        0.4773072302341461,
+        1.8651232719421387,
+        0.25331154465675354
+      ],
+      "raw": 0.6352128386497498,
+      "baseline": 0.6931471824645996,
+      "active_entries": 4.0
+    },
+    "expectation.word": {
+      "weight": 0.1,
+      "value": 1.3844341039657593,
+      "weighted": 0.13844341039657593,
+      "space": null,
+      "category": "expectation",
+      "count": 1,
+      "kind": "relative",
+      "objective": "expectation",
+      "trained": true,
+      "context_weight": 1.0,
+      "row_values": [
+        1.3535566329956055,
+        1.408864974975586,
+        1.3610813617706299,
+        1.414233684539795
+      ],
+      "raw": 1.3844341039657593,
+      "baseline": 1.0,
+      "active_entries": 4.0
+    },
+    "answer.what": {
+      "weight": 0.7,
+      "value": 0.5015134811401367,
+      "weighted": 0.3510594367980957,
+      "space": null,
+      "category": "prediction",
+      "count": 1,
+      "kind": "relative",
+      "objective": "output",
+      "trained": true,
+      "context_weight": 1.0,
+      "row_values": [
+        0.49480798840522766,
+        0.5004345178604126,
+        0.5112783312797546,
+        0.4995332360267639
+      ],
+      "raw": 0.25075674057006836,
+      "baseline": 0.5,
+      "active_entries": 4.0
+    },
+    "expectation.intra": {
+      "weight": 0.1,
+      "value": 1.4153714179992676,
+      "weighted": 0.14153714179992677,
+      "space": null,
+      "category": "expectation",
+      "count": 1,
+      "kind": "relative",
+      "objective": "expectation",
+      "trained": true,
+      "context_weight": 1.0,
+      "row_values": [
+        1.105360984802246,
+        1.099554181098938,
+        1.724687933921814,
+        1.7318824529647827
+      ],
+      "raw": 0.5663833618164062,
+      "baseline": 0.4001658856868744,
+      "active_entries": 40.0
+    }
+  },
+  "trial_selection": "explore R < greedy R; ties keep greedy; reader trains only kept rows",
+  "normalizers": "Error registry: squared error / detached target energy; CE / log K; penalties separate",
+  "regularizers": "Own strengths; concept_readout_l1 is a detached report of the proximal step",
+  "training_batches": 1,
+  "evaluation_batches": 0
+}

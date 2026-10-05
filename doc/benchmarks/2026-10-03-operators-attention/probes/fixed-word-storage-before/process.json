@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py::test_fixed_word_storage_rejects_conflicting_teaching",
+    "test/test_one_attention.py::test_fixed_word_storage_survives_projection",
+    "test/test_basicmodel.py",
+    "test/test_analyse_chunking_forward.py",
+    "test/test_partition_grammar_rewrite.py",
+    "test/test_category_em_smoke.py",
+    "test/test_router_fires_per_word.py",
+    "test/test_syntactic_order.py",
+    "test/test_discourse_space.py"
+  ],
+  "pid": 4064,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2424835096,
+  "elapsed_seconds": 20.956034458999056,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/fixed-word-storage-before/run.log"
+}

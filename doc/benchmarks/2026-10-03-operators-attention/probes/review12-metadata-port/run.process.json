@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_review10_contracts.py::test_margin_probe_records_only_training_gradient_and_actual_policy_motion",
+    "test/test_decoder_exploration.py"
+  ],
+  "pid": 23459,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 620824544,
+  "elapsed_seconds": 9.563027124968357,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review12-metadata-port/run.log"
+}

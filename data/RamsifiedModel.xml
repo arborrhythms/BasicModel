@@ -4,11 +4,11 @@
   <!-- RamsifiedModel: MentalModel with subsymbolicOrder=2.
        Used by test_reasoning.py::TestWriteMask::test_partition_isolation. -->
   <architecture>
-    <subsymbolicOrder>2</subsymbolicOrder>
+    <bindingDepth>2</bindingDepth>
     <l1Lambda>0.01</l1Lambda>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <symbolicOrder>1</symbolicOrder>
+    <conceptLayers>2</conceptLayers>
     <weightsPath>RamsifiedModel.ckpt</weightsPath>
     <data>
       <dataType>embedding</dataType>
@@ -28,23 +28,26 @@
   <SymbolSpace>
     <language>
       <grammar>
-        <!-- Per the 2026-05-07 rollback: explicit per-tier natural
-             folds (sigma at P / S, pi at C). -->
-        <P>sigma(P)</P>
-        <C>pi(C)</C>
-        <S>sigma(S)</S>
-        <S>true(S)</S>
-        <S>swap(S, S)</S>
-        <S>isEqual(S, S)</S>
-        <S>part(S, S)</S>
-        <S>non(S)</S>
-        <S>not(S)</S>
-        <S>intersection(S, S)</S>
-        <S>union(S, S)</S>
-        <S>lower(S, S)</S>
-        <S>lift(S, S)</S>
-        <S>lift(S, S, S)</S>
-      </grammar>
+      <compose>
+        <rule operands="field">F = divide.forward(F)</rule>
+        <rule operands="field">F = descend.forward(F)</rule>
+        <rule operands="field">F = gloss.forward(F)</rule>
+        <rule operands="field">F = and.forward(F)</rule>
+        <rule operands="field">F = or.forward(F)</rule>
+        <rule>P = sigma(P)</rule>
+        <rule>C = pi(C)</rule>
+        <rule>S = sigma(S)</rule>
+        <rule>S = swap(S, S)</rule>
+        <rule>S = isEqual(S, S)</rule>
+        <rule>S = part(S, S)</rule>
+        <rule>S = non(S)</rule>
+        <rule>S = not(S)</rule>
+        <rule>S = intersection(S, S)</rule>
+        <rule>S = union(S, S)</rule>
+        <rule>S = lower(S, S)</rule>
+        <rule>S = lift(S, S)</rule>
+      </compose>
+    </grammar>
     </language>
   </SymbolSpace>
 

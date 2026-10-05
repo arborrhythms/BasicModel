@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_word_interpretation.py",
+    "test/test_recon_bench.py",
+    "test/test_where_priming.py",
+    "test/test_reconstruction_scope.py",
+    "test/test_intra_routing_grad_to_router.py",
+    "test/test_negative_expectation.py",
+    "test/test_output_path_supervised.py"
+  ],
+  "pid": 4720,
+  "exit_code": 4,
+  "reason": "exit",
+  "peak_memory_bytes": 295032,
+  "elapsed_seconds": 1.2663571669836529,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/known-word-and-conditioning-repair/run.log"
+}

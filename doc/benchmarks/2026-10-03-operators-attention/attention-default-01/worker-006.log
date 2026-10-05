@@ -1,0 +1,116 @@
+..F..F...............F................FF.....ss....sssss.............F.. [ 28%]
+........................................................................ [ 56%]
+........................................................................ [ 84%]
+........................................                                 [100%]
+=================================== FAILURES ===================================
+___________ test_word_concepts_exist_before_grounded_case_discovery ____________
+test/test_definition_integrity.py:37: in test_word_concepts_exist_before_grounded_case_discovery
+    namespace['learn_grounded_xor'](tmp_path,4)
+/Users/arogers/github/WikiOracle/basicmodel/test/test_definition_integrity.py:word-first:2: in learn_grounded_xor
+    ???
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1519/test_word_concepts_exist_befor0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1519/test_word_concepts_exist_befor0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1519/test_word_concepts_exist_befor0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+___________ test_pending_field_word_reservation_survives_checkpoint ____________
+test/test_definition_integrity.py:71: in test_pending_field_word_reservation_survives_checkpoint
+    m, _ = grounded_model(tmp_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1519/test_pending_field_word_reserv0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1519/test_pending_field_word_reserv0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1519/test_pending_field_word_reserv0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_ test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml] _
+test/test_definition_rows.py:131: in test_31_read_words_have_definition_rows_without_changing_the_configuration
+    m = _fresh_model(str(path))[0]
+        ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+______________ test_referenced_phrase_admission_is_atomic[width] _______________
+test/test_definition_taxonomy.py:143: in test_referenced_phrase_admission_is_atomic
+    assert clause.refs[2] == ('clause', 0)
+E   AssertionError: assert 7 == ('clause', 0)
+_____________ test_referenced_phrase_admission_is_atomic[capacity] _____________
+test/test_definition_taxonomy.py:143: in test_referenced_phrase_admission_is_atomic
+    assert clause.refs[2] == ('clause', 0)
+E   AssertionError: assert 7 == ('clause', 0)
+_ TestModelIntegration.test_discourse_layer_absent_when_sentenceExpectation_false _
+test/test_discourse_space.py:250: in test_discourse_layer_absent_when_sentenceExpectation_false
+    self.assertIsNone(model.symbolSpace.expectation)
+E   AssertionError: BracketExpectation(
+E     (predictor): Sequential(
+E       (0): Linear(in_features=98, out_features=28, bias=True)
+E       (1): Tanh()
+E       (2): Linear(in_features=28, out_features=14, bias=True)
+E     )
+E     (_inter_predictor): SentenceExpectation(
+E       (network): Sequential(
+E         (0): Linear(in_features=360, out_features=90, bias=True)
+E         (1): Tanh()
+E         (2): Linear(in_features=90, out_features=45, bias=True)
+E       )
+E     )
+E     (word_predictor): Sequential(
+E       (0): Linear(in_features=98, out_features=28, bias=True)
+E       (1): Tanh()
+E       (2): Linear(in_features=28, out_features=14, bias=True)
+E     )
+E     (_ltm_store): TernaryTruthStore()
+E   ) is not None
+=============================== warnings summary ===============================
+test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery
+FAILED test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint
+FAILED test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]
+FAILED test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]
+FAILED test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]
+FAILED test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false
+6 failed, 243 passed, 7 skipped, 2 warnings in 8.60s

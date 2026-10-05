@@ -1,0 +1,146 @@
+.F...........................F.................F...Fs.......F........... [ 66%]
+.............s...F.F.................                                    [100%]
+=================================== FAILURES ===================================
+________ TestRuntimeSplitIngestion.test_runepoch_runtime_split_no_raise ________
+test/test_runtime_split_ingestion.py:77: in test_runepoch_runtime_split_no_raise
+    out = m.runEpoch(batchSize=2, split="runtime")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+_____ test_forward_anchor_capture_survives_text_and_grammar_changes[True] ______
+test/test_selected_relation_meaning.py:276: in test_forward_anchor_capture_survives_text_and_grammar_changes
+    model(inputs)
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22852: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13060: in _lex_embed_stem
+    self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+bin/Spaces.py:9873: in finalize_stem
+    return self._finalize_serial_word_stem(sub, ps)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9772: in _finalize_serial_word_stem
+    self._finalize_sentence_word_layout(active)
+bin/Spaces.py:9811: in _finalize_sentence_word_layout
+    raise RuntimeError(
+E   RuntimeError: packed surface word layout differs from the staged sentence boundaries; refusing to train misaligned roots
+___________ test_replaying_real_greedy_derivation_ties_in_every_row ____________
+test/test_sentence_comparison.py:75: in test_replaying_real_greedy_derivation_ties_in_every_row
+    model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+test/test_sentence_compose.py:79: in test_real_packed_ends_train_before_the_next_sentence
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+test/test_compiled_word_chunk.py:402: in _tiny_canonical_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1541/test_real_packed_ends_train_be0/tiny_chunk_model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1541/test_real_packed_ends_train_be0/tiny_chunk_model.xml:93: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1541/test_real_packed_ends_train_be0/tiny_chunk_model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______ test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path ________
+test/test_sentence_end_state.py:87: in test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path
+    compiled = torch.compile(BasicModel._tensor_record_operation_values, backend='eager', fullgraph=True)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_tensor_record_operation_values'. Did you mean: '_tensor_record_operation'?
+_________ test_first_and_later_words_keep_the_same_grad_carry_contract _________
+test/test_sentence_gradients.py:37: in test_first_and_later_words_keep_the_same_grad_carry_contract
+    assert set(seen) == {('exploit', 0), ('exploit', 1),
+E   AssertionError: assert {('exploit', ...'explore', 0)} == {('exploit', ...'explore', 1)}
+E     
+E     Extra items in the right set:
+E     ('explore', 1)
+E     ('exploit', 1)
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+_______ test_referenced_phrase_is_read_from_ltm_without_an_inventory_row _______
+test/test_sentence_identity.py:36: in test_referenced_phrase_is_read_from_ltm_without_an_inventory_row
+    assert inventory(f.cs) == before
+E   AssertionError: assert {'next_id': 1...', 7, 1): 10}} == {'next_id': 1...}, 'keys': {}}
+E     
+E     Differing items:
+E     {'next_id': 11} != {'next_id': 10}
+E     {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}} != {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}}
+E     {'keys': {('singleton', 7): 10, ('part-kind', 7, 1): 10}} != {'keys': {}}
+E     {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 5): 3, ...}} != {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 5): 3, ...}}
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_idempotent_clear_then_record
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7125: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1541/test_sentence_trials_keep_thei0/tiny_chunk_model.xml]: Data.what target (2, 16) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7125: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1541/test_sentence_trials_keep_thei0/tiny_chunk_model.xml]: head pred (2, 1, 1) vs labels (2, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7125: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1541/test_first_and_later_words_kee0/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7125: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1541/test_first_and_later_words_kee0/tiny_chunk_model.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_runepoch_runtime_split_no_raise
+FAILED test/test_selected_relation_meaning.py::test_forward_anchor_capture_survives_text_and_grammar_changes[True]
+FAILED test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+FAILED test/test_sentence_end_state.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path
+FAILED test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+FAILED test/test_sentence_identity.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row
+7 failed, 100 passed, 2 skipped, 5 warnings in 165.73s (0:02:45)

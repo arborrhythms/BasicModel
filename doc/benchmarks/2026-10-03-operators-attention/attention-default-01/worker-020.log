@@ -1,0 +1,171 @@
+F......s.............................................................sss [ 63%]
+.................FF.FFFFFFFFFFFFFFssssssss                               [100%]
+=================================== FAILURES ===================================
+____ test_real_sentence_capture_owns_native_object_ids_across_later_staging ____
+test/test_query_native_ids.py:12: in test_real_sentence_capture_owns_native_object_ids_across_later_staging
+    model = _native_answer_model(tmp_path, False)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1839: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:23879: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - flat-slab invariant violated: PS.nOutput*content (8*128=1088) must equal CS.nOutput*content (8*264=2112), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 8x136, WS 8x136, and CS input 8x264 -> output 8x264; IS may be larger (PS scopes the input down).
+________________ test_saved_roots_follow_operand_unaries[False] ________________
+test/test_readback_operand_unaries.py:59: in test_saved_roots_follow_operand_unaries
+    recovered, _, _, unavailable, _ = inverse(roots, basis)
+                                      ^^^^^^^^^^^^^^^^^^^^^
+test/test_readback_operand_unaries.py:53: in reconstruct
+    return Models.BasicModel._reconstruct_sentences(
+bin/Models.py:12003: in _reconstruct_sentences
+    ready, targets, target_valid = self._byte_tables(B, W)
+                                   ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute '_byte_tables'
+________________ test_saved_roots_follow_operand_unaries[True] _________________
+torch._dynamo.exc.ObservedAttributeError: raised exception AttributeError("'SimpleNamespace' object has no attribute '_byte_tables'")
+
+The above exception was the direct cause of the following exception:
+test/test_readback_operand_unaries.py:59: in test_saved_roots_follow_operand_unaries
+    recovered, _, _, unavailable, _ = inverse(roots, basis)
+                                      ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.Unsupported: Observed exception
+E     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.
+E     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance("force_eager")`. 
+E     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+E   
+E     Developer debug context: raised exception AttributeError("'SimpleNamespace' object has no attribute '_byte_tables'")
+E   
+E    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/test/test_readback_operand_unaries.py", line 53, in reconstruct
+E       return Models.BasicModel._reconstruct_sentences(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12003, in _reconstruct_sentences
+E       ready, targets, target_valid = self._byte_tables(B, W)
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_____________ test_generation_lesson_merge_keeps_its_sentence_row ______________
+test/test_reader_trial_ownership.py:36: in test_generation_lesson_merge_keeps_its_sentence_row
+    torch.testing.assert_close(values.grad,torch.tensor([0.,2.]))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 2 (50.0%)
+E   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)
+________________ test_shift_bootstrap_selects_next_span_at_init ________________
+test/test_reading_attention.py:53: in test_shift_bootstrap_selects_next_span_at_init
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+_____________________ test_scope_is_normalized_unit_range ______________________
+test/test_reading_attention.py:65: in test_scope_is_normalized_unit_range
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+________________ test_monotonic_coverage_mask_excludes_consumed ________________
+test/test_reading_attention.py:81: in test_monotonic_coverage_mask_excludes_consumed
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+______________________ test_padding_spans_never_selected _______________________
+test/test_reading_attention.py:93: in test_padding_spans_never_selected
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+____________ test_codebook_retrieval_prior_is_the_subsymbolic_term _____________
+test/test_reading_attention.py:110: in test_codebook_retrieval_prior_is_the_subsymbolic_term
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+________________ test_codebook_path_preserves_gradient_boundary ________________
+test/test_reading_attention.py:128: in test_codebook_path_preserves_gradient_boundary
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+___________________ test_codebook_path_keeps_shift_bootstrap ___________________
+test/test_reading_attention.py:144: in test_codebook_path_keeps_shift_bootstrap
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+____________________ test_no_codebook_falls_back_to_cosine _____________________
+test/test_reading_attention.py:159: in test_no_codebook_falls_back_to_cosine
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+___________________ test_next_word_ce_matches_neg_log_alpha ____________________
+test/test_reading_attention.py:171: in test_next_word_ce_matches_neg_log_alpha
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+___________________________ test_eval_has_no_ce_loss ___________________________
+test/test_reading_attention.py:183: in test_eval_has_no_ce_loss
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+____________________________ test_no_spans_is_noop _____________________________
+test/test_reading_attention.py:193: in test_no_spans_is_noop
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+____________________ test_gradient_stops_at_primed_symbols _____________________
+test/test_reading_attention.py:204: in test_gradient_stops_at_primed_symbols
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+___________________ test_loss_trains_attention_toward_target ___________________
+test/test_reading_attention.py:225: in test_loss_trains_attention_toward_target
+    from Spaces import ReadingAttention
+E   ImportError: cannot import name 'ReadingAttention' from 'Spaces' (/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py)
+=============================== warnings summary ===============================
+test/test_query_phase_permissions.py::test_operand_occurrence_reads_require_permission_before_preparation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging
+FAILED test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[False]
+FAILED test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[True]
+FAILED test/test_reader_trial_ownership.py::test_generation_lesson_merge_keeps_its_sentence_row
+FAILED test/test_reading_attention.py::test_shift_bootstrap_selects_next_span_at_init
+FAILED test/test_reading_attention.py::test_scope_is_normalized_unit_range - ...
+FAILED test/test_reading_attention.py::test_monotonic_coverage_mask_excludes_consumed
+FAILED test/test_reading_attention.py::test_padding_spans_never_selected - Im...
+FAILED test/test_reading_attention.py::test_codebook_retrieval_prior_is_the_subsymbolic_term
+FAILED test/test_reading_attention.py::test_codebook_path_preserves_gradient_boundary
+FAILED test/test_reading_attention.py::test_codebook_path_keeps_shift_bootstrap
+FAILED test/test_reading_attention.py::test_no_codebook_falls_back_to_cosine
+FAILED test/test_reading_attention.py::test_next_word_ce_matches_neg_log_alpha
+FAILED test/test_reading_attention.py::test_eval_has_no_ce_loss - ImportError...
+FAILED test/test_reading_attention.py::test_no_spans_is_noop - ImportError: c...
+FAILED test/test_reading_attention.py::test_gradient_stops_at_primed_symbols
+FAILED test/test_reading_attention.py::test_loss_trains_attention_toward_target
+17 failed, 85 passed, 12 skipped, 1 warning in 5.01s

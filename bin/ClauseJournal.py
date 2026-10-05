@@ -61,7 +61,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             raise ValueError('invalid clause derivation')
         operands = tuple(stack[-arity:])
         del stack[-arity:]
-        relation_rule = catalog[local].method_name in ('part', 'whole', 'equal', 'implies')
+        relation_rule = bool(getattr(catalog[local], 'relation_kind', None))
         selected_refs = (None if program.operation_refs is None else
                          list(program.operation_refs[action].tolist()))
         for role, (operand, actual) in enumerate(zip(operands, frames[action, :arity])):
@@ -72,8 +72,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 selected = operand
                 while selected['children']:
                     headed = getattr(selected['rule'], 'head_role', 0)
-                    if not headed and selected['rule'].method_name in ('lower', 'bind', 'surface', 'preposition'):
-                        headed = 2
                     if not headed:
                         break
                     selected = selected['children'][headed-1]
@@ -108,9 +106,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         obj = registry.space.concept_id_at_row(int(program.word_rows[leaf]))
         return (-1 if obj is None else registry.space.word_concept_of_object(obj) or -1)
 
-    def name(node):
-        return getattr(node['rule'], 'method_name', None)
-
     def value(node):
         return node['value']
 
@@ -128,11 +123,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     relative = {'part', 'whole', 'equal', 'implies', 'operator'}
     absolute_starts = set(TheGrammar.ws_absolute_starts)
 
-    def head(node):
+    def head(node, *, clause=False):
         while node['children']:
+            if clause and getattr(node['rule'], 'clause_form', None) == 'VP':
+                break
             role = getattr(node['rule'], 'head_role', 0)
-            if not role and name(node) in ('lower', 'bind', 'surface', 'preposition'):
-                role = 2
             if not role:
                 break
             node = node['children'][role - 1]
@@ -160,30 +155,36 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
 
     def operation_concept(node, relation=None):
         """The selected grammar predicate lives only in its row occurrences."""
-        identity = relation if relation is not None else name(node)
+        identity = relation if relation is not None else getattr(
+            node['rule'], 'predicate_identity', None)
+        if identity is None:
+            raise ValueError('a clause predicate requires a declared identity')
         point = predicate_point(identity, program.leaves)
         return ClausePredicate(point, identity)
 
     def is_clause(node):
-        node = head(node)
-        while len(node['children']) == 1 and name(node) in ('not', 'non', 'what', 'true', 'tense', 'morphology'):
-            node = head(node['children'][0])
-        return (name(node) in relative or getattr(node['rule'], 'clause_form', None) in ('S', 'implies') or
+        node = head(node, clause=True)
+        while len(node['children']) == 1 and getattr(node['rule'], 'scope_transparent', False):
+            node = head(node['children'][0], clause=True)
+        return (getattr(node['rule'], 'relation_kind', None) is not None or
+                getattr(node['rule'], 'clause_form', None) in ('S', 'implies') or
                 getattr(node['rule'], 'lhs', None) in absolute_starts or
                 (len(node['children']) == 2 and not node['has_point']
-                 and name(node) != 'verb' and getattr(node['rule'], 'clause_form', None) != 'VP'))
+                 and getattr(node['rule'], 'clause_form', None) != 'VP'))
 
     def recover(root, *, top=False):
         polarity = True
+        excluded = False
         mode = 'assertive'
-        node = head(root)
+        node = head(root, clause=True)
         while len(node['children']) == 1:
-            if name(node) in ('not', 'non'):
+            if getattr(node['rule'], 'polarity_effect', None) == 'invert':
                 polarity = not polarity
-            if name(node) == 'what':
-                mode = 'interrogative'
-            node = head(node['children'][0])
-        operator = name(node)
+            if getattr(node['rule'], 'polarity_effect', None) == 'exclude':
+                excluded = True
+            mode = getattr(node['rule'], 'meaning_mode', None) or mode
+            node = head(node['children'][0], clause=True)
+        operator = getattr(node['rule'], 'relation_kind', None)
         children = []
         owned = set()
         factored_refs = None
@@ -218,9 +219,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 predicate_ref = operation_concept(node, relation)
                 predicate = predicate_ref.point
             if predicate is None:
-                vp = head(operands[1])
-                if len(vp['children']) == 2 and (name(vp) == 'verb'
-                                                 or getattr(vp['rule'], 'clause_form', None) == 'VP'):
+                vp = head(operands[1], clause=True)
+                if len(vp['children']) == 2 and getattr(vp['rule'], 'clause_form', None) == 'VP':
                     verb = head(vp['children'][0])
                     predicate, predicate_ref = value(verb), concept(verb)
                     right, right_ref = operand(vp['children'][1])
@@ -291,12 +291,16 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     continue
                 pending.extend(reversed(part['children']))
         retain_completed(root)
+        evidence = metadata(root['leaves'])
+        if excluded:
+            support = evidence['evidence']
+            evidence['evidence'] = (0., support[1]) if polarity else (support[0], 0.)
         field = Clause(described, point=None if relation else (
             program.end_state[0] if top else value(root)), relation=relation,
             refs=references, children=tuple(children),
             subject_word_id=subject_word_id(role_nodes[0]),
             factored_refs=factored_refs,
-            **metadata(root['leaves']),
+            **evidence,
             eternal=relation is None and node['rule'] is None and node['ref'] > 0
             and program.symbol_when is None,
             **bands(root))

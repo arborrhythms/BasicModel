@@ -115,7 +115,7 @@ def test_collapsed_cat_ctx_passthrough_when_flag_off():
 
 
 def test_consumption_is_clean_noop_in_serial_mode_on_live_grammar():
-    """serial=True forward is byte-identical with <categoryCollapse> on vs off
+    """word_brackets=True forward is byte-identical with <categoryCollapse> on vs off
     on the (already role-collapsed) live grammar — the consumption is wired
     into the serial per-word path and correctly a no-op there."""
     from data import TheData

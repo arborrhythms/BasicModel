@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_compound_cases.py",
+    "test/test_free_reconstruction.py",
+    "test/test_tied_operator_reconstruction.py",
+    "test/test_meronomy_ladder.py"
+  ],
+  "pid": 92599,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1630063640,
+  "elapsed_seconds": 26.177262333018007,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/compound-consumers/run.log"
+}

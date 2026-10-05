@@ -75,12 +75,13 @@ def test_first_sight_admits_concepts_before_reconstruction(tmp_path):
     model = build_model(tmp_path, active_vectors=1)
     try:
         owner = model._concept_owner()
-        before = owner._concept_allocator.next_id
+        from Spaces import _concept_alloc_of
+        before = _concept_alloc_of(owner).next_id
         active_before = model._active_inventory_rows
         assert not owner.definitions.word_ids
         _stage(model)
         isp = model.inputSpace
-        active = isp._word_active_mask
+        active = isp._ar_grammar_leaf_mask
         assert owner._concept_allocator.next_id > before
         assert model._active_inventory_rows > active_before
         assert (isp._ar_word_concept_rows[active] >= 0).all()

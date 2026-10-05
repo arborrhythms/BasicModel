@@ -1,0 +1,327 @@
+....F...FFFF..sFFFFEF.EsFFsFss.................................FFFFF.... [ 54%]
+........sssss.s..ss..FF.F..................................              [100%]
+==================================== ERRORS ====================================
+______ ERROR at setup of test_epoch_report_carries_the_word_unit_fraction ______
+test/test_meronomy_ladder.py:143: in trained_ladder
+    m.runEpoch(optimizer=optimizer, batchSize=1, split="train", max_batches=2)
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+______ ERROR at setup of test_utility_counts_accrue_once_per_presentation ______
+test/test_meronomy_ladder.py:143: in trained_ladder
+    m.runEpoch(optimizer=optimizer, batchSize=1, split="train", max_batches=2)
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+=================================== FAILURES ===================================
+_______ test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes _______
+test/test_meronomy_ladder.py:170: in test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes
+    assert units[0] == ["1", "2", " ", "plus", " ", "1"]
+E   AssertionError: assert ['12', ' ', 'plus', ' ', '1'] == ['1', '2', ' ...us', ' ', '1']
+E     
+E     At index 0 diff: '12' != '1'
+E     Right contains one more item: '1'
+E     Use -v to get more diff
+__________________ test_witness_replay_is_byte_exact[aab ba] ___________________
+test/test_meronomy_ladder.py:184: in test_witness_replay_is_byte_exact
+    assert replay == surface.encode("ascii")             # whitespace units included
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert b'aab ' == b'aab ba'
+E     
+E     Use -v to get more diff
+______________________ test_long_unit_presents_every_atom ______________________
+test/test_meronomy_ladder.py:197: in test_long_unit_presents_every_atom
+    assert units[0] == [long_word, " ", "y"]
+E   AssertionError: assert ['abcdefghijklmnopqrst', ' '] == ['abcdefghijk...st', ' ', 'y']
+E     
+E     Right contains one more item: 'y'
+E     Use -v to get more diff
+_____ test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse _____
+test/test_meronomy_ladder.py:215: in test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse
+    assert store.get_id(b"12") is None                  # digits are separate units
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert 8 is None
+E    +  where 8 = get_id(b'12')
+E    +    where get_id = RadixLayer(\n  (byte_fallback): BytesFallbackEncoder()\n).get_id
+____________ test_tiling_ladder_nests_units_in_space_bounded_wholes ____________
+test/test_meronomy_ladder.py:247: in test_tiling_ladder_nests_units_in_space_bounded_wholes
+    assert [tuple(x) for x in fake._staged_unit_spans[0].tolist() if x[1] > x[0]] == [(0, 2), (3, 9)]
+E   assert [(0, 1), (1, ...3, 6), (6, 9)] == [(0, 2), (3, 9)]
+E     
+E     At index 0 diff: (0, 1) != (0, 2)
+E     Left contains 2 more items, first extra item: (3, 6)
+E     Use -v to get more diff
+______________ test_admitted_phrase_row_snaps_at_the_folded_slot _______________
+test/test_meronomy_ladder.py:397: in test_admitted_phrase_row_snaps_at_the_folded_slot
+    assert phrase_row.tolist() == [5] and count.tolist() == [1]
+E   assert ([-1] == [5]
+E     
+E     At index 0 diff: -1 != 5
+E     Use -v to get more diff)
+_________________ test_word_unit_fraction_is_one_on_plain_text _________________
+test/test_meronomy_ladder.py:418: in test_word_unit_fraction_is_one_on_plain_text
+    assert m.word_unit_fraction() == 1.0
+E   assert 0.7142857142857143 == 1.0
+E    +  where 0.7142857142857143 = word_unit_fraction()
+E    +    where word_unit_fraction = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).word_unit_fraction
+________ test_word_unit_fraction_counts_digit_wholes_as_sub_word_units _________
+test/test_meronomy_ladder.py:430: in test_word_unit_fraction_counts_digit_wholes_as_sub_word_units
+    assert m.__dict__["_word_unit_stats"] == [3, 2, 1, 1]
+E   assert [3, 3, 1, 1] == [3, 2, 1, 1]
+E     
+E     At index 1 diff: 3 != 2
+E     Use -v to get more diff
+___________ test_word_unit_fraction_is_zero_on_the_atomic_cold_start ___________
+test/test_meronomy_ladder.py:438: in test_word_unit_fraction_is_zero_on_the_atomic_cold_start
+    assert m.word_unit_fraction() == 0.0
+E   assert 0.75 == 0.0
+E    +  where 0.75 = word_unit_fraction()
+E    +    where word_unit_fraction = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).word_unit_fraction
+_____________ test_packed_rows_are_laid_out_in_units_of_the_ladder _____________
+test/test_meronomy_ladder.py:481: in test_packed_rows_are_laid_out_in_units_of_the_ladder
+    assert isp.sentence_unit_count("12 plus 1") == 6
+E   AssertionError: assert 5 == 6
+E    +  where 5 = sentence_unit_count('12 plus 1')
+E    +    where sentence_unit_count = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n).sentence_unit_count
+_____________ test_boundary_predicates_reproduce_the_priors_tiling _____________
+test/test_meronomy_ladder.py:582: in test_boundary_predicates_reproduce_the_priors_tiling
+    assert units == [["1", "2", " ", "plus", " ", "1"], ["hi", ",", " ", "there"],
+E   AssertionError: assert [['12', ' ', ...'abc', '123']] == [['1', '2', '...1', '2', ...]]
+E     
+E     At index 0 diff: ['12', ' ', 'plus', ' ', '1'] != ['1', '2', ' ', 'plus', ' ', '1']
+E     Use -v to get more diff
+______________ test_boundary_types_none_starts_without_boundaries ______________
+test/test_meronomy_ladder.py:615: in test_boundary_types_none_starts_without_boundaries
+    assert units[0] == ["1", "2", " ", "p", "l", "u", "s", " ", "1"]
+E   AssertionError: assert ['12', ' ', 'plus', ' ', '1'] == ['1', '2', ' ...'l', 'u', ...]
+E     
+E     At index 0 diff: '12' != '1'
+E     Right contains 4 more items, first extra item: 'u'
+E     Use -v to get more diff
+______ test_digit_identity_order_and_repetition_are_distinct_occurrences _______
+test/test_meronomy_ladder.py:686: in test_digit_identity_order_and_repetition_are_distinct_occurrences
+    assert units[0][:2] == ["1", "2"] and units[1][:2] == ["2", "1"] and units[2][:2] == ["1", "1"]
+E   AssertionError: assert (['12', ' '] == ['1', '2']
+E     
+E     At index 0 diff: '12' != '1'
+E     Use -v to get more diff)
+_______ test_current_grammar_recovery_by_depth_training_and_chain_length _______
+test/test_mind_generativity.py:19: in test_current_grammar_recovery_by_depth_training_and_chain_length
+    model = _native_answer_model(tmp_path, True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1839: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:23879: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - flat-slab invariant violated: PS.nOutput*content (8*128=1088) must equal CS.nOutput*content (8*264=2112), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 8x136, WS 8x136, and CS input 8x264 -> output 8x264; IS may be larger (PS scopes the input down).
+____ test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes _____
+test/test_mixing_reconstruction_bank.py:13: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+    model, _, _ = _fresh_model(str(config))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+_______________ test_mixing_bank_uses_byte_preserving_word_texts _______________
+test/test_mixing_reconstruction_bank.py:48: in test_mixing_bank_uses_byte_preserving_word_texts
+    BasicModel._stage_mixing_reconstruction_bank(model)
+bin/Models.py:11576: in _stage_mixing_reconstruction_bank
+    if (not self.word_brackets or self._aligned_serial_word_mode()
+            ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'word_brackets'
+______ test_mixing_reconstruction_stages_objects_surfaces_and_occurrences ______
+test/test_mixing_reconstruction_bank.py:60: in test_mixing_reconstruction_stages_objects_surfaces_and_occurrences
+    model, _, _ = _fresh_model(str(config))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+___________ test_no_compile_reconstruction_uses_the_eager_loop_body ____________
+test/test_mixing_reconstruction_bank.py:106: in test_no_compile_reconstruction_uses_the_eager_loop_body
+    model, _, _ = _fresh_model(str(config))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+_____________ test_real_mnist_subset_trains_one_short_batch[False] _____________
+test/test_mnist.py:39: in test_real_mnist_subset_trains_one_short_batch
+    model,_=Models.BaseModel.from_config(str(path),data=data.TheData)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+_____________ test_real_mnist_subset_trains_one_short_batch[True] ______________
+test/test_mnist.py:39: in test_real_mnist_subset_trains_one_short_batch
+    model,_=Models.BaseModel.from_config(str(path),data=data.TheData)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+__________ TestCodebookTiering.test_ws_codebook_none_opt_out_honored ___________
+test/test_modality_codebook.py:64: in test_ws_codebook_none_opt_out_honored
+    model = _build(path)
+            ^^^^^^^^^^^^
+test/test_modality_codebook.py:36: in _build
+    model, _ = Models.BasicModel.from_config(cfg)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6551: in create
+    return self._create_per_stage(
+bin/Models.py:16456: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13929: in __init__
+    self.languageSpace = LanguageSpace(self)
+                         ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12472: in __init__
+    raise ValueError(f"unresolved generate rule: {rule.canonical}")
+E   ValueError: unresolved generate rule: P -> sigma.reverse(P)
+=============================== warnings summary ===============================
+test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_model_time_when.py::test_clock_increments_once_per_inference_batch
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7125: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes
+FAILED test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[aab ba]
+FAILED test/test_meronomy_ladder.py::test_long_unit_presents_every_atom - Ass...
+FAILED test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse
+FAILED test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes
+FAILED test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot
+FAILED test/test_meronomy_ladder.py::test_word_unit_fraction_is_one_on_plain_text
+FAILED test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units
+FAILED test/test_meronomy_ladder.py::test_word_unit_fraction_is_zero_on_the_atomic_cold_start
+FAILED test/test_meronomy_ladder.py::test_packed_rows_are_laid_out_in_units_of_the_ladder
+FAILED test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling
+FAILED test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries
+FAILED test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences
+FAILED test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length
+FAILED test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+FAILED test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts
+FAILED test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences
+FAILED test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body
+FAILED test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]
+FAILED test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]
+FAILED test/test_modality_codebook.py::TestCodebookTiering::test_ws_codebook_none_opt_out_honored
+ERROR test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction
+ERROR test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation
+21 failed, 95 passed, 13 skipped, 3 warnings, 2 errors in 15.26s

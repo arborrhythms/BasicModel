@@ -172,7 +172,7 @@ def test_part_thought_writes_detached_vector_residual_without_memory_read(monkey
     assert context.work.spent == 1
 
 
-def test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm():
+def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
     from dataclasses import replace
     from test_cs_symbol_table import _cs
     from test_query_vp_boundaries import _context, _signature
@@ -182,25 +182,22 @@ def test_what_retrieves_old_cued_frame_and_exist_keeps_it_out_of_stm():
     oldest = store.append_meaning(fact, trust=.2)
     for _ in range(20):
         store.append_meaning(_meaning(4, 5), trust=.9)
+    newest = store.append_meaning(fact, trust=.3)
     context = _context(_cs(), store=store)
-    first = _signature('exist', 'I1').invoke(context, fact)
-    store.append_meaning(fact, trust=.3)
-    second = _signature('exist', 'I1').invoke(context, fact)
-    assert second['support_true'] > first['support_true']
-    assert context.ltm.held_frames() == ()
     cue = replace(fact, role_mask=torch.tensor([True, False, False]),
                   role_refs=(fact.role_refs[0], None, None), mode='interrogative')
     found = _signature('what', 'I1').invoke(context, cue)
-    assert len(found['frames']) == 1
-    assert found['frames'][0]['occurrence'] == store.occurrence_of(oldest)
+    assert len(found['frames']) == 2
+    assert {frame['occurrence'] for frame in found['frames']} == {
+        store.occurrence_of(oldest), store.occurrence_of(newest)}
+    assert sorted(frame['trust'] for frame in found['frames']) == pytest.approx([.2, .3])
+    assert context.ltm.held_frames() == ()
     assert found['result_kind'] == 'set'
-    # Other readers cannot bring the same unseen row into serial context.
-    assert not _signature('lookup', 'I1', 'I2').invoke(context, fact.roles[0], fact.roles[2])['value']
     with pytest.raises((TypeError, ValueError)):
         _signature('quantize', 'I1').invoke(context, store.occurrence_of(oldest))
 
 
-def test_higher_order_missing_edge_is_symbolic_zero_not_a_residual():
+def test_higher_order_missing_edge_keeps_content_with_zero_evidence():
     from test_cs_symbol_table import _cs
     from test_query_vp_boundaries import _context, _signature
     cs = _cs()
@@ -209,9 +206,9 @@ def test_higher_order_missing_edge_is_symbolic_zero_not_a_residual():
     for cid in (a, b, higher):
         cs._csw_concept_row(0, cid)
     result = _signature('part', 'I1', 'I2').invoke(_context(cs), ('sym', higher), ('sym', b))
-    assert result['symbolic_value'] == 0.
-    assert result['result_kind'] == 'truth' and result['evidence_kind'] == 'taxonomy'
-    assert not torch.is_tensor(result.get('value'))
+    assert result['support_true'] == 0.
+    assert result['result_kind'] == 'concept' and result['evidence_kind'] == 'taxonomy'
+    assert torch.is_tensor(result['value']) and not result['value'].requires_grad
 
 
 def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):

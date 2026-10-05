@@ -22,7 +22,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512, synthesis="meronomy"):
     xml = f"""<?xml version='1.0'?>
 <model>
   <architecture>
-    <subsymbolicOrder>2</subsymbolicOrder>
+    <bindingDepth>2</bindingDepth>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>

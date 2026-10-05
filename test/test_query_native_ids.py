@@ -20,7 +20,7 @@ def test_real_sentence_capture_owns_native_object_ids_across_later_staging(tmp_p
             expected = torch.where(source._ar_word_object_rows >= 0,
                                    source._ar_word_object_ids,
                                    source._ar_word_concept_ids)
-            active = source._word_active_mask
+            active = source._ar_grammar_leaf_mask
             assert bool((expected[active] > 0).any())
             programs = readings[0]
             snapshots = []

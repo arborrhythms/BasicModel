@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review15-audit-wiring2/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review15-audit-wiring2/worker-000.json"
+  ],
+  "pid": 54906,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1514163800,
+  "elapsed_seconds": 43.15762279200135,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review15-audit-wiring2/worker-000.log"
+}

@@ -63,7 +63,7 @@ def semantic_metadata(meanings):
         for meaning in meanings)
 
 
-def attend_meanings(query, records, *, incomplete=False):
+def attend_meanings(query, records, *, incomplete=False, reader=None, work=None, space_id=1):
     """Attention over detached, actually observed full role payloads.
 
     Records contain (meaning, signed evidence). The query remains live; no
@@ -88,4 +88,13 @@ def attend_meanings(query, records, *, incomplete=False):
     keys = torch.stack(keys)
     q = (query.roles * query.role_mask.to(query.roles)[:, None]).reshape(-1)
     scores = F.normalize(keys, dim=-1) @ F.normalize(q, dim=0)
-    return torch.softmax(scores, dim=0) @ torch.stack(values)
+    result = torch.softmax(scores, dim=0) @ torch.stack(values)
+    if reader is not None:
+        observation = reader(concept_q=q[None], symbol_q=None,
+            spaces=[dict(id=space_id, keys=keys)], work=None if work is None else (work,))
+        if observation is not None:
+            # Only semantic content is consumed. Occupancy, evidence and the
+            # incomplete flag retain their original measured meanings.
+            result = torch.cat((reader.consume(result[None, :3*width],
+                observation['content'])[0], result[3*width:]))
+    return result

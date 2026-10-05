@@ -82,13 +82,27 @@ class PrimitiveProperties(nn.Module):
         # A coefficient of zero can mean either a witnessed exclusion or an
         # unwritten primitive. Only the former supplies counterevidence.
         self.register_buffer('observed', torch.zeros(int(rows), 256, device=device, dtype=torch.bool))
+        self.register_buffer('fixed_rows', torch.zeros(int(rows), device=device, dtype=torch.bool))
+        self.register_buffer('fixed_members', torch.zeros(int(rows), 256, device=device, dtype=dtype))
+
+    @torch.no_grad()
+    def define_word(self, row):
+        """An immutable whole over exactly the reader's letter predicate."""
+        from Meronomy import _letter
+        value=torch.tensor([_letter(i) for i in range(256)],device=self.members.device,dtype=self.members.dtype)
+        self.fixed_rows[row]=True
+        self.fixed_members[row].copy_(value)
+        self.members[row].copy_(value)
+        self.observed[row]=True
 
     def coefficients(self, rows=None):
         # Projection constrains storage after the optimizer step. The read
         # uses an STE at the rails: clamp's zero boundary derivative would
         # freeze an a-priori 0/1 definition against all later evidence.
         members = self.members if rows is None else self.members.index_select(0, rows)
-        return members + (members.clamp(0, 1) - members).detach()
+        fixed=self.fixed_rows if rows is None else self.fixed_rows.index_select(0,rows)
+        value=self.fixed_members if rows is None else self.fixed_members.index_select(0,rows)
+        return torch.where(fixed[:,None],value,members + (members.clamp(0, 1) - members).detach())
 
     def forward(self, byte_ids, observed=None, *, rows=None):
         ids = byte_ids.to(device=self.members.device, dtype=torch.long).clamp(0, 255)
@@ -167,6 +181,10 @@ class PrimitiveProperties(nn.Module):
             raise ValueError('property teaching requires paired byte observations and memberships')
         if ids.unique().numel() != ids.numel():
             raise ValueError('aggregate repeated primitive observations before teaching')
+        if bool(self.fixed_rows[row]):
+            if not torch.equal(targets,self.fixed_members[row,ids]):
+                raise ValueError('a fixed property cannot be taught conflicting memberships')
+            return 0., 0.
         self.observed[row, ids] = True
         before = (self.members[row, ids] - targets).square().mean()
         for _ in range(int(steps)):
@@ -178,6 +196,7 @@ class PrimitiveProperties(nn.Module):
     @torch.no_grad()
     def project(self):
         self.members.clamp_(0, 1)
+        self.members.copy_(torch.where(self.fixed_rows[:,None],self.fixed_members,self.members))
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
@@ -191,5 +210,7 @@ class PrimitiveProperties(nn.Module):
             state_dict.setdefault(prefix + 'observed', self.observed.detach().clone())
         elif prefix + 'observed' not in state_dict:
             state_dict[prefix + 'observed'] = state_dict[key] != 0
+        for name in ('fixed_rows','fixed_members'):
+            state_dict.setdefault(prefix+name,getattr(self,name).clone())
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                      missing_keys, unexpected_keys, error_msgs)

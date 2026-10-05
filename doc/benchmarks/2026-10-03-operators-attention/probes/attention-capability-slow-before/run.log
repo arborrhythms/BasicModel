@@ -1,0 +1,121 @@
+.......FF..........F..........................                           [100%]
+=================================== FAILURES ===================================
+_________________________ test_global_on_builds_module _________________________
+
+    @pytest.mark.slow
+    def test_global_on_builds_module():
+        from Attention import PrimedSymbolReader
+        m = _build("MM_global.xml")
+>       assert m.answer_attention_enabled
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_global_attention.py:169: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+name = 'answer_attention_enabled'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'answer_attention_enabled'. Did you mean: '_answer_attention_step'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________________________ test_global_off_has_no_module _________________________
+
+    @pytest.mark.slow
+    def test_global_off_has_no_module():
+        m = _build("MM_reading.xml")            # readingAttention only
+        assert not getattr(m, "answer_attention_enabled", False)
+>       assert getattr(m, "answer_attention", None) is None
+E       AssertionError: assert PrimedSymbolReader(\n  (scorer): Sequential(\n    (0): Linear(in_features=4, out_features=16, bias=True)\n    (1): ReLU()\n    (2): Linear(in_features=16, out_features=1, bias=True)\n  )\n) is None
+E        +  where PrimedSymbolReader(\n  (scorer): Sequential(\n    (0): Linear(in_features=4, out_features=16, bias=True)\n    (1): ReLU()\n    (2): Linear(in_features=16, out_features=1, bias=True)\n  )\n) = getattr(BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n), 'answer_attention', None)
+
+test/test_global_attention.py:177: AssertionError
+_________________ test_qa_config_builds_with_consumer_and_ltm __________________
+
+    @pytest.mark.slow
+    def test_qa_config_builds_with_consumer_and_ltm():
+        m = _build("MM_qa.xml")
+>       assert m.answer_attention_consume and m.answer_attention is not None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_global_consume.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...    (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+  (answer_record_reader): SentenceRecordReader()
+)
+name = 'answer_attention_consume'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'answer_attention_consume'. Did you mean: '_answer_attention_step'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_global_attention.py: 6 warnings
+test/test_global_consume.py: 7 warnings
+test/test_reading_attention.py: 7 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_global_attention.py::test_forward_parks_typed_obs_over_spaces
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_global_consume.py::test_consume_width_mismatch_slices_to_common
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_global_attention.py::test_global_on_builds_module - Attribut...
+FAILED test/test_global_attention.py::test_global_off_has_no_module - Asserti...
+FAILED test/test_global_consume.py::test_qa_config_builds_with_consumer_and_ltm
+3 failed, 43 passed, 22 warnings in 5.58s

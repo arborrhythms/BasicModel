@@ -1,0 +1,173 @@
+.....................F....................                               [100%]
+=================================== FAILURES ===================================
+_______ test_normal_what_uses_the_selected_thought_without_a_legacy_slot _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x122e75340>
+
+    def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch):
+        """One grammatical boundary must not append a second legacy interaction."""
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.reconstruct_in_loop = False
+        model.answer_synthesis = True
+        model.eval()
+        monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+        monkeypatch.setattr(
+            model, "_what_grammar_context",
+            lambda questions, **kwargs: (torch.zeros(
+                len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]),
+                ({},) * len(questions)),
+        )
+        monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+        understanding = Understanding(sentence_states=(sentence_state(language, program(), registry),))
+        produced = torch.zeros(1, 1, 3, dtype=program().leaves.dtype)
+        execution = (None, produced, produced)
+        monkeypatch.setattr(model, "_capture_understanding", lambda _: understanding)
+        monkeypatch.setattr(
+            model, "reverseOutput", lambda _understanding, _derivation:
+            SimpleNamespace(actual=produced))
+    
+>       answer = model.what(WhatQuestion.inference(0), execution=execution)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_normal_thought_controller.py:738: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (selected_thought_choosers): ModuleDict(
+    (8): SelectedThoughtChooser(
+      (mlp): Sequential(
+     ...       (1): GELU(approximate='none')
+        (2): Linear(in_features=16, out_features=1, bias=True)
+      )
+    )
+  )
+)
+question = WhatQuestion(where=0, relation=<WhatRelation.INFERENCE: 'inference'>, offset=0, split='runtime', prompt=None)
+input_data = None, executor = None
+execution = (None, tensor([[[0., 0., 0.]]]), tensor([[[0., 0., 0.]]]))
+record = True, iteration = 0, closure_pressure = 0.0
+
+    def what(self, question, input_data=None, *, executor=None,
+             execution=None, record=True, iteration=0,
+             closure_pressure=0.0):
+        """Produce the model's answer through the existing forward path.
+    
+        A sequence of questions shares one batched execution and returns a
+        tuple of answers.  A single question returns one ``WhatAnswer``.  The
+        target is never accepted by this interface.  ``execution`` lets
+        ``runBatch`` or a compatibility test wrap an already-computed clean
+        path without a second model pass.
+        """
+        questions = question_batch(question)
+        if not questions:
+            raise ValueError("Model.what requires at least one question")
+        # Episode bookkeeping for the resolve step (mathematical thinking
+        # spec 6): iteration 0 opens fresh scratchpads / pending referents /
+        # policy records; later iterations reuse them.
+        self._what_current_iteration = int(iteration)
+        self._what_current_closure_pressure = float(closure_pressure)
+        if int(iteration) == 0:
+            self._what_pending = {}
+            self._what_policy_records = []
+            self._what_root_symbols = {}
+            self._what_episode_steps = []          # every iteration's step trace
+            self._begin_referents(questions)
+    
+        if torch.is_tensor(input_data):
+            device = input_data.device
+            dtype = (input_data.dtype if input_data.is_floating_point()
+                     else torch.float32)
+        else:
+            try:
+                parameter = next(self.parameters())
+                device, dtype = parameter.device, parameter.dtype
+            except StopIteration:
+                device, dtype = TheDevice.get(), torch.float32
+        chooser_context, detailed_context = self._what_grammar_context(
+            questions, device=device, dtype=dtype)
+        language = getattr(getattr(self, "symbolSpace", None),
+                           "languageLayer", None)
+        # Install the target-free question context on the LanguageLayer AND
+        # on every grammar layer with a chooser: the STM bounded-reduce pass
+        # calls the grammar layers directly (no ``what_ctx`` threaded), and
+        # its choices are the ones the policy objective credits.
+        holders = [language] if language is not None else []
+        symbol_space = getattr(self, "symbolSpace", None)
+        named_modules = getattr(symbol_space, "named_modules", None)
+        if callable(named_modules):
+            for _name, module in named_modules():
+                if (hasattr(module, "chooser") and hasattr(module, "forward")
+                        and module is not language):
+                    holders.append(module)
+        saved = [(h, getattr(h, "_what_context", None),
+                  getattr(h, "_what_ltm_context", None)) for h in holders]
+        self._active_what_questions = questions
+        for h in holders:
+            h._what_context = chooser_context
+            h._what_ltm_context = detailed_context
+        try:
+            if execution is None:
+                if input_data is None:
+                    raise ValueError(
+                        "Model.what needs input_data or an existing execution")
+                execution = self._execute_input_sentence(input_data, executor)
+        finally:
+            for h, ctx, detail in saved:
+                h._what_context = ctx
+                h._what_ltm_context = detail
+    
+        _forward_input, symbols, produced_all = self._what_execution_parts(
+            execution)
+        if produced_all is None:
+            raise RuntimeError("Model.what received no produced response")
+        previous = getattr(self, "_last_understanding", None)
+        self._last_understanding = (
+            previous if previous is not None and previous.execution is execution
+            else self._capture_understanding(execution))
+        self._last_answer_construction = None
+        selected_thought_rows = {}
+        if getattr(self, "answer_synthesis", False):
+            # Complete conceptual resolution before entering surface generation.
+            derivation = self.resolveAnswer(self._last_understanding, questions)
+            selected_thought_rows = {
+                int(row): result
+                for row, result in getattr(derivation, "selected_thoughts", ())
+            }
+            values=None
+            if self.training and self.inputSpace.data.has_supervised_outputs:
+                values=tuple(answer.what if answer.available and question.relation is WhatRelation.SUPERVISED else None
+                    for question in questions for answer in (self.inputSpace.data.what(question),))
+            score=(None if values is None or not any(value is not None for value in values)
+                   else lambda construction:self._output_target_cost(construction,values))
+>           construction = self.reverseOutput(self._last_understanding, derivation,score=score)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: test_normal_what_uses_the_selected_thought_without_a_legacy_slot.<locals>.<lambda>() got an unexpected keyword argument 'score'
+
+bin/Models.py:10296: TypeError
+=============================== warnings summary ===============================
+test/test_walk_trials.py::test_thought_pair_keeps_one_episode_and_costs_before_policy_backward
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7153: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpmmub2fqg/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_normal_thought_controller.py::test_normal_what_uses_the_selected_thought_without_a_legacy_slot
+1 failed, 41 passed, 2 warnings in 4.94s

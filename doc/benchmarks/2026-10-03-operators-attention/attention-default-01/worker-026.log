@@ -1,0 +1,206 @@
+.......................................................s................ [ 40%]
+F....................................................................... [ 80%]
+..FFFFFFFFF.FFF.....F.sF............                                     [100%]
+=================================== FAILURES ===================================
+_____________ test_unary_and_generate_use_the_same_exact_tie_order _____________
+test/test_structural_preference.py:95: in test_unary_and_generate_use_the_same_exact_tie_order
+    _, _, routing = layer(torch.randn(2, 1, 4))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7244: in forward
+    binary_scores = binary_scores.masked_fill(needs_cases[None, None], -torch.inf)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: masked_fill_ only supports boolean masks, but got mask with dtype float
+________________ test_attention_pass_selection[all-1-expected0] ________________
+test/test_subsymbolic_loop.py:17: in test_attention_pass_selection
+    assert BasicModel._subsymbolic_loop_passes(value, bound) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_subsymbolic_loop_passes'
+________________ test_attention_pass_selection[all-4-expected1] ________________
+test/test_subsymbolic_loop.py:17: in test_attention_pass_selection
+    assert BasicModel._subsymbolic_loop_passes(value, bound) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_subsymbolic_loop_passes'
+________________ test_attention_pass_selection[off-4-expected2] ________________
+test/test_subsymbolic_loop.py:17: in test_attention_pass_selection
+    assert BasicModel._subsymbolic_loop_passes(value, bound) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_subsymbolic_loop_passes'
+_______________ test_attention_pass_selection[1, 3-4-expected3] ________________
+test/test_subsymbolic_loop.py:17: in test_attention_pass_selection
+    assert BasicModel._subsymbolic_loop_passes(value, bound) == expected
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_subsymbolic_loop_passes'
+____________ test_selector_rejects_initial_or_unavailable_passes[0] ____________
+test/test_subsymbolic_loop.py:23: in test_selector_rejects_initial_or_unavailable_passes
+    BasicModel._subsymbolic_loop_passes(value, 4)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_subsymbolic_loop_passes'
+____________ test_selector_rejects_initial_or_unavailable_passes[4] ____________
+test/test_subsymbolic_loop.py:23: in test_selector_rejects_initial_or_unavailable_passes
+    BasicModel._subsymbolic_loop_passes(value, 4)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_subsymbolic_loop_passes'
+___________ test_selector_rejects_initial_or_unavailable_passes[-1] ____________
+test/test_subsymbolic_loop.py:23: in test_selector_rejects_initial_or_unavailable_passes
+    BasicModel._subsymbolic_loop_passes(value, 4)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_subsymbolic_loop_passes'
+__________ test_selector_rejects_initial_or_unavailable_passes[1,no] ___________
+test/test_subsymbolic_loop.py:23: in test_selector_rejects_initial_or_unavailable_passes
+    BasicModel._subsymbolic_loop_passes(value, 4)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'BasicModel' has no attribute '_subsymbolic_loop_passes'
+________________ test_default_and_overlay_use_subsymbolic_loop _________________
+test/test_subsymbolic_loop.py:29: in test_default_and_overlay_use_subsymbolic_loop
+    assert config.get('architecture.subsymbolicLoop') == 'all'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1533: in get
+    raise KeyError(
+E   KeyError: "Config key not found: 'architecture.subsymbolicLoop' (missing at 'subsymbolicLoop')"
+_______________ test_selected_pass_changes_the_attentive_extent ________________
+test/test_subsymbolic_loop.py:50: in test_selected_pass_changes_the_attentive_extent
+    model, inputs = grounded_model(tmp_path)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1539/test_selected_pass_changes_the0/grounded.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1539/test_selected_pass_changes_the0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1539/test_selected_pass_changes_the0/grounded.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_____________ test_answer_cost_does_not_include_a_generate_lesson ______________
+test/test_supplied_answer_training.py:49: in test_answer_cost_does_not_include_a_generate_lesson
+    answer = BasicModel._sentence_answer_error(model, state, 0, active, {"record": None}, registry=registry)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19777: in _sentence_answer_error
+    answer = self._forward_head(None, sentence_state=(root, slots, depth),
+bin/Models.py:16972: in _forward_head
+    result = self.outputSpace(sub)
+             ^^^^^^^^^^^^^^^^^^^^^
+test/test_supplied_answer_training.py:20: in __call__
+    value = sub.materialize().flatten(1) @ self.weight
+            ^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'materialize'
+_____ test_real_supplied_trials_cost_before_updates_and_reach_only_reader ______
+test/test_supplied_answer_training.py:63: in test_real_supplied_trials_cost_before_updates_and_reach_only_reader
+    model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1876: in _parse_xml
+    tree = ET.parse(path)
+           ^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:1204: in parse
+    tree.parse(source, parser)
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/xml/etree/ElementTree.py:569: in parse
+    self._root = parser._parse_whole(source)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   xml.etree.ElementTree.ParseError: not well-formed (invalid token): line 16, column 10
+___________ test_selected_surface_preserves_complete_content_meaning ___________
+test/test_surface_grammar.py:78: in test_selected_surface_preserves_complete_content_meaning
+    assert recovered.metadata() == original.metadata()
+           ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'metadata'
+______________ test_normal_batch_trains_supplied_grammar_lessons _______________
+test/test_surface_grammar.py:238: in test_normal_batch_trains_supplied_grammar_lessons
+    result, _ = model.runBatch(train=True, batchNum=0, batchSize=2,
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13634: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14001: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8759: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10201: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8456: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22869: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17110: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21433: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20992: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20152: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20120: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19650: in _sentence_path_cost
+    objectives = self._grammar_lesson_objectives([program],
+bin/Models.py:13495: in _grammar_lesson_objectives
+    raise ValueError("grammar lesson text does not match its captured forward words")
+E   ValueError: grammar lesson text does not match its captured forward words
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_stm_substrate.py::test_word_space_params_include_category_embedding
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_stm_substrate.py::test_word_space_params_include_category_embedding
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_structural_preference.py::test_unary_and_generate_use_the_same_exact_tie_order
+FAILED test/test_subsymbolic_loop.py::test_attention_pass_selection[all-1-expected0]
+FAILED test/test_subsymbolic_loop.py::test_attention_pass_selection[all-4-expected1]
+FAILED test/test_subsymbolic_loop.py::test_attention_pass_selection[off-4-expected2]
+FAILED test/test_subsymbolic_loop.py::test_attention_pass_selection[1, 3-4-expected3]
+FAILED test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[0]
+FAILED test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[4]
+FAILED test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[-1]
+FAILED test/test_subsymbolic_loop.py::test_selector_rejects_initial_or_unavailable_passes[1,no]
+FAILED test/test_subsymbolic_loop.py::test_default_and_overlay_use_subsymbolic_loop
+FAILED test/test_subsymbolic_loop.py::test_selected_pass_changes_the_attentive_extent
+FAILED test/test_supplied_answer_training.py::test_answer_cost_does_not_include_a_generate_lesson
+FAILED test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_only_reader
+FAILED test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning
+FAILED test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons
+15 failed, 163 passed, 2 skipped, 2 warnings in 10.35s

@@ -1,0 +1,35 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_declared_implementation_and_predicate_survive_rule_rename ________
+
+    def test_declared_implementation_and_predicate_survive_rule_rename():
+        from Language import Grammar
+        from ClauseScope import ClauseScope
+        grammar = Grammar()
+        rules = []
+        grammar._fill_rule_list(rules, {'rule': {'_': 'r_O1 = r.forward(r_I1, r_I2)',
+            'implementation': 'verb', 'clause': 'VP', 'head': 'I1',
+            'predicate': 'activity'}})
+        rule = rules[0]
+>       assert rule.method_name == 'verb'
+E       AssertionError: assert 'r' == 'verb'
+E         
+E         - verb
+E         + r
+
+test/test_operator_catalogue.py:85: AssertionError
+_________ test_explicit_effects_and_operand_kinds_are_checked_at_load __________
+
+    def test_explicit_effects_and_operand_kinds_are_checked_at_load():
+        from Language import Grammar
+        grammar = Grammar()
+        base = dict(_='x_O1 = x.forward(x_I1, x_I2)', implementation='verb')
+>       with pytest.raises(ValueError, match='field'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_operator_catalogue.py:97: Failed
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_declared_implementation_and_predicate_survive_rule_rename
+FAILED test/test_operator_catalogue.py::test_explicit_effects_and_operand_kinds_are_checked_at_load
+2 failed, 4 deselected in 1.99s

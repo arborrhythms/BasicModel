@@ -1,0 +1,86 @@
+.....F                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis __
+
+    def test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis():
+        from test_mm_xor import _fresh_model
+>       model, _, _ = _fresh_model('data/XOR_grammar.xml')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_derived_concept_codes.py:112: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:40: in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6599: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1913: in create_from_config
+    self.create(
+bin/Models.py:6619: in create
+    return self._create_per_stage(
+bin/Models.py:16330: in _create_per_stage
+    cs = ConceptualSpace(
+bin/Spaces.py:13036: in __init__
+    _sim_cb.enable_derived_codes(self, basis_capacity=int(TheXMLConfig.space(
+bin/Spaces.py:2455: in enable_derived_codes
+    vq.bind_external_codebook(self.W)
+bin/Layers.py:18320: in bind_external_codebook
+    self._sync_ema_buffers()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = VectorQuantize()
+
+    def _sync_ema_buffers(self):
+        """Repair EMA buffers when they drift from the live codebook shape.
+    
+        Training can reassign the codebook Parameter after construction
+        (for example when resizing or reloading weights). The EMA buffers
+        must stay row-aligned with that Parameter or the dead-code refresh
+        path can end up indexing the wrong rows.
+        """
+        codebook = self.codebook
+        V, D = int(codebook.shape[0]), int(codebook.shape[1])
+        if self.ema_state_enabled:
+            cluster_size = self.cluster_size
+            if (
+                cluster_size.ndim != 1
+                or int(cluster_size.shape[0]) != V
+                or cluster_size.device != codebook.device
+            ):
+                dtype = (cluster_size.dtype
+                         if cluster_size.is_floating_point()
+                         else torch.float32)
+                self._buffers["cluster_size"] = torch.ones(
+                    V, device=codebook.device, dtype=dtype
+                )
+            embed_avg = self.embed_avg
+            if (
+                embed_avg.ndim != 2
+                or tuple(embed_avg.shape) != (V, D)
+                or embed_avg.device != codebook.device
+            ):
+                dtype = (embed_avg.dtype
+                         if embed_avg.is_floating_point()
+                         else codebook.dtype)
+                self._buffers["embed_avg"] = (
+                    codebook.detach().to(dtype=dtype).clone())
+        elif "cluster_size" in self._buffers or "embed_avg" in self._buffers:
+>           raise RuntimeError(
+                "VectorQuantize compact EMA contract drifted: an EMA buffer "
+                "was installed after allocate_ema_state=False")
+E           RuntimeError: VectorQuantize compact EMA contract drifted: an EMA buffer was installed after allocate_ema_state=False
+
+bin/Layers.py:18365: RuntimeError
+=============================== warnings summary ===============================
+test/test_derived_concept_codes.py::test_code_is_signed_sum_of_lookup_locations_without_a_word_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_derived_concept_codes.py::test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis
+1 failed, 5 passed, 1 warning in 3.14s

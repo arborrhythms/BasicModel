@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word"
+  ],
+  "pid": 93741,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 507020704,
+  "elapsed_seconds": 3.8635939579980914,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/field-recurrence-before/run.log"
+}

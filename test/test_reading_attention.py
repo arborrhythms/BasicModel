@@ -1,403 +1,221 @@
-"""Reading attention: the learned ``.where`` producer
-(doc/specs/reading-attention.md "(A) Reading attention"; orders.md §6).
+"""6.8 §7 ports: bracket coverage/priming and word distribution supervision.
 
-Gated ``<readingAttention>`` and DARK by default: with the flag off no module
-is allocated, no scope is written, and no loss is added (byte-identical -- the
-full suite is the byte-identical-off witness).
-
-These tests cover (a) the ``ReadingAttention`` module in isolation -- the shift
-bootstrap, the monotonic/coverage mask, the unit-range scope, the next-word CE,
-and the gradient boundary (the loss never reaches the codebooks / primed
-symbols) -- and (b) the model wiring on the dedicated ``MM_reading.xml`` config:
-the producer is built when on (and absent when off), it writes
-``wholeSpaces[0]._passback_scope_where`` (teacher span in training), it registers
-the next-word CE on the conceptual error container, and its readout params reach
-the optimizer.
+The prior producer's learned next-word objective belongs to expectation;
+its scope and coverage belong to the typed bracket table. The complete old
+file is retained in the operators-attention source and test-port receipts.
 """
-import os, sys, warnings
-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
-os.environ.setdefault("MODEL_COMPILE", "eager")
-_BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
-if _BIN not in sys.path:
-    sys.path.insert(0, _BIN)
+import os
+from pathlib import Path
 import pytest
 import torch
-
-_DATA = os.path.join(os.path.dirname(_BIN), "data")
-_DEFAULTS = os.path.join(_DATA, "model.xml")
-
-
-# ---------------------------------------------------------------------------
-# (a) the ReadingAttention module in isolation
-# ---------------------------------------------------------------------------
-
-def _contiguous_spans(B, K, w):
-    """``[B, K, 2]`` of K contiguous words each ``w`` atoms wide."""
-    one = [[k * w, (k + 1) * w] for k in range(K)]
-    return torch.tensor([one] * B)
+from Attention import BracketKeys, narrow_words
+from Language import OperationSelectionLayer
+from Layers import BracketExpectation
 
 
-def _module_inputs(B=2, K=5, w=8, D=16, seed=0):
+def _contiguous_spans(B,K,w):
+    return torch.tensor([[[k*w,(k+1)*w] for k in range(K)]]*B)
+
+
+def _module_inputs(B=2,K=5,w=8,D=16,seed=0):
     torch.manual_seed(seed)
-    spans = _contiguous_spans(B, K, w)
-    percept = torch.randn(B, K * w, D)
-    concept_q = torch.randn(B, D)
-    symbol_q = torch.randn(B, D)
-    return spans, percept, concept_q, symbol_q
+    spans=_contiguous_spans(B,K,w)
+    percept=torch.randn(B,K*w,D)
+    concept_q=torch.randn(B,D)
+    symbol_q=torch.randn(B,D)
+    return spans,percept,concept_q,symbol_q
 
 
-def test_shift_bootstrap_selects_next_span_at_init():
-    # At init (zero-init readout head) the producer IS the serial reading
-    # for-loop: argmax of the attention distribution is the next word.
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs()
-    N = int(percept.shape[1])
-    for read_idx in range(4):
-        _, _, alpha = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                         spans=spans, read_idx=read_idx, N=N, training=False)
-        assert int(alpha[0].argmax()) == read_idx, (
-            f"bootstrap should select span {read_idx}, got {int(alpha[0].argmax())}")
+def _reading(spans,percept,prior=None):
+    keys=BracketKeys._span_keys(percept,spans)
+    chooser=OperationSelectionLayer(d_model=keys.shape[-1])
+    known=spans[...,1]>spans[...,0]
+    return narrow_words(chooser,keys,spans,known,budget=32,prior=prior)
+
+
+def _distribution(percept,spans,*,training=True):
+    keys=BracketKeys._span_keys(percept,spans)
+    B,W,D=keys.shape
+    owner=BracketExpectation(n_symbols=W,max_depth=W,n_dim=D,concept_dim=D)
+    targets=torch.arange(W)[None].expand(B,-1)
+    valid=spans[...,1]>spans[...,0]
+    def read():
+        return owner.expect('word',keys,keys,valid,targets,teacher_forcing=training,active=valid)
+    return owner,read
+
+
+def test_shift_bootstrap_selects_each_word_once():
+    spans,percept,*_=_module_inputs()
+    value=_reading(spans,percept)
+    assert value.accepted.all() and not value.descended.any()
+    assert value.table.spent.tolist()==[9,9]
+    for row in range(len(spans)):
+        assert sorted(map(tuple,value.table.intervals[row,value.table.done[row]].tolist()))==list(map(tuple,spans[row].tolist()))
 
 
 def test_scope_is_normalized_unit_range():
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs()
-    N = int(percept.shape[1])
-    next_where, _, _ = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                          spans=spans, read_idx=1, N=N, training=False)
-    next_where = next_where.detach()
-    assert next_where.shape == (spans.shape[0], 2)
-    assert float(next_where.min()) >= 0.0 and float(next_where.max()) <= 1.0
-    # start <= end for every row (a well-formed [start, end] bracket).
-    assert bool((next_where[:, 1] >= next_where[:, 0]).all())
+    spans,percept,*_=_module_inputs();out=_reading(spans,percept)
+    scope=out.table.intervals[out.table.done]/percept.shape[1]
+    assert scope.shape[-1]==2
+    assert float(scope.min())>=0. and float(scope.max())<=1.
+    assert (scope[:,1]>=scope[:,0]).all()
 
 
-def test_monotonic_coverage_mask_excludes_consumed():
-    # Already-consumed spans (k < read_idx) carry ~0 probability -> reading
-    # stays left-to-right and cannot re-select.
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs()
-    N = int(percept.shape[1])
-    _, _, alpha = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                     spans=spans, read_idx=3, N=N, training=False)
-    assert float(alpha[:, :3].detach().sum()) < 1e-4, "consumed spans must be masked out"
+def test_coverage_mask_excludes_consumed():
+    spans,percept,*_=_module_inputs();out=_reading(spans,percept)
+    for actions in out.actions:
+        gloss=actions[(actions>=0)&(actions%6==2)]//6
+        assert gloss.unique().numel()==len(gloss)==spans.shape[1]
 
 
 def test_padding_spans_never_selected():
-    # A (0, 0) padding span (extent 0) is masked even when it is the only
-    # unconsumed candidate.
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    B, w, D = 2, 8, 16
-    spans = torch.tensor([[[0, w], [w, 2 * w], [0, 0]]] * B)   # last = pad
-    percept = torch.randn(B, 2 * w, D)
-    N = int(percept.shape[1])
-    # read_idx=0: spans 0/1 are real unconsumed candidates, span 2 is pad.
-    _, _, alpha = ra(concept_q=None, symbol_q=None, percept_ev=percept,
-                     spans=spans, read_idx=0, N=N, training=False)
-    assert float(alpha[:, 2].detach().max()) < 1e-4, "padding span must not be selected"
+    spans,percept,*_=_module_inputs();spans[:,-1]=0
+    out=_reading(spans,percept)
+    assert float(out.accepted[:,-1].float().max())<1e-4
+    assert out.accepted[:,:-1].all()
 
 
 def test_codebook_retrieval_prior_is_the_subsymbolic_term():
-    # The codebook-retrieval prior (the literal intent_boosts path) ranks a
-    # span high when its content snaps near an intent-primed prototype. Build a
-    # codebook whose rows ARE the span contents and an intent boost that singles
-    # prototype 3 out; the prior (tested directly) must then rank span 3 top.
-    from Spaces import ReadingAttention
-    B, K, w, D = 1, 5, 6, 8
-    spans = _contiguous_spans(B, K, w)
+    B,K,w,D=1,5,6,8
+    spans=_contiguous_spans(B,K,w)
     torch.manual_seed(1)
-    percept = torch.randn(B, K * w, D)
-    keys = ReadingAttention._span_keys(percept, spans)        # [1, K, D]
-    W = keys[0].clone()                                       # rows = span means
-    boosts = torch.ones(K)
-    boosts[3] = 5.0                                           # prime prototype 3
-    prior = ReadingAttention._codebook_retrieval_prior(
-        keys, W, intent=None, external_boosts=boosts)
-    assert prior is not None and prior.shape == (B, K)
-    assert int(prior[0].argmax()) == 3, "primed prototype's span must score top"
+    percept=torch.randn(B,K*w,D)
+    keys=BracketKeys._span_keys(percept,spans)
+    W=keys[0].clone();boosts=torch.ones(K);boosts[3]=5.
+    prior=BracketKeys._codebook_retrieval_prior(keys,W,None,boosts)
+    assert prior is not None and prior.shape==(B,K)
+    assert int(prior[0].argmax())==3
 
 
 def test_codebook_path_preserves_gradient_boundary():
-    # The codebook-retrieval prior is fully detached: a codebook with
-    # requires_grad must receive NO gradient from the reading loss.
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs(K=5, D=16)
-    N = int(percept.shape[1])
-    W = torch.randn(32, 16, requires_grad=True)
-    _, ce, _ = ra(concept_q=cq, symbol_q=sq, percept_ev=percept, spans=spans,
-                  read_idx=2, N=N, training=True, codebook_rows=W)
-    ce.backward()
-    assert W.grad is None, "the EMA-only codebook must receive no reading grad"
-    assert any(p.grad is not None and float(p.grad.abs().sum()) > 0
-               for p in ra.parameters())
+    spans,percept,cq,_=_module_inputs()
+    keys=BracketKeys._span_keys(percept.requires_grad_(),spans)
+    W=torch.randn(32,16,requires_grad=True)
+    prior=BracketKeys._codebook_retrieval_prior(keys,W,cq.requires_grad_(),None)
+    assert not prior.requires_grad
+    out=_reading(spans,percept,prior);out.values.sum().backward()
+    assert W.grad is None and cq.grad is None and percept.grad is None
 
 
-def test_codebook_path_keeps_shift_bootstrap():
-    # Wiring the codebook prior must not disturb the shift bootstrap: at init
-    # (zero readout head) the argmax is still the next span.
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs(K=5, D=16)
-    N = int(percept.shape[1])
-    W = torch.randn(32, 16)
-    for read_idx in range(4):
-        _, _, alpha = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                         spans=spans, read_idx=read_idx, N=N, training=False,
-                         codebook_rows=W)
-        assert int(alpha[0].argmax()) == read_idx
+def test_codebook_path_keeps_complete_word_coverage():
+    spans,percept,cq,_=_module_inputs()
+    keys=BracketKeys._span_keys(percept,spans)
+    prior=BracketKeys._codebook_retrieval_prior(keys,torch.randn(32,16),cq,None)
+    assert _reading(spans,percept,prior).accepted.all()
 
 
-def test_no_codebook_falls_back_to_cosine():
-    # With no codebook the producer is unchanged (concept-content cosine
-    # fallback) -- the module still scores and bootstraps.
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs(K=5, D=16)
-    N = int(percept.shape[1])
-    _, _, alpha = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                     spans=spans, read_idx=1, N=N, training=False)  # no codebook
-    assert int(alpha[0].argmax()) == 1
+def test_no_codebook_falls_back_to_content_choice():
+    spans,percept,cq,_=_module_inputs()
+    assert BracketKeys._codebook_retrieval_prior(percept,None,cq,None) is None
+    assert _reading(spans,percept).accepted.all()
 
 
 def test_next_word_ce_matches_neg_log_alpha():
-    # The text-mode CE is exactly -log α at the next-word index, averaged over
-    # rows whose target span is real.
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs()
-    N = int(percept.shape[1])
-    read_idx = 2
-    _, ce, alpha = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                      spans=spans, read_idx=read_idx, N=N, training=True)
-    expect = -torch.log(alpha[:, read_idx].clamp_min(1e-12)).mean()
-    assert torch.allclose(ce, expect, atol=1e-4)
+    spans,percept,*_=_module_inputs();owner,read=_distribution(percept,spans)
+    out=read();targets=torch.arange(spans.shape[1])[None,:,None].expand(len(spans),-1,-1)
+    expect=-torch.log(out.probabilities.gather(-1,targets)[...,0].clamp_min(1e-12))
+    torch.testing.assert_close(out.loss,expect,atol=1e-4,rtol=0.)
 
 
-def test_eval_has_no_ce_loss():
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs()
-    N = int(percept.shape[1])
-    _, ce, _ = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                  spans=spans, read_idx=1, N=N, training=False)
-    assert ce is None
+def test_eval_does_not_build_a_training_graph():
+    spans,percept,*_=_module_inputs();owner,read=_distribution(percept,spans,training=False)
+    owner.eval()
+    with torch.no_grad():out=read()
+    assert not out.loss.requires_grad and not out.probabilities.requires_grad
 
 
 def test_no_spans_is_noop():
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    out = ra(concept_q=None, symbol_q=None, percept_ev=torch.randn(2, 8, 4),
-             spans=None, read_idx=1, N=8, training=True)
-    assert out == (None, None, None)
+    # Empty readings have no candidate bank to score; narrowing has no work.
+    out=_reading(torch.empty(2,0,2,dtype=torch.long),torch.randn(2,8,4))
+    assert not out.table.valid.any() and not out.table.spent.any()
 
 
 def test_gradient_stops_at_primed_symbols():
-    # The reading loss trains the MLP readout ONLY: it does NOT backprop into
-    # the codebooks (the percept keys) nor the primed symbols (the query),
-    # preserving the EMA-only VQ contract (orders.md §6 "Learning").
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs()
-    N = int(percept.shape[1])
-    percept = percept.requires_grad_(True)
-    cq = cq.requires_grad_(True)
-    sq = sq.requires_grad_(True)
-    _, ce, _ = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                  spans=spans, read_idx=2, N=N, training=True)
-    ce.backward()
-    assert percept.grad is None, "no gradient may reach the codebook content"
-    assert cq.grad is None and sq.grad is None, (
-        "no gradient may reach the primed symbols (query)")
-    got = any(p.grad is not None and float(p.grad.abs().sum()) > 0
-              for p in ra.parameters())
-    assert got, "the MLP readout must receive the reading-loss gradient"
+    spans,percept,cq,sq=_module_inputs()
+    percept.requires_grad_();cq.requires_grad_();sq.requires_grad_()
+    owner,read=_distribution(percept,spans);read().loss.mean().backward()
+    assert percept.grad is None and cq.grad is None and sq.grad is None
+    assert any(p.grad is not None and p.grad.abs().sum()>0 for p in owner.word_predictor.parameters())
 
 
-def test_loss_trains_attention_toward_target():
-    # A few SGD steps on the next-word CE sharpen the distribution onto the
-    # target span (the readout learns; it is not frozen at the bootstrap).
-    from Spaces import ReadingAttention
-    ra = ReadingAttention()
-    spans, percept, cq, sq = _module_inputs(seed=3)
-    N = int(percept.shape[1])
-    opt = torch.optim.SGD(ra.parameters(), lr=0.5)
-    read_idx = 2
-    _, ce0, a0 = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                    spans=spans, read_idx=read_idx, N=N, training=True)
+def test_loss_trains_distribution_toward_target():
+    spans,percept,*_=_module_inputs(seed=3)
+    owner,read=_distribution(percept,spans)
+    opt=torch.optim.SGD(owner.word_predictor.parameters(),lr=.5)
+    first=read()
     for _ in range(25):
-        opt.zero_grad()
-        _, ce, _ = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                      spans=spans, read_idx=read_idx, N=N, training=True)
-        ce.backward()
-        opt.step()
-    _, ce1, a1 = ra(concept_q=cq, symbol_q=sq, percept_ev=percept,
-                    spans=spans, read_idx=read_idx, N=N, training=True)
-    assert float(ce1.detach()) < float(ce0.detach()), "CE should decrease under training"
-    assert float(a1[0, read_idx].detach()) >= float(a0[0, read_idx].detach())
+        opt.zero_grad();out=read();out.loss.mean().backward();opt.step()
+    last=read()
+    assert float(last.loss.mean().detach())<float(first.loss.mean().detach())
+    assert float(last.probabilities[0,2,2].detach())>=float(first.probabilities[0,2,2].detach())
 
-
-# ---------------------------------------------------------------------------
-# (b) the model wiring (MM_reading.xml)
-# ---------------------------------------------------------------------------
 
 def _build(name):
     from configuration_fixtures import small_retained
     from recon_bench import _build_model
-    with small_retained(name) as path:
-        model, *_ = _build_model(path)
+    with small_retained(name) as path:model,*_=_build_model(path)
     return model
 
 
-def _batch(m):
-    import Models
-    Models.TheData.load("xor")
-    loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
-    items, _ = next(iter(loader))
-    return m.inputSpace.prepInput(items)
-
-
-def _stage_synthetic_spans(m, ps, K=3):
-    """Overwrite the staged word brackets with K contiguous synthetic words
-    (xor items lex to a single token, too short to exercise reading)."""
-    ev = ps.materialize()
-    B, N = int(ev.shape[0]), int(ev.shape[1])
-    w = max(N // (K + 1), 1)
-    spans = torch.tensor([[[k * w, (k + 1) * w] for k in range(K)]] * B)
-    object.__setattr__(m.wholeSpaces[0], "_staged_analysis_spans", spans)
-    return spans, N
+def _batch(model):
+    return model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
 
 
 @pytest.mark.slow
-def test_reading_attention_on_builds_producer():
-    m = _build("MM_reading.xml")
-    from Spaces import ReadingAttention
-    assert m.reading_attention_enabled
-    assert isinstance(m.reading_attention, ReadingAttention)
-    # The handoff consumer is also wired on this config.
-    assert m.mereology_raise
-
-
-@pytest.mark.slow
-def test_reading_attention_off_has_no_module():
-    # MM_mereology does not set <readingAttention> -> the off path is untouched
-    # (no module, the producer wiring is inert -> byte-identical).
-    m = _build("MM_20M_xor.xml")
-    assert not getattr(m, "reading_attention_enabled", False)
-    assert getattr(m, "reading_attention", None) is None
+@pytest.mark.parametrize('name',['MM_reading.xml','MM_20M_xor.xml'])
+def test_normal_configs_share_bracket_and_expectation_owners(name):
+    model=_build(name)
+    assert not hasattr(model,'reading_attention')
+    assert set(model._stm_reducer().attention_operations)>={0,1,2}
+    assert 'word' in model.symbolSpace.expectation.enabled_levels
 
 
 @pytest.mark.slow
 def test_forward_is_finite_and_deterministic(monkeypatch):
-    m = _build("MM_reading.xml")
-    x = _batch(m)
+    model=_build('MM_reading.xml');x=_batch(model)
     from configuration_fixtures import freeze_admission
-    freeze_admission(m, x, monkeypatch)
-    m.eval()
-    with torch.no_grad():
-        out1 = m.forward(x)[2]
-        out2 = m.forward(x)[2]
-    assert torch.isfinite(out1).all()
-    assert torch.equal(out1, out2), "the eval forward must be deterministic"
+    freeze_admission(model,x,monkeypatch);model.eval()
+    with torch.no_grad():a=model(x)[2];b=model(x)[2]
+    assert torch.isfinite(a).all() and torch.equal(a,b)
 
 
 @pytest.mark.slow
 def test_train_forward_then_backward_is_finite():
-    m = _build("MM_reading.xml")
-    x = _batch(m)
-    m.train()
-    out = m.forward(x)
-    assert torch.isfinite(out[2]).all()
+    model=_build('MM_reading.xml');model.train();model(_batch(model))
+    out=model._word_expectation
+    assert torch.isfinite(out.loss).all();out.loss.mean().backward()
+    assert all(torch.isfinite(p.grad).all() for p in model.symbolSpace.expectation.parameters() if p.grad is not None)
 
 
 @pytest.mark.slow
-def test_producer_writes_teacher_scope_and_registers_loss():
-    m = _build("MM_reading.xml")
-    x = _batch(m)
-    m.train()
-    with torch.no_grad():
-        m.forward(x)                      # warm the CS carriers / STM
-    ws0, cs0 = m.wholeSpaces[0], m.conceptualSpaces[0]
-    prev = cs0._subspaceForWS
-    in_sub = m._lex_embed_stem(x)         # re-lex (stages real spans)
-    ps = m.perceptualSpace.forward(in_sub)
-    spans, N = _stage_synthetic_spans(m, ps, K=3)
-    cs_sub = cs0._subspaceForWS
-    m._reading_attention_step(1, prev, ps, cs_sub)
-    # Teacher forcing in training: the WRITTEN scope is the TRUE next span
-    # (word read_idx = t - 1 = 0 -> [0, w] / N). R2: the scope is CS-owned.
-    scope = getattr(m.conceptualSpace, "_passback_scope_where", None)
-    assert scope is not None and scope.numel() == 2
-    w = float(spans[0, 0, 1]) / N
-    assert torch.allclose(scope.float(), torch.tensor([0.0, w]), atol=1e-4)
-    # The next-word CE is registered on the conceptual error container.
-    assert "reading_attention" in cs_sub.errors._terms
-    val = cs_sub.errors._value(cs_sub.errors._terms["reading_attention"])
-    assert torch.isfinite(val).all() and bool(val.requires_grad)
+def test_producer_writes_bracket_scope_and_registers_loss():
+    model=_build('MM_reading.xml');model.train();model(_batch(model))
+    scope=model.conceptualSpace._passback_scope_where
+    assert scope.shape==(4,2) and (scope>=0).all() and (scope<=1).all()
+    table=model._attention_words.table
+    assert table.done.any() and model._word_expectation.loss.requires_grad
 
 
 @pytest.mark.slow
 def test_registered_loss_backprops_to_producer():
-    # The loss registered on the (copy_context-shared) conceptual error
-    # container backprops to the producer readout -- closing the loop from
-    # the pipeline Error (which flows into the model's totalLoss) to the MLP.
-    m = _build("MM_reading.xml")
-    x = _batch(m)
-    m.train()
-    with torch.no_grad():
-        m.forward(x)
-    cs0 = m.conceptualSpaces[0]
-    prev = cs0._subspaceForWS
-    in_sub = m._lex_embed_stem(x)
-    ps = m.perceptualSpace.forward(in_sub)
-    _stage_synthetic_spans(m, ps, K=3)
-    cs_sub = cs0._subspaceForWS
-    m._reading_attention_step(1, prev, ps, cs_sub)
-    val = cs_sub.errors._value(cs_sub.errors._terms["reading_attention"])
-    m.zero_grad(set_to_none=True)
-    val.backward()
-    got = any(p.grad is not None and float(p.grad.abs().sum()) > 0
-              for p in m.reading_attention.parameters())
-    assert got, "the registered reading loss must backprop to the producer"
+    model=_build('MM_reading.xml');model.train();model(_batch(model))
+    model.zero_grad(set_to_none=True);model._word_expectation.loss.mean().backward()
+    assert any(p.grad is not None and p.grad.abs().sum()>0 for p in model.symbolSpace.expectation.word_predictor.parameters())
 
 
 @pytest.mark.slow
-def test_producer_scope_clears_past_last_word():
-    m = _build("MM_reading.xml")
-    x = _batch(m)
-    m.train()
+def test_producer_scope_replaces_previous_input():
+    model=_build('MM_reading.xml');model.eval()
     with torch.no_grad():
-        m.forward(x)
-    ws0, cs0 = m.wholeSpaces[0], m.conceptualSpaces[0]
-    prev = cs0._subspaceForWS
-    in_sub = m._lex_embed_stem(x)
-    ps = m.perceptualSpace.forward(in_sub)
-    _stage_synthetic_spans(m, ps, K=2)    # only 2 words
-    # pass t=4 -> read_idx=3 >= K=2 -> no next word -> scope cleared to None.
-    m._reading_attention_step(4, prev, ps, cs0._subspaceForWS)
-    assert getattr(m.conceptualSpace, "_passback_scope_where", None) is None
+        model(_batch(model));first=model._attention_words
+        model(model.inputSpace.prepInput(['cat']))
+    assert model._attention_words is not first
+    assert int(model._attention_words.accepted.sum())==1
 
 
 @pytest.mark.slow
 def test_producer_params_reach_the_optimizer():
-    m = _build("MM_reading.xml")
-    opt = m.getOptimizer(lr=0.01)
-    ra_ptrs = {p.data_ptr() for p in m.reading_attention.parameters()}
-    opt_ptrs = set()
-    groups = list(getattr(opt, "param_groups", []) or [])
-    for o in getattr(opt, "optimizers", []) or []:
-        groups.extend(o.param_groups)
-    for g in groups:
-        for p in g["params"]:
-            opt_ptrs.add(p.data_ptr())
-    assert ra_ptrs and ra_ptrs.issubset(opt_ptrs), (
-        "the reading-attention readout params must be optimized")
-
-
-if __name__ == "__main__":
-    sys.exit(pytest.main([__file__, "-q"]))
+    model=_build('MM_reading.xml');opt=model.getOptimizer(lr=.01)
+    params={p.data_ptr() for p in model.symbolSpace.expectation.word_predictor.parameters()}
+    owned={p.data_ptr() for g in opt.param_groups for p in g['params']}
+    assert params and params<=owned

@@ -7,14 +7,19 @@ model-specific configs. The schema is in `data/model.xsd`.
 This document is the human-facing reference for common knobs and migrations.
 `data/model.xsd` is authoritative for the complete accepted element set.
 
+The §14 lattice derivation uses `ConceptualSpace.latticeMargin` (default `0`)
+for its deterministic room projection. `OutputSpace.unitRootRead` defaults to
+`false`; XOR_grammar sets it to `true` for a fixed unit-root affine reading.
+The sum control retains `false`. Neither setting adds a learned parameter.
+
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
 Several XML knobs expose the architecture's relation to LLMs, Formal Concept
 Analysis, and DisCoCat. `dataType=embedding`, sentence prediction, and
 reconstruction cover the LLM-like prediction/generation path.
-`subsymbolicOrder`, `symbolicOrder`, `mereologyRaise`, `monotonic`, and the
+`attentionBudget`, `bindingDepth`, `conceptLayers`, `mereologyRaise`, `monotonic`, and the
 codebook settings control the FCA-like concept order and part/whole lattice.
-`serial`, `learning`, `transformChooser`, `categoryCodebook`, and grammar-layer
+`learning`, `transformChooser`, `categoryCodebook`, and grammar-layer
 settings control the DisCoCat-like typed composition path.
 
 Overlay merge order:
@@ -50,16 +55,16 @@ sub-elements `<training>` and `<data>` (see below).
 |-----------|------|---------|-------------|
 | `data/dataType` | string | `"numeric"` | The data space-role (was the retired architecture-level `modelType`), set under `<data>`: `embedding` (LM / chat with sequence processing — PartSpace owns the byte/word lexicon) or `numeric` (dense slab, e.g. MNIST pixels). The old `simple`+`passthrough` collapsed to `numeric`; `vq` was dropped (0 configs). |
 | `reconstruct` | — | — | RETIRED (A1, 2026-06-09): the `reconstructEnum` / `<reconstruct>` element no longer exists. Reconstruction is concepts-seeded; stream binding is governed separately by `conceptBinding` (`aligned` does not allocate `ConceptualCombine`, while `mixing` is the parallel learned-matrix option). There is no selectable `none` / `symbols` / `both` mode. |
-| `subsymbolicOrder` | int | `1` | Maximum subsymbolic passes over native percepts and the order-0 field. Passes may retarget region or mereological level through subsymbolicLoop; they do not raise conceptual order or apply perceptual fold layers. |
 | `conceptBinding` | string | `"mixing"` | PS/WS concept-formation mode. `aligned` preserves location and fuses every non-raw cumulative fold from both towers; BasicModel uses order 4, hence three PS plus three WS sources. Exact ordered paths and actual concept order ride on the concept. Interpretation replaces the word's inventory row with its object and records their identities in a DEF row, without a META fold or an imposed order increase. `mixing` retains the learned `ConceptualCombine` matrix as a parallel-path alternative; BasicModel's serial path is aligned. |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
 | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
-| `serial` | bool | derived | Forward-dispatch mode. `true` = serial / grammatical (per-word `[B, 1, D]` body); `false` = parallel (whole-slab `[B, N, D]` body). If omitted, legacy configs derive it from `symbolicOrder > 0`; new configs should set it explicitly. |
+| `attentionBudget` | positive int | `32` | One allowance for input bracket operations, symbol recall and thought attention. Grammatical word composition does not spend it. Also sizes the padded bracket table. |
+| `bindingDepth` | nonnegative int | `1` | Number of constructed percept/concept binding layers, with live recurrence between them; model capacity, not an attention work allowance. |
+| `conceptLayers` | positive int | `1` | Concept inventory depth including order zero. It does not run repeated symbolic promotion passes. |
+| Removed attention controls | — | rejected | `subsymbolicOrder`, `symbolicOrder`, `subsymbolicLoop`, `serial`, `modeSchedule`, `readingAttention`, `globalAttention` and `globalAttentionConsume` are rejected by schema and runtime validation. |
 | `composeTemperature` | finite float ≥ 0 | `0` | Shared hard-choice sampling temperature for exploit and explore. Zero selects the greatest logit, with item 8's structural rule on exact ties. Positive values sample `softmax(logits / temperature)` during training. Evaluation always uses argmax. Straight-through credit always uses the untempered model softmax; this parameter never scales its gradients. |
-| `modeSchedule` | string | derived from `serial` | `serial`, `parallel`, or `interleave:N` for a positive integer N. Interleaving stages the next N complete sentences, reads them in native parallel mode, then reads the same sentences in serial mode. The final shorter group is processed too. Both passes share the inventory. Context runs forward under no-grad, updating admission, participation and priming; only serial presentations train through the optimizer and advance the external clock. There is no separate label read-back. |
-| `symbolicOrder` | int | `0` | Bound on symbolizations in the symbolic loop. Higher rows union the preceding order's symbols; pi edges exist only within the order-0 field. Two poles share one code. 0 disables the parallel pyramid; serial grammar dispatch is independent. |
 | `conceptualPi` | bool | `false` | Enable conjunctive parts in the order-0 field before max over alternatives. The pool discovers recurring fused native parts; conceptual conjunction means co-presence inside the field bracket. Pi edges above order 0 are rejected. |
 | `attentionPromotion` | bool | `false` | Enable witnessed-context discovery in the conceptual row pool at the parallel sentence boundary. Grammatical clause admission is independent of this discovery switch. |
 | `conceptPoolSize` | positive int | `1` | Provisional rows reserved per conceptual order, replenished after discovery, within the fixed inventory. Exhaustion is reported; discovered rows are never recycled. |
@@ -69,7 +74,6 @@ sub-elements `<training>` and `<data>` (see below).
 | `conceptRecycleThreshold` | decimal | `0.2` | Reassign the least-used provisional row below this value when no free row remains. Must be below the discovery threshold. |
 | `conceptMatchCos` | decimal | `0.8` | Minimum cosine between witnessed context weights for substitution. A conjunction reuses only its complete observed part set. |
 | `conceptPartFloor` | decimal | `0.001` | Prune exponents weaker in magnitude than this floor when a provisional concept is discovered. |
-| `subsymbolicLoop` | string | `all` | Passes on which conceptual demand may retarget perception to a region or mereological level: `all`, `off`, or comma-separated indices in `1..subsymbolicOrder-1`, e.g. `"1,3"`. Pass 0 reads the initial attended field. This selector keeps `subsymbolicOrder` as the processing bound; it adds no perceptual fold layers or identity slots. |
 | `sparseReplace` | — | — | RETIRED (2026-07-02 P3 two-phase forward): phase separation makes non-replacement structural — the symbolic phase's outputs feed the SS leg, the head-side losses, and the concept table, never substituting the subsymbolic advance. Parsed only to emit a `DeprecationWarning`. |
 | `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `symbolSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
 | `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params $\to$ deliberate fresh-basin cutover). See [Language.md](Language.md). |
@@ -77,7 +81,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `transformChooserDepth` | int | `1` | Number of hidden Linear/GELU blocks in each grammar MLP, followed by one scalar Linear head; must be positive. Not the number of grammatical reductions or thought iterations. |
 | `whatThinkingHidden` | int | `16` | Positive hidden width of the sole `SelectedThoughtChooser` MLP. Its context includes masked root/active/candidate roles, semantic metadata, attended visible STM/LTM and execution state; see [SelectedMeaning](SelectedMeaning.md). |
 | `whatThinkingDepth` | int | `1` | Positive number of hidden Linear/GELU blocks in the selected-thought MLP, followed by its zero-initialized scalar head. It does not change the shared work allowance or enable policy credit. |
-| `selectedThoughtBudget` | non-negative int | `32` | Shared work allowance for one completed interrogative grammatical-thought episode. It covers controller choices plus the forwarded `QueryWorkBudget`; `0` permits only the defined cutoff/root-finish drain. It is independent of legacy `whatThinkingIterations`. |
+| `selectedThoughtBudget` | — | — | Rejected: symbol attention shares `attentionBudget` with input narrowing. |
 | `reconstructFromIdea` | bool | `false` | Legacy evaluation selection of recovered word ideas instead of the single-slot seed. Tied mode always returns its owned completed reconstruction, independently of this flag, and never enters the free generate chart ([Models.py](../bin/Models.py)). |
 | `categoryCodebook` | bool | `true` | MetaSymbol participation-category codebook for the role-collapsed grammar: a small role-space `VectorQuantize` initialized with one prototype per labelled grammar role (`op_I1`, `op_I2`, `op_O1`, ...). Unsettled MetaSymbols accumulate bounded temporary role evidence; once mass/confidence/margin/stability thresholds are met, the MetaSymbol commits to one category id and its pending row is discarded. Structured grammar layers use the role context for all `transformChooser` modes: as an input feature for `mlp`, and as a labelled-role score prior for anchordot/default routing. See [Language.md $\to$ Participation Categories](Language.md). |
 | `adverbEigEdit` | bool | `false` | Legacy/direct `LiftLayer` helper flag for the adverb sparse eigenvalue edit. The live `adverb` grammar operator force-builds the same zero-init projection and calls `LiftLayer.apply_adverb`, so ordinary grammar use does not depend on this flag. When enabled for plain `LiftLayer`, an adverb modifies a composed VP by `a2 = atanh(vp) + p_vp * delta_adv`, masked by the VP's own eigen-signature. Default off keeps plain `LiftLayer` byte-identical. |
@@ -116,16 +120,10 @@ penalises propositions that contradict the TruthSet. Both coexist. See
 
 ---
 
-With `interleave:N`, `runEpoch` stages complete sentences in corpus order and
-keeps serial batches at or below the requested `batchSize`, splitting at group
-boundaries. The native context batch has N rows, so N also determines its memory
-requirement. This cursor uses complete sentence inputs rather than byte slabs
-or packed bricks. Direct `runBatch` callers can supply a complete group or pass
-`schedule_context` with the coming group before its first serial batch; later
-batches must match the unread prefix. A checkpoint preserves that prefix.
-Mid-epoch resume requires the same schedule and serial batch size.
-Evaluation uses its own temporary queue, preserving any unfinished training
-group. A fresh training epoch starts a new queue; a resume keeps the saved one.
+Every input begins with the open bracket read under no-grad, then narrows
+before native word admission. Packed sentences retain their exact boundaries
+and final short batches; no mode-schedule queue or checkpoint cursor remains.
+`runBatch` no longer accepts `schedule_context`.
 
 ### `<architecture><data>`
 
@@ -187,14 +185,19 @@ Training loop and I/O.
 | `checkpointEveryBatches` | int | `0` | Save mid-training checkpoint every N optimizer steps. `0` disables periodic checkpoints. |
 | `profile` | bool | `false` | cProfile the training loop. |
 | `certainty` | bool | `false` | Per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition exploration $\to$ exploitation at different rates. |
+| `wordExpectation` | bool | `true` | Word level of the shared bracket expectation owner; categorical next-word prediction over the native bank. |
+| `wordExpectationLossWeight` | nonnegative float | `0.1` | Cross-entropy weight at accepted word brackets. |
+| `wordExpectationArmaScale` | nonnegative float | `1` | Scale of the word expectation's negative image in its surprise column. |
+| `sentenceExpectationContrastiveWeight` | nonnegative float | `0` | Contrastive term at the sentence level. |
+| `byteExpectation`, `rowExpectation` | bool | `false` | Declared future levels; enabling them is rejected in 6.8-1. Their per-level loss/ARMA/contrastive knobs are reserved. |
 | `sentenceExpectation` | bool | `true` | Enables automatic structured expectation and observed residuals. Explicit `false` bypasses the cycle while understanding and the single What memory remain available. Replaces `sentencePrediction`. |
 | `sentenceExpectationScope` | string | `structured` | Predict distinct NP1/VP/NP2 vectors and occupancy from the bounded chronological observation context. `root` selects the historical single-vector benchmark. |
-| `armaScale` | float | `0.0` | Loss weight for the ARMA sentence-prediction MSE. |
+| `sentenceExpectationArmaScale` | float | `0.0` | Loss weight for the ARMA sentence-prediction MSE. |
 | `expectationGain` | float in `[0,1]` | `1` | Closing-only per-role negative image gain. Zero conceives the raw observation while leaving prediction loss and gradients unchanged. |
 | `expectationPolicyWeight` | nonnegative float | `0` | Residual policy credit on the ordinary chooser before an incoming batch; requires `arma` in `<thought>` and owned LTM occurrences. Independent EMA baseline, detached trajectory replay. See [ExpectationRetention](ExpectationRetention.md). |
-| `expectationQueryBudget` | nonnegative integer | `64` | Shared work allowance for each optional anticipatory episode. Later packed slots use prediction without an optional query episode. |
+| `expectationQueryBudget` | nonnegative integer | `64` | Local cap on optional prior thought, clipped to the same input's remaining `attentionBudget`. Both forecasts reserve the larger spend until their later comparison. Later packed slots use prediction without an optional query episode. |
 | `intraLossWeight` | float | `0.1` | Loss weight on the in-STM next-idea term $\mathcal{L}_\text{intra} = \mathrm{MSE}(\hat{c}_t, c_t)$ from `IntraSentenceLayer` (owned by ConceptualSpace), added to the IR-loss path. `0` disables. See [STM.md Section 6](STM.md#6-intrasentencelayer). |
-| `interLossWeight` | float | `0.1` | Weight on role MSE, role-presence binary cross entropy and clause-kind binary cross entropy (`structured`), or root MSE (`root`). Uses a bounded row/document observation view: current-step source context can train its encoder, targets/durable history are detached. Consumed alongside Teacher reconstruction; `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
+| `sentenceExpectationLossWeight` | float | `0.1` | Weight on role MSE, role-presence binary cross entropy and clause-kind binary cross entropy (`structured`), or root MSE (`root`). Uses a bounded row/document observation view: current-step source context can train its encoder, targets/durable history are detached. Consumed alongside Teacher reconstruction; `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 
 Gradient-balance defaults and validation are implemented in
 [Models.py](../bin/Models.py), with the numerical contract in
@@ -235,7 +238,8 @@ The two configurations that train the full P$\to$C$\to$S pipeline:
   <truthBiasScale>0.1</truthBiasScale>
   <LuminosityWeight>0.1</LuminosityWeight>
   <UniversalityWeight>0.1</UniversalityWeight>
-  <subsymbolicOrder>1</subsymbolicOrder>
+  <bindingDepth>1</bindingDepth>
+  <attentionBudget>32</attentionBudget>
   <monotonic>false</monotonic>
 </architecture>
 
@@ -368,7 +372,7 @@ those parameters. Constant-signature runs keep their input brackets.
 Word staging retains byte counts, and the compiled read evaluates the live
 memberships. Native conceptual definitions read PartSpace containment and WholeSpace
 pervasion from those memberships. The distributed codes serve similarity and
-tied reconstruction, never conceptual presence. See [the membership design](Architecture.md#the-three-cognitive-operations-updated-for-11c).
+tied reconstruction, never conceptual presence. See [the membership design](Architecture.md#one-attention-68-1).
 
 The whole-percept/property side of perception and the home of top-down
 analysis. WholeSpace owns primitive property memberships, the
@@ -470,7 +474,7 @@ symbol (line anchors drift).
 | `sigmaPi` | `Models.py` (BaseModel init) + `Spaces.py` (PS/WS fold builders) | `butterfly` | Fold span enum `last` \| `butterfly` \| `full`; the per-space `<butterfly>` boolean is its deprecated alias (PS/WS only). |
 | `conceptBinding` | `Models.py` (serial word loop) + `Spaces.py` (`ConceptualSpace`) | `mixing`; BasicModel sets `aligned` | Selects historical learned mixing or strict same-location fusion over all non-raw PS/WS folds. |
 | `syntacticOrder` | `Models.py` (BaseModel init) | `0` | Parse-tree depth cap for the serial reduce sweep; `0` = unbounded. Inert in parallel mode. |
-| `sentenceProtocol` | `Models.py` (BaseModel init) | = `serial` | Whole-sentence gist prelude (parallel `subsymbolicOrder` pumps, intent-only commit) before the serial per-word loop. |
+| `sentenceProtocol` | `Models.py` | compatibility | The open bracket is unconditional; this flag no longer schedules perception or a second forward pass. |
 | `truthSet` (`<truth>` rows: text, `trust` attrs) | `Models.py` (`provision_ltm`) | (none) | Configured English truths run through the sentence driver; grammar determines their kind and external provenance supplies trust; row trust $\times$ `architecture.trust`. Admitted by the shared grammatical clause closing with external provenance. |
 | `thinkingBudget` | `Models.py` (BaseModel init; `think_about`) | `0` | Shared work allowance for the explicit `think_about` API on the normal grammatical controller. Choices, reads, traversal and child execution all spend it; `0` disables this API. It adds no second result to `answer_query`. |
 | `answerSynthesis` | `Models.py` (BaseModel init; `what()` / `reverseOutput()`) | `false`; `data/BasicModel.xml` ships `true` | Resolve the owned row program into full-width conceptual ideas, apply thinking and one conceptual conditioner, and realize the answer through the selected output mode ([Models.py](../bin/Models.py), [Models.py](../bin/Models.py)). Without `outputInLoop`, concepts enter `ConceptualSpace.synthesize_idea`, the shared reverse body and perceptual inverse, dedicated perceptual synthesis, then `OutputSpace.from_percepts`. New adapters use the forward-equivalent rectangular LDU readout over all generated percept coordinates; old checkpoint adapters keep their layout ([Spaces.py](../bin/Spaces.py)). Topologies without row programs retain dense synthesis compatibility. Training scores only separately supplied desired answers; automatic temporal targets remain evaluation metrics ([Models.py](../bin/Models.py)). |
@@ -479,15 +483,15 @@ symbol (line anchors drift).
 | `whatCurriculumDistance` | `Models.py` (`_curriculum_questions`) | `1` | Presentation offset of the past/future curriculum questions. |
 | `whatCurriculumRatio` | `Models.py` (`_curriculum_questions`) | `0.25` | Fraction of training batches that are curriculum trials. |
 | `whatThinkingDetach` | `Models.py` (`_what_memory` applies it to the slot owner) | `slot` | Episode credit boundary (mathematical thinking spec 8.2): `slot` detaches every interaction value at append (established); `episode` keeps values appended between `begin_what_episode` / `end_what_episode` live until the episode ends. |
-| `whatThinkingIterations` | `Models.py` (compatibility configuration) | `1` | Retained configuration metadata and optional serving-summary gate; `think()` performs one presentation and the normal controller uses `selectedThoughtBudget`. The lexical ANSWER/OPEN parity selector is retired. `whatThinkingPrimitives` remains rejected at load. |
+| `whatThinkingIterations` | `Models.py` (compatibility configuration) | `1` | Retained configuration metadata and optional serving-summary gate; `think()` performs one presentation and the normal controller shares `attentionBudget`. The lexical ANSWER/OPEN parity selector is retired. `whatThinkingPrimitives` remains rejected at load. |
 | `whatThinkingPressure` | `Models.py` (`_thinking_pressure`) | `linear` | Retained numerical schedule utility (`linear`, `quadratic`, `step`). The normal controller derives pressure from shared work; this setting does not change its execution. |
-| `reasoningIterations` | `Models.py` (BaseModel init; public reasoning APIs) | `1` | Shared work allowance for explicit `reason_about` / `answer_query`; `0` disables those APIs. Normal `resolveAnswer` uses `selectedThoughtBudget`. A selected completed meaning grants execution; raw prompt words do not. |
+| `reasoningIterations` | `Models.py` (BaseModel init; public reasoning APIs) | `1` | Shared work allowance for explicit `reason_about` / `answer_query`; `0` disables those APIs. Normal `resolveAnswer` shares `attentionBudget`. A selected completed meaning grants execution; raw prompt words do not. |
 | `queryReasoning` | `Models.py` (BaseModel init) | `false` | DEPRECATED alias: `true` $\Rightarrow$ `reasoningIterations = 10`. Read only when `<reasoningIterations>` is absent. |
 | `ltmConsolidation` | retired compatibility input | ignored | The shared `TernaryTruthStore` is unconditional; this input selects no alternate path. |
 | `stateless` | `Models.py`, `Language.py` | `true` | Request-scoped user TruthSet rows: on state-dict load the consolidated LTM is revived without `ORIGIN_USER` rows. `false` = stateful deployment. |
-| `globalAttention` | `Models.py` (BaseModel init) | `false` | Typed addressable attention over input window / STM / LTM / codebook; the soft-read is parked on `_global_attention_obs`. |
-| `globalAttentionConsume` | `Models.py` (BaseModel init) | `false` | Feeds the parked soft-read back into the head (`Finish`) as a zero-init gated residual. Requires `<globalAttention>`. |
-| `readingAttention` | `Models.py` (BaseModel init) | `false` | Learned `.where` scope producer at each $t>0$ subsymbolic pass (feeds the `<mereologyRaise>` handoff). |
+| `globalAttention` | retired | rejected | The typed registry and learned answer reader are unconditional parts of one attention. |
+| `globalAttentionConsume` | retired | rejected | The answer-owned consume gate starts at zero and is trained by answer loss. |
+| `readingAttention` | retired | rejected | Bracket candidates, priming and word expectation carry its capabilities. |
 | `relevance` | `Models.py` (BaseModel init) | `false` | Relevance-integration gate (Architecture.md sec C). |
 | `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Priming-energy decay per prime event. |
 | `primingSpread` | `Models.py` (BaseModel init) | `0.25` | Fraction of a connected row's standing energy diffused to neighbors per prime event (live by default; `0` = pure decay+bump). |
@@ -757,7 +761,7 @@ candidate formation or execution.
 Every ordinary event charges positive work; pressure is cumulative and no child
 gets a refreshed allowance. A cutoff permits only its bounded return drain and
 one root finish. Capacity reserves those transitions and rejects eviction of
-active or referenced records. `selectedThoughtBudget` wires this API into the
+active or referenced records. `attentionBudget` wires this API into the
 normal completed-grammatical-question controller; it forwards one meter and
 records exact deltas. The separate policy weight remains default-off and is not
 residual credit or learned-utility evidence. See [ordinary thought

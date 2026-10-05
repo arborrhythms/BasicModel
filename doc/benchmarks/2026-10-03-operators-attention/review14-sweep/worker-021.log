@@ -1,0 +1,56 @@
+.....F..................ss...sssss...............sssss.sF.s..ssss.s.s... [ 57%]
+...............F..................s..................                    [100%]
+=================================== FAILURES ===================================
+__________________ TestIsConsistent.test_contradictory_truths __________________
+test/test_reasoning.py:143: in test_contradictory_truths
+    self.assertLess(result['score'], 0.5)
+E   AssertionError: 1.5495097637176514 not less than 0.5
+__________________ test_shape_gate_reconciles_singleton_axes ___________________
+test/test_reconstruction_roundtrip.py:281: in test_shape_gate_reconciles_singleton_axes
+    assert torch.allclose(
+E   assert False
+E    +  where False = <built-in method allclose of type object at 0x10c3453a0>(tensor([[[-0.0003]],\n\n        [[-0.0972]],\n\n        [[-0.1269]],\n\n        [[ 0.1077]]]), tensor([[[-0.0003]],\n\n        [[-0.0972]],\n\n        [[-0.1269]],\n\n        [[ 0.1077]]]))
+E    +    where <built-in method allclose of type object at 0x10c3453a0> = torch.allclose
+E    +    and   tensor([[[-0.0003]],\n\n        [[-0.0972]],\n\n        [[-0.1269]],\n\n        [[ 0.1077]]]) = <built-in method mean of Tensor object at 0x130f4c230>(dim=1, keepdim=True)
+E    +      where <built-in method mean of Tensor object at 0x130f4c230> = tensor([[[-0.1186],\n         [-0.2650],\n         [ 0.4667],\n         [-0.0843]],\n\n        [[-0.0901],\n         [-0.054...     [-0.0340],\n         [ 0.0106]],\n\n        [[-0.5668],\n         [ 0.1064],\n         [ 0.2695],\n         [ 0.6219]]]).mean
+E    +        where tensor([[[-0.1186],\n         [-0.2650],\n         [ 0.4667],\n         [-0.0843]],\n\n        [[-0.0901],\n         [-0.054...     [-0.0340],\n         [ 0.0106]],\n\n        [[-0.5668],\n         [ 0.1064],\n         [ 0.2695],\n         [ 0.6219]]]) = <built-in method mean of Tensor object at 0x130f4ceb0>(dim=2, keepdim=True)
+E    +          where <built-in method mean of Tensor object at 0x130f4ceb0> = tensor([[[ 0.5400,  0.2611, -1.0270, -0.2485],\n         [-0.6578, -0.2922, -0.3119,  0.2021],\n         [-0.5869,  0.05...512, -1.1768, -1.0336],\n         [-0.9645,  0.6568, -0.0389,  1.4246],\n         [-0.4677,  0.9726,  2.1865, -0.2039]]]).mean
+_______ test_native_packed_unary_preference_still_records_every_sentence _______
+test/test_reduction_pressure.py:161: in test_native_packed_unary_preference_still_records_every_sentence
+    assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) - before == 2
+E   assert (4 - 0) == 2
+E    +  where 4 = int(tensor(4))
+E    +    where tensor(4) = <built-in method sum of Tensor object at 0x1326f71b0>()
+E    +      where <built-in method sum of Tensor object at 0x1326f71b0> = tensor([4, 4, 4, 4, 4, 1, 3, 1, 3]) != 4.sum
+E    +        where 4 = TernaryTruthStore().REL_DEF
+=============================== warnings summary ===============================
+test/test_reasoning.py::TestIsConsistent::test_consistent_truths
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_recon_bench.py::test_run_record_schema_smoke
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7162: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7162: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7162: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/idempotent.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 10, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7162: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1788/test_missing_packed_sentence_d0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reasoning.py::TestIsConsistent::test_contradictory_truths - ...
+FAILED test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes
+FAILED test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence
+3 failed, 101 passed, 21 skipped, 6 warnings in 37.67s

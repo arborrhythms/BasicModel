@@ -1,0 +1,31 @@
+.....................F.............                                      [100%]
+=================================== FAILURES ===================================
+___ test_optional_field_choices_cannot_exhaust_the_word_completion_deadline ____
+
+    def test_optional_field_choices_cannot_exhaust_the_word_completion_deadline():
+        from types import SimpleNamespace
+        from Attention import narrow_words
+        def field_first(keys,legal,space,**kwargs):
+            priority=torch.arange(legal.shape[-1],device=keys.device).expand_as(legal)
+            logits=priority.to(keys).masked_fill(~legal,-torch.inf).flatten(1)
+            return logits.argmax(-1),keys.new_ones(len(keys)),legal.flatten(1).sum(-1)>1
+        chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=field_first)
+        starts=torch.arange(8)*2
+        spans=torch.stack((starts,starts+1),-1)[None]
+        result=narrow_words(chooser,torch.eye(8)[None],spans,torch.zeros(1,8,dtype=torch.bool),budget=32)
+>       assert result.accepted.all()
+E       assert tensor(False)
+E        +  where tensor(False) = <built-in method all of Tensor object at 0x12a88f980>()
+E        +    where <built-in method all of Tensor object at 0x12a88f980> = tensor([[ True,  True,  True,  True, False, False, False, False]]).all
+E        +      where tensor([[ True,  True,  True,  True, False, False, False, False]]) = NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  1],\n         [ 2,  3],\n         [ 4,  5],\n         [ 6,  7],...  True,  True,\n          True, False,  True,  True,  True,  True,  True, False,  True,  True,\n          True,  True]])).accepted
+
+test/test_one_attention.py:182: AssertionError
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_optional_field_choices_cannot_exhaust_the_word_completion_deadline
+1 failed, 34 passed, 1 warning in 7.91s

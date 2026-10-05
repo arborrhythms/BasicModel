@@ -20,12 +20,50 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
         return values
     monkeypatch.setattr(torch, 'while_loop', eager_while)
     model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+    # This separator fixture supplies the same binary form operation to
+    # composition and its fixed inverse below. An arbitrary fresh unary
+    # can erase a word before the separator boundary is exercised.
+    layer = model.languageSpace._tree_layer(2)
+    binary_scores = layer.chooser.score_binary
+    unary_scores = layer.chooser.score_unary
+    compose_names = [rule.method_name for rule in model.languageSpace._compose_binary_rules]
+    def compose_binary(*args, **kwargs):
+        stop, scores = binary_scores(*args, **kwargs)
+        bias = scores.new_full((layer.r_reduce,), -1e6)
+        bias[compose_names.index('conjunction')] = 1e6
+        return stop, scores + bias
+    def compose_unary(*args, **kwargs):
+        stop, scores = unary_scores(*args, **kwargs)
+        if kwargs.get('op_offset') == layer.r_reduce + layer.r_apply:
+            return stop, scores  # attention keeps its own policy
+        return stop, scores - 1e6
+    monkeypatch.setattr(layer.chooser, 'score_binary', compose_binary)
+    monkeypatch.setattr(layer.chooser, 'score_unary', compose_unary)
     if unadmitted:
         stage = model._stage_reading_grammar_references
         def without_first_identity(*args):
             stage(*args)
             model.inputSpace._ar_grammar_object_rows[:, 0] = -1
         monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+    # Independent generation has no compose stamp to replay. Fix one legal
+    # inverse then STOP so this separator proof still checks two emitted words.
+    walk = model._output_generate_walk
+    def two_words(*args, **kwargs):
+        language = model.languageSpace
+        policy = language.generate_policy_logits
+        count = [0]
+        choice = list(language._generate_binary_names).index('conjunction')
+        def logits(top):
+            value = top.new_full((top.shape[0], language.generate_policy.out_features), -1000.)
+            value[:, choice if count[0] == 0 else -1] = 0.
+            count[0] += 1
+            return value
+        language.generate_policy_logits = logits
+        try:
+            return walk(*args, **kwargs)
+        finally:
+            language.generate_policy_logits = policy
+    monkeypatch.setattr(model, '_output_generate_walk', two_words)
     pushes, readings, targets = [], [], []
     push = ShortTermMemory.functional_push_step_masked
     def observed_push(*args):
@@ -61,9 +99,12 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
                 int(model.perceptualSpace.outputShape[0]) * model.serial_residual_part_capacity))
         assert torch.equal(isp._ar_embedded[:, 1], isp._ar_embedded_N[:, 1])
         assert bool(isp._ar_embedded[:, 1].abs().any())
-        assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)
+        assert targets
         for b in range(4):
-            assert bytes(targets[-1][b, 1][isp._ar_target_word_mask[b, 1]].tolist()) == b' '
+            assert bytes(isp._ar_target_word_bytes[b, 1][isp._ar_target_word_mask[b, 1]].tolist()) == b' '
+            expected=isp._ar_target_word_bytes[b, isp._ar_grammar_leaf_mask[b]]
+            torch.testing.assert_close(targets[-1][b,:len(expected)],expected,rtol=0,atol=0)
+            assert not bool(targets[-1][b,len(expected):].any())
         assert [p for p, _ in pushes] == list(range(4 if trailing else 3))
         expected = [[True]*4, [False]*4, [True]*4] + ([[False]*4] if trailing else [])
         assert [gate.reshape(-1).tolist() for _, gate in pushes] == expected

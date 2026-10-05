@@ -1,0 +1,30 @@
+{
+  "head": "802abb1acc95e1bddc8cb237b13230a336681c49",
+  "status": "implemented; gate campaign held at non-strict XPASS decision",
+  "full_sweep_counts": {
+    "passed": 4900,
+    "skipped": 286,
+    "xpassed": 1
+  },
+  "full_sweep_green": false,
+  "all_pytest_workers_exit_zero": true,
+  "bounded_supervisor_exit": 1,
+  "compile_cache_retries": 0,
+  "gate_trainings": 0,
+  "source_matches_full_sweep_and_frozen_mechanism": true,
+  "whole_old_new_test_ports": 179,
+  "round_existing_test_ports": 6,
+  "changed_seed_calls": 0,
+  "gate_bars_and_runner_guards_unchanged": true,
+  "original_output_assertions_unchanged": true,
+  "original_output_regressions_passed": 16,
+  "historical_evidence_files_unchanged": 2013,
+  "source_files": 693,
+  "complete_files": 715,
+  "receipt_links_verified": 19,
+  "supplement_files": 432,
+  "source_zip_sha256": "893902e11bd3519d78dbb8e1cec3e994d558acc78bcd70196260776ab39924b7",
+  "supplement_zip_sha256": "8e196f11fc1d6fffd0c928045c9c1c642aaed8c192188305e9c1e471c7c38095",
+  "supplement_manifest_sha256": "e28c3d0e7e70f1cb4d4d509d9df53dbe2c9c1d989a4c1e30181466f1eb261417",
+  "pending": "Resolve the named non-strict XPASS under the unchanged green-sweep guard; then once-only sum, XOR and MM campaigns, reports, and Claude review before commit."
+}

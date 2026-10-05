@@ -1,0 +1,162 @@
+....FF                                                                   [100%]
+=================================== FAILURES ===================================
+__________ test_walk_audit_records_strict_wins_and_sentence_stability __________
+
+    def test_walk_audit_records_strict_wins_and_sentence_stability():
+        from types import SimpleNamespace
+>       from WalkTrials import observe_comparison
+E       ImportError: cannot import name 'observe_comparison' from 'WalkTrials' (/Users/arogers/github/WikiOracle/basicmodel/bin/WalkTrials.py)
+
+test/test_walk_trials.py:88: ImportError
+_______ test_old_sentence_expectation_checkpoint_keeps_sentence_weights ________
+
+    def test_old_sentence_expectation_checkpoint_keeps_sentence_weights():
+        from Layers import BracketExpectation
+        owner=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
+        state={name:value.clone() for name,value in owner.state_dict().items()
+               if not name.startswith('word_predictor.')}
+        restored=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4)
+>       restored.load_state_dict(state,strict=True)
+
+test/test_one_attention.py:299: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+state_dict = OrderedDict({'predictor.0.weight': tensor([[-0.1311, -0.0937,  0.1554, -0.1073, -0.0753,  0.0204,  0.0565,  0.1532,
+  ...486, -0.0201, -0.3817, -0.2775]]), '_inter_predictor.routing_proj.bias': tensor([-0.3553,  0.3507, -0.4098, -0.4086])})
+strict = True, assign = False
+
+    def load_state_dict(
+        self, state_dict: Mapping[str, Any], strict: bool = True, assign: bool = False
+    ):
+        r"""Copy parameters and buffers from :attr:`state_dict` into this module and its descendants.
+    
+        If :attr:`strict` is ``True``, then
+        the keys of :attr:`state_dict` must exactly match the keys returned
+        by this module's :meth:`~torch.nn.Module.state_dict` function.
+    
+        .. warning::
+            If :attr:`assign` is ``True`` the optimizer must be created after
+            the call to :attr:`load_state_dict` unless
+            :func:`~torch.__future__.get_swap_module_params_on_conversion` is ``True``.
+    
+        Args:
+            state_dict (dict): a dict containing parameters and
+                persistent buffers.
+            strict (bool, optional): whether to strictly enforce that the keys
+                in :attr:`state_dict` match the keys returned by this module's
+                :meth:`~torch.nn.Module.state_dict` function. Default: ``True``
+            assign (bool, optional): When set to ``False``, the properties of the tensors
+                in the current module are preserved whereas setting it to ``True`` preserves
+                properties of the Tensors in the state dict. The only
+                exception is the ``requires_grad`` field of :class:`~torch.nn.Parameter`
+                for which the value from the module is preserved. Default: ``False``
+    
+        Returns:
+            ``NamedTuple`` with ``missing_keys`` and ``unexpected_keys`` fields:
+                * ``missing_keys`` is a list of str containing any keys that are expected
+                    by this module but missing from the provided ``state_dict``.
+                * ``unexpected_keys`` is a list of str containing the keys that are not
+                    expected by this module but present in the provided ``state_dict``.
+    
+        Note:
+            If a parameter or buffer is registered as ``None`` and its corresponding key
+            exists in :attr:`state_dict`, :meth:`load_state_dict` will raise a
+            ``RuntimeError``.
+        """
+        if not isinstance(state_dict, Mapping):
+            raise TypeError(
+                f"Expected state_dict to be dict-like, got {type(state_dict)}."
+            )
+    
+        missing_keys: list[str] = []
+        unexpected_keys: list[str] = []
+        error_msgs: list[str] = []
+    
+        # copy state_dict so _load_from_state_dict can modify it
+        metadata = getattr(state_dict, "_metadata", None)
+        state_dict = OrderedDict(state_dict)
+        if metadata is not None:
+            # mypy isn't aware that "_metadata" exists in state_dict
+            state_dict._metadata = metadata  # type: ignore[attr-defined]
+    
+        def load(module, local_state_dict, prefix="") -> None:
+            local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
+            if assign:
+                local_metadata["assign_to_params_buffers"] = assign
+            module._load_from_state_dict(
+                local_state_dict,
+                prefix,
+                local_metadata,
+                True,
+                missing_keys,
+                unexpected_keys,
+                error_msgs,
+            )
+            for name, child in module._modules.items():
+                if child is not None:
+                    child_prefix = prefix + name + "."
+                    child_state_dict = {
+                        k: v
+                        for k, v in local_state_dict.items()
+                        if k.startswith(child_prefix)
+                    }
+                    load(child, child_state_dict, child_prefix)  # noqa: F821
+    
+            # Note that the hook can modify missing_keys and unexpected_keys.
+            incompatible_keys = _IncompatibleKeys(missing_keys, unexpected_keys)
+            for hook in module._load_state_dict_post_hooks.values():
+                out = hook(module, incompatible_keys)
+                if out is not None:
+                    raise AssertionError(
+                        "Hooks registered with ``register_load_state_dict_post_hook`` are not "
+                        "expected to return new values, if incompatible_keys need to be modified, "
+                        "it should be done inplace."
+                    )
+    
+        load(self, state_dict)
+        del load
+    
+        if strict:
+            if len(unexpected_keys) > 0:
+                error_msgs.insert(
+                    0,
+                    "Unexpected key(s) in state_dict: {}. ".format(
+                        ", ".join(f'"{k}"' for k in unexpected_keys)
+                    ),
+                )
+            if len(missing_keys) > 0:
+                error_msgs.insert(
+                    0,
+                    "Missing key(s) in state_dict: {}. ".format(
+                        ", ".join(f'"{k}"' for k in missing_keys)
+                    ),
+                )
+    
+        if len(error_msgs) > 0:
+>           raise RuntimeError(
+                "Error(s) in loading state_dict for {}:\n\t{}".format(
+                    self.__class__.__name__, "\n\t".join(error_msgs)
+                )
+            )
+E           RuntimeError: Error(s) in loading state_dict for BracketExpectation:
+E           	Missing key(s) in state_dict: "word_predictor.0.weight", "word_predictor.0.bias", "word_predictor.2.weight", "word_predictor.2.bias".
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:2643: RuntimeError
+=============================== warnings summary ===============================
+test/test_walk_trials.py::test_thought_pair_keeps_one_episode_and_costs_before_policy_backward
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_walk_trials.py::test_walk_audit_records_strict_wins_and_sentence_stability
+FAILED test/test_one_attention.py::test_old_sentence_expectation_checkpoint_keeps_sentence_weights
+2 failed, 4 passed, 1 warning in 2.11s

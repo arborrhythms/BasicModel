@@ -23,7 +23,7 @@ def _sentence(supplied):
     slots = torch.cat((root[:, None], root.new_zeros(2, 2, 2)), 1)
     lang = [None] * 15
     lang[9], lang[13], lang[14] = root[:, None], slots.flatten(1)[:, None], torch.ones(2, 1, dtype=torch.long)
-    model = SimpleNamespace(serial=True, outputSpace=head,
+    model = SimpleNamespace(word_brackets=True, outputSpace=head,
         loss=ModelLoss(reconstruction_scale=1., what_scale=1., where_scale=1., when_scale=1.),
         normalizer=SimpleNamespace(denormalize=lambda value, **kw: value),
         inputSpace=SimpleNamespace(data=SimpleNamespace(has_supervised_outputs=supplied)),
@@ -110,7 +110,7 @@ def test_native_trial_reads_the_completed_point_without_state_credit():
     model._what_grammar_context = lambda *args, **kwargs: (None, None)
     model.outputSpace.prepOutput = lambda values: torch.tensor(values)[:, None]
     seen = []
-    def realize(understanding, derivation):
+    def realize(understanding, derivation, **kwargs):
         assert [int(field.meaning.role_mask.sum()) for field in derivation.sentence_states] == [1, 1]
         seen.append(derivation.conceptual_answer)
         return SimpleNamespace(actual=(derivation.conceptual_answer.detach().flatten(1) @ parameters[-1])[:, None])

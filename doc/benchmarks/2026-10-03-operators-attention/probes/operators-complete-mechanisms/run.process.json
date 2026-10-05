@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operator_catalogue.py",
+    "test/test_operator_effects.py",
+    "test/test_compound_cases.py",
+    "test/test_symbolize_layer.py",
+    "test/test_query_registry.py",
+    "test/test_grammatical_query_vps.py",
+    "test/test_normal_thought_controller.py",
+    "test/test_decoder_exploration.py"
+  ],
+  "pid": 93094,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 621086712,
+  "elapsed_seconds": 10.358910499984631,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/operators-complete-mechanisms/run.log"
+}

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_symbolize_layer.py",
+    "test/test_compound_cases.py",
+    "test/test_operator_effects.py",
+    "test/test_operator_catalogue.py",
+    "test/test_normal_thought_controller.py",
+    "test/test_serial_reverse_errors.py"
+  ],
+  "pid": 92873,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 610174944,
+  "elapsed_seconds": 5.682509290985763,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/final-operator-retire-after/run.log"
+}

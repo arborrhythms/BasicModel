@@ -1,0 +1,11 @@
+
+==================================== ERRORS ====================================
+_______________ ERROR collecting test/test_review14_contracts.py _______________
+test/test_review14_contracts.py:182: in <module>
+    @pytest.mark.parametrize('wins', [False, True])
+     ^^^^^^
+E   NameError: name 'pytest' is not defined
+=========================== short test summary info ============================
+ERROR test/test_review14_contracts.py - NameError: name 'pytest' is not defined
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+no tests collected, 1 error in 0.49s

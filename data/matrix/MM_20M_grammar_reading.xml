@@ -12,8 +12,8 @@
        else is verbatim from the parent. -->
   <architecture>
     <!-- legacy serial: per-word forward dispatch via _forward_body_per_word. -->
-    <symbolicOrder>1</symbolicOrder>
-    <subsymbolicOrder>3</subsymbolicOrder>
+    <conceptLayers>2</conceptLayers>
+    <bindingDepth>3</bindingDepth>
     <l1Lambda>0.01</l1Lambda>
     <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
          butterfly cascade (moved from per-space to architecture-level). -->
@@ -21,7 +21,7 @@
     <!-- FLIPPED for this variant: readingAttention ON (parent MM_20M_grammar
          leaves it default false). The learned reading-scope producer runs at
          t>0 passes and a next-word cross-entropy term trains it. -->
-    <readingAttention>true</readingAttention>
+
 
     <data>
       <dataType>embedding</dataType>

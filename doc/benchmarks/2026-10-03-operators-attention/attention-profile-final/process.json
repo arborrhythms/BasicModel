@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/attention_profile.py"
+  ],
+  "pid": 8212,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 7665425032,
+  "elapsed_seconds": 141.10852933401475,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/attention-profile-final/run.log"
+}

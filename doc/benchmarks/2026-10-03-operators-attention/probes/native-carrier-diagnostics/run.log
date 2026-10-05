@@ -1,0 +1,290 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+FAILED_WORD [6] (0, 8) {'form': 'world', 'word_reading': True} old {'forms': ('world',), 'parts': ((6, 4),), 'wholes': (0, 8)}
+CAPS (4, 4) rows {(0, 2): 0, (0, 4): 1, (0, 6): 2, (0, 8): 3}
+Fbatch = 0 (warm-up)
+GRADS [0.0, 1.8033243417739868, 0.06708560883998871, 0.3663901090621948, 1.4778611660003662]
+PARAMS 0 [False, True, True, True, True] [(136, 29), (2176, 16), (16,), (16, 16), (1, 16)]
+F....F.USDT:2026-10-03 21:54:50 4509:3436625 SyncActivityProfilerHandler.cpp:39] profiler_start
+USDT:2026-10-03 21:54:50 4509:3436625 SyncActivityProfilerHandler.cpp:46] profiler_stop
+...[BasicModel] Activated aligned codebook prefix 1 -> 2 rows (physical capacity 4096; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)
+[BasicModel] Activated aligned codebook prefix 2 -> 4 rows (physical capacity 4096; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)
+......................batch = 0 (warm-up)
+.batch = 0 (warm-up)
+.
+=================================== FAILURES ===================================
+_____________________________ test_capacity_before _____________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10bfe77a0>
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1634/test_capacity_before0')
+
+    def test_capacity_before(monkeypatch,tmp_path):
+        from Interpret import InterpretLayer
+        from recon_bench import run_config
+        lookup=InterpretLayer.lookup_word
+        def read(self,parts,wholes,**kwargs):
+            try:return lookup(self,parts,wholes,**kwargs)
+            except RuntimeError:
+                index=self.owner.definitions
+                word=index.word(form=kwargs.get('form'))
+                print('FAILED_WORD',parts,wholes,kwargs,'old',None if word is None else index.description(word),flush=True)
+                print('CAPS',self.owner._order_caps(),'rows',self.owner._csw_rows,flush=True)
+                raise
+        monkeypatch.setattr(InterpretLayer,'lookup_word',read)
+>       run_config('data/MM_xor_fixture.xml',epochs=1,seed=0,out_dir=str(tmp_path))
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers.py:17: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/recon_bench.py:215: in run_config
+    _epoch_loop()
+bin/recon_bench.py:199: in _epoch_loop
+    out_loss, rec_loss, _, _ = model.runEpoch(
+bin/Models.py:15688: in runEpoch
+    self.dispatch_per_row_reset(hard_eos)
+bin/Models.py:14973: in dispatch_per_row_reset
+    space.Reset()
+bin/Spaces.py:14188: in Reset
+    self._commit_autobind_from_stash()
+bin/Spaces.py:14290: in _commit_autobind_from_stash
+    self._maybe_autobind_words(
+bin/Spaces.py:14508: in _maybe_autobind_words
+    return self._autobind_property_concepts(
+bin/Spaces.py:14441: in _autobind_property_concepts
+    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers.py:9: in read
+    try:return lookup(self,parts,wholes,**kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:62: in lookup_word
+    cs._preflight_concept_row(0)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ...  (concept_parts_layer): ConceptualAttentionLayer(
+    (conjunctive): SparseLayer()
+    (features): SparseLayer()
+  )
+)
+order = 0
+
+    def _preflight_concept_row(self, order=0):
+        """Check the physical seat before changing identity or definition records."""
+        store = _concept_alloc_of(self).layer()
+        caps, capacity = self._order_caps(), int(self.nVectors)
+        if getattr(self, '_concept_binding', 'mixing') == 'aligned':
+            base, size = 0, capacity
+        elif int(order) == 0:
+            base = 0 if store._row_next.get(0, 0) < caps[0] else sum(caps)
+            size = caps[0] if base == 0 else capacity - base
+        else:
+            rung = min(int(order), len(caps) - 1)
+            base, size = sum(caps[:rung]), caps[rung]
+        next_row = int(store._row_next.get(base, 0))
+        while next_row < size and base + next_row in store._tensor_row_keys:
+            next_row += 1
+        if next_row >= size:
+>           raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+E           RuntimeError: concept row capacity exhausted before word admission; no identity was minted
+
+bin/Spaces.py:14694: RuntimeError
+__________________________ test_mixed_gradient_before __________________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x131291970>
+
+    def test_mixed_gradient_before(monkeypatch):
+        import test_output_path_supervised as tests
+        original=tests._answer_training_probe
+        def run(*args):
+            result=original(*args)
+            print('GRADS',[None if p is None else float(p.norm()) for p in result['total_grads']],flush=True)
+            print('PARAMS',result['active_index'],result['changed'],[tuple(p.shape) for p in result['params']],flush=True)
+            return result
+        monkeypatch.setattr(tests,'_answer_training_probe',run)
+>       tests.test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row(None)
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+eager_reading = None
+
+    def test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row(eager_reading):
+        from copy import deepcopy
+        from test_output_walk import _model
+        m = _model()
+        m._tensor_peer_while_eager = True
+        m._chart_compose_per_word = lambda: None
+        data = m.inputSpace.data
+        saved_addresses = deepcopy(data.source_addresses["train"])
+        for address in data.source_addresses["train"]:
+            address["document"] = 0
+            address["sentence"] = address["row"]
+        opt = m.getOptimizer(lr=1e-3)
+        try:
+            # Put the automatic text first: it must not select the text modality
+            # and displace the second row's explicitly supplied numeric target.
+            questions = (What.future(0), What.supervised(1))
+            assert all(data.what(q).available for q in questions)
+            got = _answer_training_probe(m, opt, questions)
+            assert got["mask"] == [False, True]
+            assert got["actual_grad"] is not None
+            assert torch.count_nonzero(got["actual_grad"][0]) == 0
+            assert bool(got["actual_grad"][1].abs().sum() > 0)
+>           assert got["changed"][got["active_index"]]
+E           assert False
+
+test/test_output_path_supervised.py:380: AssertionError
+____ test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction _____
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1634/test_missing_packed_sentence_d0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1317518b0>
+
+    def test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction(tmp_path, monkeypatch):
+        import util
+        from test_packed_reconstruction_parity import build_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = build_model(tmp_path, word_capacity=8)
+        stage = model._stage_snapshot_bytes
+        def without_second_sentence():
+            stage()
+            isp = model.inputSpace
+            isp._ar_bank_valid[isp._ar_concept_lookup_sentence_ids == 1] = False
+        monkeypatch.setattr(model, '_stage_snapshot_bytes', without_second_sentence)
+        prime=model._prime_sentence_symbols
+        def without_prior_candidates(sid):
+            from dataclasses import replace
+            prime(sid)
+            if sid == 1:
+                bank=model._sentence_primed_bank
+                model._sentence_primed_bank=replace(bank,valid=torch.zeros_like(bank.valid),
+                    byte_valid=torch.zeros_like(bank.byte_valid))
+        monkeypatch.setattr(model,'_prime_sentence_symbols',without_prior_candidates)
+        try:
+            model._install_unit_span_fn()
+            raw = model.inputSpace.prepPackedInput([['quorp flarn', 'wug blim']])
+            with torch.no_grad():
+>               model.runBatch(train=False, batchSize=1, split='validation',
+                    batch_override=(raw, torch.empty(1, 0)))
+
+test/test_reconstruction_scope.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13580: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13707: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14082: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8777: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10259: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8462: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22985: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17195: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21534: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21093: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20157: in _run_sentence_word_bricks
+    self._prime_sentence_symbols(sid)
+test/test_reconstruction_scope.py:68: in without_prior_candidates
+    model._sentence_primed_bank=replace(bank,valid=torch.zeros_like(bank.valid),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+obj = PrimedSymbols(rows=tensor([[ 2,  3,  0,  1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]]), codes=tensor([[...   [[0., 0.],
+         [0., 0.],
+         [0., 0.],
+         [1., 0.]]]), eligible=tensor([[True, True, True, True]])))
+changes = {'valid': tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False,....0000,  ...,  0.0000,  0.0000,  0.0000],
+         [ 0.0000,  0.0000,  0.0000,  ...,  0.0000,  0.0000,  0.0000]]]), ...}
+
+    def replace(obj, /, **changes):
+        """Return a new object replacing specified fields with new values.
+    
+        This is especially useful for frozen classes.  Example usage::
+    
+          @dataclass(frozen=True)
+          class C:
+              x: int
+              y: int
+    
+          c = C(1, 2)
+          c1 = replace(c, x=3)
+          assert c1.x == 3 and c1.y == 2
+        """
+    
+        # We're going to mutate 'changes', but that's okay because it's a
+        # new dict, even if called with 'replace(obj, **my_changes)'.
+    
+        if not _is_dataclass_instance(obj):
+            raise TypeError("replace() should be called on dataclass instances")
+    
+        # It's an error to have init=False fields in 'changes'.
+        # If a field is not in 'changes', read its value from the provided obj.
+    
+        for f in getattr(obj, _FIELDS).values():
+            # Only consider normal fields or InitVars.
+            if f._field_type is _FIELD_CLASSVAR:
+                continue
+    
+            if not f.init:
+                # Error if this field is specified in changes.
+                if f.name in changes:
+                    raise ValueError(f'field {f.name} is declared with '
+                                     'init=False, it cannot be specified with '
+                                     'replace()')
+                continue
+    
+            if f.name not in changes:
+                if f._field_type is _FIELD_INITVAR and f.default is MISSING:
+                    raise ValueError(f"InitVar {f.name!r} "
+                                     'must be specified with replace()')
+                changes[f.name] = getattr(obj, f.name)
+    
+        # Create the new object, which calls __init__() and
+        # __post_init__() (if defined), using all of the init fields we've
+        # added and/or left in 'changes'.  If there are values supplied in
+        # changes that aren't fields, this will correctly raise a
+        # TypeError.
+>       return obj.__class__(**changes)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: PrimedSymbols.__init__() got an unexpected keyword argument 'valid'
+
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/dataclasses.py:1588: TypeError
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers.py::test_capacity_before
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+doc/benchmarks/2026-10-03-operators-attention/inspect_carriers.py::test_mixed_gradient_before
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpmpl1hq15/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-03-operators-attention/inspect_carriers.py::test_capacity_before
+FAILED doc/benchmarks/2026-10-03-operators-attention/inspect_carriers.py::test_mixed_gradient_before
+FAILED test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+3 failed, 32 passed, 2 warnings in 12.66s

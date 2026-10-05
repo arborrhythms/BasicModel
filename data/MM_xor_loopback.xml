@@ -10,7 +10,7 @@
     </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <symbolicOrder>1</symbolicOrder>
+    <conceptLayers>2</conceptLayers>
     <!-- Pure forward-only smoke: zero out truth weights and learning so
          the scalar loopback path is the only thing exercised. -->
     <truthBiasScale>0.0</truthBiasScale>
@@ -101,10 +101,17 @@
     <language>
       <start>S</start>
       <grammar>
-        <S>S = not(S)</S>
-        <S>S = intersection(S, S)</S>
-        <S>S = union(S, S)</S>
-      </grammar>
+      <compose>
+        <rule operands="field">F = divide.forward(F)</rule>
+        <rule operands="field">F = descend.forward(F)</rule>
+        <rule operands="field">F = gloss.forward(F)</rule>
+        <rule operands="field">F = and.forward(F)</rule>
+        <rule operands="field">F = or.forward(F)</rule>
+        <rule>S = not(S)</rule>
+        <rule>S = intersection(S, S)</rule>
+        <rule>S = union(S, S)</rule>
+      </compose>
+    </grammar>
     </language>
   </SymbolSpace>
 

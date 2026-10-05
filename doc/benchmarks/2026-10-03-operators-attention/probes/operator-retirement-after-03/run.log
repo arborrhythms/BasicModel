@@ -1,0 +1,838 @@
+........................F..........FF...FF..F...F......FF..F..........F. [ 60%]
+...............F.F....F...F.FF............FFF..                          [100%]
+=================================== FAILURES ===================================
+_____ test_operand_occurrence_reads_require_permission_before_preparation ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x128e55d60>
+
+    def test_operand_occurrence_reads_require_permission_before_preparation(monkeypatch):
+        import Queries
+        from Meaning import ConceptualMeaning
+    
+        model = _model()
+        grammar = __import__('Language').Grammar()
+>       grammar.configure({'compose': {'rule': [
+            'exist_O1 = exist.forward(exist_I1)']},
+            'thought': {'rule': ['exist_O1 = exist.thought(exist_I1)']}})
+
+test/test_query_phase_permissions.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:1217: in configure
+    self._fill_section(self.rules_upward, up)
+bin/Language.py:1505: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Language.Grammar object at 0x128e7c800>, target = []
+rules_dict = {'rule': ['exist_O1 = exist.forward(exist_I1)']}, space_role = 'SS'
+face = None
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+    
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                if implementation in ('exist', 'true', 'lookup'):
+>                   raise ValueError(f'{implementation} is retired; query conceptual content with what')
+E                   ValueError: exist is retired; query conceptual content with what
+
+bin/Language.py:1583: ValueError
+_____ test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12e3d6ea0>
+
+    def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypatch):
+        from Queries import _existing_row, ThoughtLTMCapability
+        from reasoning import TruthGroundedReasoner
+        from index_fixtures import append_indexed
+        cs = _cs()
+        ref = ('sym', cs.new_concept())
+        cs._csw_concept_row(0, ref[1])
+        meaning = replace(ConceptualMeaning.from_description(torch.ones(8)),
+                          role_refs=(ref, None, None))
+        store = TernaryTruthStore(8)
+        store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
+        code = _existing_row(cs, ref)
+        append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=.6)
+        append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=-.4)
+        # This mechanism budgets primed candidate reads. Indexing precedes the
+        # query; its context supplies no generation work or renewal of the meter.
+        store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
+        read, original = [], store.row
+    
+        def row(index):
+            read.append(index)
+            return original(index)
+    
+        monkeypatch.setattr(store, "row", row)
+        meter = budget(2)
+        reader = TruthGroundedReasoner(store=store)
+        context = replace(_context(cs, store=store, work=meter),
+            ltm=ThoughtLTMCapability(store=reader.reasoning_store,
+                equal=reader.equal, tau_id=reader.tau_id, primed=(code,)))
+        from test_query_vp_boundaries import _signature
+>       result = _signature('exist', 'I1').invoke(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+            context, meaning)
+
+test/test_query_work_budget.py:112: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'exist', roles = ('I1',)
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'exist'
+
+test/test_query_vp_boundaries.py:62: KeyError
+___ test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances ___
+
+    def test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances():
+        cs, (a, b, c) = _world()
+        del c
+        cs.add_whole(a, _ref(b))
+        meter = budget(3)
+        context = _context(
+            cs,
+            max_nodes=99,
+            max_records=99,
+            max_expansions=99,
+            work=meter,
+        )
+        from test_query_vp_boundaries import _signature
+        result = _signature('part', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
+>       assert (result["nodes_scanned"] + result["records_scanned"]
+                ^^^^^^^^^^^^^^^^^^^^^^^
+                + result["edges_expanded"] == 2)
+E       KeyError: 'nodes_scanned'
+
+test/test_query_work_budget.py:134: KeyError
+______ test_registry_description_resolution_and_fact_scan_use_one_budget _______
+
+    def test_registry_description_resolution_and_fact_scan_use_one_budget():
+        cs, registry, a, b, context = _world()
+        del a, b, context
+        store = TernaryTruthStore(8)
+        description = ConceptualMeaning.from_description(torch.eye(8)[:3])
+        slot = store.append_meaning(description, kind="fact", trust=.6)
+        context = _context(cs, store=store)
+>       question = registry.form("exist", store.occurrence_of(slot), context=context)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_work_boundaries.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Queries.py:1812: in form
+    operation, form = self._operation_form(semantic_id)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x128e58c50>
+structural_id = 'exist'
+
+    def _operation_form(self, structural_id):
+        pair = self._forms_by_id.get(structural_id)
+        if pair is None:
+            if structural_id in self._operations_by_id:
+                # A canonical family always has its own structural form, but
+                # retain a precise diagnosis for malformed external metadata.
+                raise ValueError(
+                    f'thought operation {structural_id!r} has no structural form')
+>           raise ValueError(
+                f'thought operation {structural_id!r} is not registered by this grammar')
+E           ValueError: thought operation 'exist' is not registered by this grammar
+
+bin/Queries.py:1744: ValueError
+____ test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance _____
+
+    def test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance():
+        meaning = ConceptualMeaning.from_description(torch.eye(8)[:3])
+        store = TernaryTruthStore(8)
+        store.append_meaning(meaning, kind="fact", trust=.7)
+        meter = QueryWorkBudget(2)
+        context = _context(_cs(), store=store, work=meter)
+>       exist = _signature('exist', 'I1')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_work_boundaries.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'exist', roles = ('I1',)
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'exist'
+
+test/test_query_vp_boundaries.py:62: KeyError
+______ test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures _______
+
+    def test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures():
+        from test_taxonomy_view import _ref, _world as taxonomy_world
+    
+        cs, (a, b, c) = taxonomy_world()
+        del c
+        cs.add_whole(a, _ref(b))
+        context = _context(cs, work=QueryWorkBudget(5))
+        result = _signature('part', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
+>       assert result["support_true"] == 1, "capture must leave work for the direct proof"
+E       AssertionError: capture must leave work for the direct proof
+E       assert 0.0 == 1
+
+test/test_query_work_boundaries.py:122: AssertionError
+____ test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row _____
+
+    def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
+        cs, _, registry, _, _, _ = _world()
+        store = TernaryTruthStore(8)
+        description = ConceptualMeaning.from_description(torch.eye(8)[:3])
+        first = store.append_meaning(description)
+        second = store.append_meaning(description)
+        context = _context(cs, store=store, max_records=1)
+        # A direct occurrence address costs one read regardless of row age.
+>       question = registry.form('exist', store.occurrence_of(second), context=context)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_vp_boundaries.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Queries.py:1812: in form
+    operation, form = self._operation_form(semantic_id)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12e4cac30>
+structural_id = 'exist'
+
+    def _operation_form(self, structural_id):
+        pair = self._forms_by_id.get(structural_id)
+        if pair is None:
+            if structural_id in self._operations_by_id:
+                # A canonical family always has its own structural form, but
+                # retain a precise diagnosis for malformed external metadata.
+                raise ValueError(
+                    f'thought operation {structural_id!r} has no structural form')
+>           raise ValueError(
+                f'thought operation {structural_id!r} is not registered by this grammar')
+E           ValueError: thought operation 'exist' is not registered by this grammar
+
+bin/Queries.py:1744: ValueError
+__ test_checked_call_rejects_foreign_width_before_any_executor[exist-roles2] ___
+
+name = 'exist', roles = ('I1',)
+
+    @pytest.mark.parametrize(('name', 'roles'), [
+        ('equal', ('I1', 'I2')), ('what', ('I1',)), ('exist', ('I1',)),
+    ])
+    def test_checked_call_rejects_foreign_width_before_any_executor(name, roles):
+        cs = _cs()
+        width = int(cs.outputShape[-1])
+        calls = []
+>       descriptor = replace(THOUGHT_EXECUTORS[name],
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+                             executor=lambda *args: calls.append(args) or {})
+E       KeyError: 'exist'
+
+test/test_query_owner_width.py:22: KeyError
+___ test_exist_executor_limits_native_fact_reads_and_reports_incompleteness ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x128f71bb0>
+
+    def test_exist_executor_limits_native_fact_reads_and_reports_incompleteness(monkeypatch):
+        store = TernaryTruthStore(8)
+        store.configure_leaf_index(unfold=lambda idea, limit, **kw: ((7,), 1, True))
+        meaning = ConceptualMeaning.from_description(torch.ones(8))
+        for strength in (0.2, 0.8):
+            store.append_meaning(meaning, trust=strength)
+        rows = []
+        original = store.row
+        def read(index):
+            rows.append(index)
+            return original(index)
+        monkeypatch.setattr(store, 'row', read)
+>       result = _signature('exist', 'I1').invoke(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+            _context(_cs(), store=store, max_records=1), meaning)
+
+test/test_query_contract_boundaries.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'exist', roles = ('I1',)
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'exist'
+
+test/test_query_vp_boundaries.py:62: KeyError
+_ test_distinct_lookup_returns_complete_record_and_does_not_admit_observation __
+
+    def test_distinct_lookup_returns_complete_record_and_does_not_admit_observation():
+        store = TernaryTruthStore(8)
+        roles = torch.eye(8)[:3]
+        meaning = ConceptualMeaning.from_description(roles)
+        row = store.append_meaning(meaning, kind='observation', trust=0.9)
+        context = _context(_cs(), store=store)
+        # Only a prior what may bring this row into serial thinking.
+>       assert not _signature('lookup', 'I1', 'I2').invoke(context, roles[0], roles[2])['value']
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_contract_boundaries.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'lookup', roles = ('I1', 'I2')
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'lookup'
+
+test/test_query_vp_boundaries.py:62: KeyError
+__ test_unary_existence_keeps_full_description_through_an_existing_occurrence __
+
+    def test_unary_existence_keeps_full_description_through_an_existing_occurrence():
+        cs, registry, a, b, _ = _world()
+        store = TernaryTruthStore(8)
+        description = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
+                                       scope={'place': 'workshop'})
+        store.configure_leaf_index(unfold=lambda idea, limit, **kw: ((7,), 1, True))
+        index = store.append_meaning(description, trust=0.75)
+        context = _context(cs, store=store)
+        reference = store.occurrence_of(index)
+>       question = registry.form('exist', reference, context=context)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammatical_query_vps.py:109: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Queries.py:1812: in form
+    operation, form = self._operation_form(semantic_id)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x128f35880>
+structural_id = 'exist'
+
+    def _operation_form(self, structural_id):
+        pair = self._forms_by_id.get(structural_id)
+        if pair is None:
+            if structural_id in self._operations_by_id:
+                # A canonical family always has its own structural form, but
+                # retain a precise diagnosis for malformed external metadata.
+                raise ValueError(
+                    f'thought operation {structural_id!r} has no structural form')
+>           raise ValueError(
+                f'thought operation {structural_id!r} is not registered by this grammar')
+E           ValueError: thought operation 'exist' is not registered by this grammar
+
+bin/Queries.py:1744: ValueError
+__ test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12e39cf20>
+
+    def test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata(
+            monkeypatch):
+        """A later grammar action keeps the selected question's negation/context."""
+        model, registry, memory, part, whole = _catalog_world()
+        question = registry.form(
+            "part", part, whole, polarity=False,
+            bindings={"variable": "whole"}, scope={"place": "workshop"})
+    
+        choices = []
+    
+        def choose(_root, _active, actions, **_kwargs):
+            choices.append(actions)
+            if len(choices) == 1:
+                return next(action for action in actions
+                            if action is not None and action.semantic_id == "equal")
+            return None
+    
+        monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
+        with model._query_boundary_scope((0,)):
+>           result = model.run_selected_thought(question, row=0, work_budget=16)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_normal_thought_controller.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6492: in run_selected_thought
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6455: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6411: in execute
+    raw = registry.execute(current, context)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:2127: in execute
+    signature = self.signature_for(meaning, work=context.work)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12e452960>
+meaning = ConceptualMeaning(mode='interrogative', polarity=False, role_refs=(('sym', 6), ('sym', 1), ('sym', 7)), bindings=(('variable', 'whole'),), scope=(('place', 'workshop'),), sentence_kind=None)
+work = <QueryWork.QueryWorkBudget object at 0x129031be0>
+verify_reference = True
+
+    def signature_for(self, meaning, *, work=None, verify_reference=True):
+        """Recover one checked operation from a canonical VP and role mask."""
+        if (not isinstance(meaning, ConceptualMeaning)
+                or meaning.mode != 'interrogative'):
+            raise ValueError('thought execution requires a completed interrogative meaning')
+        if not bool(meaning.role_mask[1]):
+            raise ValueError('thought meaning has no grammatical VP')
+        reference = concept_reference(meaning.role_refs[1])
+        identity = next((identity for identity in self.identities
+                         if self._identifier(identity) == reference[1]), None)
+        if identity is None:
+            raise ValueError('thought VP is not a registered grammatical operation')
+        if verify_reference:
+            self._reference(identity, work=work)
+        semantic_id = identity[1]
+        operation = self.operation_spec(semantic_id)
+        occupied = tuple(
+            role for role in operation.operand_roles
+            if bool(meaning.role_mask[self._slot_for_operand(role)]))
+        allowed_slots = {1} | {self._slot_for_operand(role)
+                              for role in operation.operand_roles}
+        if any(bool(meaning.role_mask[index]) and index not in allowed_slots
+               for index in range(len(meaning.role_mask))):
+            raise ValueError('thought meaning has occupancy outside its structural role contract')
+        signature = ThoughtSignature(operation, self.descriptors[semantic_id], occupied)
+        if signature.open_roles and any(
+                not (isinstance(meaning.role_refs[self._slot_for_operand(role)], tuple)
+                     and meaning.role_refs[self._slot_for_operand(role)][0] == 'sym')
+                for role in occupied):
+            raise ValueError('open taxonomy operand requires a native concept reference')
+        if not meaning.polarity and signature.result_kind != 'truth' and signature.operation.semantic_id != 'part':
+>           raise ValueError('negated thought requires a truth-valued operation')
+E           ValueError: negated thought requires a truth-valued operation
+
+bin/Queries.py:2103: ValueError
+____ test_selected_history_retains_the_typed_checked_result_through_restore ____
+
+    def test_selected_history_retains_the_typed_checked_result_through_restore():
+        """The one history owner keeps the actual checked result, not a summary."""
+        model, registry, memory, part, whole = _world()
+        question = registry.form("part", part, whole)
+    
+        with model._query_boundary_scope((0,)):
+            selected = model.run_selected_thought(question, row=0, work_budget=16)
+    
+        executed = next(
+            record for record in selected.records
+            if record.kind == "thought" and record.operation == "part")
+        stored = executed.result
+        assert stored is not None
+        assert stored.semantic_id == selected.result.semantic_id == "part"
+>       assert stored.result_kind == selected.result.result_kind == "truth"
+E       AssertionError: assert 'concept' == 'truth'
+E         
+E         - truth
+E         + concept
+
+test/test_normal_thought_controller.py:154: AssertionError
+______ test_completed_unary_concept_program_enters_the_normal_controller _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12e238d70>
+
+    def test_completed_unary_concept_program_enters_the_normal_controller(
+            monkeypatch):
+        """A grammar-selected unary concept tool reaches its typed executor.
+    
+        The normal bridge must not assume every selected program is a binary
+        truth relation.  A completed ``what(quantize(x))`` owns its live signed
+        leaf and grammar-native VP, enters the same ordinary episode, and retains
+        the checked ``code`` result without coercing that result into a truth or
+        answer seed.
+        """
+        from Understanding import AnswerProgram
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, leaves, _program, _part, _whole = (
+            _program_owner(monkeypatch))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+>       quantize = next(
+            index for index, rule in enumerate(language._compose_unary_rules)
+            if rule.method_name == "quantize")
+E       StopIteration
+
+test/test_normal_thought_controller.py:318: StopIteration
+____ test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12e532060>
+
+    def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monkeypatch):
+        """A completed thought's full grammar, not its trace, feeds output."""
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.reconstruct_in_loop = False
+        model.eval()
+        monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+        monkeypatch.setattr(
+            model, "_what_grammar_context",
+            lambda questions, **kwargs: (torch.zeros(
+                len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+        )
+        monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+    
+        derivation = model.resolveAnswer(
+            Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
+    
+        selected = derivation.selected_thoughts[0][1]
+>       torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 16 / 24 (66.7%)
+E       Greatest absolute difference: 0.6386378407478333 at index (1, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (1, 0) (up to 1.3e-06 allowed)
+
+test/test_normal_thought_controller.py:505: AssertionError
+_______ test_normal_boundary_realizes_the_controller_selected_operation ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12e2389e0>
+
+    def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch):
+        """A later catalog choice changes the answer meaning, not only its trace."""
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.reconstruct_in_loop = False
+        model.eval()
+        monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+        monkeypatch.setattr(
+            model, "_what_grammar_context",
+            lambda questions, **kwargs: (torch.zeros(
+                len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+        )
+        monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+        choices = []
+    
+        def choose(_root, _active, actions, **_kwargs):
+            choices.append(actions)
+            if len(choices) == 1:
+                return next(action for action in actions
+                            if action is not None and action.semantic_id == "equal")
+            return None
+    
+        monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
+        derivation = model.resolveAnswer(
+            Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
+    
+        selected = derivation.selected_thoughts[0][1]
+        assert registry.signature_for(selected.meaning).operation.semantic_id == "equal"
+>       torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 16 / 24 (66.7%)
+E       Greatest absolute difference: 0.6960723400115967 at index (1, 1) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (1, 0) (up to 1.3e-06 allowed)
+
+test/test_normal_thought_controller.py:615: AssertionError
+__________ test_selected_program_precedes_the_legacy_surface_reasoner __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12e5a8a10>
+
+    def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
+        """A grammar-owned completed question never opens the legacy tool path."""
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.reconstruct_in_loop = False
+        model.reasoning_iterations = 1
+        model.eval()
+        monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+        monkeypatch.setattr(
+            model, "_what_grammar_context",
+            lambda questions, **kwargs: (torch.zeros(
+                len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+        )
+        monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+    
+        legacy_calls = []
+    
+        def legacy_reasoner(*args, **kwargs):
+            legacy_calls.append((args, kwargs))
+            return {"posture": "legacy", "confidence": 1.0,
+                    "support_true": 1.0, "support_false": 0.0}
+    
+        monkeypatch.setattr(model, "answer_query", legacy_reasoner)
+        understanding = Understanding(sentence_states=(sentence_state(language, program(), registry),))
+        question = WhatQuestion.inference(0, prompt="is the part in the whole?")
+    
+        result = model.resolveAnswer(understanding, question)
+    
+        assert len(result.selected_thoughts) == 1
+>       assert result.source == "thought"
+E       AssertionError: assert 'thought-concept' == 'thought'
+E         
+E         - thought
+E         + thought-concept
+
+test/test_normal_thought_controller.py:661: AssertionError
+_ test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH] _
+
+positive = 0.8, negative = 0.7, posture = 'BOTH'
+
+    @pytest.mark.parametrize('positive,negative,posture', [(.8, .7, 'BOTH'), (.8, .1, 'TRUE'), (0, 0, 'UNKNOWN')])
+    def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):
+        from index_fixtures import terminal_model_index
+        model, registry, store, (a, b, _c, _d) = _world()
+        meaning = registry.form('part', a, b, mode='assertive')
+        order = terminal_model_index(model, meaning.role_refs)
+        for trust in (positive, -negative):
+            if trust:
+                store.append_meaning(meaning, kind='fact', trust=trust, order=order)
+        occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)
+        with model._query_boundary_scope((0,)):
+            from QueryWork import QueryWorkBudget
+>           query = registry.form('exist', store.row(occurrence)['occurrence'],
+                                  context=model._thought_grammar_context(meaning,
+                                      row=0, work=QueryWorkBudget(32), continuation=None))
+
+test/test_replacement_kernel_contracts.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Queries.py:1812: in form
+    operation, form = self._operation_form(semantic_id)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x128e042f0>
+structural_id = 'exist'
+
+    def _operation_form(self, structural_id):
+        pair = self._forms_by_id.get(structural_id)
+        if pair is None:
+            if structural_id in self._operations_by_id:
+                # A canonical family always has its own structural form, but
+                # retain a precise diagnosis for malformed external metadata.
+                raise ValueError(
+                    f'thought operation {structural_id!r} has no structural form')
+>           raise ValueError(
+                f'thought operation {structural_id!r} is not registered by this grammar')
+E           ValueError: thought operation 'exist' is not registered by this grammar
+
+bin/Queries.py:1744: ValueError
+_ test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE] _
+
+positive = 0.8, negative = 0.1, posture = 'TRUE'
+
+    @pytest.mark.parametrize('positive,negative,posture', [(.8, .7, 'BOTH'), (.8, .1, 'TRUE'), (0, 0, 'UNKNOWN')])
+    def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):
+        from index_fixtures import terminal_model_index
+        model, registry, store, (a, b, _c, _d) = _world()
+        meaning = registry.form('part', a, b, mode='assertive')
+        order = terminal_model_index(model, meaning.role_refs)
+        for trust in (positive, -negative):
+            if trust:
+                store.append_meaning(meaning, kind='fact', trust=trust, order=order)
+        occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)
+        with model._query_boundary_scope((0,)):
+            from QueryWork import QueryWorkBudget
+>           query = registry.form('exist', store.row(occurrence)['occurrence'],
+                                  context=model._thought_grammar_context(meaning,
+                                      row=0, work=QueryWorkBudget(32), continuation=None))
+
+test/test_replacement_kernel_contracts.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Queries.py:1812: in form
+    operation, form = self._operation_form(semantic_id)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12e51c830>
+structural_id = 'exist'
+
+    def _operation_form(self, structural_id):
+        pair = self._forms_by_id.get(structural_id)
+        if pair is None:
+            if structural_id in self._operations_by_id:
+                # A canonical family always has its own structural form, but
+                # retain a precise diagnosis for malformed external metadata.
+                raise ValueError(
+                    f'thought operation {structural_id!r} has no structural form')
+>           raise ValueError(
+                f'thought operation {structural_id!r} is not registered by this grammar')
+E           ValueError: thought operation 'exist' is not registered by this grammar
+
+bin/Queries.py:1744: ValueError
+_ test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN] _
+
+positive = 0, negative = 0, posture = 'UNKNOWN'
+
+    @pytest.mark.parametrize('positive,negative,posture', [(.8, .7, 'BOTH'), (.8, .1, 'TRUE'), (0, 0, 'UNKNOWN')])
+    def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, negative, posture):
+        from index_fixtures import terminal_model_index
+        model, registry, store, (a, b, _c, _d) = _world()
+        meaning = registry.form('part', a, b, mode='assertive')
+        order = terminal_model_index(model, meaning.role_refs)
+        for trust in (positive, -negative):
+            if trust:
+                store.append_meaning(meaning, kind='fact', trust=trust, order=order)
+        occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)
+        with model._query_boundary_scope((0,)):
+            from QueryWork import QueryWorkBudget
+>           query = registry.form('exist', store.row(occurrence)['occurrence'],
+                                  context=model._thought_grammar_context(meaning,
+                                      row=0, work=QueryWorkBudget(32), continuation=None))
+
+test/test_replacement_kernel_contracts.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Queries.py:1812: in form
+    operation, form = self._operation_form(semantic_id)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x128e07a10>
+structural_id = 'exist'
+
+    def _operation_form(self, structural_id):
+        pair = self._forms_by_id.get(structural_id)
+        if pair is None:
+            if structural_id in self._operations_by_id:
+                # A canonical family always has its own structural form, but
+                # retain a precise diagnosis for malformed external metadata.
+                raise ValueError(
+                    f'thought operation {structural_id!r} has no structural form')
+>           raise ValueError(
+                f'thought operation {structural_id!r} is not registered by this grammar')
+E           ValueError: thought operation 'exist' is not registered by this grammar
+
+bin/Queries.py:1744: ValueError
+=============================== warnings summary ===============================
+test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_query_phase_permissions.py::test_operand_occurrence_reads_require_permission_before_preparation
+FAILED test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence
+FAILED test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances
+FAILED test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget
+FAILED test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance
+FAILED test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures
+FAILED test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row
+FAILED test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[exist-roles2]
+FAILED test/test_query_contract_boundaries.py::test_exist_executor_limits_native_fact_reads_and_reports_incompleteness
+FAILED test/test_query_contract_boundaries.py::test_distinct_lookup_returns_complete_record_and_does_not_admit_observation
+FAILED test/test_grammatical_query_vps.py::test_unary_existence_keeps_full_description_through_an_existing_occurrence
+FAILED test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata
+FAILED test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore
+FAILED test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation
+FAILED test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner
+FAILED test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]
+FAILED test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]
+FAILED test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]
+20 failed, 99 passed, 1 warning in 4.32s

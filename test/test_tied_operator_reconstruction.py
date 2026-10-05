@@ -309,23 +309,22 @@ def test_noninvertible_compose_transform_uses_the_bounded_candidate_path(tmp_pat
     model = _model(tmp_path)
     try:
         op = LiftLayer(nInput=2, nOutput=2, invertible=False)
-        parent = torch.tensor([[.2, .7]], requires_grad=True)
+        # The relative residual selects one hard candidate pair.
+        basis = torch.tensor([[[.49, .51], [.52, .50]]])
+        parent = op.compose(basis[:,0], basis[:,1]).detach().requires_grad_()
         _, _, unavailable = model.languageSpace.reverse_binary_step(
             parent, torch.tensor([0]), torch.tensor([True]), ops=[op], return_status=True)
         assert unavailable.all()
         left, right, unavailable = model.languageSpace.reverse_binary_step(
             parent, torch.tensor([0]), torch.tensor([True]), ops=[op],
-            basis=torch.tensor([[[.1, .3], [.6, .2]]]),
+            basis=basis,
             basis_valid=torch.ones(1, 2, dtype=torch.bool), candidate_limit=2,
             return_status=True)
         assert not unavailable.any()
-        # LinearLayer.forward uses W; its separately exposed forwardBias is
-        # not called by this compose path. Test the actual shared operator.
-        parameters = (op._sigma.layer.W,)
-        gradients = torch.autograd.grad((left + right).sum(), (parent, *parameters))
-        assert all(g.isfinite().all() for g in gradients)
-        assert gradients[0].abs().sum() > 0
-        assert any(g.abs().sum() > 0 for g in gradients[1:])
+        gradients = torch.autograd.grad((left + right).sum(), parent, allow_unused=True)
+        assert all(g is None or not g.any() for g in gradients)
+        assert ((basis == left[:, None]).all(-1)).any()
+        assert ((basis == right[:, None]).all(-1)).any()
     finally:
         model.End()
         model.symbolSpace.soft_reset()
@@ -355,12 +354,13 @@ def test_adverb_uses_its_own_bounded_inverse_and_shared_parameters(tmp_path):
         model.symbolSpace.soft_reset()
 
 
-def test_masked_candidate_values_do_not_poison_parent_gradient(tmp_path):
+def test_masked_candidate_values_do_not_poison_hard_pair(tmp_path):
     from Language import UnionLayer
     model = _model(tmp_path)
     try:
         parent = torch.tensor([[.25, .7]], requires_grad=True)
-        basis = torch.tensor([[[.1, .2], [.3, .8], [float("nan"), float("nan")]]])
+        # Invalid competitors cannot poison the hard minimum-residual pick.
+        basis = torch.tensor([[[.2, .68], [.3, .72], [float("nan"), float("nan")]]])
         left, right, unavailable = model.languageSpace.reverse_binary_step(
             parent, torch.tensor([0]), torch.tensor([True]),
             ops=[UnionLayer(monotonic=True)], basis=basis,
@@ -368,8 +368,10 @@ def test_masked_candidate_values_do_not_poison_parent_gradient(tmp_path):
             return_status=True)
         assert not unavailable.any()
         assert torch.isfinite(left).all() and torch.isfinite(right).all()
-        gradient, = torch.autograd.grad((left + right).sum(), (parent,))
-        assert gradient.isfinite().all() and gradient.abs().sum() > 0
+        gradients = torch.autograd.grad((left + right).sum(), parent, allow_unused=True)
+        assert all(g is None or not g.any() for g in gradients)
+        assert ((basis[:, :2] == left[:, None]).all(-1)).any()
+        assert ((basis[:, :2] == right[:, None]).all(-1)).any()
     finally:
         model.End()
         model.symbolSpace.soft_reset()
@@ -390,12 +392,12 @@ def test_inactive_batch_row_does_not_poison_the_selected_inverse_gradient(tmp_pa
         model.symbolSpace.soft_reset()
 
 
-@pytest.mark.parametrize("name", ["null", "exist", "tense", "morphology"])
+@pytest.mark.parametrize("name", ["null", "generic", "tense", "morphology"])
 def test_declared_identity_unary_is_available_on_opaque_concepts(tmp_path, name):
-    from Language import NullLayer, ExistLayer, TenseLayer, MorphologyLayer
+    from Language import NullLayer, GenericLayer, TenseLayer, MorphologyLayer
     model = _model(tmp_path)
     try:
-        op = {"null": NullLayer, "exist": ExistLayer, "tense": TenseLayer,
+        op = {"null": NullLayer, "generic": GenericLayer, "tense": TenseLayer,
               "morphology": MorphologyLayer}[name]()
         idea = torch.tensor([[.2, -.7, .4, .8]])
         torch.testing.assert_close(op.compose(idea), idea)

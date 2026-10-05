@@ -1,0 +1,18 @@
+[
+  {
+    "nodeid": "test/test_grammar_sentence_scope.py::test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence[False]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.08667516702553257,
+    "message": "test/test_grammar_sentence_scope.py:42: in test_sentence_inverse_does_not_pop_leaves_from_an_earlier_sentence\n    assert not bool(unavailable.any())\nE   assert not True\nE    +  where True = bool(tensor(True))\nE    +    where tensor(True) = <built-in method any of Tensor object at 0x107dd89b0>()\nE    +      where <built-in method any of Tensor object at 0x107dd89b0> = tensor([True]).any",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.1608492919767741,
+    "message": "test/test_sentence_protocol.py:70: in test_repeated_word_is_not_reminted\n    assert not model._attention_words.descended.any()\nE   assert not tensor(True)\nE    +  where tensor(True) = <built-in method any of Tensor object at 0x12a4464e0>()\nE    +    where <built-in method any of Tensor object at 0x12a4464e0> = tensor([[ True, False,  True, False, False, False, False, False]]).any\nE    +      where tensor([[ True, False,  True, False, False, False, False, False]]) = NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\\n         [ 6, 11],\\n         [ 0,  0],\\n         [ 0,  0],... False, False,\\n         False, False, False, False, False, False, False, False, False, False,\\n         False, False]])).descended\nE    +        where NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\\n         [ 6, 11],\\n         [ 0,  0],\\n         [ 0,  0],... False, False,\\n         False, False, False, False, False, False, False, False, False, False,\\n         False, False]])) = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub...    (2): Linear(in_features=16, out_features=1, bias=True)\\n    )\\n  )\\n  (answer_record_reader): SentenceRecordReader()\\n)._attention_words",
+    "stdout": ""
+  }
+]

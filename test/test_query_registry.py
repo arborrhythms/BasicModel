@@ -21,7 +21,7 @@ def test_complete_grammar_declares_the_general_what_subgoal():
     grammar = Grammar()
     grammar.configure(load_grammar("complete.grammar"))
     operations = {operation.semantic_id for operation in grammar.thought_operations}
-    assert {'what', 'lookup'}.issubset(operations)
+    assert {'what'}.issubset(operations) and 'lookup' not in operations
 
 
 def test_checked_operations_share_grammar_owned_identity_and_explicit_roles():

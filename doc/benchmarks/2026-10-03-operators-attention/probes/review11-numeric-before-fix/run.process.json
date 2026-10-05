@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_review11_contracts.py::test_numeric_head_does_not_call_learned_retrieval"
+  ],
+  "pid": 18372,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 496829832,
+  "elapsed_seconds": 3.86112345798756,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review11-numeric-before-fix/run.log"
+}

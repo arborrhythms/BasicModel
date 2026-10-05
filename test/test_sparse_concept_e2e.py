@@ -131,7 +131,7 @@ def test_symbolic_phase_unwritten_definitions_are_neither():
 
 
 def test_symbolic_phase_inactive_is_noop():
-    cs = _cs_active(order=0)                            # symbolicOrder=0
+    cs = _cs_active(order=0)                            # concept_order_limit=0
     settled = torch.randn(2, 64, _D)
     out, acts = cs.cs_symbolic_phase(settled)
     assert out is settled and acts is None
@@ -142,8 +142,8 @@ def test_symbolic_phase_inactive_is_noop():
 @pytest.mark.slow
 def test_sparse_concept_config_builds_and_stamps():
     m = _build("MM_20M_xor.xml")
-    # symbolicOrder=3: the wave iteration budget K (task 8.3, K=1 leaves deep links dark)
-    assert m.serial is False and m.symbolicOrder == 3 and m.symbol_tower is True
+    # concept_order_limit=3: the wave iteration budget K (task 8.3, K=1 leaves deep links dark)
+    assert m.word_brackets is False and m.concept_order_limit == 3 and m.symbol_tower is True
     css = [cs for cs in m.conceptualSpaces if cs._sparse_active()]
     assert css
     cs = css[-1]

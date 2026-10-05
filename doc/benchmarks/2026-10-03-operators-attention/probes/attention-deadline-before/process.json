@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py",
+    "test/test_nanochat_grammar_eval.py"
+  ],
+  "pid": 98128,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 703121424,
+  "elapsed_seconds": 9.836727124988101,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/attention-deadline-before/run.log"
+}

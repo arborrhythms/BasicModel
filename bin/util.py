@@ -1490,10 +1490,15 @@ class XMLConfig:
         Retired architecture knobs are rejected at ingestion.
         """
         architecture = data.get("architecture", {}) or {}
-        for retired in ('subsymbolicNoop', 'conceptualWidth'):
+        for retired in ('subsymbolicNoop', 'conceptualWidth', 'subsymbolicOrder', 'symbolicOrder', 'subsymbolicLoop', 'serial', 'modeSchedule', 'readingAttention', 'globalAttention', 'globalAttentionConsume', 'selectedThoughtBudget'):
             if retired in architecture:
                 raise ValueError(f'{source_path}: <{retired}> is retired; '
-                                 'subsymbolicLoop selects attention passes without perceptual folds')
+                                 'use the typed bracket and attentionBudget')
+
+        training=architecture.get('training',{}) or {}
+        for retired in ('interLossWeight','armaScale','interContrastiveWeight'):
+            if retired in training:
+                raise ValueError(f'{source_path}: <{retired}> is retired; expectation settings are per level')
 
     def reload(self):
         """Re-parse all previously loaded sources in order.

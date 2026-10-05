@@ -22,6 +22,13 @@ class QueryWorkBudget:
         self._spent = 0
         self._counts = Counter()
 
+    @classmethod
+    def from_brackets(cls, table, *, row):
+        """Transfer the input's spent allowance to the same symbolic meter."""
+        result = cls(int(table.intervals.shape[1]))
+        result.require('bracket', int(table.spent[row]))
+        return result
+
     @property
     def remaining(self):
         return self._limit - self._spent

@@ -48,18 +48,17 @@ class TestUnaryGrammarLayers(unittest.TestCase):
         # Self-inverse: pos/neg swap applied twice is identity.
         self.assertTrue(torch.allclose(layer.decompose(y), x, atol=1e-5))
 
-    def test_non_compose_decompose_self_inverse(self):
-        """NonLayer: per-pole bivector complement [1-pos, 1-neg].
-        Self-inverse on each pole, where/when channels pass through."""
-        layer = NonLayer()
-        x = torch.rand(4, 3, 6)        # bivector poles in [0, 1] domain
+    def test_non_excludes_the_expressed_pole_without_an_inverse(self):
+        """Non-affirming exclusion preserves the other pole and metadata."""
+        layer = NonLayer(representation='poles')
+        x = torch.rand(4, 3, 6)
         y = layer.compose(x)
         self.assertEqual(y.shape, x.shape)
-        # Bivector poles complemented at [..., :2]; rest unchanged.
-        self.assertTrue(torch.allclose(y[..., :2], 1.0 - x[..., :2], atol=1e-5))
-        self.assertTrue(torch.allclose(y[..., 2:], x[..., 2:], atol=1e-5))
-        # Self-inverse: non(non(x)) == x.
-        self.assertTrue(torch.allclose(layer.decompose(y), x, atol=1e-5))
+        self.assertTrue(torch.equal(y[..., 0], torch.zeros_like(x[..., 0])))
+        self.assertTrue(torch.equal(y[..., 1:], x[..., 1:]))
+        self.assertTrue(torch.equal(layer.compose(y), y))
+        with self.assertRaises(NotImplementedError):
+            layer.decompose(y)
 
     # FusionLayer / ContiguousLayer were retired 2026-05-04. The
     # operator was a duplicate of DisjunctionLayer at SS-space_role --

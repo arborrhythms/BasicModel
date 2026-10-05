@@ -1,0 +1,627 @@
+...........F..s...F....s.Fs.ss.................................s.F..F... [ 42%]
+................F....FFF.....................................FFF........ [ 84%]
+..........................                                               [100%]
+=================================== FAILURES ===================================
+____________ test_tiling_ladder_nests_units_in_space_bounded_wholes ____________
+
+    def test_tiling_ladder_nests_units_in_space_bounded_wholes():
+        fake = property_reader(analysis_mode="meronomy", digit_wholes=True)
+        WholeSpace.stage_analysis_spans(fake, _bytes("12 plus 1, ok"))
+        clause, coarse, fine = fake._staged_tiling_ladder
+        assert [tuple(x) for x in clause[0].tolist() if x[1] > x[0]] == [(0, 9), (10, 13)]   # cut at the comma
+        assert fake._staged_unit_clause[0].tolist() == [0, 0, 0, 0, -1, 1]   # the comma bounds, belongs to none
+        assert [tuple(x) for x in coarse[0].tolist() if x[1] > x[0]] == [(0, 2), (3, 7), (8, 10), (11, 13)]
+        assert [tuple(x) for x in fine[0].tolist() if x[1] > x[0]] == \
+            [(0, 1), (1, 2), (3, 7), (8, 9), (9, 10), (11, 13)]
+        assert fake._staged_unit_parent[0].tolist() == [0, 0, 1, 2, 2, 3]
+        assert torch.equal(fake._staged_unit_spans, fine)
+        # Letter/digit flips are not unit boundaries (contract 3 priors): one unit.
+        fake = property_reader(analysis_mode="meronomy", digit_wholes=False)
+        WholeSpace.stage_analysis_spans(fake, _bytes("w0 abc123"))
+>       assert [tuple(x) for x in fake._staged_unit_spans[0].tolist() if x[1] > x[0]] == [(0, 2), (3, 9)]
+E       assert [(0, 1), (1, ...3, 6), (6, 9)] == [(0, 2), (3, 9)]
+E         
+E         At index 0 diff: (0, 1) != (0, 2)
+E         Left contains 2 more items, first extra item: (3, 6)
+E         Use -v to get more diff
+
+test/test_meronomy_ladder.py:247: AssertionError
+___________ test_word_unit_fraction_is_zero_on_the_atomic_cold_start ___________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1598/test_word_unit_fraction_is_zer0')
+
+    def test_word_unit_fraction_is_zero_on_the_atomic_cold_start(tmp_path):
+        m = _build_none_ladder(tmp_path)
+        m.reset_word_unit_stats()
+        _stage(m, ["the quick brown fox"])
+>       assert m.word_unit_fraction() == 0.0
+E       assert 1.0 == 0.0
+E        +  where 1.0 = word_unit_fraction()
+E        +    where word_unit_fraction = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).word_unit_fraction
+
+test/test_meronomy_ladder.py:438: AssertionError
+______________ test_boundary_types_none_starts_without_boundaries ______________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1598/test_boundary_types_none_start0')
+
+    def test_boundary_types_none_starts_without_boundaries(tmp_path):
+        m = _build_none_ladder(tmp_path)
+        ws = m.wholeSpaces[0]
+        assert ws.boundary_types == "none"
+        b_on, e_on, a_on, _ = ws._predicate_masks()
+        assert not bool(b_on.any() or e_on.any() or a_on.any())
+        units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1"])
+        # The cold start is the atomic tiling: every byte a whole, spaces included.
+>       assert units[0] == ["1", "2", " ", "p", "l", "u", "s", " ", "1"]
+E       AssertionError: assert ['1', '2', ' ...us', ' ', '1'] == ['1', '2', ' ...'l', 'u', ...]
+E         
+E         At index 3 diff: 'plus' != 'p'
+E         Right contains 3 more items, first extra item: 's'
+E         Use -v to get more diff
+
+test/test_meronomy_ladder.py:615: AssertionError
+_______ test_compact_predicates_preserve_spans_and_global_columns[cold] ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1598/test_compact_predicates_preser1')
+mode = 'cold'
+
+    @pytest.mark.parametrize('mode', ['normal', 'cold', 'absent'])
+    def test_compact_predicates_preserve_spans_and_global_columns(tmp_path, mode):
+        owner, idx, dense, masks, expected = fixture(tmp_path, mode)
+        actual, packet = owner._unit_tiling_from_predicates(idx)
+>       torch.testing.assert_close(actual, expected, atol=0, rtol=0)
+E       AssertionError: The values for attribute 'shape' do not match: torch.Size([2, 2, 2]) != torch.Size([2, 4, 2]).
+
+test/test_predicate_storage.py:41: AssertionError
+______ test_compact_predicates_preserve_boundary_learning_evidence[cold] _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1598/test_compact_predicates_preser4')
+mode = 'cold'
+
+    @pytest.mark.parametrize('mode', ['normal', 'cold', 'absent'])
+    def test_compact_predicates_preserve_boundary_learning_evidence(tmp_path, mode):
+        owner, idx, dense, masks, current = fixture(tmp_path, mode)
+        candidates = [(('current',), current)]
+        for c in dense.any((0, 1)).nonzero().flatten().tolist():
+            if bool(masks[3][c]):
+                continue
+            for i, move in enumerate(('begins', 'ends', 'atom')):
+                changed = [v.clone() for v in masks]
+                changed[i][c] = True
+                candidates.append(((move, c), _predicate_unit_spans(dense, *changed)))
+        expected = {}
+        vals = idx.tolist()
+        for key, spans in candidates:
+            rec = dict(surfaces={}, units=0, presentations=0)
+            for b, row in enumerate(spans.tolist()):
+                rec['presentations'] += 1
+                for a, z in row:
+                    if z > a:
+                        surface = bytes(vals[b][a:z])
+                        rec['surfaces'][surface] = rec['surfaces'].get(surface, 0) + 1
+                        rec['units'] += 1
+            expected[key] = rec
+        actual, packet = owner._unit_tiling_from_predicates(idx)
+        owner._observe_candidate_tilings(idx, packet, actual)
+>       assert owner._boundary_evidence == expected
+E       AssertionError: assert {('current',)...ons': 2}, ...} == {('current',)...ons': 2}, ...}
+E         
+E         Omitting 15 identical items, use -vv to show
+E         Differing items:
+E         {('current',): {'surfaces': {b'AABC': 1, b'B': 1, b'AC': 1}, 'units': 3, 'presentations': 2}} != {('current',): {'surfaces': {b'A': 3, b'B': 2, b'C': 2}, 'units': 7, 'presentations': 2}}
+E         Use -v to get more diff
+
+test/test_predicate_storage.py:76: AssertionError
+__________________ test_one_operation_layer_owns_both_arities __________________
+
+    def test_one_operation_layer_owns_both_arities():
+        model = _grammar_model()
+        shared = model.symbolSpace.languageLayer.operation_layer
+        assert model._stm_reducer() is shared
+>       assert shared.r_reduce > 0 and shared.r_apply > 0
+E       assert (9 > 0 and 0 > 0)
+E        +  where 9 = OperationSelectionLayer(\n  (ops): ModuleList(\n    (0): _BinaryGrammarOpAdapter(\n      (gl): UnionLayer()\n    )\n    (1)...dapter(\n      (gl): DisjunctionLayer()\n    )\n  )\n  (unary_ops): ModuleList()\n  (chooser): AnchorDotTransformChooser()\n).r_reduce
+E        +  and   0 = OperationSelectionLayer(\n  (ops): ModuleList(\n    (0): _BinaryGrammarOpAdapter(\n      (gl): UnionLayer()\n    )\n    (1)...dapter(\n      (gl): DisjunctionLayer()\n    )\n  )\n  (unary_ops): ModuleList()\n  (chooser): AnchorDotTransformChooser()\n).r_apply
+
+test/test_word_loop_buckets_and_orders.py:104: AssertionError
+____ test_typed_results_survive_resolve_and_reverse_without_execution[set] _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12627aea0>
+kind = 'set'
+
+    @pytest.mark.parametrize('kind', ['set', 'code', 'subgoal'])
+    def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch, kind):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from Understanding import AnswerProgram, Understanding
+        from What import What
+        model, registry, memory, part, whole = _catalog_world()
+        query = registry.form('part', part, whole)
+        if kind == 'set':
+            extra = ('sym', model.conceptualSpace.new_concept())
+            model.conceptualSpace._csw_concept_row(0, extra[1])
+            model.conceptualSpace.add_whole(extra[1], whole)
+            query = registry.form('part', whole, open_roles=('I1',))
+        elif kind == 'code':
+            query = registry.form('quantize', registry._payload(part))
+        else:
+            from Layers import TernaryTruthStore
+            model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
+            query = registry.form('what', query)
+        entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
+            concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
+            leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
+            targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            program_meaning=lambda item, _registry: query,
+            # This adapter fixture stubs every numerical synthesis operation.
+            generation_scope=nullcontext))
+        object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
+        model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
+        model._select_perceptual_bindings = lambda *_a: ()
+        model._condition_answer_on_question = lambda idea, _context: idea
+        model._synthesis_guard = nullcontext
+        model.conceptualSpace.synthesize_idea = lambda idea, **_k: idea
+        object.__setattr__(model, 'perceptualSpace', SimpleNamespace(synthesize=lambda idea, **_k: idea))
+        object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
+        model.selected_thought_budget = 128
+        model.reconstruct_in_loop = False
+        from Understanding import SentenceEndState
+        from Meaning import ConceptualMeaning
+        field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)
+        understanding = Understanding(sentence_states=(field,))
+        model.eval()
+        derivation = model.resolveAnswer(understanding, What.supervised(0))
+        assert derivation.source == 'thought-' + kind
+        assert len(derivation.answer_meanings[0]) == (2 if kind == 'set' else 1)
+        assert derivation.resolved
+        monkeypatch.setattr(registry, 'execute', lambda *_a, **_k: pytest.fail('output executed a query'))
+>       result = model.reverseOutput(understanding, derivation)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_thought_answer_adapters.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9624: in reverseOutput
+    self._compiled_output_walk()(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (selected_thought_choosers): ModuleDict(
+    (8): SelectedThoughtChooser(
+      (mlp): Sequential(
+     ...       (1): GELU(approximate='none')
+        (2): Linear(in_features=16, out_features=1, bias=True)
+      )
+    )
+  )
+)
+event = tensor([[[ 0.2897,  0.7049,  0.1477, -0.2986,  0.0247, -0.1521,  0.5330,
+           0.0196],
+         [-0.6386,  0.406...569,
+           0.0658],
+         [ 0.6596,  0.5330, -0.0198, -0.1512, -0.4926, -0.0905, -0.0465,
+          -0.0681]]])
+budget = 33, sample_actions = False, basis = None, basis_valid = None
+candidate_limit = 16, basis_priming = None, return_trace = True
+exploit_actions = None, departure = None, return_candidates = False
+case_bank = None
+
+    def _output_generate_walk(self, event, budget, stamped_events=False,
+                              targets=None, sample_actions=False,
+                              basis=None, basis_valid=None, candidate_limit=16,
+                              *, basis_priming=None, return_trace=False,
+                              exploit_actions=None, departure=None,
+                              return_candidates=False, case_bank=None):
+        """The shared conceptual decoder. No compose actions enter this walk.
+    
+        Hard generate choices determine the stack topology. Its numerical
+        transition uses the usual straight-through softmax over candidate
+        transitions, so reconstruction teaches the chooser as well as the
+        inverse search. Output's restricted backward trains only its reader.
+        """
+        del targets, stamped_events
+        language = self.languageSpace
+        B, N, D = event.shape
+        T = int(budget)
+>       R2, R1 = len(language._generate_binary_ops), len(language._generate_unary_ops)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_generate_binary_ops'
+
+bin/Models.py:12870: AttributeError
+____ test_typed_results_survive_resolve_and_reverse_without_execution[code] ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x126124a10>
+kind = 'code'
+
+    @pytest.mark.parametrize('kind', ['set', 'code', 'subgoal'])
+    def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch, kind):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from Understanding import AnswerProgram, Understanding
+        from What import What
+        model, registry, memory, part, whole = _catalog_world()
+        query = registry.form('part', part, whole)
+        if kind == 'set':
+            extra = ('sym', model.conceptualSpace.new_concept())
+            model.conceptualSpace._csw_concept_row(0, extra[1])
+            model.conceptualSpace.add_whole(extra[1], whole)
+            query = registry.form('part', whole, open_roles=('I1',))
+        elif kind == 'code':
+            query = registry.form('quantize', registry._payload(part))
+        else:
+            from Layers import TernaryTruthStore
+            model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
+            query = registry.form('what', query)
+        entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
+            concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
+            leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
+            targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            program_meaning=lambda item, _registry: query,
+            # This adapter fixture stubs every numerical synthesis operation.
+            generation_scope=nullcontext))
+        object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
+        model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
+        model._select_perceptual_bindings = lambda *_a: ()
+        model._condition_answer_on_question = lambda idea, _context: idea
+        model._synthesis_guard = nullcontext
+        model.conceptualSpace.synthesize_idea = lambda idea, **_k: idea
+        object.__setattr__(model, 'perceptualSpace', SimpleNamespace(synthesize=lambda idea, **_k: idea))
+        object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
+        model.selected_thought_budget = 128
+        model.reconstruct_in_loop = False
+        from Understanding import SentenceEndState
+        from Meaning import ConceptualMeaning
+        field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)
+        understanding = Understanding(sentence_states=(field,))
+        model.eval()
+        derivation = model.resolveAnswer(understanding, What.supervised(0))
+        assert derivation.source == 'thought-' + kind
+        assert len(derivation.answer_meanings[0]) == (2 if kind == 'set' else 1)
+        assert derivation.resolved
+        monkeypatch.setattr(registry, 'execute', lambda *_a, **_k: pytest.fail('output executed a query'))
+>       result = model.reverseOutput(understanding, derivation)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_thought_answer_adapters.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9624: in reverseOutput
+    self._compiled_output_walk()(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (selected_thought_choosers): ModuleDict(
+    (8): SelectedThoughtChooser(
+      (mlp): Sequential(
+     ...       (1): GELU(approximate='none')
+        (2): Linear(in_features=16, out_features=1, bias=True)
+      )
+    )
+  )
+)
+event = tensor([[[ 0.6297,  0.4829, -0.0941,  0.1207,  0.1992,  0.1350, -0.5313,
+           0.0820],
+         [ 0.0000,  0.000...000,
+           0.0000],
+         [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000]]])
+budget = 33, sample_actions = False, basis = None, basis_valid = None
+candidate_limit = 16, basis_priming = None, return_trace = True
+exploit_actions = None, departure = None, return_candidates = False
+case_bank = None
+
+    def _output_generate_walk(self, event, budget, stamped_events=False,
+                              targets=None, sample_actions=False,
+                              basis=None, basis_valid=None, candidate_limit=16,
+                              *, basis_priming=None, return_trace=False,
+                              exploit_actions=None, departure=None,
+                              return_candidates=False, case_bank=None):
+        """The shared conceptual decoder. No compose actions enter this walk.
+    
+        Hard generate choices determine the stack topology. Its numerical
+        transition uses the usual straight-through softmax over candidate
+        transitions, so reconstruction teaches the chooser as well as the
+        inverse search. Output's restricted backward trains only its reader.
+        """
+        del targets, stamped_events
+        language = self.languageSpace
+        B, N, D = event.shape
+        T = int(budget)
+>       R2, R1 = len(language._generate_binary_ops), len(language._generate_unary_ops)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_generate_binary_ops'
+
+bin/Models.py:12870: AttributeError
+__ test_typed_results_survive_resolve_and_reverse_without_execution[subgoal] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12621f6b0>
+kind = 'subgoal'
+
+    @pytest.mark.parametrize('kind', ['set', 'code', 'subgoal'])
+    def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch, kind):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from Understanding import AnswerProgram, Understanding
+        from What import What
+        model, registry, memory, part, whole = _catalog_world()
+        query = registry.form('part', part, whole)
+        if kind == 'set':
+            extra = ('sym', model.conceptualSpace.new_concept())
+            model.conceptualSpace._csw_concept_row(0, extra[1])
+            model.conceptualSpace.add_whole(extra[1], whole)
+            query = registry.form('part', whole, open_roles=('I1',))
+        elif kind == 'code':
+            query = registry.form('quantize', registry._payload(part))
+        else:
+            from Layers import TernaryTruthStore
+            model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
+            query = registry.form('what', query)
+        entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
+            concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
+            leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
+            targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            program_meaning=lambda item, _registry: query,
+            # This adapter fixture stubs every numerical synthesis operation.
+            generation_scope=nullcontext))
+        object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
+        model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
+        model._select_perceptual_bindings = lambda *_a: ()
+        model._condition_answer_on_question = lambda idea, _context: idea
+        model._synthesis_guard = nullcontext
+        model.conceptualSpace.synthesize_idea = lambda idea, **_k: idea
+        object.__setattr__(model, 'perceptualSpace', SimpleNamespace(synthesize=lambda idea, **_k: idea))
+        object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
+        model.selected_thought_budget = 128
+        model.reconstruct_in_loop = False
+        from Understanding import SentenceEndState
+        from Meaning import ConceptualMeaning
+        field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)
+        understanding = Understanding(sentence_states=(field,))
+        model.eval()
+        derivation = model.resolveAnswer(understanding, What.supervised(0))
+        assert derivation.source == 'thought-' + kind
+        assert len(derivation.answer_meanings[0]) == (2 if kind == 'set' else 1)
+        assert derivation.resolved
+        monkeypatch.setattr(registry, 'execute', lambda *_a, **_k: pytest.fail('output executed a query'))
+>       result = model.reverseOutput(understanding, derivation)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_thought_answer_adapters.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9624: in reverseOutput
+    self._compiled_output_walk()(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (selected_thought_choosers): ModuleDict(
+    (8): SelectedThoughtChooser(
+      (mlp): Sequential(
+     ...       (1): GELU(approximate='none')
+        (2): Linear(in_features=16, out_features=1, bias=True)
+      )
+    )
+  )
+)
+event = tensor([[[ 0.4098,  0.1924,  0.4345, -0.3204, -0.3403,  0.1330,  0.5999,
+           0.1008],
+         [ 0.0000,  0.000...000,
+           0.0000],
+         [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000]]])
+budget = 33, sample_actions = False, basis = None, basis_valid = None
+candidate_limit = 16, basis_priming = None, return_trace = True
+exploit_actions = None, departure = None, return_candidates = False
+case_bank = None
+
+    def _output_generate_walk(self, event, budget, stamped_events=False,
+                              targets=None, sample_actions=False,
+                              basis=None, basis_valid=None, candidate_limit=16,
+                              *, basis_priming=None, return_trace=False,
+                              exploit_actions=None, departure=None,
+                              return_candidates=False, case_bank=None):
+        """The shared conceptual decoder. No compose actions enter this walk.
+    
+        Hard generate choices determine the stack topology. Its numerical
+        transition uses the usual straight-through softmax over candidate
+        transitions, so reconstruction teaches the chooser as well as the
+        inverse search. Output's restricted backward trains only its reader.
+        """
+        del targets, stamped_events
+        language = self.languageSpace
+        B, N, D = event.shape
+        T = int(budget)
+>       R2, R1 = len(language._generate_binary_ops), len(language._generate_unary_ops)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute '_generate_binary_ops'
+
+bin/Models.py:12870: AttributeError
+____________ test_recorded_binary_executes_only_selected_operators _____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1598/test_recorded_binary_executes_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1261e8c20>
+
+    def test_recorded_binary_executes_only_selected_operators(tmp_path, monkeypatch):
+        model = _traversal_model(tmp_path)
+        try:
+            language = model.languageSpace
+            binary = language._tree_layer(2)
+            names = list(binary.op_names)
+            chosen = names.index("sum")
+            calls = []
+            for name, op in zip(names, binary.ops):
+                original = op.forward_with_context
+    
+                def observe(*args, _original=original, _name=name, **kwargs):
+                    calls.append(_name)
+                    return _original(*args, **kwargs)
+    
+                monkeypatch.setattr(op, "forward_with_context", observe)
+            width = int(model.conceptualSpace.stm.concept_dim)
+            left, right = torch.randn(2, width), torch.randn(2, width)
+            language.forward_binary_step(
+                left, right, torch.full((2,), chosen), torch.tensor([True, False]))
+>           assert calls == ["sum"]
+E           AssertionError: assert [] == ['sum']
+E             
+E             Right contains one more item: 'sum'
+E             Use -v to get more diff
+
+test/test_recorded_compose_dispatch.py:28: AssertionError
+_ test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[False] __
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1598/test_recorded_dispatch_preserv0')
+compiled = False
+
+    @pytest.mark.parametrize("compiled", [False, True])
+    def test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows(tmp_path, compiled):
+        model = _traversal_model(tmp_path)
+        try:
+            language = model.languageSpace
+            binary = language._tree_layer(2)
+            names = list(binary.op_names)
+            selected = torch.tensor([names.index("sum"), names.index("lift"), 0])
+            valid = torch.tensor([True, True, False])
+            # The actual replay supplies two views of the same stack storage.
+            torch.manual_seed(461)
+            width = int(model.conceptualSpace.stm.concept_dim)
+            operands = (torch.randn(3, 2, width) * .1).requires_grad_()
+            left, right = operands[:, 1], operands[:, 0]
+            window = torch.stack((left, right), dim=1)
+            candidates = binary._stacked_reduced(window)[:, 0]
+            indices = selected[:, None, None].expand(-1, 1, width)
+            expected = torch.where(valid[:, None], candidates.gather(1, indices)[:, 0], right)
+            parameters = tuple(binary.parameters())
+            expected_grads = torch.autograd.grad(
+                expected.square().sum(), (operands, *parameters), allow_unused=True)
+            call = language.forward_binary_step
+            if compiled:
+                call = torch.compile(call, backend="eager", fullgraph=True)
+            actual = call(left, right, selected, valid)
+            actual_grads = torch.autograd.grad(
+                actual.square().sum(), (operands, *parameters), allow_unused=True)
+>           torch.testing.assert_close(actual, expected)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 272 / 408 (66.7%)
+E           Greatest absolute difference: 0.24806569516658783 at index (1, 60) (up to 1e-05 allowed)
+E           Greatest relative difference: 552.9475708007812 at index (0, 22) (up to 1.3e-06 allowed)
+
+test/test_recorded_compose_dispatch.py:65: AssertionError
+__ test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[True] __
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1598/test_recorded_dispatch_preserv1')
+compiled = True
+
+    @pytest.mark.parametrize("compiled", [False, True])
+    def test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows(tmp_path, compiled):
+        model = _traversal_model(tmp_path)
+        try:
+            language = model.languageSpace
+            binary = language._tree_layer(2)
+            names = list(binary.op_names)
+            selected = torch.tensor([names.index("sum"), names.index("lift"), 0])
+            valid = torch.tensor([True, True, False])
+            # The actual replay supplies two views of the same stack storage.
+            torch.manual_seed(461)
+            width = int(model.conceptualSpace.stm.concept_dim)
+            operands = (torch.randn(3, 2, width) * .1).requires_grad_()
+            left, right = operands[:, 1], operands[:, 0]
+            window = torch.stack((left, right), dim=1)
+            candidates = binary._stacked_reduced(window)[:, 0]
+            indices = selected[:, None, None].expand(-1, 1, width)
+            expected = torch.where(valid[:, None], candidates.gather(1, indices)[:, 0], right)
+            parameters = tuple(binary.parameters())
+            expected_grads = torch.autograd.grad(
+                expected.square().sum(), (operands, *parameters), allow_unused=True)
+            call = language.forward_binary_step
+            if compiled:
+                call = torch.compile(call, backend="eager", fullgraph=True)
+            actual = call(left, right, selected, valid)
+            actual_grads = torch.autograd.grad(
+                actual.square().sum(), (operands, *parameters), allow_unused=True)
+>           torch.testing.assert_close(actual, expected)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 272 / 408 (66.7%)
+E           Greatest absolute difference: 0.24806569516658783 at index (1, 60) (up to 1e-05 allowed)
+E           Greatest relative difference: 552.9475708007812 at index (0, 22) (up to 1.3e-06 allowed)
+
+test/test_recorded_compose_dispatch.py:65: AssertionError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_type_run_spans.py: 8 warnings
+test/test_within_whole_division.py: 6 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: answer_text_target [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1598/test_native_progress_and_train0/tiny_chunk_model.xml]: text answer target unavailable: sentence has 19 words but the largest configured serial word bucket is W=8; add a bucket before training rather than clipping the sentence
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes
+FAILED test/test_meronomy_ladder.py::test_word_unit_fraction_is_zero_on_the_atomic_cold_start
+FAILED test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries
+FAILED test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]
+FAILED test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[cold]
+FAILED test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[code]
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]
+FAILED test/test_recorded_compose_dispatch.py::test_recorded_binary_executes_only_selected_operators
+FAILED test/test_recorded_compose_dispatch.py::test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[False]
+FAILED test/test_recorded_compose_dispatch.py::test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[True]
+12 failed, 152 passed, 6 skipped, 17 warnings in 19.38s

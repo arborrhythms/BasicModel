@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_decoder_exploration.py",
+    "test/test_echoic_decoder.py",
+    "test/test_free_reconstruction.py",
+    "test/test_trial_policy_ownership.py"
+  ],
+  "pid": 82024,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 904628408,
+  "elapsed_seconds": 16.311561750015244,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/decoder-after-01/run.log"
+}

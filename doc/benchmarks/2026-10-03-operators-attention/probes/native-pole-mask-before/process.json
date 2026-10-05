@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-operators-attention/native_attention_probe.py",
+    "test/test_walk_trials.py",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words"
+  ],
+  "pid": 6511,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 577324496,
+  "elapsed_seconds": 4.376749500021106,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/native-pole-mask-before/run.log"
+}

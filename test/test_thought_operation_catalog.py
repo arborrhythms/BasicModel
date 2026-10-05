@@ -201,12 +201,12 @@ def test_canonical_thought_executor_joins_only_a_declared_thought_form():
 
 
 def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
-    """Inventory VP setup stays all-or-nothing beside the row-free part VP."""
+    """Inventory VP setup stays all-or-nothing beside the row-free relation predicates."""
     from Queries import GrammaticalThoughtRegistry
 
     space = _cs()
-    # IDs start at one, so equal and lookup do not fit a two-row inventory.
-    # Part is a grammar predicate and requires no inventory row.
+    # IDs start at one, so quantize and what do not fit a two-row inventory.
+    # Part and the equality formula are grammar predicates, not inventory rows.
     # The underlying fixture basis stays intact; this owns only the allocator's
     # physical-capacity boundary used by setup preflight.
     space.nVectors = 2
@@ -214,25 +214,28 @@ def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
     grammar.configure({"compose": {"rule": [
         "part_O1 = part.forward(part_I1, part_I2)",
         "equal_O1 = equal.forward(equal_I1, equal_I2)",
-        "lookup_O1 = lookup.forward(lookup_I1, lookup_I2)",
+
     ]}, "thought": {"rule": [
         "part_O1 = part.thought(part_I1, part_I2)",
         "equal_O1 = equal.thought(equal_I1, equal_I2)",
-        "lookup_O1 = lookup.thought(lookup_I1, lookup_I2)",
+        "quantize_O1 = quantize.thought(quantize_I1)",
+        "what_O1 = what.thought(what_I1)",
     ]}})
 
     registry = GrammaticalThoughtRegistry.install(space, grammar)
 
     assert tuple(item.semantic_id for item in registry.operations) == (
-        "part", "equal", "lookup")
-    assert registry.executable_operation_ids == ("part",)
-    assert registry.unavailable_operation_ids == ("equal", "lookup")
+        "part", "equal", "quantize", "what")
+    assert registry.executable_operation_ids == ("part", "equal")
+    assert registry.unavailable_operation_ids == ("quantize", "what")
     assert not any(name.startswith("grammatical-vp:")
                    for name in getattr(space, "_frozen_named", {}))
     point = torch.zeros(space.outputShape[-1])
     question = registry.form("part", point, point)
     assert space._csw_row_of(question.role_refs[1][1]) is None
-    for name in ("equal", "lookup"):
+    equality = registry.form("equal", point, point)
+    assert space._csw_row_of(equality.role_refs[1][1]) is None
+    for name in ("quantize", "what"):
         with pytest.raises(RuntimeError, match="concept inventory exhausted"):
             registry.form(name, point, point)
 
@@ -429,9 +432,9 @@ def test_thought_boundary_detaches_executor_operands_and_recorded_request():
 @pytest.mark.parametrize(
     ("filename", "required"),
     [
-        ("complete.grammar", {"part", "equal", "exist"}),
+        ("complete.grammar", {"part", "equal"}),
         ("default.grammar", {"part", "equal"}),
-        ("ladder.grammar", {"part", "equal", "exist"}),
+        ("ladder.grammar", {"part", "equal"}),
     ],
 )
 def test_production_grammars_load_from_structural_thought_faces(filename, required):
@@ -446,19 +449,12 @@ def test_production_grammars_load_from_structural_thought_faces(filename, requir
         assert whole.permutation == ("I2", "I1")
 
 
-def test_thought_only_structural_faces_are_pure_contextual_noops():
-    """Boundary capabilities are never performed by composition itself."""
-    import torch
+def test_thought_only_operators_have_no_structural_noop_faces():
     from Language import GRAMMAR_LAYER_CLASSES
-
-    value = torch.randn(2, 8)
-    other = torch.randn(2, 8)
-    for name in ("quantize", "arma", "what"):
-        layer = GRAMMAR_LAYER_CLASSES[name]()
-        torch.testing.assert_close(layer.compose(value), value)
-        torch.testing.assert_close(layer.generate(value), value)
-    lookup = GRAMMAR_LAYER_CLASSES["lookup"]()
-    torch.testing.assert_close(lookup.compose(value, other), value)
+    assert {"quantize", "arma", "lookup", "exist", "true"}.isdisjoint(GRAMMAR_LAYER_CLASSES)
+    for name in ("quantize", "arma"):
+        with pytest.raises(ValueError, match="thought-only"):
+            Grammar().configure({"compose": {"rule": f"{name}_O1 = {name}.forward({name}_I1)"}})
 
 
 def test_structural_dispatch_receives_only_the_common_owned_context():
@@ -544,10 +540,9 @@ def test_complete_grammar_exposes_its_declared_canonical_thought_operations():
     grammar = Grammar()
     grammar.load_from_grammar_file("complete.grammar")
     registry = GrammaticalThoughtRegistry.install(_cs(), grammar)
-    assert {"exist", "part", "equal", "lookup", "quantize", "arma", "what"}.issubset(
+    assert {"part", "equal", "quantize", "arma", "what"}.issubset(
         registry.executable_operation_ids)
-    # Item 7 declares true over the completed one-slot or three-slot field.
-    assert "true" in registry.executable_operation_ids
+    assert {"true", "exist", "lookup"}.isdisjoint(registry.executable_operation_ids)
 
 
 def test_owner_built_structural_context_freezes_only_owned_stream_and_priming():
@@ -801,6 +796,9 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
     class ConceptualRead:
         width = 4
 
+        def payload(self, reference, **limits):
+            return torch.full((4,), float(reference[1]))
+
         def equal(self, left, right):
             return 1.0 if torch.equal(left, right) else 0.0
 
@@ -837,14 +835,11 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
         boundary=lambda _row: None, row=2)
     value = torch.ones(4)
 
-    assert THOUGHT_EXECUTORS["exist"].executor(context, {"I1": meaning})[
-        "support_true"] == 1.0
+    assert {"exist", "true", "lookup"}.isdisjoint(THOUGHT_EXECUTORS)
     assert THOUGHT_EXECUTORS["part"].executor(context, {"I1": ("sym", 1), "I2": ("sym", 2)})[
         "support_true"] == 0.5
     assert THOUGHT_EXECUTORS["equal"].executor(context, {"I1": value, "I2": value})[
         "support_true"] == 1.0
-    assert THOUGHT_EXECUTORS["lookup"].executor(context, {"I1": value, "I2": value})[
-        "records_scanned"] == 1
     assert THOUGHT_EXECUTORS["quantize"].executor(context, {"I1": value})[
         "reference"] == ("sym", 7)
     arma = THOUGHT_EXECUTORS["arma"].executor(context, {"I1": meaning})
@@ -865,20 +860,20 @@ def test_descriptor_scopes_hide_undeclared_capability_methods_at_execution():
     seen = {}
 
     def execute(context, _arguments):
-        seen["facts"] = hasattr(context.ltm, "existence_evidence")
+        seen["frames"] = hasattr(context.ltm, "retrieve")
         seen["lookup"] = hasattr(context.ltm, "lookup")
         seen["equal"] = hasattr(context.conceptual_space, "equal")
         return {"value": None, "incomplete": ()}
 
     descriptor = ThoughtExecutorDescriptor(
-        "probe", "ltm-facts", ("concept",), Mind.SERIAL,
+        "probe", "ltm-frames", ("concept",), Mind.SERIAL,
         (Mind.LTM,), (Mind.SERIAL,), "probe", execute)
     operation = SimpleNamespace(
         semantic_id="probe", operand_roles=("I1",), result_role="O1")
     signature = ThoughtSignature(operation, descriptor, ("I1",))
 
     class LTM:
-        def existence_evidence(self, *_args, **_kwargs):
+        def retrieve(self, *_args, **_kwargs):
             return {}
 
         def lookup(self, *_args, **_kwargs):
@@ -893,11 +888,11 @@ def test_descriptor_scopes_hide_undeclared_capability_methods_at_execution():
         ltm=LTM(), taxonomy=object(), work=QueryWorkBudget(2),
         continuation=None, boundary=lambda _row: None)
     signature.invoke(context, torch.ones(4))
-    assert seen == {"facts": True, "lookup": False, "equal": False}
+    assert seen == {"frames": True, "lookup": False, "equal": False}
 
 
 def test_description_thought_preparation_uses_only_its_declared_ltm_view():
-    """A description operand has no reasoner fallback before an exist call."""
+    """A description operand has no reasoner fallback before an what call."""
     import torch
     from Meaning import ConceptualMeaning
     from Queries import GrammaticalThoughtRegistry, ThoughtGrammarContext
@@ -905,13 +900,13 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
 
     grammar = Grammar()
     grammar.configure({
-        "compose": {"rule": ["exist_O1 = exist.forward(exist_I1)"]},
-        "thought": {"rule": ["exist_O1 = exist.thought(exist_I1)"]},
+        "compose": {"rule": ["what_O1 = what.forward(what_I1)"]},
+        "thought": {"rule": ["what_O1 = what.thought(what_I1)"]},
     })
     space = _cs()
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     description = ConceptualMeaning(
-        torch.ones(3, 8), torch.tensor([True, True, True]), mode="assertive")
+        torch.ones(3, 8), torch.tensor([True, True, True]), mode="interrogative")
     occurrence = ("ltm", "fixture", 1)
 
     class LTMRead:
@@ -923,13 +918,13 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
             assert reference == occurrence
             return description, 1
 
-        def existence_evidence(self, value, **limits):
-            self.calls.append(("exist", value, limits))
+        def retrieve(self, value, **limits):
+            self.calls.append(("what", value, limits))
             assert value is not description
             assert not value.roles.requires_grad
             torch.testing.assert_close(value.roles, description.roles)
-            return {"support_true": 1.0, "support_false": 0.0,
-                    "candidates": (), "incomplete": ()}
+            return {"value": value, "frames": (value,), "support_true": 1.0,
+                    "support_false": 0.0, "incomplete": ()}
 
         def lookup(self, *_args, **_kwargs):
             raise AssertionError("undeclared lookup capability escaped")
@@ -939,11 +934,11 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
         word_stream=("finished",), conceptual_space=space, primed_symbols=(),
         ltm=ltm, taxonomy=object(), work=QueryWorkBudget(32),
         continuation=None, boundary=lambda _row: None)
-    request = registry.form("exist", occurrence, context=context)
+    request = registry.form("what", occurrence, context=context)
     result = registry.execute(request, context)
 
     assert result.support_true == 1.0
-    assert [call[0] for call in ltm.calls] == ["description", "description", "exist"]
+    assert [call[0] for call in ltm.calls] == ["description", "description", "what"]
 
 
 def test_grammar_declares_whole_as_one_part_family_with_a_role_permutation():

@@ -277,32 +277,44 @@ def class_dichotomy_code(class_id, side, dim=32, seed=3):
 # The separator classes that DELIMIT words: a word is bracketed out by
 # left-of-X o right-of-X (the dual of isolating the separator). Letters AND
 # digits are word content, so "ab12" stays one word; whitespace/punctuation cut.
-_WORD_SEPARATORS = (WHITESPACE, PUNCT)
+_WORD_SEPARATORS = (WHITESPACE, PUNCT, DIGIT)
+
+
+def _letter(byte):
+    return 65 <= byte <= 90 or 97 <= byte <= 122
+
+
+def _runs(byte_seq, predicate):
+    bs = _as_bytes(byte_seq)
+    spans=[]; start=None
+    for index,byte in enumerate(bs):
+        yes=predicate(byte)
+        if yes and start is None:start=index
+        if not yes and start is not None:
+            spans.append((start,index));start=None
+    if start is not None:spans.append((start,len(bs)))
+    return spans
 
 
 def word_spans(byte_seq, separators=_WORD_SEPARATORS):
-    """Spans of the WORDS: maximal runs delimited by the separator classes.
+    """Fixed maximal runs of letters; digits and punctuation delimit words."""
+    return _runs(byte_seq,_letter)
 
-    A word is a maximal run of bytes whose class is not in ``separators``
-    (whitespace, punctuation); each separator run is skipped rather than
-    emitted as a span. Conceptual framing (wholes are types; runs over
-    types, not boundary dichotomies) is in
-    doc/plans/2026-07-10-wholes-are-types-segmentation.md.
+
+def number_spans(byte_seq):
+    """Numeric percepts retain the full digit run, including XOR's 00/01."""
+    return _runs(byte_seq,lambda byte:48 <= byte <= 57)
+
+
+def percept_spans(byte_seq):
+    """Words and primitive runs; only maximal letter runs have word wholes.
+
+    Punctuation and high bytes remain percepts with their complete surfaces.
+    Separating a word must not silently delete the separating nonword bytes.
     """
-    bs = _as_bytes(byte_seq)
-    sep = set(separators)
-    is_sep = [(_byte_class(b) in sep) for b in bs]
-    spans = []
-    i, n = 0, len(bs)
-    while i < n:
-        if is_sep[i]:
-            i += 1
-            continue
-        a = i
-        while i < n and not is_sep[i]:
-            i += 1
-        spans.append((a, i))
-    return spans
+    primitive = _runs(byte_seq, lambda byte: byte != 0 and not _letter(byte)
+        and not 48 <= byte <= 57 and not chr(byte).isspace())
+    return sorted(word_spans(byte_seq)+number_spans(byte_seq)+primitive)
 
 
 def words(byte_seq, separators=_WORD_SEPARATORS):
@@ -313,24 +325,55 @@ def words(byte_seq, separators=_WORD_SEPARATORS):
 
 
 def word_tiling(byte_seq, separators=_WORD_SEPARATORS):
-    """COMPLETE word/space/punct tiling (doc/Architecture.md "Parse time" C):
-    the :func:`word_spans` word spans interleaved with the separator runs
-    (maximal same-class runs), covering every byte exactly once."""
-    bs = _as_bytes(byte_seq)
-    sep = set(separators)
-    spans = []
-    prev_word = False
-    for (c, s, e) in class_segments(bs):
-        if c in sep:
-            spans.append((s, e))
-            prev_word = False
-        elif prev_word:
-            # adjacent non-separator classes (letter|digit) merge into a word
-            spans[-1] = (spans[-1][0], e)
-        else:
-            spans.append((s, e))
-            prev_word = True
+    """Complete fixed letter, digit, whitespace, and punctuation runs.
+
+    The pad sentinel is its own whitespace run. It must never extend a final
+    letter run beyond the supplied input and make the stem discard that word.
+    """
+    bs=_as_bytes(byte_seq)
+    def kind(byte):
+        if byte == 0:return 'padding'
+        if _letter(byte):return LETTER
+        if 48 <= byte <= 57:return DIGIT
+        if byte == 0 or chr(byte).isspace():return WHITESPACE
+        return PUNCT
+    spans=[];start=0;previous=None
+    for index,byte in enumerate(bs):
+        current=kind(byte)
+        if previous is not None and current != previous:
+            spans.append((start,index));start=index
+        previous=current
+    if bs:spans.append((start,len(bs)))
     return spans
+
+
+def pin_word_spans(byte_seq, spans):
+    """Pin maximal letter runs while retaining the nonword refinement cut.
+
+    Learned property boundaries can still distinguish digits, punctuation
+    and whitespace. They cannot split a word, join it to a nonletter or
+    extend any input extent through the NUL padding sentinel.
+    """
+    raw=bytes(_as_bytes(byte_seq)).split(b'\0',1)[0]
+    result=word_spans(raw)
+    for lo,hi in spans:
+        start=None
+        for at in range(max(0,int(lo)),min(int(hi),len(raw))):
+            if _letter(raw[at]):
+                if start is not None:result.append((start,at));start=None
+            elif start is None:start=at
+        if start is not None:result.append((start,min(int(hi),len(raw))))
+    return sorted(set(result))
+
+
+def pin_word_table(byte_ids, spans):
+    """Eager rectangular form of the shared fixed-word extent rule."""
+    rows=[pin_word_spans(raw,row) for raw,row in zip(byte_ids.cpu().tolist(),spans.cpu().tolist())]
+    width=max(1,max(map(len,rows),default=0))
+    result=spans.new_zeros(len(rows),width,2)
+    for b,row in enumerate(rows):
+        if row:result[b,:len(row)]=result.new_tensor(row)
+    return result
 
 
 def word_bounds(byte_seq, separators=_WORD_SEPARATORS):

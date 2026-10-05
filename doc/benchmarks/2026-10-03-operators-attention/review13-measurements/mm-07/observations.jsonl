@@ -1,0 +1,1 @@
+{"nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence", "kind": "mm", "calls": 49, "best": 0.18651366233825684, "last": 0.18651366233825684, "predictions": [0.44140347838401794, 0.5920092463493347, 0.47686517238616943, 0.3333033621311188], "targets": [0.0, 1.0, 1.0, 0.0], "gate": 2}

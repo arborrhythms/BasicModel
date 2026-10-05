@@ -1,0 +1,25 @@
+{
+  "config": "data/matrix/MM_20M_grammar_reading.xml",
+  "source_geometry": "unchanged shipped XML",
+  "seed": null,
+  "output_shape": [
+    4,
+    1,
+    1
+  ],
+  "spent": [
+    5,
+    5,
+    5,
+    5
+  ],
+  "budget": 32,
+  "reader_gradients": {
+    "space_bias": 1.78988869947716e-07,
+    "consume_gate": 0.0001585480204084888,
+    "scorer.0.weight": 2.0023678359848418e-07,
+    "scorer.0.bias": 4.395250741140444e-08,
+    "scorer.2.weight": 3.0172299148034654e-07,
+    "scorer.2.bias": 7.16751102913804e-11
+  }
+}

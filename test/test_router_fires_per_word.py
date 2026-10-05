@@ -35,7 +35,7 @@ _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 def _write_config_with_overrides(base_config_path, symbolic_order=1,
                                  router_wire_serial=None, word_capacity=None):
-    """Materialize a temp XML overlaying ``<symbolicOrder>`` and
+    """Materialize a temp XML overlaying ``<conceptLayers>`` and
     (optionally) ``<routerWireSerial>`` inside ``<architecture>``.
 
     ``BasicModel.from_config`` re-reads ``TheXMLConfig`` from disk, so the
@@ -45,10 +45,10 @@ def _write_config_with_overrides(base_config_path, symbolic_order=1,
     with open(base_config_path, "r") as f:
         text = f.read()
     text = re.sub(
-        r"\s*<symbolicOrder>[^<]*</symbolicOrder>\s*\n", "\n", text)
+        r"\s*<conceptLayers>[^<]*</conceptLayers>\s*\n", "\n", text)
     text = re.sub(
         r"\s*<routerWireSerial>[^<]*</routerWireSerial>\s*\n", "\n", text)
-    inject = f"<symbolicOrder>{symbolic_order}</symbolicOrder>"
+    inject = f"<conceptLayers>{symbolic_order + 1}</conceptLayers>"
     if router_wire_serial is not None:
         inject += (
             f"\n    <routerWireSerial>{router_wire_serial}</routerWireSerial>")

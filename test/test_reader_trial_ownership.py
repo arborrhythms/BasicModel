@@ -24,7 +24,7 @@ def test_reader_backpropagates_only_kept_rows_and_skips_an_empty_trial():
     torch.testing.assert_close(reader,before,rtol=0,atol=0)
 
 
-def test_generation_lesson_merge_keeps_its_sentence_row():
+def test_generation_lesson_merge_trains_reconstruction_rows():
     values=torch.nn.Parameter(torch.tensor([2.,3.]))
     registry=Error(row_mask=torch.ones(2,dtype=torch.bool))
     for row in range(2):
@@ -33,4 +33,4 @@ def test_generation_lesson_merge_keeps_its_sentence_row():
         registry.merge(lesson,row=row)
     costs=registry_costs(registry,reader_rows=torch.tensor([False,True]))
     backward_owned(costs, {'generate_lesson':(values,)})
-    torch.testing.assert_close(values.grad,torch.tensor([0.,2.]))
+    torch.testing.assert_close(values.grad,torch.tensor([1.,2.]))  # both reconstruction trials train

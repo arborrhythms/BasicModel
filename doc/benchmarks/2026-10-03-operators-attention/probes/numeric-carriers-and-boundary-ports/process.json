@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_mnist.py",
+    "test/test_field_learning.py",
+    "test/test_sparse_compile_boundary.py",
+    "test/test_intra_routing_grad_to_router.py",
+    "test/test_negative_expectation.py",
+    "test/test_sentence_compose.py",
+    "test/test_sentence_comparison.py",
+    "test/test_reconstruction_scope.py",
+    "test/test_reconstruction_bank_contract.py",
+    "test/test_recon_bench.py",
+    "test/test_where_encoding_period.py",
+    "test/test_supplied_answer_training.py",
+    "test/test_output_path_supervised.py",
+    "test/test_sentence_end_state.py",
+    "test/test_generation_catalog.py",
+    "test/test_grammar_word_learning.py",
+    "test/test_occurrence_coordinates.py"
+  ],
+  "pid": 4397,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 3186969960,
+  "elapsed_seconds": 32.90967608298524,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/numeric-carriers-and-boundary-ports/run.log"
+}

@@ -1,0 +1,27 @@
+...........F.......                                                      [100%]
+=================================== FAILURES ===================================
+__ test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>] ___
+
+layer = <class 'Language.DisjunctionLayer'>
+kernel = <function <lambda> at 0x1109a1300>
+
+    @pytest.mark.parametrize('layer,kernel', [
+        (ConjunctionLayer, lambda a,b: a.norm(dim=-1,keepdim=True)*b.norm(dim=-1,keepdim=True)*torch.nn.functional.normalize(a*b, dim=-1)),
+        (DisjunctionLayer, lambda a,b: (a+b)/2),
+        (MinLayer, torch.minimum), (MaxLayer, torch.maximum)])
+    def test_three_faces_bind_and_search_the_same_pair(layer, kernel):
+        codes = torch.tensor([[.2, -.7, .4], [.8, .3, -.5], [-.6, .2, .9]], requires_grad=True)
+        op = layer()
+        left, right = codes[0:1], codes[1:2]
+        parent = kernel(left, right)
+>       torch.testing.assert_close(op(left, right), parent)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 3 / 3 (100.0%)
+E       Greatest absolute difference: 0.4672021269798279 at index (0, 0) (up to 1e-05 allowed)
+E       Greatest relative difference: 3.3028628826141357 at index (0, 2) (up to 1.3e-06 allowed)
+
+test/test_concept_binding_operators.py:16: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]
+1 failed, 18 passed in 2.47s

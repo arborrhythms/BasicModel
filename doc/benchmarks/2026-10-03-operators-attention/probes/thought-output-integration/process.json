@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_walk_trials.py",
+    "test/test_normal_thought_controller.py",
+    "test/test_unified_thought_controller.py",
+    "test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract"
+  ],
+  "pid": 97620,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 3712880504,
+  "elapsed_seconds": 12.139277916983701,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/thought-output-integration/run.log"
+}

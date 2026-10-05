@@ -1,0 +1,1691 @@
+..........s..F..s...........F..........FF...........................FF.. [ 27%]
+.FFF..............................................s.....FFFF......F..... [ 54%]
+................................................................FF...... [ 81%]
+..........................................FFFFFFFF                       [100%]
+=================================== FAILURES ===================================
+________ test_enabling_expectation_preserves_the_callers_random_stream _________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_enabling_expectation_pres0')
+
+    def test_enabling_expectation_preserves_the_callers_random_stream(tmp_path):
+        from test_meronomy_ladder import _build_ladder_variant
+        model = _build_ladder_variant(tmp_path, "expectation_rng", [])
+>       assert model.symbolSpace.expectation is None
+E       assert BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) is None
+E        +  where BracketExpectation(\n  (predictor): Sequential(\n    (0): Linear(in_features=952, out_features=272, bias=True)\n    (1): ...    (1): Tanh()\n    (2): Linear(in_features=272, out_features=136, bias=True)\n  )\n  (_ltm_store): TernaryTruthStore()\n) = SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n).expectation
+E        +    where SymbolSpace(\n  (subspace): SymbolSubSpace(\n    (layers): ModuleList(\n      (0): LanguageLayer(\n        (operation_laye...ace(\n    (clause_scope): ClauseScope()\n    (generate_policy): Linear(in_features=136, out_features=23, bias=True)\n  )\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub... out_features=16, bias=True)\n      (1): ReLU()\n      (2): Linear(in_features=16, out_features=1, bias=True)\n    )\n  )\n).symbolSpace
+
+test/test_expectation_defaults.py:270: AssertionError
+_______ test_real_intermediate_and_final_ends_have_same_canonical_roles ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_real_intermediate_and_fin0')
+eager_reading = None
+
+    def test_real_intermediate_and_final_ends_have_same_canonical_roles(tmp_path, eager_reading):
+        from test_meronomy_ladder import _build_ladder_variant
+        from test_reverse_traversal import _stage_packed
+        meanings = []
+        for i, rows in enumerate(([["1 plus 2", "3 plus 4"]], [["1 plus 2 "]])):
+            model = _build_ladder_variant(tmp_path, f"closing_layout_{i}", [
+                ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
+                ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
+                ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
+            ])
+            # This probes the closing layout on a completed derivation. Select one
+            # known binary operation and STOP when eligible; random unary loops
+            # can exhaust the budget and correctly leave an incomplete forest.
+            chooser = model.symbolSpace.languageLayer.operation_layer.chooser
+            def binary(x, candidates, *_args, **_kwargs):
+                scores = x.new_full(candidates.shape[:-1], -1e6)
+                scores[..., 0] = 0.
+                return x.new_full((*x.shape[:2], 1), 1e6), scores
+            def unary(x, candidates, *_args, **_kwargs):
+                return (x.new_full((*x.shape[:2], 1), 1e6),
+                        x.new_full(candidates.shape[:-1], -1e6))
+            chooser.score_binary, chooser.score_unary = binary, unary
+            model._tensor_peer_while_eager = True
+            model._chart_compose_per_word = lambda: None
+            model._install_unit_span_fn()
+            try:
+                with torch.no_grad():
+>                   model(model.inputSpace.prepPackedInput(rows))
+
+test/test_joint_objectives.py:346: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8296: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22956: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13160: in _lex_embed_stem
+    self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
+bin/Spaces.py:9873: in finalize_stem
+    return self._finalize_serial_word_stem(sub, ps)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:9772: in _finalize_serial_word_stem
+    self._finalize_sentence_word_layout(active)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = InputSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+    (whe...yers): ModuleList(
+      (0-1): 2 x LinearLayer()
+    )
+    (linear1): LinearLayer()
+    (linear2): LinearLayer()
+  )
+)
+active = tensor([[ True,  True,  True,  True,  True, False, False, False, False, False,
+         False, False, False, False, False, False]])
+
+    def _finalize_sentence_word_layout(self, active):
+        """Validate/install the fixed sentence-boundary tensor layout."""
+        B, W = int(active.shape[0]), int(active.shape[1])
+        dev = active.device
+        if self._sentence_pack_enabled:
+            required = (
+                self._packed_sentence_start_mask,
+                self._packed_sentence_end_mask,
+                self._packed_sentence_intermediate_end_mask,
+                self._packed_sentence_ids,
+                self._packed_sentence_word_positions,
+                self._packed_sentence_end_for_word,
+            )
+            if (not all(torch.is_tensor(value) for value in required)
+                    or any(tuple(value.shape) != (B, W)
+                           for value in required)):
+                raise RuntimeError(
+                    "packed sentence metadata is missing or shape-misaligned "
+                    f"with staged words {(B, W)}")
+            expected_active = self._packed_sentence_ids >= 0
+            if not torch.equal(
+                    expected_active.detach().to("cpu"),
+                    active.detach().to("cpu")):
+>               raise RuntimeError(
+                    "packed surface word layout differs from the staged "
+                    "sentence boundaries; refusing to train misaligned roots")
+E               RuntimeError: packed surface word layout differs from the staged sentence boundaries; refusing to train misaligned roots
+
+bin/Spaces.py:9811: RuntimeError
+______________ TestSimpleModelCreation.test_simple_model_ergodic _______________
+
+self = <test_basicmodel.TestSimpleModelCreation testMethod=test_simple_model_ergodic>
+
+    def test_simple_model_ergodic(self):
+        """BasicModel (simple path) with ergodic=True uses SigmaLayer path."""
+        N = 16
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, certainty=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:457: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________ TestSimpleModelCreation.test_simple_model_traditional _____________
+
+self = <test_basicmodel.TestSimpleModelCreation testMethod=test_simple_model_traditional>
+
+    def test_simple_model_traditional(self):
+        """BasicModel (simple path) with ergodic=False produces valid output.
+    
+        Stage 1.C+ architecture: the CS forward is STM bookkeeping
+        (no atomic ``sigma_percept`` lift), so the per-space_role N counts
+        must match: nInput == nPercepts == nConcepts == nSymbols.
+        The OutputSpace performs the final aggregation to nOutput.
+        """
+        N = 16
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:443: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______________ TestSimpleModel.test_simple_model_ergodic_shapes _______________
+
+self = <test_basicmodel.TestSimpleModel testMethod=test_simple_model_ergodic_shapes>
+
+    def test_simple_model_ergodic_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:799: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____________ TestSimpleModel.test_simple_model_traditional_shapes _____________
+
+self = <test_basicmodel.TestSimpleModel testMethod=test_simple_model_traditional_shapes>
+
+    def test_simple_model_traditional_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:814: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______________ TestModelEndToEnd.test_simple_model_ergodic_shapes ______________
+
+self = <test_basicmodel.TestModelEndToEnd testMethod=test_simple_model_ergodic_shapes>
+
+    def test_simple_model_ergodic_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:867: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________________ TestModelEndToEnd.test_simple_model_loss_runs _________________
+
+self = <test_basicmodel.TestModelEndToEnd testMethod=test_simple_model_loss_runs>
+
+    def test_simple_model_loss_runs(self):
+        """Verify forward + loss + backward doesn't crash."""
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, certainty=True, flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+        target = torch.randn(2, 4).to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:901: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________ TestModelEndToEnd.test_simple_model_traditional_shapes ____________
+
+self = <test_basicmodel.TestModelEndToEnd testMethod=test_simple_model_traditional_shapes>
+
+    def test_simple_model_traditional_shapes(self):
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:882: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______________ TestModelTypeVariants.test_concept_with_attention _______________
+
+self = <test_basicmodel.TestModelTypeVariants testMethod=test_concept_with_attention>
+
+    def test_concept_with_attention(self):
+        """conceptHasAttention=True -- forward only."""
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            conceptHasAttention=True,
+            perceptPassThrough=True, symbolPassThrough=True,
+            flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh()
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1822: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________________ TestModelTypeVariants.test_conceptual_order_1 _________________
+
+self = <test_basicmodel.TestModelTypeVariants testMethod=test_conceptual_order_1>
+
+    def test_conceptual_order_1(self):
+        """bindingDepth=1 with non-passthrough symbolic -- forward only.
+    
+        After the 2026-05-05 BasicModel/BasicModel merger, the
+        per-stage path is the only construction path and
+        ``bindingDepth`` literally drives the per-stage iteration.
+        """
+        # symbolDim is the SS EVENT nDim (not band-adjusted by the fixture);
+        # under the uniform (4,4) band SS content = symbolDim - 8, which must
+        # be >= 0 AND match CS.nWhat (conceptDim=1 -> CS content 1). So
+        # symbolDim=9 -> SS content 1 == CS.nWhat. (2026-07-04 encoding pass
+        # widened (2,2)->(2,4), symbolDim 5 -> 7; 2026-07-09 multi-rung pass
+        # widened (2,4)->(4,4), symbolDim 7 -> 9.)
+        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=9,
+                              wordDim=1, outputDim=1,
+                              nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                              perceptPassThrough=True, symbolPassThrough=False,
+                              flatten=True)
+        model = Models.BasicModel()
+        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                     bindingDepth=1)
+        x = torch.randn(2, 8, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1789: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______________ TestModelTypeVariants.test_percept_no_attention ________________
+
+self = <test_basicmodel.TestModelTypeVariants testMethod=test_percept_no_attention>
+
+    def test_percept_no_attention(self):
+        """perceptHasAttention=False, perceptPassThrough=False -- forward only."""
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptHasAttention=False,
+            perceptPassThrough=False, symbolPassThrough=True,
+            flatten=True, naive=True)
+        model = Models.BasicModel()
+        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
+        x = torch.randn(2, 8, 1)
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:1806: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________ TestReconstructionSymbols.test_forward_output_shape_unchanged _________
+
+self = <test_basicmodel.TestReconstructionSymbols testMethod=test_forward_output_shape_unchanged>
+
+    def test_forward_output_shape_unchanged(self):
+        """Forward pass output shape is [batch, nOutput] regardless of nSymbols.
+    
+        The flat-slab invariant (post Stage 1.C) requires IS.nOutput
+        == PS.nOutput == CS.nOutput == SS.nOutput. This fixture sets all
+        peers to eight slots before varying the output geometry.
+        """
+        m = self._create_xor_model(nSymbols=8, nOutput=1)
+        m.train(False)
+        test_input, _ = m.inputSpace.getTestData()
+        x = m.inputSpace.prepInput(test_input[:2])
+        with torch.no_grad():
+>           forwardInput, symbols, outputPred, _ = m.forward(x)
+                                                   ^^^^^^^^^^^^
+
+test/test_basicmodel.py:1932: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8296: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22973: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17489: in _forward_body
+    self._read_subsymbolic_field(_part_ids, _part_spans, t)
+bin/Models.py:17133: in _read_subsymbolic_field
+    elif pass_idx in self.subsymbolic_loop:
+                     ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+name = 'subsymbolic_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'subsymbolic_loop'. Did you mean: '_subsymbolic_scope'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______ TestTrainingUpdatesWeights.test_xor_weights_change_after_one_epoch ______
+
+self = <test_basicmodel.TestTrainingUpdatesWeights testMethod=test_xor_weights_change_after_one_epoch>
+
+    def test_xor_weights_change_after_one_epoch(self):
+        """XOR model weights must differ after 1 epoch of training."""
+    
+        # XOR_exact.xml has autoload=false, autosave=false
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        Models.init_config(path=xml_path, defaults_path=os.path.join(os.path.dirname(_BIN), "data", "model.xml"))
+        Models.TheData.load("inline", dat=Models.TheXMLConfig.get("architecture.data"))
+    
+        m = Models.BasicModel()
+        m.create_from_config(xml_path, data=Models.TheData)
+    
+        weights_before = {k: v.clone() for k, v in m.state_dict().items()}
+    
+>       m.runTrial(numEpochs=1, batchSize=10, lr=0.01)
+
+test/test_basicmodel.py:2126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:10561: in runTrial
+    teach_concept_lessons(self)
+bin/ConceptLessons.py:68: in teach_concept_lessons
+    model.forward(native)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8296: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22973: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17489: in _forward_body
+    self._read_subsymbolic_field(_part_ids, _part_spans, t)
+bin/Models.py:17133: in _read_subsymbolic_field
+    elif pass_idx in self.subsymbolic_loop:
+                     ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+name = 'subsymbolic_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'subsymbolic_loop'. Did you mean: '_subsymbolic_scope'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ TestSubspaceActivationPipeline.test_simple_model_subspace_activation _____
+
+self = <test_basicmodel.TestSubspaceActivationPipeline testMethod=test_simple_model_subspace_activation>
+
+    def test_simple_model_subspace_activation(self):
+        """BasicModel with useSubspaceActivation=True produces valid output shapes."""
+        N = 16
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       _, end_state, out, _ = model.forward(x)
+                               ^^^^^^^^^^^^^^^^
+
+test/test_basicmodel.py:2907: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________ TestSubspaceActivationPipeline.test_subspace_activation_stored ________
+
+self = <test_basicmodel.TestSubspaceActivationPipeline testMethod=test_subspace_activation_stored>
+
+    def test_subspace_activation_stored(self):
+        """After forward with useSubspaceActivation, spaces have activations."""
+        N = 8
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=True)
+        model = Models.BasicModel()
+        model.create(nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4)
+        # SigmaLayer.nonlinear=True applies atanh; input must be in [-1, 1]
+        # or atanh produces NaN. Matches the companion test above.
+        x = torch.randn(2, N, 1).tanh().to(Models.TheDevice.get())
+>       model.forward(x)
+
+test/test_basicmodel.py:2923: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8291: in forward
+    with context:
+         ^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+bin/Models.py:13680: in _sentence_run
+    self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...uleList(
+    (0): _BodyStage()
+  )
+  (where_encoding): WhereEncoding()
+  (when_encoding): WhenStartDurationEncoding()
+)
+name = 'reconstruct_in_loop'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute 'reconstruct_in_loop'. Did you mean: '_reconstruction_seed'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______ test_answer_reader_empty_registry_rows_have_no_content_or_address _______
+
+    def test_answer_reader_empty_registry_rows_have_no_content_or_address():
+        from Attention import PrimedSymbolReader
+        reader=PrimedSymbolReader()
+        out=reader(concept_q=torch.ones(2,4),symbol_q=None,
+                   spaces=[{'id':0,'keys':torch.ones(2,3,4),'valid':torch.zeros(2,3,dtype=torch.bool)}])
+>       assert not out['alpha'].any() and not out['content'].any()
+E       assert (not tensor(True))
+E        +  where tensor(True) = <built-in method any of Tensor object at 0x13423f3e0>()
+E        +    where <built-in method any of Tensor object at 0x13423f3e0> = tensor([[0.3333, 0.3333, 0.3333],\n        [0.3333, 0.3333, 0.3333]], grad_fn=<SoftmaxBackward0>).any
+
+test/test_one_attention.py:263: AssertionError
+______ test_answer_space_choice_uses_shared_chooser_and_bracket_allowance ______
+
+    def test_answer_space_choice_uses_shared_chooser_and_bracket_allowance():
+        from Attention import PrimedSymbolReader
+        from Language import OperationSelectionLayer
+        from QueryWork import QueryWorkBudget
+        reader=PrimedSymbolReader(); chooser=OperationSelectionLayer(d_model=4)
+        calls=[]; original=chooser.select_logits
+        def choose(*args,**kwargs):
+            calls.append(True);return original(*args,**kwargs)
+        chooser.select_logits=choose
+        work=(QueryWorkBudget(1),QueryWorkBudget(0))
+>       out=reader(concept_q=torch.ones(2,4),symbol_q=None,
+            spaces=[{'id':5,'keys':torch.eye(4)}],chooser=chooser,work=work)
+
+test/test_one_attention.py:277: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PrimedSymbolReader(
+  (scorer): Sequential(
+    (0): Linear(in_features=4, out_features=16, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=16, out_features=1, bias=True)
+  )
+)
+args = ()
+kwargs = {'concept_q': tensor([[1., 1., 1., 1.],
+        [1., 1., 1., 1.]]), 'symbol_q': None, 'spaces': [{'id': 5, 'keys': ten...ationSelectionLayer(
+  (ops): ModuleList()
+  (unary_ops): ModuleList()
+  (chooser): AnchorDotTransformChooser()
+), ...}
+
+    def _call_impl(self, *args, **kwargs):
+        forward_call = (self._slow_forward if torch._C._get_tracing_state() else self.forward)
+        # If we don't have any hooks, we want to skip the rest of the logic in
+        # this function, and just call forward.
+        if not (self._backward_hooks or self._backward_pre_hooks or self._forward_hooks or self._forward_pre_hooks
+                or _global_backward_pre_hooks or _global_backward_hooks
+                or _global_forward_hooks or _global_forward_pre_hooks):
+>           return forward_call(*args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: PrimedSymbolReader.forward() got an unexpected keyword argument 'chooser'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: TypeError
+________________________ test_native_unseeded_xor[0-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_4_0')
+pool = 4, trial = 0
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+xml_path = '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_4_0/grounded.xml'
+
+    @staticmethod
+    def _validate_against_schema(xml_path):
+        """Validate ``xml_path`` against the ``model.xsd`` schema.
+    
+        This is the precursor gate for model creation:
+        ``create_from_config`` -> ``init_config`` -> ``load``/``overlay``
+        parse every config through here, so an invalid config raises
+        BEFORE any Space is constructed.
+    
+        Schema resolution prefers a ``model.xsd`` sibling of the XML, then
+        falls back to the canonical ``<project>/data/model.xsd`` -- so temp
+        / variant configs written outside ``data/`` still validate against
+        the real schema.
+    
+        Hard-fails (raises ``ValueError``) on a schema violation. The check
+        is skipped only when no validator backend is available (neither the
+        ``lxml`` package nor the ``xmllint`` CLI); that case emits a
+        one-time warning rather than silently passing, and does not block
+        loading on missing tooling.
+        """
+        if not xml_path or not os.path.exists(xml_path):
+            return
+        sibling = os.path.join(
+            os.path.dirname(os.path.abspath(xml_path)), "model.xsd")
+        canonical = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "model.xsd")
+        xsd_path = sibling if os.path.exists(sibling) else (
+            canonical if os.path.exists(canonical) else None)
+        if xsd_path is None:
+            return
+        abspath = os.path.abspath(xml_path)
+        try:
+            mtime = os.path.getmtime(abspath)
+        except OSError:
+            mtime = None
+        if (mtime is not None
+                and XMLConfig._SCHEMA_VALIDATION_CACHE.get(abspath) == mtime):
+            return
+        errors = XMLConfig._run_schema_validation(xsd_path, abspath)
+        if errors is None:
+            return  # no validator backend; already warned once
+        if errors:
+>           raise ValueError(
+                f"XML schema validation failed for {xml_path}\n"
+                f"  (schema: {xsd_path})\n{errors}\n"
+                f"Fix the config, or update data/model.xsd if this is a "
+                f"new config element.")
+E           ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_4_0/grounded.xml
+E             (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_4_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_4_0/grounded.xml fails to validate
+E           Fix the config, or update data/model.xsd if this is a new config element.
+
+bin/util.py:1937: ValueError
+________________________ test_native_unseeded_xor[0-8] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_8_0')
+pool = 8, trial = 0
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+xml_path = '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_8_0/grounded.xml'
+
+    @staticmethod
+    def _validate_against_schema(xml_path):
+        """Validate ``xml_path`` against the ``model.xsd`` schema.
+    
+        This is the precursor gate for model creation:
+        ``create_from_config`` -> ``init_config`` -> ``load``/``overlay``
+        parse every config through here, so an invalid config raises
+        BEFORE any Space is constructed.
+    
+        Schema resolution prefers a ``model.xsd`` sibling of the XML, then
+        falls back to the canonical ``<project>/data/model.xsd`` -- so temp
+        / variant configs written outside ``data/`` still validate against
+        the real schema.
+    
+        Hard-fails (raises ``ValueError``) on a schema violation. The check
+        is skipped only when no validator backend is available (neither the
+        ``lxml`` package nor the ``xmllint`` CLI); that case emits a
+        one-time warning rather than silently passing, and does not block
+        loading on missing tooling.
+        """
+        if not xml_path or not os.path.exists(xml_path):
+            return
+        sibling = os.path.join(
+            os.path.dirname(os.path.abspath(xml_path)), "model.xsd")
+        canonical = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "model.xsd")
+        xsd_path = sibling if os.path.exists(sibling) else (
+            canonical if os.path.exists(canonical) else None)
+        if xsd_path is None:
+            return
+        abspath = os.path.abspath(xml_path)
+        try:
+            mtime = os.path.getmtime(abspath)
+        except OSError:
+            mtime = None
+        if (mtime is not None
+                and XMLConfig._SCHEMA_VALIDATION_CACHE.get(abspath) == mtime):
+            return
+        errors = XMLConfig._run_schema_validation(xsd_path, abspath)
+        if errors is None:
+            return  # no validator backend; already warned once
+        if errors:
+>           raise ValueError(
+                f"XML schema validation failed for {xml_path}\n"
+                f"  (schema: {xsd_path})\n{errors}\n"
+                f"Fix the config, or update data/model.xsd if this is a "
+                f"new config element.")
+E           ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_8_0/grounded.xml
+E             (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_8_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_0_8_0/grounded.xml fails to validate
+E           Fix the config, or update data/model.xsd if this is a new config element.
+
+bin/util.py:1937: ValueError
+________________________ test_native_unseeded_xor[1-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_4_0')
+pool = 4, trial = 1
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+xml_path = '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_4_0/grounded.xml'
+
+    @staticmethod
+    def _validate_against_schema(xml_path):
+        """Validate ``xml_path`` against the ``model.xsd`` schema.
+    
+        This is the precursor gate for model creation:
+        ``create_from_config`` -> ``init_config`` -> ``load``/``overlay``
+        parse every config through here, so an invalid config raises
+        BEFORE any Space is constructed.
+    
+        Schema resolution prefers a ``model.xsd`` sibling of the XML, then
+        falls back to the canonical ``<project>/data/model.xsd`` -- so temp
+        / variant configs written outside ``data/`` still validate against
+        the real schema.
+    
+        Hard-fails (raises ``ValueError``) on a schema violation. The check
+        is skipped only when no validator backend is available (neither the
+        ``lxml`` package nor the ``xmllint`` CLI); that case emits a
+        one-time warning rather than silently passing, and does not block
+        loading on missing tooling.
+        """
+        if not xml_path or not os.path.exists(xml_path):
+            return
+        sibling = os.path.join(
+            os.path.dirname(os.path.abspath(xml_path)), "model.xsd")
+        canonical = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "model.xsd")
+        xsd_path = sibling if os.path.exists(sibling) else (
+            canonical if os.path.exists(canonical) else None)
+        if xsd_path is None:
+            return
+        abspath = os.path.abspath(xml_path)
+        try:
+            mtime = os.path.getmtime(abspath)
+        except OSError:
+            mtime = None
+        if (mtime is not None
+                and XMLConfig._SCHEMA_VALIDATION_CACHE.get(abspath) == mtime):
+            return
+        errors = XMLConfig._run_schema_validation(xsd_path, abspath)
+        if errors is None:
+            return  # no validator backend; already warned once
+        if errors:
+>           raise ValueError(
+                f"XML schema validation failed for {xml_path}\n"
+                f"  (schema: {xsd_path})\n{errors}\n"
+                f"Fix the config, or update data/model.xsd if this is a "
+                f"new config element.")
+E           ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_4_0/grounded.xml
+E             (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_4_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_4_0/grounded.xml fails to validate
+E           Fix the config, or update data/model.xsd if this is a new config element.
+
+bin/util.py:1937: ValueError
+________________________ test_native_unseeded_xor[1-8] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_8_0')
+pool = 8, trial = 1
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+xml_path = '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_8_0/grounded.xml'
+
+    @staticmethod
+    def _validate_against_schema(xml_path):
+        """Validate ``xml_path`` against the ``model.xsd`` schema.
+    
+        This is the precursor gate for model creation:
+        ``create_from_config`` -> ``init_config`` -> ``load``/``overlay``
+        parse every config through here, so an invalid config raises
+        BEFORE any Space is constructed.
+    
+        Schema resolution prefers a ``model.xsd`` sibling of the XML, then
+        falls back to the canonical ``<project>/data/model.xsd`` -- so temp
+        / variant configs written outside ``data/`` still validate against
+        the real schema.
+    
+        Hard-fails (raises ``ValueError``) on a schema violation. The check
+        is skipped only when no validator backend is available (neither the
+        ``lxml`` package nor the ``xmllint`` CLI); that case emits a
+        one-time warning rather than silently passing, and does not block
+        loading on missing tooling.
+        """
+        if not xml_path or not os.path.exists(xml_path):
+            return
+        sibling = os.path.join(
+            os.path.dirname(os.path.abspath(xml_path)), "model.xsd")
+        canonical = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "model.xsd")
+        xsd_path = sibling if os.path.exists(sibling) else (
+            canonical if os.path.exists(canonical) else None)
+        if xsd_path is None:
+            return
+        abspath = os.path.abspath(xml_path)
+        try:
+            mtime = os.path.getmtime(abspath)
+        except OSError:
+            mtime = None
+        if (mtime is not None
+                and XMLConfig._SCHEMA_VALIDATION_CACHE.get(abspath) == mtime):
+            return
+        errors = XMLConfig._run_schema_validation(xsd_path, abspath)
+        if errors is None:
+            return  # no validator backend; already warned once
+        if errors:
+>           raise ValueError(
+                f"XML schema validation failed for {xml_path}\n"
+                f"  (schema: {xsd_path})\n{errors}\n"
+                f"Fix the config, or update data/model.xsd if this is a "
+                f"new config element.")
+E           ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_8_0/grounded.xml
+E             (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_8_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_1_8_0/grounded.xml fails to validate
+E           Fix the config, or update data/model.xsd if this is a new config element.
+
+bin/util.py:1937: ValueError
+________________________ test_native_unseeded_xor[2-4] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_4_0')
+pool = 4, trial = 2
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+xml_path = '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_4_0/grounded.xml'
+
+    @staticmethod
+    def _validate_against_schema(xml_path):
+        """Validate ``xml_path`` against the ``model.xsd`` schema.
+    
+        This is the precursor gate for model creation:
+        ``create_from_config`` -> ``init_config`` -> ``load``/``overlay``
+        parse every config through here, so an invalid config raises
+        BEFORE any Space is constructed.
+    
+        Schema resolution prefers a ``model.xsd`` sibling of the XML, then
+        falls back to the canonical ``<project>/data/model.xsd`` -- so temp
+        / variant configs written outside ``data/`` still validate against
+        the real schema.
+    
+        Hard-fails (raises ``ValueError``) on a schema violation. The check
+        is skipped only when no validator backend is available (neither the
+        ``lxml`` package nor the ``xmllint`` CLI); that case emits a
+        one-time warning rather than silently passing, and does not block
+        loading on missing tooling.
+        """
+        if not xml_path or not os.path.exists(xml_path):
+            return
+        sibling = os.path.join(
+            os.path.dirname(os.path.abspath(xml_path)), "model.xsd")
+        canonical = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "model.xsd")
+        xsd_path = sibling if os.path.exists(sibling) else (
+            canonical if os.path.exists(canonical) else None)
+        if xsd_path is None:
+            return
+        abspath = os.path.abspath(xml_path)
+        try:
+            mtime = os.path.getmtime(abspath)
+        except OSError:
+            mtime = None
+        if (mtime is not None
+                and XMLConfig._SCHEMA_VALIDATION_CACHE.get(abspath) == mtime):
+            return
+        errors = XMLConfig._run_schema_validation(xsd_path, abspath)
+        if errors is None:
+            return  # no validator backend; already warned once
+        if errors:
+>           raise ValueError(
+                f"XML schema validation failed for {xml_path}\n"
+                f"  (schema: {xsd_path})\n{errors}\n"
+                f"Fix the config, or update data/model.xsd if this is a "
+                f"new config element.")
+E           ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_4_0/grounded.xml
+E             (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_4_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_4_0/grounded.xml fails to validate
+E           Fix the config, or update data/model.xsd if this is a new config element.
+
+bin/util.py:1937: ValueError
+________________________ test_native_unseeded_xor[2-8] _________________________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_8_0')
+pool = 8, trial = 2
+
+    @pytest.mark.parametrize('pool', [4, 8])
+    @pytest.mark.parametrize('trial', range(3))
+    def test_native_unseeded_xor(tmp_path, pool, trial):
+>       learn_grounded_xor(tmp_path, pool)
+
+test/test_grounded_xor.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_grounded_xor.py:74: in learn_grounded_xor
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_grounded_xor.py:57: in grounded_model
+    init_config(path=str(path), defaults_path=str(ROOT / 'data/model.xml'))
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+xml_path = '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_8_0/grounded.xml'
+
+    @staticmethod
+    def _validate_against_schema(xml_path):
+        """Validate ``xml_path`` against the ``model.xsd`` schema.
+    
+        This is the precursor gate for model creation:
+        ``create_from_config`` -> ``init_config`` -> ``load``/``overlay``
+        parse every config through here, so an invalid config raises
+        BEFORE any Space is constructed.
+    
+        Schema resolution prefers a ``model.xsd`` sibling of the XML, then
+        falls back to the canonical ``<project>/data/model.xsd`` -- so temp
+        / variant configs written outside ``data/`` still validate against
+        the real schema.
+    
+        Hard-fails (raises ``ValueError``) on a schema violation. The check
+        is skipped only when no validator backend is available (neither the
+        ``lxml`` package nor the ``xmllint`` CLI); that case emits a
+        one-time warning rather than silently passing, and does not block
+        loading on missing tooling.
+        """
+        if not xml_path or not os.path.exists(xml_path):
+            return
+        sibling = os.path.join(
+            os.path.dirname(os.path.abspath(xml_path)), "model.xsd")
+        canonical = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "model.xsd")
+        xsd_path = sibling if os.path.exists(sibling) else (
+            canonical if os.path.exists(canonical) else None)
+        if xsd_path is None:
+            return
+        abspath = os.path.abspath(xml_path)
+        try:
+            mtime = os.path.getmtime(abspath)
+        except OSError:
+            mtime = None
+        if (mtime is not None
+                and XMLConfig._SCHEMA_VALIDATION_CACHE.get(abspath) == mtime):
+            return
+        errors = XMLConfig._run_schema_validation(xsd_path, abspath)
+        if errors is None:
+            return  # no validator backend; already warned once
+        if errors:
+>           raise ValueError(
+                f"XML schema validation failed for {xml_path}\n"
+                f"  (schema: {xsd_path})\n{errors}\n"
+                f"Fix the config, or update data/model.xsd if this is a "
+                f"new config element.")
+E           ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_8_0/grounded.xml
+E             (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_8_0/grounded.xml:19: element serial: Schemas validity error : Element 'serial': This element is not expected.
+E           /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1559/test_native_unseeded_xor_2_8_0/grounded.xml fails to validate
+E           Fix the config, or update data/model.xsd if this is a new config element.
+
+bin/util.py:1937: ValueError
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16617: RuntimeWarning: concept pool order 0 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream
+FAILED test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic
+FAILED test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_ergodic_shapes
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs
+FAILED test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_traditional_shapes
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_concept_with_attention
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1
+FAILED test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention
+FAILED test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+FAILED test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation
+FAILED test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored
+FAILED test/test_one_attention.py::test_answer_reader_empty_registry_rows_have_no_content_or_address
+FAILED test/test_one_attention.py::test_answer_space_choice_uses_shared_chooser_and_bracket_allowance
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-4] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[0-8] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-4] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[1-8] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-4] - ValueError:...
+FAILED test/test_grounded_xor.py::test_native_unseeded_xor[2-8] - ValueError:...
+24 failed, 239 passed, 3 skipped, 9 warnings in 22.63s

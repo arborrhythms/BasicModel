@@ -27,7 +27,7 @@ def test_answer_reads_understanding_with_gradient_cut(depth, supplied):
     carrier.set_event(slab)
     readout = Readout()
     end_depth = torch.full((2,), depth, dtype=torch.long)
-    model = SimpleNamespace(serial=True, outputSpace=readout,
+    model = SimpleNamespace(word_brackets=True, outputSpace=readout,
         _stm_single_S=root, _stm_post_depth=end_depth,
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(_buffer=field)),
         _tensor_final_end_slots=field, _tensor_final_end_depth=end_depth)
@@ -53,5 +53,5 @@ def test_named_concept_head_keeps_its_identity_carrier():
         def __call__(self, sub):
             assert sub is carrier
             return sub
-    model = SimpleNamespace(serial=False, outputSpace=Readout(), _combine_last_cs_sub=carrier)
+    model = SimpleNamespace(word_brackets=False, outputSpace=Readout(), _combine_last_cs_sub=carrier)
     assert BasicModel._forward_head(model, object()) is carrier

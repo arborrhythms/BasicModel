@@ -71,9 +71,6 @@ for nm, mk in (
     ("isEqual",   lambda: L.IsEqualLayer()),
     ("isPart",    lambda: L.IsPartLayer()),
     ("part",      lambda: L.PartLayer()),
-    ("query",     lambda: L.QueryLayer()),
-    ("queryPart", lambda: L.QueryPartLayer()),
-    ("queryEqual",lambda: L.QueryEqualLayer()),
 ):
     try:
         op = mk(); a, b = ev(), ev()

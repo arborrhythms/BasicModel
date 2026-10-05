@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py",
+    "test/test_global_attention.py",
+    "test/test_global_consume.py",
+    "test/test_grounded_xor.py",
+    "test/test_expectation_defaults.py",
+    "test/test_joint_objectives.py",
+    "test/test_basicmodel.py",
+    "test/test_clause_scope.py"
+  ],
+  "pid": 99527,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2510851768,
+  "elapsed_seconds": 25.671198583004298,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/space-and-controls-after/run.log"
+}

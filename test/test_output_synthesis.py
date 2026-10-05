@@ -266,7 +266,7 @@ def test_present_and_supervised_resolve_by_identity(synth_config):
 def test_past_resolves_by_recall_from_discourse_memory(synth_discourse_config):
     m = _build(synth_discourse_config)
     batch = _batch(m)
-    memory = m.symbolSpace.discourse
+    memory = m.symbolSpace.expectation
     assert memory is not None and getattr(memory, "_s_history", None) is not None
     _prime_discourse(m, batch, sentences=2)
     with torch.no_grad():
@@ -295,7 +295,7 @@ def test_past_resolves_by_recall_from_discourse_memory(synth_discourse_config):
 def test_future_resolves_by_prediction_without_committing_memory(synth_discourse_config):
     m = _build(synth_discourse_config)
     batch = _batch(m)
-    memory = m.symbolSpace.discourse
+    memory = m.symbolSpace.expectation
     assert memory is not None and getattr(memory, "predictor", None) is not None
     _prime_discourse(m, batch, sentences=2)
     before = memory._s_history.clone()
@@ -579,7 +579,7 @@ def test_recall_returns_the_most_recent_sentence_during_ring_fill(synth_discours
     # LOW end), so indexing the ring tail is wrong; recall uses its own
     # chronological history instead.
     m = _build(synth_discourse_config)
-    memory = m.symbolSpace.discourse
+    memory = m.symbolSpace.expectation
     batch = _batch(m)
     seen = []
     orig = m._observe_discourse

@@ -69,15 +69,15 @@ def test_boundary_candidates_stay_in_the_preceding_symbolic_order():
                for row, col in matrix._index if row == two)
 
 
-def test_primed_reading_writes_the_shared_field_scope():
-    canonical = SimpleNamespace(_stage0_indices=torch.tensor([[2, 5]]),
-                                priming_weights=lambda: torch.tensor([[1., 1., 1., 1., 1., 6.]]))
-    whole = SimpleNamespace(_staged_analysis_spans=torch.tensor([[[0, 5], [6, 11]]]),
-                            _priming_target=lambda: canonical)
-    owner = SimpleNamespace()
-    model = SimpleNamespace(wholeSpaces=[whole], conceptualSpace=owner,
-                            _staged_concepts_in=torch.zeros(1, 1, 16))
-    BasicModel._primed_reading_step(model)
-    torch.testing.assert_close(owner._passback_scope_where,
-                               torch.tensor([[6., 11.]]) / 16)
-
+def test_primed_reading_writes_the_shared_field_scope(tmp_path, eager_reading):
+    from test_packed_reconstruction_parity import build_model
+    model=build_model(tmp_path,word_capacity=8)
+    raw=model.inputSpace.prepInput(['first last'])
+    with torch.no_grad():model._lex_embed_stem(raw)
+    table=model._attention_words.table
+    assert table.done.any()
+    last=(table.done.long()*torch.arange(1,table.done.shape[1]+1)).argmax(-1)
+    selected=table.intervals[torch.arange(len(last)),last]
+    torch.testing.assert_close(model.conceptualSpace._passback_scope_where,
+                               selected.to(raw.dtype)/raw.shape[-1])
+    assert model.conceptualSpace._passback_scope_space.tolist()==[0]

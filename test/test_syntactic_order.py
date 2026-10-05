@@ -54,9 +54,9 @@ def test_syntactic_order_defaults_zero_and_reads_config():
 
     # A temp config that sets the knob is honoured.
     src = open(os.path.join(_DATA, "XOR_grammar.xml")).read()
-    assert "<symbolicOrder>" in src
-    src2 = src.replace("<symbolicOrder>",
-                       "<syntacticOrder>2</syntacticOrder>\n    <symbolicOrder>", 1)
+    assert "<conceptLayers>" in src
+    src2 = src.replace("<conceptLayers>",
+                       "<syntacticOrder>2</syntacticOrder>\n    <conceptLayers>", 1)
     tmp = tempfile.NamedTemporaryFile(
         mode="w", suffix=".xml", delete=False)
     tmp.write(src2); tmp.close()
@@ -122,11 +122,11 @@ def test_syntactic_order_caps_parse_tree_depth():
 
 def test_syntactic_order_negative_rejected():
     # A negative value is rejected (the XSD's nonNegativeInteger restriction
-    # fires at load; the code guard mirrors symbolicOrder's for non-XML paths).
+    # fires at load; the code guard mirrors conceptLayers's for non-XML paths).
     from util import init_config
     src = open(os.path.join(_DATA, "XOR_grammar.xml")).read().replace(
-        "<symbolicOrder>",
-        "<syntacticOrder>-1</syntacticOrder>\n    <symbolicOrder>", 1)
+        "<conceptLayers>",
+        "<syntacticOrder>-1</syntacticOrder>\n    <conceptLayers>", 1)
     tmp = tempfile.NamedTemporaryFile(
         mode="w", suffix=".xml", delete=False)
     tmp.write(src); tmp.close()

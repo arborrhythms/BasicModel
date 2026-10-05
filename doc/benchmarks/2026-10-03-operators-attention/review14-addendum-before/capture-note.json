@@ -1,0 +1,11 @@
+{
+  "canonical_before": "source.zip",
+  "same_as_canonical": {
+    "source.json": true,
+    "complete-source.json": false,
+    "test-ports.json": true,
+    "seed-port-audit.json": true,
+    "changes.patch": false
+  },
+  "note": "Verified source.zip matches complete-source.json. The executable source and test ports match review14-delivery; the only differences are incoming edits to the 6.8 plan and operator catalogue. The capture and its patch both retain capacities 262/264, before the addendum XML change."
+}

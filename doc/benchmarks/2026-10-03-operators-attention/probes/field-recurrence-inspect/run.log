@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_normal_field_answer_reaches_every_binding_and_keeps_first_word ______
+
+    def test_normal_field_answer_reaches_every_binding_and_keeps_first_word():
+        from test_mm_xor import _fresh_model
+        model,_,_= _fresh_model()
+        model.train()
+        value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
+        _,_,output,_=model.forward(value)
+        output.square().sum().backward()
+        for space in model.conceptualSpaces:
+            parameters=list(space.combine.parameters())
+>           assert any(p.grad is not None and p.grad.abs().sum()>0 for p in parameters), [(name,p.requires_grad,None if p.grad is None else p.grad.abs().sum().item()) for name,p in space.combine.named_parameters()]
+E           AssertionError: [('callosum', True, None), ('layer.butterfly_L', True, None), ('layer.butterfly_d', True, None), ('layer.butterfly_U', True, None)]
+E           assert False
+E            +  where False = any(<generator object test_normal_field_answer_reaches_every_binding_and_keeps_first_word.<locals>.<genexpr> at 0x120bef100>)
+
+test/test_one_attention.py:71: AssertionError
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+1 failed, 1 warning in 2.08s

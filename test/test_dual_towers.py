@@ -71,7 +71,7 @@ def test_default_expectation_adds_only_its_owned_checkpoint_keys():
     """Default-on expectation adds its keys; unrelated structural pins hold."""
     for cfg in ("data/MM_20M_xor.xml", "data/XOR_grammar.xml"):
         model = _build(cfg)
-        discourse = model.symbolSpace.discourse
+        discourse = model.symbolSpace.expectation
         assert discourse is not None
         paths = [name for name, module in
                  model.named_modules(remove_duplicate=False)

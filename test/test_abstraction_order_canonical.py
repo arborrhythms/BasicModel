@@ -5,7 +5,7 @@ optional sidecar:
 
   * ALLOCATION -- ``Codebook.create`` allocates the ``[V, max_order]``
     fold-provenance table for every built codebook, ``max_order = max(1,
-    architecture.subsymbolicOrder)``; no ``<mereologyRaise>`` flag needed.
+    architecture.bindingDepth)``; no ``<mereologyRaise>`` flag needed.
   * LIVE STAMPING -- the sigma/pi processing sites stamp rows as a normal
     consequence of processing: RadixLayer.insert (multi-byte percept =
     sigma product), the stage-0 analysis snap (pi descriptors), the t>0
@@ -119,10 +119,10 @@ def test_created_codebook_carries_table():
 def test_no_flag_model_allocates_ps_ws_tables():
     # Build WITHOUT any mereologyRaise flag: PS percept codebook, WS
     # symbol codebook, and the stage-0 analysis store all carry tables
-    # sized to the model's subsymbolicOrder (3 in this fixture).
+    # sized to the model's bindingDepth (3 in this fixture).
     m = _model()
     assert not bool(getattr(m, "mereology_raise", False))
-    so = max(1, int(m.subsymbolicOrder))
+    so = max(1, int(m.bindingDepth))
     ps_cb = m.perceptualSpace.subspace.what
     assert isinstance(ps_cb, Codebook)
     assert ps_cb.ramsification is not None

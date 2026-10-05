@@ -135,7 +135,7 @@ def test_sentence_prediction_uses_root_slot_only():
     concept_dim = 12
     p, q = 5, 2
 
-    discourse = Layers.InterSentenceLayer(
+    discourse = Layers.BracketExpectation(
         n_symbols=n_symbols,
         max_depth=max_depth,
         n_dim=n_dim,

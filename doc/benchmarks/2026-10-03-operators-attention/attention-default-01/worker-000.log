@@ -1,0 +1,182 @@
+.F...................................................................... [ 53%]
+......FF....FFF..FFF.....s..F...FFF...........................           [100%]
+=================================== FAILURES ===================================
+__________________ test_no_flag_model_allocates_ps_ws_tables ___________________
+test/test_abstraction_order_canonical.py:125: in test_no_flag_model_allocates_ps_ws_tables
+    so = max(1, int(m.subsymbolicOrder))
+                    ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'subsymbolicOrder'
+_________ test_smaller_codebook_checkpoint_prefix_expands_all_aliases __________
+test/test_aligned_capacity_checkpoint_growth.py:103: in test_smaller_codebook_checkpoint_prefix_expands_all_aliases
+    assert count == len(expected_prefix)
+E   AssertionError: assert 0 == 10
+E    +  where 10 = len({'conceptualSpaces.0.layers.0.W': tensor([[-0.5544, -1.0000, -0.7698],\n        [-1.0000, -0.6113, -0.0953],\n        [-...1985,  0.1996,  1.0000]]), 'conceptualSpaces.0.layers.0.vq._b_norms_sq': tensor([1.9000, 1.3828, 1.9932, 1.0792]), ...})
+___ test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary ____
+test/test_aligned_capacity_checkpoint_growth.py:156: in test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary
+    assert model._expand_aligned_codebook_checkpoint_state(
+E   AssertionError: assert 0 > 0
+E    +  where 0 = _expand_aligned_codebook_checkpoint_state({'conceptualSpaces.0.layers.0.W': tensor([[ 0.7461,  0.6228,  1.0000],\n        [ 0.1811, -1.0000,  0.7588],\n        [ ...2669, -0.1233, -1.0000]]), 'conceptualSpaces.0.layers.0.vq._b_norms_sq': tensor([1.9446, 1.6086, 1.9986, 1.0865]), ...}, {'conceptualSpaces.0.layers.0.W': tensor([[ 0.7461,  0.6228,  1.0000],\n        [ 0.1811, -1.0000,  0.7588],\n        [ ...eptualSpaces.0.layers.0.vq._b_norms_sq': tensor([1.9446, 1.6086, 1.9986, 1.0865, 1.0163, 1.2381, 1.5953, 1.2876]), ...})
+E    +    where _expand_aligned_codebook_checkpoint_state = BaseModel(\n  (conceptualSpaces): ModuleList(\n    (0-2): 3 x _ConceptHost(\n      (layers): ModuleList(\n        (0): Cod...rQuantize()\n        )\n      )\n      (similarity_codebook): Codebook(\n        (vq): VectorQuantize()\n      )\n    )\n  )\n)._expand_aligned_codebook_checkpoint_state
+___ test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation ___
+test/test_aligned_capacity_checkpoint_growth.py:448: in test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation
+    assert codebooks == [cs_cb]
+E   assert [] == [Codebook(\n  ...rQuantize()\n)]
+E     
+E     Right contains one more item: Codebook(\n  (vq): VectorQuantize()\n)
+E     Use -v to get more diff
+______ test_logical_growth_detects_prefix_drift_before_mutating_any_mask _______
+test/test_aligned_capacity_checkpoint_growth.py:475: in test_logical_growth_detects_prefix_drift_before_mutating_any_mask
+    codebooks[0].vq.set_active_rows(2)
+    ^^^^^^^^^^^^
+E   IndexError: list index out of range
+____________ test_resync_covers_restored_concept_allocator_next_id _____________
+test/test_aligned_capacity_checkpoint_growth.py:501: in test_resync_covers_restored_concept_allocator_next_id
+    assert model._resync_aligned_active_codebooks() == 8
+E   assert None == 8
+E    +  where None = _resync_aligned_active_codebooks()
+E    +    where _resync_aligned_active_codebooks = BaseModel(\n  (conceptualSpaces): ModuleList(\n    (0): _ConceptHost(\n      (layers): ModuleList(\n        (0): Codebook(...rQuantize()\n        )\n      )\n      (similarity_codebook): Codebook(\n        (vq): VectorQuantize()\n      )\n    )\n  )\n)._resync_aligned_active_codebooks
+_________ test_allocator_square_growth_moves_only_the_everything_bias __________
+test/test_aligned_capacity_checkpoint_growth.py:578: in test_allocator_square_growth_moves_only_the_everything_bias
+    model._restore_allocator_extras(cs, _allocator_blob(old_n))
+bin/Models.py:4220: in _restore_allocator_extras
+    raise ValueError('ConceptAllocator store shape mismatch')
+E   ValueError: ConceptAllocator store shape mismatch
+_______ test_allocator_partitioned_growth_fails_instead_of_rekeying_rows _______
+test/test_aligned_capacity_checkpoint_growth.py:597: in test_allocator_partitioned_growth_fails_instead_of_rekeying_rows
+    with pytest.raises(ValueError, match="partitioned row map"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'partitioned row map'
+E     Actual message: 'ConceptAllocator store shape mismatch'
+________________ test_basicmodel_selects_three_folds_per_tower _________________
+test/test_aligned_fold_binding.py:56: in test_basicmodel_selects_three_folds_per_tower
+    assert int(arch.findtext("subsymbolicOrder")) - 1 == 3
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+____ TestAnalyseMigration.test_meronomy_synthesis_owns_full_surface_lexing _____
+test/test_analyse_chunking_forward.py:132: in test_meronomy_synthesis_owns_full_surface_lexing
+    lexicon = [t for t in self._tokens("meronomy", lexer="word")[0] if t]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_analyse_chunking_forward.py:116: in _tokens
+    model, _cfg = BaseModel.from_config(config_path=path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1834: in create_from_config
+    init_config(path=config_path, defaults_path=defaults_path)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmphxs0ib36/mm_analyse_test.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmphxs0ib36/mm_analyse_test.xml:4: element subsymbolicOrder: Schemas validity error : Element 'subsymbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmphxs0ib36/mm_analyse_test.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______ test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0] _______
+test/test_arithmetic_isolation.py:98: in test_numeric_and_renamed_sentence_paths_keep_oracles_out
+    model = _native_answer_model(tmp_path, True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1839: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:23879: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - flat-slab invariant violated: PS.nOutput*content (8*128=1088) must equal CS.nOutput*content (8*264=2112), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 8x136, WS 8x136, and CS input 8x264 -> output 8x264; IS may be larger (PS scopes the input down).
+_______ test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1] _______
+test/test_arithmetic_isolation.py:98: in test_numeric_and_renamed_sentence_paths_keep_oracles_out
+    model = _native_answer_model(tmp_path, True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1839: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:23879: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - flat-slab invariant violated: PS.nOutput*content (8*128=1088) must equal CS.nOutput*content (8*264=2112), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 8x136, WS 8x136, and CS input 8x264 -> output 8x264; IS may be larger (PS scopes the input down).
+_____ test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes _____
+test/test_arithmetic_isolation.py:119: in test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+    model = _native_answer_model(tmp_path, True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6531: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1839: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:23879: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - flat-slab invariant violated: PS.nOutput*content (8*128=1088) must equal CS.nOutput*content (8*264=2112), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 8x136, WS 8x136, and CS input 8x264 -> output 8x264; IS may be larger (PS scopes the input down).
+=============================== warnings summary ===============================
+test/test_abstraction_order_canonical.py::test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_attention_promotion.py:231: UserWarning: Space ownership migration: removed 102 duplicate alias checkpoint keys.
+    assert target.load_weights(path, require_match=True)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables
+FAILED test/test_aligned_capacity_checkpoint_growth.py::test_smaller_codebook_checkpoint_prefix_expands_all_aliases
+FAILED test/test_aligned_capacity_checkpoint_growth.py::test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary
+FAILED test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation
+FAILED test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_detects_prefix_drift_before_mutating_any_mask
+FAILED test/test_aligned_capacity_checkpoint_growth.py::test_resync_covers_restored_concept_allocator_next_id
+FAILED test/test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias
+FAILED test/test_aligned_capacity_checkpoint_growth.py::test_allocator_partitioned_growth_fails_instead_of_rekeying_rows
+FAILED test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower
+FAILED test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing
+FAILED test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]
+FAILED test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]
+FAILED test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+13 failed, 120 passed, 1 skipped, 3 warnings in 8.18s

@@ -129,10 +129,10 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
     model.grammatical_thoughts = registry
     model.symbolSpace.grammatical_thoughts = registry
     request = registry.form("not", part)
-    from Layers import InterSentenceLayer
+    from Layers import BracketExpectation
     width = request.roles.shape[-1]
-    discourse = InterSentenceLayer(4, 8, width, concept_dim=width, expectation_scope="structured")
-    model.symbolSpace.discourse = discourse
+    discourse = BracketExpectation(4, 8, width, concept_dim=width, expectation_scope="structured")
+    model.symbolSpace.expectation = discourse
     actual = ConceptualMeaning(request.roles, torch.tensor([False, True, False]))
     estimate = MeaningExpectation(request.roles, torch.full((3,), 30.))
     discourse._last_expectation_comparisons[0] = ExpectationComparison(
@@ -155,17 +155,17 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
 
 
 def _anticipating_model():
-    from Layers import InterSentenceLayer
+    from Layers import BracketExpectation
     from test_normal_thought_controller import _catalog_world
     model, registry, memory, part, whole = _catalog_world()
     meaning = registry.form("part", part, whole)
     width = meaning.roles.shape[-1]
     store = TernaryTruthStore(width, capacity=64)
-    discourse = InterSentenceLayer(4, 8, width, concept_dim=width,
+    discourse = BracketExpectation(4, 8, width, concept_dim=width,
                                    expectation_scope="structured")
     discourse._ltm_store = store
     model.symbolSpace.ltm_store = store
-    model.symbolSpace.discourse = discourse
+    model.symbolSpace.expectation = discourse
     model.expectation_policy_weight = .2
     model.expectation_query_budget = 64
     observe(discourse, meaning.roles)
@@ -392,7 +392,7 @@ def test_anticipation_ignores_incoming_staging_and_other_streams():
     perturbed.inputSpace = SimpleNamespace(_ar_embedded_N=torch.full((2, 8, 16), -999.))
     perturbed.symbolSpace.ltm_store.append_meaning(meaning, kind="observation", stream=1)
     perturbed._stage_expectation_queries()
-    after = perturbed.symbolSpace.discourse._inter_last_meaning[0]
+    after = perturbed.symbolSpace.expectation._inter_last_meaning[0]
     torch.testing.assert_close(before.prediction.roles, after.prediction.roles, rtol=0, atol=0)
     assert before.source_occurrences == after.source_occurrences
     assert len(before.policy) == len(after.policy)
@@ -474,17 +474,17 @@ def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, m
         torch.manual_seed(948)
         model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1,
             training_overrides={"reconstructInLoop": False, "sentenceExpectation": enabled, "expectationGain": gain},
-            architecture_overrides={"readingAttention": True})
+            architecture_overrides={"attentionBudget": 32})
         model.eval()
         model._tensor_peer_while_eager = True
         model._chart_compose_per_word = lambda: None
         with torch.no_grad():
             # A nonzero readout makes the snapshot sensitive to content;
             # the zero-init cursor bootstrap alone could hide leaked inputs.
-            model.reading_attention.scorer[-1].weight.fill_(.25)
+            model.answer_attention.scorer[-1].weight.fill_(.25)
             _stage_fullgraph_tensor_peer(model, ["a bicycle has a wheel"])
             if staged:
-                discourse = model.symbolSpace.discourse
+                discourse = model.symbolSpace.expectation
                 observe(discourse, torch.ones(3, discourse.concept_dim))
                 assert discourse.expect_next_meaning() is not None
             cs = model.conceptualSpace
@@ -492,7 +492,7 @@ def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, m
             # is live and nonuniform; use the real staged percepts for scope.
             cs.prime_desire(torch.tensor([0, 1]), valence=1.)
             before_priority = model._assemble_relevance_priority(cs, 0, None, None).clone()
-            model._reading_attention_step(1, cs.stm.snapshot(detach=True), model._staged_in_sub, None)
+            __import__('ModelAttention').stage_input(model)
             before_scope = cs._passback_scope_where.clone()
             out = model._forward_with_compiled_sentence_state(None)
             model._publish_compiled_sentence_state(out)
@@ -503,10 +503,10 @@ def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, m
                         trace._choice_arities.detach().clone(), trace._choice_mask.detach().clone(),
                         model._tensor_pushed_ideas.detach().clone())
             priority = model._assemble_relevance_priority(cs, 0, None, None)
-            model._reading_attention_step(1, cs.stm.snapshot(detach=True), model._staged_in_sub, None)
+            __import__('ModelAttention').stage_input(model)
             scope = cs._passback_scope_where
             assert priority.abs().sum() > 0 and priority.max() > priority.min()
-            assert scope.numel() == 2 and scope[1] > scope[0]
+            assert scope.numel() == 2 and scope.reshape(-1)[1] > scope.reshape(-1)[0]
         snapshots.append(captured +
             (model.conceptualSpace.similarity_codebook.W.clone(),
              model.inputSpace._ar_embedded_N.detach().clone(),

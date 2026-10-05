@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 14/14 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.017351958027575165</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0023590420023538172</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0025950829731300473</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0016649580211378634</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.011266790970694274</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>32.83194825000828</pre></td><td><pre></pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+</pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0005437919753603637</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00038104201667010784</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_review15_measurement_wiring_on_one_ordinary_batch</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>5.9528951669926755</pre></td><td><pre>^^^^^^^
+E     bin/SentenceCompose.py:159: in sentence_pair
+E         step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+E     bin/Models.py:20315: in train_trial
+E         self._sentence_train_step(loss)
+E     doc/benchmarks/2026-10-03-operators-attention/review15_preference_probe.py:74: in stepped
+E         for entry in selected:entry[&#x27;before&#x27;]=scores(entry)
+E                                               ^^^^^^^^^^^^^
+E     .venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+E         return func(*args, **kwargs)
+E                ^^^^^^^^^^^^^^^^^^^^^
+E     _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+E     
+E     entry = {&#x27;module&#x27;: OperationSelectionLayer(
+E       (ops): ModuleList(
+E         (0): _BinaryGrammarOpAdapter(
+E           (gl): ConjunctionLaye...horDotTransformChooser()
+E     ), &#x27;forced&#x27;: tensor([True, True, True, True]), &#x27;depth&#x27;: tensor([2, 2, 2, 2]), &#x27;width&#x27;: 2, ...}
+E     
+E         @torch.no_grad()
+E         def scores(entry):
+E             chooser=entry[&#x27;module&#x27;].chooser
+E     &gt;       bargs,bkwargs=entry[&#x27;score_binary&#x27;];uargs,ukwargs=entry[&#x27;score_unary&#x27;]
+E                           ^^^^^^^^^^^^^^^^^^^^^
+E     E       KeyError: &#x27;score_binary&#x27;
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_preference_probe.py:52: KeyError
+E     ----------------------------- Captured stdout call -----------------------------
+E     [AMP] off (fp32, MODEL_AMP unset or =off)
+E     =============================== warnings summary ===============================
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E         @pytest.mark.slow
+E     
+E     doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E       /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+E         return func(*args, **kwargs)
+E     
+E     -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+E     =========================== short test summary info ============================
+E     FAILED doc/benchmarks/2026-10-03-operators-attention/review15_observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E     1 failed, 4 warnings in 1.71s
+E     
+E   assert 1 == 0</pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.007006166968494654</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.0007283330196514726</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.004240332986228168</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_compose_preference_updates_only_the_winning_departure[False]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.000824499991722405</pre></td><td><pre></pre></td><td><pre></pre></td></tr><tr><td><pre>test/test_review14_contracts.py::test_compose_preference_updates_only_the_winning_departure[True]</pre></td><td><pre>call</pre></td><td><pre>passed</pre></td><td><pre>0.00058245804393664</pre></td><td><pre></pre></td><td><pre></pre></td></tr></table></body></html>

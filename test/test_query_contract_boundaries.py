@@ -13,7 +13,7 @@ from test_cs_symbol_table import _cs
 from test_query_vp_boundaries import _context, _signature
 
 
-def test_exist_executor_limits_native_fact_reads_and_reports_incompleteness(monkeypatch):
+def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatch):
     store = TernaryTruthStore(8)
     store.configure_leaf_index(unfold=lambda idea, limit, **kw: ((7,), 1, True))
     meaning = ConceptualMeaning.from_description(torch.ones(8))
@@ -25,10 +25,10 @@ def test_exist_executor_limits_native_fact_reads_and_reports_incompleteness(monk
         rows.append(index)
         return original(index)
     monkeypatch.setattr(store, 'row', read)
-    result = _signature('exist', 'I1').invoke(
-        _context(_cs(), store=store, max_records=1), meaning)
+    result = _signature('what', 'I1').invoke(
+        _context(_cs(), store=store, max_records=1), replace(meaning, mode='interrogative'))
     assert rows == [0]
-    assert result['support_true'] == pytest.approx(0.2)
+    assert result['value'][0]['trust'] == pytest.approx(0.2)
     assert result['records_scanned'] == 1
     assert 'candidate_limit' in result['incomplete']
 
@@ -56,23 +56,21 @@ def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_eviden
             context, ('sym', concept), ('sym', concept))
 
 
-def test_distinct_lookup_returns_complete_record_and_does_not_admit_observation():
+def test_unified_query_returns_complete_record_and_does_not_admit_observation():
     store = TernaryTruthStore(8)
+    store.configure_leaf_index(unfold=lambda idea, limit, **kw: ((7,), 1, True))
     roles = torch.eye(8)[:3]
     meaning = ConceptualMeaning.from_description(roles)
     row = store.append_meaning(meaning, kind='observation', trust=0.9)
     context = _context(_cs(), store=store)
-    # Only a prior what may bring this row into serial thinking.
-    assert not _signature('lookup', 'I1', 'I2').invoke(context, roles[0], roles[2])['value']
-    context = _context(context.conceptual_space._ThoughtConceptualCapability__space, store=store,
-                       memory=SimpleNamespace(retrieved_frames=lambda **kw: (store.row(row),)))
-    found = _signature('lookup', 'I1', 'I2').invoke(context, roles[0], roles[2])
+    found = _signature('what', 'I1').invoke(context, replace(meaning, mode='interrogative'))
     assert found['result_kind'] == 'set'
     assert found['evidence_kind'] == 'retrieval'
     assert len(found['value']) == 1
     torch.testing.assert_close(found['value'][0]['meaning'].roles, roles)
     assert found['value'][0]['occurrence'] == store.occurrence_of(row)
-    assert _signature('exist', 'I1').invoke(context, meaning)['support_true'] == 0
+    assert found['value'][0]['kind'] == 'observation'
+    assert found['support_true'] == 0  # authority never invents identification evidence
     assert len(store) == 1
 
 

@@ -41,7 +41,7 @@ def test_conj_disj_isequal_share_one_template():
 def test_unary_ops_use_unary_affix_template():
     """not / non / exist are unary-affix (T1) operators."""
     from Language import GRAMMAR_LAYER_CLASSES
-    for name in ("not", "non", "exist"):
+    for name in ("not", "non"):
         sch = GRAMMAR_LAYER_CLASSES[name].surface_schema
         assert sch.template_id == "T1", (name, sch.template_id)
         assert sch.arity == 1

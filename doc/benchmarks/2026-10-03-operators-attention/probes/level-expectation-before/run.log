@@ -1,0 +1,20 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___ test_word_expectation_is_a_trained_distribution_with_one_negative_image ____
+
+    def test_word_expectation_is_a_trained_distribution_with_one_negative_image():
+>       from Layers import BracketExpectation
+E       ImportError: cannot import name 'BracketExpectation' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'MeaningExpectation'?
+
+test/test_one_attention.py:120: ImportError
+_______ test_word_expectation_teacher_forcing_only_reads_earlier_targets _______
+
+    def test_word_expectation_teacher_forcing_only_reads_earlier_targets():
+>       from Layers import BracketExpectation
+E       ImportError: cannot import name 'BracketExpectation' from 'Layers' (/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py). Did you mean: 'MeaningExpectation'?
+
+test/test_one_attention.py:137: ImportError
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_word_expectation_is_a_trained_distribution_with_one_negative_image
+FAILED test/test_one_attention.py::test_word_expectation_teacher_forcing_only_reads_earlier_targets
+2 failed, 17 deselected in 2.00s

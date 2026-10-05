@@ -1,0 +1,1223 @@
+{
+  "kind": "mechanism check, not a gate",
+  "batch": [
+    "a b c d e",
+    "f g h i j"
+  ],
+  "seed": 613,
+  "seed_source": "unchanged original chooser fixture",
+  "cost_override": false,
+  "training_batches": 1,
+  "compose_score_function_steps": [
+    {
+      "step": 0,
+      "epoch": 0,
+      "sentence": 0,
+      "owner_step": 2,
+      "batch_row": 0,
+      "departed": true,
+      "C_greedy": 0.48405393958091736,
+      "C_explore": 0.17757786810398102,
+      "advantage": -0.30647605657577515,
+      "action": 20,
+      "action_name": "non",
+      "p_before": 0.1664561629295349,
+      "p_after": 0.16646046936511993,
+      "measured_costs": [
+        0.48405393958091736,
+        0.17757786810398102
+      ],
+      "round": 50,
+      "p_forward": 0.1664561629295349,
+      "logit_gradient": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.004252834245562553,
+        0.004252317361533642,
+        -0.0212615504860878,
+        0.004250908736139536,
+        0.004258907865732908,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0042465790174901485
+      ],
+      "expected_gradient": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.004252833779901266,
+        0.0042523168958723545,
+        -0.02126154862344265,
+        0.004250908270478249,
+        0.004258907400071621,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0042465790174901485
+      ],
+      "gradient_max_error": 1.862645149230957e-09,
+      "finite_difference": {
+        "logit": 20,
+        "epsilon": 0.0001,
+        "numeric": -0.02126154928044717,
+        "analytic": -0.0212615504860878,
+        "error": 1.2056406289984167e-09
+      },
+      "eligible_alternatives": 1
+    },
+    {
+      "step": 1,
+      "epoch": 0,
+      "sentence": 0,
+      "owner_step": 2,
+      "batch_row": 1,
+      "departed": true,
+      "C_greedy": 0.18007595837116241,
+      "C_explore": 0.4118289351463318,
+      "advantage": 0.23175297677516937,
+      "action": 20,
+      "action_name": "non",
+      "p_before": 0.16660115122795105,
+      "p_after": 0.1666000783443451,
+      "measured_costs": [
+        0.18007595837116241,
+        0.4118289351463318
+      ],
+      "round": 4,
+      "p_forward": 0.16660115122795105,
+      "logit_gradient": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -0.003218144876882434,
+        -0.0032177979592233896,
+        0.01608889549970627,
+        -0.00321672554127872,
+        -0.0032227779738605022,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -0.003213450312614441
+      ],
+      "expected_gradient": [
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.003218144178390503,
+        -0.0032177981920540333,
+        0.01608889549970627,
+        -0.0032167253084480762,
+        -0.0032227777410298586,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.0,
+        -0.003213450312614441
+      ],
+      "gradient_max_error": 6.984919309616089e-10,
+      "finite_difference": {
+        "logit": 20,
+        "epsilon": 0.0001,
+        "numeric": 0.01608889452552597,
+        "analytic": 0.01608889549970627,
+        "error": 9.741802989293724e-10
+      },
+      "eligible_alternatives": 1
+    }
+  ],
+  "chooser_logit_ranges": {
+    "0": {
+      "minimum": -0.1955070197582245,
+      "maximum": 0.09702439606189728,
+      "calls": 62,
+      "nan_count": 0,
+      "positive_infinity_count": 0
+    }
+  },
+  "nonzero_advantage_sentences": 2,
+  "ownership": {
+    "parameters": [
+      {
+        "parameter": "conceptualSpaces.0.concept_parts_layer.features.values",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 30
+      },
+      {
+        "parameter": "conceptualSpaces.0.concept_parts_layer.values",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2
+      },
+      {
+        "parameter": "perceptualSpace._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 512
+      },
+      {
+        "parameter": "perceptualSpace._percept_store.byte_fallback.byte_codebook",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2048
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.5.sigma.layer.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 9
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.5.sigma.layer.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 9
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.5.sigma.layer.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 9
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.5.sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.5.sigma.layer.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 9
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.5.sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "wholeSpaces.0.begins_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.0.ends_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.0.atom_level",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.0._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 72
+      },
+      {
+        "parameter": "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2304
+      },
+      {
+        "parameter": "wholeSpaces.1.begins_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.1.ends_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.1.atom_level",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.1._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 72
+      },
+      {
+        "parameter": "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2304
+      },
+      {
+        "parameter": "wholeSpaces.2.begins_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.2.ends_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.2.atom_level",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.2._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 72
+      },
+      {
+        "parameter": "wholeSpaces.2._owned_bases.what.primitive_properties.members",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2304
+      },
+      {
+        "parameter": "wholeSpaces.3.begins_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.3.ends_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.3.atom_level",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.3._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 72
+      },
+      {
+        "parameter": "wholeSpaces.3._owned_bases.what.primitive_properties.members",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 2304
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_L",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.d",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.raw_U",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._lex_gate.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.0._lex_gate.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.raw_L",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.d",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.raw_U",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._lex_gate.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._lex_gate.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.1._verb_spec.bias",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.raw_L",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.d",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.raw_U",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._lex_gate.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._lex_gate.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._adv_edit.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.2._adv_edit.bias",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_L",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.d",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.raw_U",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._pi.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._lex_gate.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.3._lex_gate.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.26.marker_map.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.26.marker_map.bias",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.26.marker_prior.0.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.26.marker_prior.0.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.26.marker_prior.2.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.syntacticLayer.layers.26.marker_prior.2.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 288
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 80
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.bracket_anchor",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 96
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.space_prior",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 6
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.tool_embedding",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 240
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 2016
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.0.bias",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.bias",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 1
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.operand_order.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 1504
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.copy_order.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 1504
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.chooser.what_projection.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 870
+      },
+      {
+        "parameter": "symbolSpace.subspace.category_embedding.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 280
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.0.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1024
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.0.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 32
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.2.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1792
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.2.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 56
+      },
+      {
+        "parameter": "symbolSpace.languageSpace.generate_policy.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 400
+      },
+      {
+        "parameter": "symbolSpace.languageSpace.generate_policy.bias",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 25
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.4.coefficients",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 576
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.routing_proj.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 896
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.routing_proj.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.routing_proj.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 896
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.routing_proj.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.pi.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.pi.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.pi.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.pi.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.sigma.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.sigma.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.sigma.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.sigma.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.routing_proj.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 896
+      },
+      {
+        "parameter": "conceptualSpaces.2.layers.0.routing_proj.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.pi.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.pi.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.pi.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.pi.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.sigma.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.sigma.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.sigma.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.sigma.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.routing_proj.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 896
+      },
+      {
+        "parameter": "conceptualSpaces.3.layers.0.routing_proj.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.0.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 3584
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.0.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 32
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.2.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 512
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.2.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 102
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 41616
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 102
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 5202
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 51
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.0.weight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 3584
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.0.bias",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 32
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.2.weight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 512
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.2.bias",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 16
+      },
+      {
+        "parameter": "inputSpace.outputSpace._readout_bias",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.0.W",
+        "owner": "output",
+        "writers": [],
+        "elements": 128
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.0.biasWeight",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.1.W",
+        "owner": "output",
+        "writers": [],
+        "elements": 128
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.1.biasWeight",
+        "owner": "output",
+        "writers": [],
+        "elements": 128
+      },
+      {
+        "parameter": "answer_attention.space_bias",
+        "owner": "output",
+        "writers": [],
+        "elements": 6
+      },
+      {
+        "parameter": "answer_attention.consume_gate",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "answer_attention.scorer.0.weight",
+        "owner": "output",
+        "writers": [],
+        "elements": 64
+      },
+      {
+        "parameter": "answer_attention.scorer.0.bias",
+        "owner": "output",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "answer_attention.scorer.2.weight",
+        "owner": "output",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "answer_attention.scorer.2.bias",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "question_conditioners.16.weight",
+        "owner": "output",
+        "writers": [],
+        "elements": 464
+      },
+      {
+        "parameter": "inputSpace.outputSpace.percept_adapter.raw_L",
+        "owner": "output",
+        "writers": [],
+        "elements": 512
+      },
+      {
+        "parameter": "inputSpace.outputSpace.percept_adapter.d",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "inputSpace.outputSpace.percept_adapter.raw_U",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "inputSpace.outputSpace.percept_adapter.biasWeight",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      }
+    ],
+    "conflicts": 0,
+    "active": 33,
+    "inactive": 124
+  },
+  "source_matched": true
+}

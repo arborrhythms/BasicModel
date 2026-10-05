@@ -204,14 +204,14 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
 @pytest.mark.parametrize('budget', [0, 1, 6, 12, 24])
 @pytest.mark.parametrize('with_expectation', [False, True])
 def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget, with_expectation):
-    from Layers import TernaryTruthStore, InterSentenceLayer
+    from Layers import TernaryTruthStore, BracketExpectation
     model, registry, memory, part, whole = _catalog_world()
     model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=32)
     question = registry.form('part', part, whole)
     if with_expectation:
         from test_sentence_expectation import observe
-        discourse = InterSentenceLayer(4, 8, 8, concept_dim=8, expectation_scope='structured')
-        model.symbolSpace.discourse = discourse
+        discourse = BracketExpectation(4, 8, 8, concept_dim=8, expectation_scope='structured')
+        model.symbolSpace.expectation = discourse
         observe(discourse, question.roles)
         observe(discourse, question.roles)
     for _ in range(4):

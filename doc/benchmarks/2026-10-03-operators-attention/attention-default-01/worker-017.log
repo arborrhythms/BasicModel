@@ -1,0 +1,330 @@
+.....................EEEEEEEEEEEEEEEEEE................................. [ 50%]
+.....................................Fsssssssss.......................   [100%]
+==================================== ERRORS ====================================
+____________ ERROR at setup of test_grammar_golden[0-S -> true(S)] _____________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+____________ ERROR at setup of test_grammar_golden[1-S -> false(S)] ____________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+_____________ ERROR at setup of test_grammar_golden[2-S -> non(S)] _____________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+_______ ERROR at setup of test_grammar_golden[3-S -> conjunction(S, S)] ________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+_______ ERROR at setup of test_grammar_golden[4-S -> disjunction(S, S)] ________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+____________ ERROR at setup of test_grammar_golden[5-S -> what(S)] _____________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+____________ ERROR at setup of test_grammar_golden[6-S -> where(S)] ____________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+____________ ERROR at setup of test_grammar_golden[7-S -> when(S)] _____________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+__________ ERROR at setup of test_grammar_golden[8-S -> query(S, S)] ___________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+___________ ERROR at setup of test_grammar_golden[9-S -> swap(S, S)] ___________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+_________ ERROR at setup of test_grammar_golden[10-S -> equals(S, S)] __________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+____________ ERROR at setup of test_grammar_golden[11-S -> not(S)] _____________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+__________ ERROR at setup of test_grammar_golden[12-S -> part(S, S)] ___________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+______ ERROR at setup of test_grammar_golden[13-S -> intersection(S, S)] _______
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+__________ ERROR at setup of test_grammar_golden[14-S -> join(S, S)] ___________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+__________ ERROR at setup of test_grammar_golden[15-S -> lower(S, S)] __________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+__________ ERROR at setup of test_grammar_golden[16-S -> lift(S, S)] ___________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+_____________ ERROR at setup of test_grammar_rule_table_roundtrip ______________
+test/test_partition_grammar_rewrite.py:62: in grammar
+    return _make_grammar()
+           ^^^^^^^^^^^^^^^
+test/test_partition_grammar_rewrite.py:56: in _make_grammar
+    g.configure(_POST_REWRITE_GRAMMAR)
+bin/Language.py:1236: in configure
+    self._fill_section(self.rules_upward, grammar_dict)
+bin/Language.py:1519: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1687: in _fill_rule_list
+    self._check_operator_availability(rule.method_name, face=face)
+bin/Language.py:1694: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+E   ValueError: true is retired; query content with what or use thought quantize
+=================================== FAILURES ===================================
+_______________ test_runEpoch_dispatches_per_row_reset_per_batch _______________
+test/test_per_row_hard_reset.py:148: in test_runEpoch_dispatches_per_row_reset_per_batch
+    model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
+bin/Models.py:15583: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13507: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13629: in _run_sentence_batch
+    bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3280: in bind
+    return self._bind(args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/inspect.py:3269: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'schedule_context'
+=============================== warnings summary ===============================
+test/test_partition_pos_codebook.py: 5 warnings
+test/test_partition_reconstruction_stack.py: 2 warnings
+test/test_partition_rule_predictor.py: 6 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_partition_pos_codebook.py: 5 warnings
+test/test_partition_reconstruction_stack.py: 2 warnings
+test/test_partition_rule_predictor.py: 6 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_partition_resolve.py::test_symbol_codebook_quantizes_activation_not_what
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> true(S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> false(S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> non(S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> conjunction(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> disjunction(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> what(S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> where(S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> when(S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> query(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> swap(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> equals(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> not(S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> part(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> intersection(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> join(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[15-S -> lower(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_golden[16-S -> lift(S, S)]
+ERROR test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip
+1 failed, 114 passed, 9 skipped, 27 warnings, 18 errors in 10.86s

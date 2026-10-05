@@ -1,0 +1,167 @@
+.......F.....................sssss.................................s..ss [ 54%]
+ssssssssss..................FFFFFFF...............ss.......              [100%]
+=================================== FAILURES ===================================
+___ test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows ___
+test/test_relation_closing.py:79: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+    result = model.forward(model.inputSpace.prepInput(inputs))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22963: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13151: in _lex_embed_stem
+    self._validate_reconstruction_bank()
+bin/Models.py:11752: in _validate_reconstruction_bank
+    raise RuntimeError("tied reconstruction bank was not staged after concept admission")
+E   RuntimeError: tied reconstruction bank was not staged after concept admission
+___________________ test_default_router_wire_serial_is_both ____________________
+test/test_router_fires_per_word.py:198: in test_default_router_wire_serial_is_both
+    model = _make_serial_model()
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpr6_7nz5x.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpr6_7nz5x.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpr6_7nz5x.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+____________ test_serial_words_use_the_shared_operation_layer[both] ____________
+test/test_router_fires_per_word.py:206: in test_serial_words_use_the_shared_operation_layer
+    model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp2qvhn4av.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp2qvhn4av.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp2qvhn4av.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________ test_serial_words_use_the_shared_operation_layer[per-word] __________
+test/test_router_fires_per_word.py:206: in test_serial_words_use_the_shared_operation_layer
+    model = _make_serial_model(router_wire_serial=mode, word_capacity=16)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpv0bdfgr5.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpv0bdfgr5.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpv0bdfgr5.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+__________ test_router_wire_serial_boundary_no_serial_forward_compose __________
+test/test_router_fires_per_word.py:220: in test_router_wire_serial_boundary_no_serial_forward_compose
+    model = _make_serial_model(router_wire_serial="boundary")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpf_rsi8ah.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpf_rsi8ah.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpf_rsi8ah.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+____________ test_router_wire_serial_off_no_serial_forward_compose _____________
+test/test_router_fires_per_word.py:235: in test_router_wire_serial_off_no_serial_forward_compose
+    model = _make_serial_model(router_wire_serial="off")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxjnxzvmo.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxjnxzvmo.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxjnxzvmo.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+______________ test_boundary_generate_gated_by_router_wire_serial ______________
+test/test_router_fires_per_word.py:276: in test_boundary_generate_gated_by_router_wire_serial
+    assert _generate_fires("both") >= 1, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:254: in _generate_fires
+    model = _make_serial_model(router_wire_serial=mode)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_router_fires_per_word.py:90: in _make_serial_model
+    init_config(path=cfg, defaults_path=_DEFAULTS)
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0q_etjax.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0q_etjax.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.
+E   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0q_etjax.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_________________ test_invalid_router_wire_serial_raises_loud __________________
+test/test_router_fires_per_word.py:290: in test_invalid_router_wire_serial_raises_loud
+    with pytest.raises(ValueError, match="routerWireSerial"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'routerWireSerial'
+E     Actual message: "XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpw6q73wbw.xml\n  (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\n/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpw6q73wbw.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\n/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpw6q73wbw.xml fails to validate\nFix the config, or update data/model.xsd if this is a new config element."
+=============================== warnings summary ===============================
+test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows
+FAILED test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]
+FAILED test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]
+FAILED test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose
+FAILED test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose
+FAILED test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial
+FAILED test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud
+8 failed, 103 passed, 20 skipped, 1 warning in 12.80s

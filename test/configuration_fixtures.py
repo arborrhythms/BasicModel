@@ -18,7 +18,7 @@ def parallel_concepts(*, category=False):
     source = source.replace('1024', '64').replace('65536', '512').replace('8192', '512')
     tree = ET.fromstring(source)
     for key, value in {
-        'architecture/symbolicOrder': '3',
+        'architecture/conceptLayers': '4',
         'architecture/categoryCodebook': str(category).lower(),
         'ConceptualSpace/nVectors': '64' if category else '32',
         'WholeSpace/codebook': 'quantize',

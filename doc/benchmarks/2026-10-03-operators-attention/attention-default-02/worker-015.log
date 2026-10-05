@@ -1,0 +1,52 @@
+...........................................F............................ [ 49%]
+.....................s........F....F.................................... [ 99%]
+.                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_native_nonzero_composition_is_bit_identical_at_every_stance _______
+test/test_negative_expectation.py:475: in test_native_nonzero_composition_is_bit_identical_at_every_stance
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1,
+test/test_compiled_word_chunk.py:402: in _tiny_canonical_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+bin/util.py:1937: in _validate_against_schema
+    raise ValueError(
+E   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1578/test_native_nonzero_compositio0/tiny_chunk_model.xml
+E     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1578/test_native_nonzero_compositio0/tiny_chunk_model.xml:93: element readingAttention: Schemas validity error : Element 'readingAttention': This element is not expected.
+E   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1578/test_native_nonzero_compositio0/tiny_chunk_model.xml fails to validate
+E   Fix the config, or update data/model.xsd if this is a new config element.
+_______ test_native_program_captures_the_symbol_band_and_one_field_time ________
+test/test_occurrence_coordinates.py:39: in test_native_program_captures_the_symbol_band_and_one_field_time
+    torch.testing.assert_close(addresses, expected)
+E   AssertionError: The values for attribute 'shape' do not match: torch.Size([3]) != torch.Size([5]).
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+_____ test_input_symbols_keep_their_word_starts_even_when_the_word_repeats _____
+test/test_occurrence_coordinates.py:139: in test_input_symbols_keep_their_word_starts_even_when_the_word_repeats
+    assert len(program.rows) == 5
+E   assert 3 == 5
+E    +  where 3 = len(tensor([0, 0, 1]))
+E    +    where tensor([0, 0, 1]) = AnswerProgram(rows=tensor([0, 0, 1]), word_rows=tensor([0, 0, 1]), activations=tensor([0.7838, 0.7838, 0.2924]), leave...orders=tensor([0, 0, 0]), leaf_evidence=tensor([[0.7838, 0.0000],\n        [0.7838, 0.0000],\n        [0.2924, 0.0000]])).rows
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7130: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1578/test_input_event_time_uses_the0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance
+FAILED test/test_occurrence_coordinates.py::test_native_program_captures_the_symbol_band_and_one_field_time
+FAILED test/test_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats
+3 failed, 141 passed, 1 skipped, 2 warnings in 21.01s

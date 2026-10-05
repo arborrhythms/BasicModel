@@ -25,11 +25,11 @@ def test_shared_grammar_operators_belong_to_the_diagnostic_set():
 
 def test_packed_prediction_teardown_records_each_observation_once(monkeypatch):
     from Models import BasicModel
-    from Layers import InterSentenceLayer
+    from Layers import BracketExpectation
     from reading_fixtures import commit_reading
     from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
-    discourse = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
+    discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
         concept_dim=8, expectation_scope='structured')
     calls = []
     observe = discourse.observe_stm_end_state
@@ -59,7 +59,7 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
         ("<serialWordCapacity>8</serialWordCapacity>", "<serialWordCapacity>16</serialWordCapacity>"),
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
         ("<sentenceExpectation>false</sentenceExpectation>", "<sentenceExpectation>true</sentenceExpectation>"),
-        ("<interLossWeight>0.0</interLossWeight>", "<interLossWeight>0.1</interLossWeight>"),
+        ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
         ("<training>", "<training><teacherReconstruction>true</teacherReconstruction>"),
     ])
     m._tensor_peer_while_eager = True
@@ -72,7 +72,7 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
     had_outputs = m.inputSpace.data.has_supervised_outputs
     m.inputSpace.data.has_supervised_outputs = False
     optimizer = m.getOptimizer(lr=1e-5)
-    disc = m.symbolSpace.discourse
+    disc = m.symbolSpace.expectation
     assert disc is not None and not m.legacy_prediction_enabled
     predictor = list(disc._inter_predictor.parameters())
     observed_predictor_gradient = []
@@ -295,7 +295,14 @@ def test_answer_path_operators_are_independently_owned_and_keep_learning(monkeyp
         model.what((What.supervised(0), What.supervised(1)), batch[0])   # builds the answer path
     model.train()
     optimizer = model.getOptimizer(lr=1e-2)
-    answer_only = list(model.synthesis_parameters())
+    enlisted = list(model.synthesis_parameters())
+    groups = model.objective_parameter_groups(optimizer)
+    output_ids = {id(p) for p in groups['output']}
+    answer_only = [p for p in enlisted if id(p) in output_ids]
+    # The generate chooser is enlisted by synthesis but has one writer:
+    # reconstruction. Output only chooses between already-costed walks.
+    reconstruction_ids = {id(p) for p in groups['reconstruction']}
+    assert {id(p) for p in model.languageSpace.generate_policy.parameters()} <= reconstruction_ids
     assert answer_only
     before = [p.detach().clone() for p in answer_only]
     result, _ = model.runBatch(train=True, batchSize=2, split="train",
@@ -337,7 +344,7 @@ def test_real_intermediate_and_final_ends_have_same_canonical_roles(tmp_path, ea
         try:
             with torch.no_grad():
                 model(model.inputSpace.prepPackedInput(rows))
-            discourse = model.symbolSpace.discourse
+            discourse = model.symbolSpace.expectation
             if i == 0:
                 payload = model._tensor_sentence_roots_live[0, 0].reshape(3, -1)
                 depth = model._tensor_sentence_roots_depth[0, 0]

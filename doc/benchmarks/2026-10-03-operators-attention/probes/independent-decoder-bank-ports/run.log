@@ -1,0 +1,602 @@
+..................F.........s...........s..FFFF....                      [100%]
+=================================== FAILURES ===================================
+________________ test_materialised_idea_follows_the_symbol_rows ________________
+
+    def test_materialised_idea_follows_the_symbol_rows():
+        """A completed answer owns its field; a new reading uses its own words.
+    
+        Exchanging the later input's row staging cannot alter the held answer.
+        Reading those exchanged words produces a distinct field through the same
+        sentence driver. Generation has no reading actions to replay.
+        """
+        from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+        from What import What
+        m = _model()
+        m._tensor_peer_while_eager = True
+        m._chart_compose_per_word = lambda: None
+        m.reconstruct_in_loop = False
+        m.loss.reconstruction_scale = 0.
+        with torch.no_grad():
+            u = _capture_program_probe(m, ["one plus two", "three plus four"])
+            derivation = m._resolve_answer(u, (What.supervised(0), What.supervised(1)))
+            idea0, resolved, sources, targets = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
+            end = m._sentence_end_state(None)
+>           assert torch.allclose(idea0, end, atol=1e-4), float((idea0 - end).abs().max())
+E           AssertionError: 0.25500625371932983
+E           assert False
+E            +  where False = <built-in method allclose of type object at 0x10d66d3a0>(tensor([[[ 0.0000e+00,  0.0000e+00, -8.5374e-02,  0.0000e+00, -1.0503e-01,\n           8.1822e-02, -7.4240e-02, -9.7941...e-02,  5.4242e-02,\n          -1.8156e-02, -1.1091e-02,  1.4416e-02,  4.0053e-03, -6.2008e-02,\n           9.3475e-02]]]), tensor([[[ 0.0000e+00,  0.0000e+00, -8.5374e-02,  0.0000e+00, -1.0503e-01,\n           8.1822e-02, -7.4240e-02, -9.7941...e-01,  1.2695e-01,\n           2.1939e-02, -4.9517e-02,  1.6937e-01,  1.0494e-02, -1.5826e-01,\n          -5.4191e-02]]]), atol=0.0001)
+E            +    where <built-in method allclose of type object at 0x10d66d3a0> = torch.allclose
+
+test/test_output_walk.py:482: AssertionError
+_ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1461ca3f0>
+unadmitted = False, trailing = False
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        # Independent generation has no compose stamp to replay. Fix one legal
+        # inverse then STOP so this separator proof still checks two emitted words.
+        walk = model._output_generate_walk
+        def two_words(*args, **kwargs):
+            language = model.languageSpace
+            policy = language.generate_policy_logits
+            count = [0]
+            choice = list(language._generate_binary_names).index('sum')
+            def logits(top):
+                value = top.new_full((top.shape[0], language.generate_policy.out_features), -1000.)
+                value[:, choice if count[0] == 0 else -1] = 0.
+                count[0] += 1
+                return value
+            language.generate_policy_logits = logits
+            try:
+                return walk(*args, **kwargs)
+            finally:
+                language.generate_policy_logits = policy
+        monkeypatch.setattr(model, '_output_generate_walk', two_words)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22988: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17198: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21537: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21096: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20239: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20207: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19714: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19683: in _reconstruct_trial
+    greedy, trace = decode(decoder_candidates=True) if training else decode()
+                                                                     ^^^^^^^^
+bin/Models.py:19678: in decode
+    result, trace = self._compiled_reconstruct()(record.root.clone(), record.word_values,
+bin/Models.py:12128: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+bin/Models.py:12054: in _decode_conceptual_sentence
+    return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[[-6.2383e-02,  4.2317e-02, -1.9397e-01, -9.2648e-01, -5.1278e-02,
+          -2.4073e-02, -2.3753e-04, -3.067....0000e+00,  0.0000e+00,  0.0000e+00,
+           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]), 48)
+kwargs = {'basis': tensor([[[ 0.1119, -0.0998,  0.2570, -0.8323,  0.1318, -0.0938, -0.0373,
+          -0.4289,  0.0185, -0.0830... 0.],
+        [2., 2., 0., 0., 0., 0., 0., 0.],
+        [2., 2., 0., 0., 0., 0., 0., 0.]]), 'candidate_limit': 16, ...}
+
+    def two_words(*args, **kwargs):
+        language = model.languageSpace
+        policy = language.generate_policy_logits
+        count = [0]
+>       choice = list(language._generate_binary_names).index('sum')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: 'sum' is not in list
+
+test/test_grammar_separator.py:36: ValueError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14c431010>
+unadmitted = True, trailing = False
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        # Independent generation has no compose stamp to replay. Fix one legal
+        # inverse then STOP so this separator proof still checks two emitted words.
+        walk = model._output_generate_walk
+        def two_words(*args, **kwargs):
+            language = model.languageSpace
+            policy = language.generate_policy_logits
+            count = [0]
+            choice = list(language._generate_binary_names).index('sum')
+            def logits(top):
+                value = top.new_full((top.shape[0], language.generate_policy.out_features), -1000.)
+                value[:, choice if count[0] == 0 else -1] = 0.
+                count[0] += 1
+                return value
+            language.generate_policy_logits = logits
+            try:
+                return walk(*args, **kwargs)
+            finally:
+                language.generate_policy_logits = policy
+        monkeypatch.setattr(model, '_output_generate_walk', two_words)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22988: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17198: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21537: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21096: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20239: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20207: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19714: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19683: in _reconstruct_trial
+    greedy, trace = decode(decoder_candidates=True) if training else decode()
+                                                                     ^^^^^^^^
+bin/Models.py:19678: in decode
+    result, trace = self._compiled_reconstruct()(record.root.clone(), record.word_values,
+bin/Models.py:12128: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+bin/Models.py:12054: in _decode_conceptual_sentence
+    return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[[-2.5161e-02,  2.6864e-01,  2.2554e-01,  6.2711e-01, -5.7551e-02,
+          -6.4743e-01, -1.8297e-01,  3.251....0000e+00,  0.0000e+00,  0.0000e+00,
+           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]), 48)
+kwargs = {'basis': tensor([[[-0.0550,  0.5118,  0.3531,  0.2590, -0.1151, -0.2949, -0.3659,
+          -0.3496,  0.2536,  0.3503... 0., 0., 0.],
+        [2., 0., 0., 0., 0., 0., 0.],
+        [2., 0., 0., 0., 0., 0., 0.]]), 'candidate_limit': 16, ...}
+
+    def two_words(*args, **kwargs):
+        language = model.languageSpace
+        policy = language.generate_policy_logits
+        count = [0]
+>       choice = list(language._generate_binary_names).index('sum')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: 'sum' is not in list
+
+test/test_grammar_separator.py:36: ValueError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False] __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14d07c560>
+unadmitted = False, trailing = True
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        # Independent generation has no compose stamp to replay. Fix one legal
+        # inverse then STOP so this separator proof still checks two emitted words.
+        walk = model._output_generate_walk
+        def two_words(*args, **kwargs):
+            language = model.languageSpace
+            policy = language.generate_policy_logits
+            count = [0]
+            choice = list(language._generate_binary_names).index('sum')
+            def logits(top):
+                value = top.new_full((top.shape[0], language.generate_policy.out_features), -1000.)
+                value[:, choice if count[0] == 0 else -1] = 0.
+                count[0] += 1
+                return value
+            language.generate_policy_logits = logits
+            try:
+                return walk(*args, **kwargs)
+            finally:
+                language.generate_policy_logits = policy
+        monkeypatch.setattr(model, '_output_generate_walk', two_words)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22988: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17198: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21537: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21096: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20239: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20207: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19714: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19683: in _reconstruct_trial
+    greedy, trace = decode(decoder_candidates=True) if training else decode()
+                                                                     ^^^^^^^^
+bin/Models.py:19678: in decode
+    result, trace = self._compiled_reconstruct()(record.root.clone(), record.word_values,
+bin/Models.py:12128: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+bin/Models.py:12054: in _decode_conceptual_sentence
+    return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[[ 0.0084,  0.1718, -0.7793, -0.1968,  0.2743, -0.0065, -0.2789,
+           0.1936,  0.0909, -0.3542],
+      ...,
+         [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+           0.0000,  0.0000,  0.0000]]]), 48)
+kwargs = {'basis': tensor([[[ 0.3634, -0.1734, -0.7220,  0.0806,  0.1917, -0.0208, -0.1608,
+          -0.0847,  0.0968, -0.4801... 0.],
+        [2., 2., 0., 0., 0., 0., 0., 0.],
+        [2., 2., 0., 0., 0., 0., 0., 0.]]), 'candidate_limit': 16, ...}
+
+    def two_words(*args, **kwargs):
+        language = model.languageSpace
+        policy = language.generate_policy_logits
+        count = [0]
+>       choice = list(language._generate_binary_names).index('sum')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: 'sum' is not in list
+
+test/test_grammar_separator.py:36: ValueError
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14ce168a0>
+unadmitted = True, trailing = True
+
+    @pytest.mark.parametrize('unadmitted', [False, True])
+    @pytest.mark.parametrize('trailing', [False, True])
+    def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
+        import Models
+        import util
+        from Layers import ShortTermMemory
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        if unadmitted:
+            stage = model._stage_reading_grammar_references
+            def without_first_identity(*args):
+                stage(*args)
+                model.inputSpace._ar_grammar_object_rows[:, 0] = -1
+            monkeypatch.setattr(model, '_stage_reading_grammar_references', without_first_identity)
+        # Independent generation has no compose stamp to replay. Fix one legal
+        # inverse then STOP so this separator proof still checks two emitted words.
+        walk = model._output_generate_walk
+        def two_words(*args, **kwargs):
+            language = model.languageSpace
+            policy = language.generate_policy_logits
+            count = [0]
+            choice = list(language._generate_binary_names).index('sum')
+            def logits(top):
+                value = top.new_full((top.shape[0], language.generate_policy.out_features), -1000.)
+                value[:, choice if count[0] == 0 else -1] = 0.
+                count[0] += 1
+                return value
+            language.generate_policy_logits = logits
+            try:
+                return walk(*args, **kwargs)
+            finally:
+                language.generate_policy_logits = policy
+        monkeypatch.setattr(model, '_output_generate_walk', two_words)
+        pushes, readings, targets = [], [], []
+        push = ShortTermMemory.functional_push_step_masked
+        def observed_push(*args):
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == 'stage_cs_lang':
+                pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            return push(*args)
+        monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
+        commit = model._commit_sentence
+        def observed_commit(state, sid, active, *rest):
+            readings.append(model.reconstruct_grammar_sentence(state, sid, active))
+            return commit(state, sid, active, *rest)
+        monkeypatch.setattr(model, '_commit_sentence', observed_commit)
+        word_cost = model._byte_word_cost
+        def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                          target_bytes, target_valid, ready, *, priming=None):
+            if ready:
+                targets.append(target_bytes.detach().clone())
+            return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
+                             target_bytes, target_valid, ready, priming=priming)
+        monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+        try:
+            texts = ['hello world', 'hello there', 'loving world', 'loving there']
+            if trailing:
+                texts = [text + ' ' for text in texts]
+            with torch.no_grad():
+>               model(model.inputSpace.prepInput(texts))
+
+test/test_grammar_separator.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8273: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22988: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17198: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21537: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21096: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20239: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20207: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19714: in _sentence_path_cost
+    reconstruction = self._reconstruct_trial(record)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19683: in _reconstruct_trial
+    greedy, trace = decode(decoder_candidates=True) if training else decode()
+                                                                     ^^^^^^^^
+bin/Models.py:19678: in decode
+    result, trace = self._compiled_reconstruct()(record.root.clone(), record.word_values,
+bin/Models.py:12128: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+bin/Models.py:12054: in _decode_conceptual_sentence
+    return self._output_generate_walk(self._walk_operand(slots), self._walk_budget(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (tensor([[[-1.4925e-02, -1.5361e-02,  2.4498e-01,  1.0174e+00,  9.6780e-08,
+          -1.1672e+00,  0.0000e+00, -1.225....0000e+00,  0.0000e+00,  0.0000e+00,
+           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]), 48)
+kwargs = {'basis': tensor([[[-0.4420, -0.1696,  0.6230,  0.2548, -0.2759,  0.2909, -0.0356,
+          -0.3055,  0.2549, -0.0501... 0., 0., 0.],
+        [2., 0., 0., 0., 0., 0., 0.],
+        [2., 0., 0., 0., 0., 0., 0.]]), 'candidate_limit': 16, ...}
+
+    def two_words(*args, **kwargs):
+        language = model.languageSpace
+        policy = language.generate_policy_logits
+        count = [0]
+>       choice = list(language._generate_binary_names).index('sum')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: 'sum' is not in list
+
+test/test_grammar_separator.py:36: ValueError
+=============================== warnings summary ===============================
+test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxi92j9fo/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpiypakfyb/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_az6e5qi/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7131: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpbu9yza7j/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]
+5 failed, 44 passed, 2 skipped, 6 warnings in 46.28s

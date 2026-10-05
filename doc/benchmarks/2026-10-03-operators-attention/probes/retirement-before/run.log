@@ -1,0 +1,147 @@
+FFFFFFFFFFF..                                                            [100%]
+=================================== FAILURES ===================================
+______ test_binary_symbolize_has_no_class_export_or_dispatch_registration ______
+
+    def test_binary_symbolize_has_no_class_export_or_dispatch_registration():
+        import Language
+        import Layers
+>       assert not hasattr(Language, 'SymbolizeLayer')
+E       AssertionError: assert not True
+E        +  where True = hasattr(<module 'Language' from '/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py'>, 'SymbolizeLayer')
+
+test/test_symbolize_layer.py:14: AssertionError
+___________ test_binary_symbolize_is_rejected_in_every_face[compose] ___________
+
+face = 'compose'
+
+    @pytest.mark.parametrize('face', ['compose', 'generate', 'thought'])
+    def test_binary_symbolize_is_rejected_in_every_face(face):
+        from Language import Grammar
+        direction = {'compose': 'forward', 'generate': 'reverse', 'thought': 'thought'}[face]
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_symbolize_layer.py:23: Failed
+__________ test_binary_symbolize_is_rejected_in_every_face[generate] ___________
+
+face = 'generate'
+
+    @pytest.mark.parametrize('face', ['compose', 'generate', 'thought'])
+    def test_binary_symbolize_is_rejected_in_every_face(face):
+        from Language import Grammar
+        direction = {'compose': 'forward', 'generate': 'reverse', 'thought': 'thought'}[face]
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_symbolize_layer.py:23: Failed
+___________ test_binary_symbolize_is_rejected_in_every_face[thought] ___________
+
+face = 'thought'
+
+    @pytest.mark.parametrize('face', ['compose', 'generate', 'thought'])
+    def test_binary_symbolize_is_rejected_in_every_face(face):
+        from Language import Grammar
+        direction = {'compose': 'forward', 'generate': 'reverse', 'thought': 'thought'}[face]
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_symbolize_layer.py:23: Failed
+_______ test_legacy_syntax_does_not_restore_retired_operators[symbolize] _______
+
+name = 'symbolize'
+
+    @pytest.mark.parametrize('name', ['symbolize', 'exist', 'true', 'lookup'])
+    def test_legacy_syntax_does_not_restore_retired_operators(name):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_symbolize_layer.py:32: Failed
+_________ test_legacy_syntax_does_not_restore_retired_operators[exist] _________
+
+name = 'exist'
+
+    @pytest.mark.parametrize('name', ['symbolize', 'exist', 'true', 'lookup'])
+    def test_legacy_syntax_does_not_restore_retired_operators(name):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_symbolize_layer.py:32: Failed
+_________ test_legacy_syntax_does_not_restore_retired_operators[true] __________
+
+name = 'true'
+
+    @pytest.mark.parametrize('name', ['symbolize', 'exist', 'true', 'lookup'])
+    def test_legacy_syntax_does_not_restore_retired_operators(name):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_symbolize_layer.py:32: Failed
+________ test_legacy_syntax_does_not_restore_retired_operators[lookup] _________
+
+name = 'lookup'
+
+    @pytest.mark.parametrize('name', ['symbolize', 'exist', 'true', 'lookup'])
+    def test_legacy_syntax_does_not_restore_retired_operators(name):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_symbolize_layer.py:32: Failed
+______ test_legacy_syntax_does_not_restore_thought_only_compose[quantize] ______
+
+name = 'quantize'
+
+    @pytest.mark.parametrize('name', ['quantize', 'arma'])
+    def test_legacy_syntax_does_not_restore_thought_only_compose(name):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='thought-only'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_symbolize_layer.py:39: Failed
+________ test_legacy_syntax_does_not_restore_thought_only_compose[arma] ________
+
+name = 'arma'
+
+    @pytest.mark.parametrize('name', ['quantize', 'arma'])
+    def test_legacy_syntax_does_not_restore_thought_only_compose(name):
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='thought-only'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_symbolize_layer.py:39: Failed
+___________ test_implementation_alias_cannot_restore_retired_carrier ___________
+
+    def test_implementation_alias_cannot_restore_retired_carrier():
+        from Language import Grammar
+>       with pytest.raises(ValueError, match='retired'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'retired'
+E         Actual message: 'unknown rule implementation: symbolize'
+
+test/test_symbolize_layer.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_symbolize_layer.py::test_binary_symbolize_has_no_class_export_or_dispatch_registration
+FAILED test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[compose]
+FAILED test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[generate]
+FAILED test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[thought]
+FAILED test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[symbolize]
+FAILED test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[exist]
+FAILED test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[true]
+FAILED test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[lookup]
+FAILED test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[quantize]
+FAILED test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[arma]
+FAILED test/test_symbolize_layer.py::test_implementation_alias_cannot_restore_retired_carrier
+11 failed, 2 passed in 2.00s

@@ -1,0 +1,5 @@
+ERROR: not found: /Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py::test_normal_batch_trains_supplied_grammar_lessons
+(no match in any of [<Module test_compiled_word_chunk.py>])
+
+
+no tests ran in 2.07s

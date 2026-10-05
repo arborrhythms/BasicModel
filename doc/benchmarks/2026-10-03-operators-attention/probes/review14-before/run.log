@@ -1,0 +1,219 @@
+FFFFF................................................................... [ 52%]
+.............................s...................................        [100%]
+=================================== FAILURES ===================================
+____________ test_net_evidence_interval_and_detached_native_sources ____________
+
+    def test_net_evidence_interval_and_detached_native_sources():
+        cs, cb, ps, ws, alloc = towers()
+        row = word(cs, [(4,.75),(4,-.25),(7,.25)])
+        cs.add_concept_feature(row, 'ws', 0, .5)
+        cs.add_concept_feature(row, 'ws', 0, -.25)
+        lower = torch.maximum(.5*ps.W[4], .25*ps.W[7])
+        upper = 1-.25*(1-ws.W[0])
+        expected = (.75*lower+.25*upper)
+        result = cb.lookup_rows(row)
+>       torch.testing.assert_close(result[:3], expected)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 3 / 3 (100.0%)
+E       Greatest absolute difference: 0.11249998211860657 at index (1,) (up to 1e-05 allowed)
+E       Greatest relative difference: 0.24324320256710052 at index (1,) (up to 1.3e-06 allowed)
+
+test/test_review14_contracts.py:26: AssertionError
+______ test_against_alone_is_not_negative_form_and_no_wholes_means_lower _______
+
+    def test_against_alone_is_not_negative_form_and_no_wholes_means_lower():
+        cs, cb, ps, ws, alloc = towers()
+        row = word(cs, [(4,.5),(7,-.5)])
+>       torch.testing.assert_close(cb.lookup_rows(row)[:3], .5*ps.W[4])
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 3 / 3 (100.0%)
+E       Greatest absolute difference: 0.20000000298023224 at index (2,) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)
+
+test/test_review14_contracts.py:35: AssertionError
+______ test_room_projection_reports_before_after_and_moves_extremal_rows _______
+
+    def test_room_projection_reports_before_after_and_moves_extremal_rows():
+        cs, cb, ps, ws, alloc = towers()
+        row = word(cs, [(7,1.)])
+        cs.add_concept_feature(row, 'ws', 1, 1.)
+        before_ps, before_ws = ps.W.detach().clone(), ws.W.detach().clone()
+>       report = cb.mereology.project_room(margin=.1)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_review14_contracts.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = MereologicalCodes(), name = 'project_room'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'MereologicalCodes' object has no attribute 'project_room'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ test_pair_pullback_is_parent_only_and_relative_under_product_scaling _____
+
+    def test_pair_pullback_is_parent_only_and_relative_under_product_scaling():
+        bank = torch.tensor([[[.2,.4],[.7,.3]]], requires_grad=True)
+        parent = torch.tensor([[.11,.13]], requires_grad=True)
+        left,right,ok = pair(parent,bank)
+        gradient = torch.autograd.grad((left+2*right).sum(), (parent,bank), allow_unused=True)
+        assert ok.all() and gradient[0].norm()>0
+>       assert gradient[1] is None
+E       assert tensor([[[1.3276, 2.2512],\n         [0.9938, 1.1261]]]) is None
+
+test/test_review14_contracts.py:72: AssertionError
+________________ test_byte_scorer_bank_is_constant_leaf_is_live ________________
+
+    def test_byte_scorer_bank_is_constant_leaf_is_live():
+        from Models import BasicModel
+        bank = torch.tensor([[[.2,.6],[.7,.3]]], requires_grad=True)
+        leaf = torch.tensor([[.3,.5]], requires_grad=True)
+        owner = SimpleNamespace(_BYTE_ASSIGNMENT_TAU=.1, _readback_percept_width=2)
+>       cost = BasicModel._byte_word_cost(owner, leaf, 0, bank,
+            torch.tensor([[[65,0],[66,0]]]), torch.ones(1,2,2,dtype=torch.bool),
+            torch.tensor([[[65,0]]]), torch.ones(1,1,2,dtype=torch.bool),True)
+
+test/test_review14_contracts.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(_BYTE_ASSIGNMENT_TAU=0.1, _readback_percept_width=2)
+idea = tensor([[0.3000, 0.5000]], requires_grad=True), word = 0
+bank_n = tensor([[[0.2000, 0.6000],
+         [0.7000, 0.3000]]], grad_fn=<WhereBackward0>)
+bank_bytes = tensor([[[65,  0],
+         [66,  0]]])
+bank_valid = tensor([[[ True, False],
+         [ True, False]]])
+target_bytes = tensor([[[65,  0]]]), target_valid = tensor([[[True, True]]])
+ready = True, priming = tensor([[1., 1.]])
+
+    def _byte_word_cost(self, idea, word, bank_n, bank_bytes, bank_valid,
+                        target_bytes, target_valid, ready, *, priming=None):
+        """``[B]`` byte/end-of-word cross entropy of a recovered word idea.
+    
+        A derived concept row carries its native perceptual fold. The lexical
+        read-back matches that fold to a row whose surface is its bytes: the decoder's
+        candidates are the rows of the brick's staged dictionary snapshot
+        (``bank_n``, every word and object row the brick staged, with a
+        null candidate of similarity 0 and uniform scoring symbols so a one-word
+        brick, a zero idea or an idea near no row cannot score zero by
+        having nothing to choose between). Score byte values 0..255, including
+        the token's first NUL terminator (0), to distinguish a word from a
+        longer word with the same prefix. No extra scoring category is added.
+        Derived-code logits are absolute perceptual cosine × priming /
+        temperature. Other dictionaries retain activation × cosine.
+        The target byte's log mass sums only candidates emitting that byte,
+        plus the null column's uniform byte mass; the normalizer sums every
+        candidate and the null column. Both sums stay in log space. Thus a
+        wrong winner cannot erase reconstruction credit through underflow or
+        a probability floor. Gradients reach the idea, tied inverses and all
+        candidate codes; surface bytes and priming weights are constants.
+        """
+        B, L, C = (int(size) for size in bank_bytes.shape)
+        W, P = int(target_bytes.shape[1]), int(target_bytes.shape[2])
+        if not ready or P == 0:
+            return idea.new_zeros(B)
+        present = bank_valid.any(dim=-1)                                 # [B, L]
+        # Packing may place the same sentence's candidates in different
+        # columns. Compact them stably before the dot products and softmax,
+        # preserving the fixed bank capacity and the candidates' order.
+        columns = torch.arange(L, device=bank_n.device).expand(B, L)
+        compact = torch.argsort(columns + (~present).to(columns.dtype) * L, dim=1)
+        bank_n = bank_n.gather(1, compact[:, :, None].expand_as(bank_n))
+        bank_bytes = bank_bytes.gather(1, compact[:, :, None].expand_as(bank_bytes))
+        bank_valid = bank_valid.gather(1, compact[:, :, None].expand_as(bank_valid))
+        present = present.gather(1, compact)
+        bank_n = torch.where(present[:, :, None], bank_n, torch.zeros_like(bank_n))
+        # a symbol's value is its signed activation and its identity its
+        # row: the snap reads the row regardless of the sign
+        from SentenceUnderstanding import readback_scores
+        priming = (torch.ones_like(present, dtype=idea.dtype) if priming is None
+                   else priming.gather(1, compact))
+        # Inductor reassociates float32 reductions/reciprocals in the dot,
+        # norm and cosine. Large activation logits magnify those roundoff
+        # differences before normalization. Accumulate the score and log
+        # masses in double where supported, then return the input dtype.
+        score_dtype = (torch.float64 if idea.device.type != 'mps'
+                       and idea.dtype in (torch.float16, torch.bfloat16, torch.float32)
+                       else idea.dtype)
+        sim = readback_scores(idea.to(score_dtype), bank_n.to(score_dtype),
+                              priming.to(score_dtype),
+                              percept_width=getattr(self, '_readback_percept_width', None))
+        sim = sim / self._BYTE_ASSIGNMENT_TAU
+        # Token buffers terminate at their first NUL, even if a caller's
+        # span includes padding or stale bytes after it.
+        bank_valid = bank_valid & (bank_bytes != 0).to(torch.long).cumprod(-1).bool()
+        sim = torch.where(present, sim, torch.full_like(sim, -1e4))
+        normalizer = torch.logsumexp(
+            torch.cat((sim, sim.new_zeros(B, 1)), dim=-1), dim=-1)
+        positions = torch.arange(P + 1, device=idea.device)
+        bank_end = (torch.where(bank_valid, torch.arange(C, device=idea.device) + 1, 0).amax(-1)
+                    if C else torch.zeros_like(present, dtype=torch.long))
+        bank_eow = positions == bank_end[:, :, None]
+        # Candidate and target windows differ by the retained lookahead byte.
+        # Score only the target's P bytes and its possible word end at P.
+        # Gather through one masked sentinel column. Padding by max(P+1-C, 0)
+        # followed by slicing imposes incompatible shape guards on dynamic P.
+        candidate_positions = positions.clamp(max=C)
+        bank_tokens = F.pad(bank_bytes, (0, 1)).index_select(-1, candidate_positions)
+        bank_tokens = torch.where(bank_eow, torch.zeros_like(bank_tokens), bank_tokens)
+        # Integer padding avoids Inductor's mixed VecMask types when a
+        # boolean cumprod mask is fused across the sentinel boundary on ARM.
+        bank_emits = (F.pad(bank_valid.to(torch.int32), (0, 1)).index_select(-1, candidate_positions).bool()
+                      | bank_eow) & present[:, :, None]
+>       safe = word.clamp(0, W - 1).reshape(1, 1, 1)
+               ^^^^^^^^^^
+E       AttributeError: 'int' object has no attribute 'clamp'
+
+bin/Models.py:12404: AttributeError
+=============================== warnings summary ===============================
+test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7161: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp5lpbrz0w/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7161: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpbhs77q09/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7161: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpfxxgmqx2/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7161: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpmwo09w9a/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources
+FAILED test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower
+FAILED test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows
+FAILED test/test_review14_contracts.py::test_pair_pullback_is_parent_only_and_relative_under_product_scaling
+FAILED test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live
+5 failed, 131 passed, 1 skipped, 6 warnings in 118.23s (0:01:58)

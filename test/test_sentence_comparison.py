@@ -37,6 +37,7 @@ def test_sentence_trials_keep_their_own_perception_pullbacks(tmp_path, monkeypat
         training_overrides={'reconstructInLoop': False})
     model._tensor_peer_while_eager = True
     optimizer = model.getOptimizer(lr=1e-4)
+    model.inputSpace.data.has_supervised_outputs=False
     created, called, versions = [], [], []
     original = SentenceCompose.fork_perception
     def observed(cache):

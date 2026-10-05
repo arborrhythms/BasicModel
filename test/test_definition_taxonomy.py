@@ -139,7 +139,7 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
     from Layers import TernaryTruthStore
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('part', 'cat', ('verb', 'chases', 'mouse')))
+    clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))
     assert clause.refs[2] == ('clause', 0)
     if invalid == 'width':
         child = clause.children[0]

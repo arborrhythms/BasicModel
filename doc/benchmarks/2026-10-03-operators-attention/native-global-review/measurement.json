@@ -1,0 +1,25 @@
+{
+  "config": "data/MM_global.xml",
+  "source_geometry": "unchanged shipped XML",
+  "seed": null,
+  "output_shape": [
+    4,
+    1,
+    1
+  ],
+  "spent": [
+    5,
+    5,
+    5,
+    5
+  ],
+  "budget": 32,
+  "reader_gradients": {
+    "space_bias": 1.4049547303329746e-07,
+    "consume_gate": 0.0007321914890781045,
+    "scorer.0.weight": 1.9438798517512623e-06,
+    "scorer.0.bias": 5.917135581512412e-07,
+    "scorer.2.weight": 1.1270068398516742e-06,
+    "scorer.2.bias": 2.7720892248339624e-10
+  }
+}

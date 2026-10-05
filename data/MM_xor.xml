@@ -5,7 +5,7 @@
        Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
        but scaled to XOR-sized dims. -->
   <architecture>
-    <subsymbolicOrder>3</subsymbolicOrder>
+    <bindingDepth>3</bindingDepth>
     <data>
       <dataType>embedding</dataType>
     </data>
@@ -15,7 +15,7 @@
          at once. Serial / per-word mode iterates the cascade with a
          single position per call (the cascade then passes through as
          a no-op). -->
-    <symbolicOrder>0</symbolicOrder>
+    <conceptLayers>1</conceptLayers>
 
     <training>
       <numEpochs>400</numEpochs>

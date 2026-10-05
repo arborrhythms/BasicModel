@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "doc/benchmarks/2026-10-03-operators-attention/forecast_trial_probe.py",
+    "test/test_negative_expectation.py",
+    "test/test_sentence_prediction_trials.py",
+    "test/test_sentence_compose.py",
+    "test/test_expectation_retention.py",
+    "test/test_walk_trials.py",
+    "test/test_word_admission.py",
+    "test/test_stream_dataset.py"
+  ],
+  "pid": 6415,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 948277088,
+  "elapsed_seconds": 62.44385112499003,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/anticipation-pair-after/run.log"
+}

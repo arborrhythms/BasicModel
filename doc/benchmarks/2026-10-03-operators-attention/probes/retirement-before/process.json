@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_symbolize_layer.py"
+  ],
+  "pid": 91019,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 426099984,
+  "elapsed_seconds": 3.603002750023734,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/retirement-before/run.log"
+}

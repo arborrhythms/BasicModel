@@ -3,11 +3,11 @@ import copy
 
 import torch
 
-from Layers import InterSentenceLayer
+from Layers import BracketExpectation
 
 
 def layer():
-    return InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=4,
+    return BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
         concept_dim=4, expectation_scope='structured')
 
 

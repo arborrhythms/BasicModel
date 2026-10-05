@@ -1,0 +1,1157 @@
+.....F...........FFFFFFFFFFFF.FFFF.s.FFFFFssF                            [100%]
+=================================== FAILURES ===================================
+_____ test_normal_field_answer_reaches_every_binding_and_keeps_first_word ______
+
+    def test_normal_field_answer_reaches_every_binding_and_keeps_first_word():
+        from test_mm_xor import _fresh_model
+>       model,_,_= _fresh_model()
+                   ^^^^^^^^^^^^^^
+
+test/test_one_attention.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:40: in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6527: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6547: in create
+    return self._create_per_stage(
+bin/Models.py:16439: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13844: in __init__
+    self.subspace = SymbolSubSpace(
+bin/Language.py:9550: in __init__
+    self.ensure_sentence_expectation()
+bin/Language.py:11913: in ensure_sentence_expectation
+    discourse = BracketExpectation(**self._expectation_options)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=98, out_features=28, bias=True)
+    (1): Ta...tures=98, out_features=28, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=28, out_features=14, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___ test_word_expectation_is_a_trained_distribution_with_one_negative_image ____
+
+    def test_word_expectation_is_a_trained_distribution_with_one_negative_image():
+        from Layers import BracketExpectation
+>       layer=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4,p=2,q=1)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_one_attention.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=12, out_features=8, bias=True)
+    (1): Tan...features=12, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ test_word_expectation_teacher_forcing_only_reads_earlier_targets _______
+
+    def test_word_expectation_teacher_forcing_only_reads_earlier_targets():
+        from Layers import BracketExpectation
+>       layer=BracketExpectation(n_symbols=4,max_depth=4,n_dim=4,concept_dim=4,p=2,q=1)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_one_attention.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=12, out_features=8, bias=True)
+    (1): Tan...features=12, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________ test_np1_fixed_other_roles_change_prediction[1-False] _____________
+
+consolidated = False, role = 1
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    @pytest.mark.parametrize("role", [1, 2])
+    def test_np1_fixed_other_roles_change_prediction(consolidated, role):
+>       a = layer(consolidated=consolidated)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_sentence_expectation.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____________ test_np1_fixed_other_roles_change_prediction[1-True] _____________
+
+consolidated = True, role = 1
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    @pytest.mark.parametrize("role", [1, 2])
+    def test_np1_fixed_other_roles_change_prediction(consolidated, role):
+>       a = layer(consolidated=consolidated)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_sentence_expectation.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________ test_np1_fixed_other_roles_change_prediction[2-False] _____________
+
+consolidated = False, role = 2
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    @pytest.mark.parametrize("role", [1, 2])
+    def test_np1_fixed_other_roles_change_prediction(consolidated, role):
+>       a = layer(consolidated=consolidated)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_sentence_expectation.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____________ test_np1_fixed_other_roles_change_prediction[2-True] _____________
+
+consolidated = True, role = 2
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    @pytest.mark.parametrize("role", [1, 2])
+    def test_np1_fixed_other_roles_change_prediction(consolidated, role):
+>       a = layer(consolidated=consolidated)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_sentence_expectation.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___________ test_padding_and_legacy_operand_orientation_are_explicit ___________
+
+    def test_padding_and_legacy_operand_orientation_are_explicit():
+>       a, b, c = layer(), layer(), layer()
+                  ^^^^^^^
+
+test/test_sentence_expectation.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ test_document_change_is_cold_preserves_scored_loss_and_other_row _______
+
+    def test_document_change_is_cold_preserves_scored_loss_and_other_row():
+>       model = layer(batch=2)
+                ^^^^^^^^^^^^^^
+
+test/test_sentence_expectation.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ test_full_role_loss_trains_predictor_but_never_source_or_target ________
+
+    def test_full_role_loss_trains_predictor_but_never_source_or_target():
+>       model = layer()
+                ^^^^^^^
+
+test/test_sentence_expectation.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________ test_streaming_and_packed_boundary_use_same_full_roles[False] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1452afc80>
+consolidated = False
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolidated):
+        from Models import BasicModel as Model
+        from reading_fixtures import finish_reading
+        from test_clause_acceptance import SentenceFixture
+        f = SentenceFixture(monkeypatch)
+        entries = [f.program(('lift', 'cat', ('verb', verb, obj)))
+                   for verb, obj in (('chases', 'mouse'), ('catches', 'bird'))]
+        meanings = [finish_reading(f.language, entry, registry=f.registry).meaning
+                    for entry in entries]
+        torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
+        assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
+>       packed = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
+            concept_dim=8, expectation_scope='structured')
+
+test/test_sentence_expectation.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=56, out_features=16, bias=True)
+    (1): Ta...atures=56, out_features=16, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=16, out_features=8, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ test_streaming_and_packed_boundary_use_same_full_roles[True] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x144e0fec0>
+consolidated = True
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolidated):
+        from Models import BasicModel as Model
+        from reading_fixtures import finish_reading
+        from test_clause_acceptance import SentenceFixture
+        f = SentenceFixture(monkeypatch)
+        entries = [f.program(('lift', 'cat', ('verb', verb, obj)))
+                   for verb, obj in (('chases', 'mouse'), ('catches', 'bird'))]
+        meanings = [finish_reading(f.language, entry, registry=f.registry).meaning
+                    for entry in entries]
+        torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
+        assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
+>       packed = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
+            concept_dim=8, expectation_scope='structured')
+
+test/test_sentence_expectation.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=56, out_features=16, bias=True)
+    (1): Ta...atures=56, out_features=16, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=16, out_features=8, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____ test_restore_keeps_weights_and_durable_memory_but_starts_context_cold _____
+
+    def test_restore_keeps_weights_and_durable_memory_but_starts_context_cold():
+>       model = layer()
+                ^^^^^^^
+
+test/test_sentence_expectation.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________________ test_nonfinite_scored_role_error_is_rejected _________________
+
+    def test_nonfinite_scored_role_error_is_rejected():
+>       model = layer()
+                ^^^^^^^
+
+test/test_sentence_expectation.py:169: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___ test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration ___
+
+    def test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration():
+>       old = BracketExpectation(
+            n_symbols=4, max_depth=8, n_dim=4, concept_dim=4)
+
+test/test_sentence_expectation.py:176: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed __________
+
+    def test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed():
+        from Models import BasicModel
+    
+>       disc = layer(consolidated=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_sentence_expectation.py:192: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+__________________ test_new_document_is_reset_before_forward ___________________
+
+    def test_new_document_is_reset_before_forward():
+        from Models import BasicModel
+    
+>       disc = layer()
+               ^^^^^^^
+
+test/test_sentence_expectation.py:201: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_sentence_expectation.py:18: in layer
+    result = BracketExpectation(
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ test_real_provisioning_is_not_an_external_prediction_stream __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x145407110>
+
+    def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch):
+        from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
+    
+>       model = _make_model(_SERIAL_CONFIG)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_sentence_expectation.py:245: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_ltm_consolidation.py:52: in _make_model
+    m, _ = Models.BasicModel.from_config(config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6527: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6547: in create
+    return self._create_per_stage(
+bin/Models.py:16439: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13844: in __init__
+    self.subspace = SymbolSubSpace(
+bin/Language.py:9550: in __init__
+    self.ensure_sentence_expectation()
+bin/Language.py:11913: in ensure_sentence_expectation
+    discourse = BracketExpectation(**self._expectation_options)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=98, out_features=28, bias=True)
+    (1): Ta...tures=98, out_features=28, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=28, out_features=14, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ test_truth_ingestion_preserves_all_external_row_contexts_and_losses ______
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_truth_ingestion_preserves_all_external_row_contexts_and_losses():
+        from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
+    
+>       model = _make_model(_SERIAL_CONFIG)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_sentence_expectation.py:267: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_ltm_consolidation.py:52: in _make_model
+    m, _ = Models.BasicModel.from_config(config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1809: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6527: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1909: in create_from_config
+    self.create(
+bin/Models.py:6547: in create
+    return self._create_per_stage(
+bin/Models.py:16439: in _create_per_stage
+    self.symbolSpace = SymbolSpace(
+bin/Language.py:13844: in __init__
+    self.subspace = SymbolSubSpace(
+bin/Language.py:9550: in __init__
+    self.ensure_sentence_expectation()
+bin/Language.py:11913: in ensure_sentence_expectation
+    discourse = BracketExpectation(**self._expectation_options)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=98, out_features=28, bias=True)
+    (1): Ta...tures=98, out_features=28, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=28, out_features=14, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________ test_kind_is_supervised_independently_of_role_vectors _____________
+
+    def test_kind_is_supervised_independently_of_role_vectors():
+>       idea = layer()
+               ^^^^^^^
+
+test/test_expectation_kind.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_expectation_kind.py:10: in layer
+    return BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______________ test_kind_preview_and_committed_comparison_agree _______________
+
+    def test_kind_preview_and_committed_comparison_agree():
+>       model = layer()
+                ^^^^^^^
+
+test/test_expectation_kind.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_expectation_kind.py:10: in layer
+    return BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+______ test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind ______
+
+    def test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind():
+>       model = layer()
+                ^^^^^^^
+
+test/test_expectation_kind.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_expectation_kind.py:10: in layer
+    return BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=28, out_features=8, bias=True)
+    (1): Tan...features=28, out_features=8, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=8, out_features=4, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ test_explicit_boundary_retains_factored_roles_and_skips_masked_rows ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x126ff82f0>
+
+    def test_explicit_boundary_retains_factored_roles_and_skips_masked_rows(monkeypatch):
+        from Layers import BracketExpectation
+        from reading_fixtures import commit_reading, finish_reading
+        from test_clause_acceptance import SentenceFixture
+        fixture = SentenceFixture(monkeypatch)
+>       discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
+            concept_dim=8, expectation_scope='structured')
+
+test/test_compiled_expectation_boundary.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:10611: in __init__
+    self.params.extend(list(self.word_predictor.parameters()))
+    ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=56, out_features=16, bias=True)
+    (1): Ta...atures=56, out_features=16, bias=True)
+    (1): Tanh()
+    (2): Linear(in_features=16, out_features=8, bias=True)
+  )
+)
+name = 'params'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BracketExpectation' object has no attribute 'params'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word
+FAILED test/test_one_attention.py::test_word_expectation_is_a_trained_distribution_with_one_negative_image
+FAILED test/test_one_attention.py::test_word_expectation_teacher_forcing_only_reads_earlier_targets
+FAILED test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]
+FAILED test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]
+FAILED test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]
+FAILED test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]
+FAILED test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit
+FAILED test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row
+FAILED test/test_sentence_expectation.py::test_full_role_loss_trains_predictor_but_never_source_or_target
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]
+FAILED test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold
+FAILED test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected
+FAILED test/test_sentence_expectation.py::test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration
+FAILED test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed
+FAILED test/test_sentence_expectation.py::test_new_document_is_reset_before_forward
+FAILED test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream
+FAILED test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses
+FAILED test/test_expectation_kind.py::test_kind_is_supervised_independently_of_role_vectors
+FAILED test/test_expectation_kind.py::test_kind_preview_and_committed_comparison_agree
+FAILED test/test_expectation_kind.py::test_pre_kind_checkpoint_keeps_role_head_and_initializes_only_kind
+FAILED test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows
+23 failed, 19 passed, 3 skipped, 1 warning in 10.99s

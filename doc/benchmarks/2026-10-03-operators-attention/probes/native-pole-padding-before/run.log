@@ -1,0 +1,64 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_native_pole_read_omits_padding_without_changing_evidence _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11060bf50>
+
+    def test_native_pole_read_omits_padding_without_changing_evidence(monkeypatch):
+        from test_mm_xor import _fresh_model
+        from ModelAttention import native_word_poles
+        model, _, _ = _fresh_model()
+        model.eval()
+        with torch.no_grad():
+            model._lex_embed_stem(model.inputSpace.prepInput(['hello world']))
+            forms, _, _, live = model._attention_forms
+            spans = model._attention_spans
+            known = torch.tensor([[bool(form) and model._concept_owner().definitions.word(form=form)
+                                   is not None for form in row] for row in forms]) & live
+            assert known.any()
+            width = int(torch.where(known, torch.arange(known.shape[1])[None]+1, 0).max())
+            reference = native_word_poles(model, spans[:, :width],
+                                         [row[:width] for row in forms], known[:, :width])
+            read = model._concept_owner().cs_read_memberships
+            def bounded(percepts, extents):
+                assert extents.shape[1] == width, 'padded words expanded the native field read'
+                return read(percepts, extents)
+            monkeypatch.setattr(model._concept_owner(), 'cs_read_memberships', bounded)
+>           result = native_word_poles(model, spans, forms, known)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_one_attention.py:423: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/ModelAttention.py:77: in native_word_poles
+    field = owner.cs_read_memberships((ids, positions,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+percepts = (tensor([[1, 2, 3, 3, 4, 5, 6, 4, 7, 3, 8]]), tensor([[[ 0,  1],
+         [ 1,  2],
+         [ 2,  3],
+         [ 3,  ...]]]), PrimitiveProperties(), tensor([[[104, 101, 108,  ...,   0,   0,   0]]]), tensor([[[ 0,  5],
+         [ 6, 11]]]))
+extents = tensor([[[ 0,  5],
+         [ 6, 11],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0]]])
+
+    def bounded(percepts, extents):
+>       assert extents.shape[1] == width, 'padded words expanded the native field read'
+E       AssertionError: padded words expanded the native field read
+E       assert 8 == 2
+
+test/test_one_attention.py:420: AssertionError
+=============================== warnings summary ===============================
+test/test_one_attention.py::test_native_pole_read_omits_padding_without_changing_evidence
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_native_pole_read_omits_padding_without_changing_evidence
+1 failed, 1 warning in 2.21s

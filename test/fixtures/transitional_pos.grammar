@@ -40,7 +40,6 @@
       <rule>REL_T = part.forward(S_PART34, S34)</rule>
 
       <!-- Absolute Truth. -->
-      <rule>ABS_T = exist.forward(S345)</rule>
       <rule>ABS_T = S345</rule>
 
       <!-- Per-operator-position role categories. Each operator-argument
@@ -125,7 +124,6 @@
       <rule>S_PART34, S34 = part.reverse(REL_T)</rule>
 
       <!-- Absolute Truth. -->
-      <rule>S345 = exist.reverse(ABS_T)</rule>
       <rule>S345 = ABS_T</rule>
 
       <!-- Per-operator-position role categories (reverse mirrors of the

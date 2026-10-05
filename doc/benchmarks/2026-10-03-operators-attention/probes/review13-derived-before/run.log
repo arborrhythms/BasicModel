@@ -1,0 +1,106 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+_____ test_code_is_signed_sum_of_lookup_locations_without_a_word_parameter _____
+
+    def test_code_is_signed_sum_of_lookup_locations_without_a_word_parameter():
+>       cs, cb, alloc = fixture()
+                        ^^^^^^^^^
+
+test/test_derived_concept_codes.py:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def fixture():
+>       from MereologicalCodes import MereologicalCodes
+E       ModuleNotFoundError: No module named 'MereologicalCodes'
+
+test/test_derived_concept_codes.py:9: ModuleNotFoundError
+_ test_shared_percept_is_one_lookup_and_group_members_are_independent_locations _
+
+    def test_shared_percept_is_one_lookup_and_group_members_are_independent_locations():
+>       cs, cb, _ = fixture()
+                    ^^^^^^^^^
+
+test/test_derived_concept_codes.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def fixture():
+>       from MereologicalCodes import MereologicalCodes
+E       ModuleNotFoundError: No module named 'MereologicalCodes'
+
+test/test_derived_concept_codes.py:9: ModuleNotFoundError
+_ test_occurrence_context_uses_signed_evidence_recency_and_no_durable_gradient _
+
+    def test_occurrence_context_uses_signed_evidence_recency_and_no_durable_gradient():
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+>       cs, cb, _ = fixture()
+                    ^^^^^^^^^
+
+test/test_derived_concept_codes.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def fixture():
+>       from MereologicalCodes import MereologicalCodes
+E       ModuleNotFoundError: No module named 'MereologicalCodes'
+
+test/test_derived_concept_codes.py:9: ModuleNotFoundError
+_______ test_rows_conduct_to_other_words_without_crossing_batch_streams ________
+
+    def test_rows_conduct_to_other_words_without_crossing_batch_streams():
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+>       cs, cb, _ = fixture()
+                    ^^^^^^^^^
+
+test/test_derived_concept_codes.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def fixture():
+>       from MereologicalCodes import MereologicalCodes
+E       ModuleNotFoundError: No module named 'MereologicalCodes'
+
+test/test_derived_concept_codes.py:9: ModuleNotFoundError
+_______________ test_frozen_lookup_does_not_admit_basis_concepts _______________
+
+    def test_frozen_lookup_does_not_admit_basis_concepts():
+>       cs, cb, alloc = fixture()
+                        ^^^^^^^^^
+
+test/test_derived_concept_codes.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def fixture():
+>       from MereologicalCodes import MereologicalCodes
+E       ModuleNotFoundError: No module named 'MereologicalCodes'
+
+test/test_derived_concept_codes.py:9: ModuleNotFoundError
+_ test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis __
+
+    def test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis():
+        from test_mm_xor import _fresh_model
+        model, _, _ = _fresh_model('data/XOR_grammar.xml')
+        model.train()
+        model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
+        owner = model._concept_owner()
+        cb = owner.similarity_codebook
+>       assert not isinstance(cb.W, nn.Parameter)
+E       AssertionError: assert not True
+E        +  where True = isinstance(Parameter containing:\ntensor([[-0.1297,  0.1598,  0.1975,  0.4803, -0.1013,  0.3233,  0.3865,  0.1723,\n          0.102...0.0348,  0.4473, -0.4341, -0.3097, -0.0313, -0.6004, -0.1399, -0.0261,\n          0.0242,  0.3634]], requires_grad=True), <class 'torch.nn.parameter.Parameter'>)
+E        +    where Parameter containing:\ntensor([[-0.1297,  0.1598,  0.1975,  0.4803, -0.1013,  0.3233,  0.3865,  0.1723,\n          0.102...0.0348,  0.4473, -0.4341, -0.3097, -0.0313, -0.6004, -0.1399, -0.0261,\n          0.0242,  0.3634]], requires_grad=True) = Codebook(\n  (vq): VectorQuantize()\n).W
+E        +    and   <class 'torch.nn.parameter.Parameter'> = nn.Parameter
+
+test/test_derived_concept_codes.py:117: AssertionError
+=============================== warnings summary ===============================
+test/test_derived_concept_codes.py::test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_derived_concept_codes.py::test_code_is_signed_sum_of_lookup_locations_without_a_word_parameter
+FAILED test/test_derived_concept_codes.py::test_shared_percept_is_one_lookup_and_group_members_are_independent_locations
+FAILED test/test_derived_concept_codes.py::test_occurrence_context_uses_signed_evidence_recency_and_no_durable_gradient
+FAILED test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams
+FAILED test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_basis_concepts
+FAILED test/test_derived_concept_codes.py::test_actual_serial_leaf_has_derived_codes_and_reconstruction_owns_the_basis
+6 failed, 1 warning in 2.28s

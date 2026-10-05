@@ -1,4 +1,4 @@
-"""Tests for InterSentenceLayer -- ARMA(p, q) next-sentence predictor.
+"""Tests for BracketExpectation -- ARMA(p, q) next-sentence predictor.
 
 Replaces the pre-2026-05-14 contrastive cosine tests (retired alongside
 ``<maskedPrediction>``).  Within-sentence training is now IR-only;
@@ -14,7 +14,7 @@ Covers:
      keep their pre-ARMA signatures so existing call sites in
      ``runBatch`` still work during the transition.
   4. Integration: building a BasicModel under ``<sentenceExpectation>``
-     wires an ``InterSentenceLayer`` on ``symbolSpace.discourse`` and
+     wires an ``BracketExpectation`` on ``symbolSpace.expectation`` and
      forward() populates ``_current_discourse_s`` for the runBatch
      observe call.
 """
@@ -67,14 +67,14 @@ class _DiscourseTestBase(unittest.TestCase):
 
 
 class TestArmaUnit(_DiscourseTestBase):
-    """Stand-alone InterSentenceLayer (no model) -- ring + loss arithmetic."""
+    """Stand-alone BracketExpectation (no model) -- ring + loss arithmetic."""
 
     def setUp(self):
         self.n_symbols = 4
         self.n_dim = 3
         self.p = 5
         self.q = 2
-        self.layer = Layers.InterSentenceLayer(
+        self.layer = Layers.BracketExpectation(
             n_symbols=self.n_symbols,
             max_depth=2,
             n_dim=self.n_dim,
@@ -189,7 +189,7 @@ class TestBackCompatShims(_DiscourseTestBase):
     """
 
     def setUp(self):
-        self.layer = Layers.InterSentenceLayer(
+        self.layer = Layers.BracketExpectation(
             n_symbols=4, max_depth=2, n_dim=3, p=5, q=2,
             concept_dim=6, batch=1,
         )
@@ -226,11 +226,11 @@ class TestModelIntegration(_DiscourseTestBase):
         try:
             model, _ = Models.BasicModel.from_config(
                 os.path.join(_DATA_DIR, 'MentalModel.xml'))
-            self.assertIsNotNone(model.symbolSpace.discourse)
+            self.assertIsNotNone(model.symbolSpace.expectation)
             self.assertIsInstance(
-                model.symbolSpace.discourse, Layers.InterSentenceLayer)
-            self.assertEqual(model.symbolSpace.discourse.p, 5)
-            self.assertEqual(model.symbolSpace.discourse.q, 2)
+                model.symbolSpace.expectation, Layers.BracketExpectation)
+            self.assertEqual(model.symbolSpace.expectation.p, 5)
+            self.assertEqual(model.symbolSpace.expectation.q, 2)
             self.model = model
         finally:
             TheXMLConfig.set(
@@ -247,6 +247,7 @@ class TestModelIntegration(_DiscourseTestBase):
             config.write_text(source)
             Language.TheGrammar._configured = False
             model, _ = Models.BasicModel.from_config(str(config))
-        self.assertIsNone(model.symbolSpace.discourse)
+        self.assertFalse(model.symbolSpace.expectation.expectation_enabled)
+        self.assertIn("word", model.symbolSpace.expectation.enabled_levels)
         self.assertIsNotNone(model._what_memory())
         self.model = model

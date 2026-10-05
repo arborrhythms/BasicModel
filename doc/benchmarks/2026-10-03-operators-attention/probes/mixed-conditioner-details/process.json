@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "doc/benchmarks/2026-10-03-operators-attention/inspect_carriers_followup.py"
+  ],
+  "pid": 4660,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 1252296672,
+  "elapsed_seconds": 5.676927833002992,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/mixed-conditioner-details/run.log"
+}

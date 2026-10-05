@@ -157,7 +157,7 @@ class _StubModel(Mereology):
         self.wholeSpace = _StubSymbolSpace(event_tensor, threshold)
         self.conceptualSpace = _StubConceptualSpace()
         self.symbolSpace = None
-        self.subsymbolicOrder = n_stages
+        self.bindingDepth = n_stages
 
 
 class TestArea(unittest.TestCase):

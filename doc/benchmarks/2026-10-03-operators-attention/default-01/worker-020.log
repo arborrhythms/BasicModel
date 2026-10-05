@@ -1,0 +1,94 @@
+s.............................F...............................sss....... [ 54%]
+..........FF.F.............ssssssss........................ss            [100%]
+=================================== FAILURES ===================================
+___________ test_complete_grammar_declares_the_general_what_subgoal ____________
+test/test_query_registry.py:24: in test_complete_grammar_declares_the_general_what_subgoal
+    assert {'what', 'lookup'}.issubset(operations)
+E   AssertionError: assert False
+E    +  where False = <built-in method issubset of set object at 0x13d676b20>({'arma', 'equal', 'part', 'quantize', 'what'})
+E    +    where <built-in method issubset of set object at 0x13d676b20> = {'lookup', 'what'}.issubset
+________________ test_saved_roots_follow_operand_unaries[False] ________________
+test/test_readback_operand_unaries.py:59: in test_saved_roots_follow_operand_unaries
+    recovered, _, _, unavailable, _ = inverse(roots, basis)
+                                      ^^^^^^^^^^^^^^^^^^^^^
+test/test_readback_operand_unaries.py:53: in reconstruct
+    return Models.BasicModel._reconstruct_sentences(
+bin/Models.py:12034: in _reconstruct_sentences
+    ready, targets, target_valid = self._byte_tables(B, W)
+                                   ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute '_byte_tables'
+________________ test_saved_roots_follow_operand_unaries[True] _________________
+torch._dynamo.exc.ObservedAttributeError: raised exception AttributeError("'SimpleNamespace' object has no attribute '_byte_tables'")
+
+The above exception was the direct cause of the following exception:
+test/test_readback_operand_unaries.py:59: in test_saved_roots_follow_operand_unaries
+    recovered, _, _, unavailable, _ = inverse(roots, basis)
+                                      ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.Unsupported: Observed exception
+E     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.
+E     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance("force_eager")`. 
+E     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+E   
+E     Developer debug context: raised exception AttributeError("'SimpleNamespace' object has no attribute '_byte_tables'")
+E   
+E    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/test/test_readback_operand_unaries.py", line 53, in reconstruct
+E       return Models.BasicModel._reconstruct_sentences(
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12034, in _reconstruct_sentences
+E       ready, targets, target_valid = self._byte_tables(B, W)
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_____________ test_generation_lesson_merge_keeps_its_sentence_row ______________
+test/test_reader_trial_ownership.py:36: in test_generation_lesson_merge_keeps_its_sentence_row
+    torch.testing.assert_close(values.grad,torch.tensor([0.,2.]))
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 1 / 2 (50.0%)
+E   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)
+E   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)
+=============================== warnings summary ===============================
+test/test_query_phase_permissions.py::test_operand_occurrence_reads_require_permission_before_preparation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1705: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_query_registry.py::test_complete_grammar_declares_the_general_what_subgoal
+FAILED test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[False]
+FAILED test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[True]
+FAILED test/test_reader_trial_ownership.py::test_generation_lesson_merge_keeps_its_sentence_row
+4 failed, 115 passed, 14 skipped, 2 warnings in 8.59s

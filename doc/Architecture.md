@@ -20,8 +20,8 @@ joint learning rule across representation, prediction, thinking and output, see
 > a **symbol** is a SymbolSpace 0-D reference to a concept. The CS "symbol
 > table" is therefore the **Concept codebook** below.
 
-The architecture decomposes into three pieces; the first two run in
-parallel, the third is serial:
+The architecture has three pieces, expressed through one attention mechanism
+(see [One attention](#one-attention-68-1) for the current execution contract):
 
 1. **The mereological towers (and the Concept codebook).** In an LLM the
    mereology is completely subsymbolic — implicit in the weights,
@@ -49,9 +49,8 @@ parallel, the third is serial:
    is therefore a DIRECTION of writes on the one surface, not a second
    mechanism — matching biased competition (Desimone & Duncan: the
    template IS conceptual content) while keeping the two channels'
-   automatic/strategic dissociation distinct (§C). `readingAttention` is
-   HARD-CODED over the same surface: the reading scope is the span of
-   the hottest-primed word-whole. Two AXES, orthogonal to origin ("Parse
+   automatic/strategic dissociation distinct (§C). The bracket chooser reads the same priming surface; its selected
+   word bracket supplies the reading scope. Two AXES, orthogonal to origin ("Parse
    time" §C): HORIZONTAL (which parts within the level) and VERTICAL
    (which properties — fixing Rosch's Basic Level and, through it, which
    objects exist at all).
@@ -94,7 +93,7 @@ of conceptual space when there is no context — and each word is a
 - **Three indices.** Language individuates along which thing (determiner),
   which stretch of time (tense and aspect) and which alternative (modal).
   These are indices of the symbolic projection and of the LTM row; a concept
-  stays one opaque code.
+  stays one code; the §13.4 serial reading below derives its perceptual and context components.
 - **Regions are derived, never stored.** Membership is invariance under the
   operator and subsumption is absorption, so `part`, `whole` and `equal` are
   tests on the same algebra.
@@ -159,8 +158,8 @@ grammar-to-vector-composition reading of sentence meaning.
 
 ### Addressable attention — the typed `.where`
 
-Global attention (`GlobalAttention`, `bin/Spaces.py`; gated `<globalAttention>`)
-ranges over a **typed addressable space**: one distribution competes across every
+The answer-owned `PrimedSymbolReader` (`bin/Attention.py`)
+ranges over a **typed addressable space**: one choice competes across every
 store at once and emits a typed `.where` = `(space-id, bracket)` plus a soft-read
 $\sum_k \alpha_k \cdot \mathrm{key}_k$. Six stores (the `SPACE_*` ids):
 
@@ -175,9 +174,9 @@ $\sum_k \alpha_k \cdot \mathrm{key}_k$. Six stores (the `SPACE_*` ids):
 
 `PART`/`WHOLE` appear whenever their tower has a codebook; `SYMBOL` only under
 `<symbolTower>`. Pointing `.where` at a codebook/LTM store is recall; at the input
-window it is reading — one mechanism, the type tag distinguishes them. Under
-`<globalAttentionConsume>` the soft-read is fed back into the head as a zero-init
-gated residual, so the output loss trains the retrieval.
+window it is reading — one mechanism, the type tag distinguishes them. The
+selected read enters the answer through a gate initialized at zero, so output
+loss trains retrieval. The former global-attention flags and modules are retired.
 
 The symbol namespace is a **reference**, not a learned copy: it tracks concept
 ids so the two cannot diverge or dissociate. A symbol's IDENTITY is that integer
@@ -264,13 +263,12 @@ subclass; its *forward composition* was in turn superseded by the
 `SparseLayer` substrate itself (edges, COO forward/reverse, `add_edge` /
 `remove_edges`) is unchanged by either rework.
 
-**The forward is TWO PHASES with one terminal cutover.** Phase A reads
-PartSpace and WholeSpace, then the order-0 conceptual field, on each of at
-most `subsymbolicOrder` passes. PartSpace combines located parts; WholeSpace
-divides the field by primitive properties. Perception has no learned
-sigma/pi fold layers. `subsymbolicLoop` selects which later passes may
-retarget the region or mereological level. The symbolic loop and the serial
-loop over words keep their independent bounds.
+**The forward has one terminal cutover.** Input attention first reads the open
+bracket and narrows it under `attentionBudget`. PartSpace combines located parts;
+WholeSpace divides the field by primitive properties. Perception has no learned
+sigma/pi fold layers. `bindingDepth` constructs the binding layers through which
+the carrier passes; it does not repeat an independent attention loop. The
+concept inventory and the per-word grammar retain their structural bounds.
 
 **Pass-back scales, never gates (Alec, September 24).** Attribution of the
 current conceptual demand yields a strength `a ∈ [0,1]` for each PartSpace
@@ -313,8 +311,8 @@ remain separate. The [current equations](#decided-in-direction-a-concept-is-sigm
 define independent pole reductions and attribution descent.
 
 `_order_caps()` sizes the per-rung taper. While the sparse concept
-transform is active (`_sparse_active`: `symbolicOrder > 0` in parallel
-mode), it is a tile-based taper `[base, base>>1, .., 1]` ($K{+}1$ entries,
+transform is active (`_sparse_active`), it is a tile-based taper
+`[base, base>>1, .., 1]` (`conceptLayers` bounds the inventory's orders,
 `base = min(outputShape[0], nVectors)`, shrunk until the taper fits the
 inventory) -- inventory rows past `sum(caps)` stay inert. Off that path,
 the caps fall back to the pre-rev-2 `(n_snap, n_pool)` 50/50 split
@@ -351,11 +349,9 @@ keeps orchestration only. Each bounded evidence activation IS a 0-D
 symbol: the once-built SS leg retains the two poles at the row-aligned identity
 (order-0 codes follow their feature definitions; the leg syncs the SS state contract, while the
 activations' GRADIENT path is the conceptual SBOW over the settled slab
-parked at the cutover). The subsymbolic loop reads the attended percepts
-into the order-0 field; conceptual demand may then retarget perception
-to a region or mereological level. `<subsymbolicLoop>` selects the
-retargeting passes (`all`, `off`, or indices `1..subsymbolicOrder-1`),
-while `subsymbolicOrder` bounds the processing. Perception has no learned
+parked at the cutover). The native read places the attended percepts
+in the order-0 field; the selected bracket supplies the region or mereological
+scope. `attentionBudget` bounds perceptual operations. Perception has no learned
 $\sigma$/$\pi$ fold layers. Distributed codes serve similarity, retrieval and the
 tied reconstruction; they do not determine conceptual presence.
 
@@ -540,10 +536,9 @@ which properties/level).
   Theeuwes 2012) — both channels WRITE, neither vetoes.
   (Since 2026-09-10 the wholes the symbols map onto are the units of the
   meronomy fold ladder, doc/plans/2026-09-10-meronomy-fold-ladder.md.)
-  **`readingAttention` is HARD-CODED over this surface**: the reading
-  scope is the span of the hottest-primed word-whole
-  (`_primed_reading_step`, the learned producer's contract) — the
-  symbols map onto the wholes that isolate words.
+  The bracket candidates read this surface through their detached
+  codebook-retrieval prior. The chosen bracket supplies the scope handed
+  to mereology; there is no separate `ReadingAttention` module.
 
 **Priming diffusion (`<primingSpread>`, default 0.25, LIVE by default,
 Alec 2026-07-12).** Before the SEEN bump, `prime_seen` moves an `s =
@@ -595,8 +590,8 @@ activation); conceptual templates biasing early sensory competition
 (Desimone & Duncan's biased competition); learned context guiding spatial
 attention without awareness (Chun & Jiang's contextual cueing); labels
 sharpening perception (Lupyan's label feedback). The architectural
-consequence: **conceptual activation should be the ORIGIN of
-`readingAttention`** — the reading template built from the currently
+consequence: **conceptual activation supplies the reading prior** — the
+reading template is built from the currently
 selected concepts (the pyramid's winners, `_concept_activations`) rather
 than a free-standing query — making WS's vertical basis the conceptual
 tower's own downward projection, as biased competition prescribes.
@@ -739,10 +734,9 @@ The pre-2026-05-27 "two feedback loops" (S $\to$ C symbolic loopback per stage,
 C $\to$ P subsymbolic loopback cross-forward) collapse under the substrate
 refactor:
 
-- **Subsymbolic loop dissolves.** PS is a single-direction input processor.
-  No recurrent C $\to$ P feedback at the substrate level. In PARALLEL mode,
-  iteration happens by passing `CS` to the same `PS.forward(x)` for T
-  refinement passes (the `<subsymbolicOrder>` knob).
+- **Perception shares one attention.** PS reads native parts at the selected
+  bracket. The open read and later narrowing share `attentionBudget`; the
+  constructed binding layers carry their result forward.
 - **Symbolic loop generalizes** to pairwise grammar ops over STM, dispatched
   by the signal router (`LanguageLayer`). `Lift` and `Lower` join the same
   GrammarLayer dispatch surface as `Intersection`, `Union`, etc.
@@ -799,7 +793,7 @@ is released with the attended field; only scalar refinement history persists.
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up ordered part synthesis | Radix parts, native codes and `<synthesis>` policy | Recurrence forms parts; codes are max over constituents. Canonical ids and ordered containment determine presence. |
-| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass; registered via the `_sparse_fam` shim) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + ordered records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: membership read + FF concept pyramid, $K$ = `symbolicOrder`, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
+| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); the single untyped square `ConceptualAttentionLayer` (a `SparseLayer` subclass; registered via the `_sparse_fam` shim) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + ordered records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: membership read + FF concept pyramid, $K$ = `conceptLayers - 1`, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
 | **WholeSpace** | Top-down division by primitive properties | Property codebook (`self.subspace.what`) and `<analysis>` policy | Max over allowed primitives per position, min pervasion over a run. Readings share the attended field with PS; there is no perceptual pi layer. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
@@ -811,7 +805,7 @@ CS.forward(subspace, word_subspace):
     STM[1..7] = STM[0..6];  STM[0] = folded          # newest at slot 0, shift toward higher indices, oldest (slot 7) drops off; mode-dispatched, the pump stays subsymbolic
 # POST-PUMP cutover (sparse-active, once per forward, in _forward_body):
 #   content, acts = cs.cs_symbolic_phase(last_cs.materialize(), extents=extents, percepts=native)
-#   # membership read -> concept pyramid (K = symbolicOrder)
+#   # membership read -> concept pyramid (K = conceptLayers - 1)
 #   last_cs._concept_activations = acts;  SS leg built ONCE;  SBOW parks the settled slab
 SS:  no atomic forward operator; hosts write-required grammar ops
      (the CS->SS symbol bind leg is SymbolSpace.forward_concept_to_symbol, .forward()-mediated)
@@ -908,170 +902,81 @@ gradient variance after backward. See [Ergodic.md](Ergodic.md).
 See [Params.md](Params.md) for all XML parameters. See
 [Training.md](Training.md) for embedding modes.
 
-### The three cognitive operations (updated for 11c)
+### One attention (6.8-1)
 
-Processing decomposes into three operations, in increasing order of
-abstraction. Perceptual granularity is distinct from conceptual order:
+Attention reads a typed bracket, then narrows it with the common operation
+chooser. The first bracket covers the input. That open read takes no optimizer
+step and writes no codebook: it supplies context before native admission and
+grammatical composition. The table carries padded intervals `[B, K, 2]`,
+validity, space, level, completion and spent work; `K = attentionBudget`.
 
-**Mode exclusion (Alec, September 25).** The parallel field's sigma, pi and
-not (observer-written located conjunctions, `_compose_order0` and pole swap)
-operate only in parallel mode. They do not operate in grammatical/serial
-mode. Conversely, the grammar's `lift` and `lower` do not run in parallel
-mode. These are alternative operations; native perception serves both.
-The exclusion holds within a pass; across passes the two modes share one
-inventory and may alternate on the same content
-([item 9b](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25)).
+Within a bracket, the field offers the order-independent operations `and`,
+`or` and `not` on paired observed presences. Across brackets, grammar operates
+on identified symbols. This follows from the operand types: a pooled field
+has no order on which lift, lower, verb or adverb could act. The parser checks
+these declarations. The former mode-exclusion rule is therefore a consequence
+of representation, with no `serial` or `parallel` mode switch.
 
-1. **Granularity of analysis and synthesis.** PartSpace combines existing
-   parts into recurrent ordered groups; WholeSpace divides the inclusive
-   whole through subsets of primitive properties. These are native
-   perceptual operations, with no learned sigma/pi layers. Parts read by
-   containment and wholes by pervasion. The attended field restricts level
-   and location; rank denotes mereological level. A new percept does not by
-   itself raise conceptual order. See [Mereology](Mereology.md).
+The narrowing candidates are `divide`, `descend` and `gloss`, declared in the
+compose grammar and scored by the 7.5 chooser. A pure singular word can gloss;
+a heterogeneous bracket can divide at a pole disagreement; an unknown word
+can descend to its retained byte parts before `interpret` admits one object.
+6.8-1 pins the stop at words. A wider bracket cannot gloss and a known word
+cannot descend below that stop. Repeated unknown surfaces share one witness.
+The fixed WholeSpace `word` whole and the reader use the same maximal ASCII
+letter run; punctuation, whitespace and digits separate words. Digit runs
+remain native percepts for numeric proofs such as XOR_exact.
 
-2. **Subsymbolic order** (`<subsymbolicOrder>`) bounds repeated passes over
-   the native geometry. `subsymbolicLoop` selects the passes in which
-   attributed conceptual feedback may retarget perception's region or
-   level. Focus scales percepts with a nonzero floor, so novel content
-   remains visible. Repeating a pass does not raise conceptual order or
-   insert a feedback value into the WholeSpace property inventory.
+Before native admission, input narrowing compares two complete percept walks
+under the same parameters. Its reconstruction owner uses the decoder's existing
+byte/end-of-word likelihood against an immutable percept bank; an omitted word
+remains in the target. This comparison is separate from the later sentence
+compose comparison. Both use the same chooser and the same strict improvement
+rule. Native paired evidence, including counterevidence, determines eligibility;
+a Boolean field operation changes the next mask, while a child reads its own
+native parts.
 
-   **Refinement, answered in 11c.** A contiguous extent is refined by pi
-   within the order-0 field; a discontiguous region is combined through
-   sigma over symbols and symbolized at a higher order. Symbols cannot be
-   divided. Field brackets express location, and rank is mereological level.
+`attentionBudget` meters perceptual bracket work and attention to symbols in
+thought and recall. It does not meter the words' grammatical restriction of
+the domain of discourse. The static grammar round count and word capacity
+remain bounds on compiled tensor shapes. `bindingDepth` counts constructed
+binding layers and `conceptLayers` sizes the concept inventory; neither is a
+second attentional or symbolic-loop allowance. The old order budgets and
+`subsymbolicLoop` are rejected. There is one conceptual field read, with the
+existing refine-before-raise rule and its unchanged patience guard.
 
-   **Refine before raising (11c review residue, September 24–25).** At the
-   sentence boundary, each *both* reading is attributed through its symbol
-   definitions to the retained order-0 occurrence pairs. `RunStructureLayer`
-   counts the runs of those supporting brackets inside the subject's extent;
-   unrelated positions cannot join them. PartSpace containment remains an
-   extent read; its support marks only the matching canonical id tiles, not
-   every position where the contained literal is readable. Ordered groups
-   retain their actual contiguous constituent tiles. Brackets remain
-   coordinates of the shared field. A contiguous support stays in order-0 pi refinement, however
-   many parts it contains. A discontiguous support may request a sigma row
-   only after refinement stalls. Ordinary symbolization can establish an
-   order-1 individual; context promotion beyond order 1 uses this same gate.
-   No conjunctive edge is introduced in the symbolic loop.
+The scope handed back to mereology comes from the selected bracket table.
+One address registry names input, STM, LTM, part, whole and symbol spaces.
+Recall uses typed intervals in those spaces, the common categorical selection
+law and the same work meter. Detached content keys protect codebook ownership.
+The answer owns the learned primed-symbol reader and its initially zero
+consume gate. Priming also enters bracket logits through the codebook prior
+`max_v cos(key, row_v) * boost_v`.
 
-   The accepted policy (Alec, September 25) is `mereologyRefinePatience=3`
-   completed optimizer updates without a strict improvement in the local
-   residual `min(c⁺, c⁻)`. The worst subject reading for a definition is the
-   observed residual. Any reduction restarts patience; a pure or unknown
-   reading clears it. Repeated inference and attention passes do not count.
-   Only scalar convergence history persists, alongside the concept-id-to-
-   definition map in the checkpoint. The turn's brackets and permission to
-   raise are released. Recycled provisional rows start fresh.
+One `BracketExpectation` owner serves word and sentence levels. At a word it
+produces a categorical distribution over the native candidate bank and trains
+with cross entropy. Training advances with the observed word; inference
+advances with its own prediction. Its negative image and observation form the
+word surprise column consumed by the answer reader. The sentence level keeps
+the structured closing, negative image and chronological context. Byte and row
+levels are declared but disabled in this landing.
 
-   `ConceptualSpace.maybe_raise_order` assigns the context-matched pair to a
-   provisional sigma row, subject to that permission. The WS count-raise,
-   `K_many`, and unused `passback_action` are deleted. The controlled
-   [review gate](benchmarks/2026-09-24-item10/README.md) learns a particular at
-   order 1 and admits a scattered kind at order 2 after unsuccessful local
-   refinement; it is not a claim of unassisted object-kind learning (item 7).
-
-   **Native CLI XOR (September 25 review correction).** `XOR_exact.xml`
-   now uses symbolic order 1, conceptual pi and the native aligned towers.
-   Its inputs `00`, `01`, `10`, `11` are two primitive positions within one
-   word extent. Primitive membership/name lessons teach “is a one”; the
-   ordinary unlabelled observer witnesses every located pure case. Pi is
-   performed at order 0 before symbolization. An order-1 output concept has
-   zero-initialized sigma edges to all four cases; the ordinary supervised
-   output cost learns which cases support its positive pole. No corner is
-   read as XOR and no pi edge exists in the symbolic loop. The lesson file
-   teaches only primitive memberships and one name, never XOR. This parallel
-   config has no grammar block and does not execute grammar `lift` or `lower`.
-   `OutputSpace.conceptIds` selects the
-   positive pole by persistent concept id, without a projection, bias or
-   output denormalization. Reconstruction is best effort from forward
-   artifacts: evidence by persistent concept id, including occurrence pairs
-   and field brackets, descends through `cs_percept_attribution` to memberships
-   and native rows. The radix decodes by activity, without code-neighbour
-   matching. No saved percept event or input stack supplies the inverse, and
-   a later perception cannot replace the captured evidence or coordinates.
-   Ambiguous property definitions and unlocated contained parts can lose
-   information. The crisp-output gate and fifty-percent reconstruction bar
-   are unseeded. See the [forward-artifact receipt](benchmarks/2026-09-25-item10-forward/README.md).
-
-3. **Symbolic order** (`<symbolicOrder>`) — the symbolic / relational loop
-   budget. In serial mode (`<serial>true</serial>`), words are read **one at a
-   time** from InputSpace and processed grammatically in ConceptualSpace's STM
-   and SymbolSpace. `symbolicOrder` limits how many symbolic loops may run;
-   `<serial>` selects whether the per-word traversal is active.
-
-Granularity is the perceptual level; subsymbolic order budgets repeated
-attention over that field, symbolic order budgets the relational pump,
-and `serial` selects the serial grammatical loop over words.
-
-> **Current order semantics.** This section supersedes the older mode-selector
-> wording. The three order axes now have
-> separate semantics, bounds, and composition rules:
->
-> - **`subsymbolicOrder`** — the **analysis/synthesis refinement-pass count and
->   the area of attention**. `T` parallel CS$\to$PS/WS iterations; each pass
->   refines the attended field. Contiguous support stays at order 0;
->   discontiguous both support may raise only after the accepted convergence
->   gate. Attention scopes via a `.where` on the dual-input second argument.
->   The
->   serial-word reading supplies word `.where`s through the **same** channel.
-> - **`symbolicOrder`** — the **relational pump** budget. It spreads activation through the relation
->   graph to surface *higher-order* (relations-of-relations) features that have
->   **no mereological `.where`** and so can't be primed off `.where` contiguity.
->   `subsymbolicOrder` pumps the mereological substrate; `symbolicOrder` pumps the
->   relational one. `<serial>` separately selects whether traversal is per-word
->   serial or whole-slab parallel.
-> - **`syntacticOrder`** *(NEW — implemented 2026-06-19)* — the **parse-tree
->   composition DEPTH** per sentence, bounded by the word count. `0` = unbounded
->   (byte-identical); a positive value caps the NULL-closing reduce sweep to that
->   many fold levels (static `min(syntacticOrder, cap-1)`; $\le W$ structural).
->   Inert in parallel mode.
->
-> Composition (serial run): `<serial>true</serial>` loops words × `syntacticOrder`
-> bounds the parse-tree depth per sentence × `subsymbolicOrder` pumps per node;
-> the **basic-level stop** is shared (synthesis halts at words, so the tree's
-> leaves are words). `syntacticOrder` **layers over** the serial traversal
-> loop (it bounds depth; it does not replace the parallel-vs-serial switch).
->
-> **Where this is headed (historical design note):** the three
-> orders become **pump counts** over one connectionist attention substrate — a
-> cumulative priming hierarchy (mereological entries $\to$ relations/concepts $\to$
-> higher-order, each seeing all below) where reading is a learned `.where`
-> attention (text-mode next-word loss) that replaces the serial for-loop.
-
-### Modes of operation
-
-Two operating modes, selected by `<architecture><serial>` (replaced the
-`conceptualMode` enum; legacy configs that omit `serial` derive the mode from
-`symbolicOrder > 0`):
-
-| Mode | Trigger | PS.forward argument | Iterations | STM behavior |
-|---|---|---|---|---|
-| **SERIAL / GRAMMATICAL** | `<serial>true</serial>` | `IS_t` per word | one per word; PS pushes one idea per word | shift-and-push (newest at slot 0, oldest dropped from the high end); signal router dispatches over STM contents per word or at sentence boundary |
-| **PARALLEL** | `<serial>false</serial>` | `IS` once, then `CS` for T-1 iterations | T = `<subsymbolicOrder>` | parallel write of T slots; signal router dispatches after STM population |
-
-SERIAL and GRAMMATICAL are not architecturally distinguished — grammar
-dispatch is a chart / rule-catalog config, not a substrate mode. PS.forward
-takes a single positional argument in both modes; the argument is whatever
-input is being processed (IS in SERIAL, IS then CS in PARALLEL refinement).
-
-**Pre-2026-05-27 "two feedback loops" retired.** The legacy S $\to$ C symbolic
-loopback (per-stage) and C $\to$ P subsymbolic loopback (cross-forward) collapse
-under the substrate refactor:
-
-- PS is a single-direction input processor; no recurrent C $\to$ P feedback at
-  the substrate. CS state enters PS only via `PS.forward(CS)` in PARALLEL
-  mode's refinement iterations.
-- Symbolic loop becomes pairwise grammar ops over STM (the signal router's
-  copy/reduce dispatch). `Lift` and `Lower` are binary GrammarLayer
-  subclasses dispatched alongside `Intersection`, `Union`, etc.
-
-The recurrent character of the architecture lives in (a) STM accumulation
-across words in SERIAL mode, and (b) the T-pass PARALLEL refinement loop.
-Cross-call serial-cache (`subspace.serial_cache`) for streaming /
-autoregressive contexts is preserved; gated by
-`PartSpace._recurrent_pass_idx == 0`.
+Compose, thought and generation compare a greedy walk with one legal departure,
+replaying the greedy prefix and following a greedy suffix. Both are costed
+before training under the same parameters. Only strictly lower owner cost
+keeps exploration: reconstruction for the decoder, realized answer error for
+output, and controller return for thought. Output's selection does not grant
+its loss ownership of decoder parameters. Walk records expose costs, kept
+paths, explore-win fractions and per-sentence stability; code geometry remains
+a diagnostic. Prior-only anticipatory thought holds both forecasts until the
+next observation supplies its return. Forecast previews publish nothing, and
+only the committed observation supplies policy credit and the winning record.
+The larger prior spend is reserved against input attention, so either delayed
+winner fits the same allowance without reading the target early or restoring
+an old interaction history over a new observation.
+See the [6.8 plan](plans/2026-09-27-item-6-8-one-attention.md)
+and the [implementation receipt](benchmarks/2026-10-03-operators-attention/README.md)
+for validation status.
 
 ### Pipeline as a unit, two-space-role reset
 
@@ -1213,7 +1118,7 @@ the STM content. See Architecture.md sec A.) The mode dispatch:
 - **SERIAL / GRAMMATICAL**: one idea pushed per word; STM shifts (newest to
   slot 0, oldest dropped from the high end). Grammar ops dispatched per word
   or at sentence boundary.
-- **PARALLEL**: T = `<subsymbolicOrder>` iteration outputs written to STM
+- **Whole-slab binding**: T = `<bindingDepth>` binding outputs written to STM
   slots simultaneously; no shift.
 
 STM is cleared on hard `Reset` (sentence boundary) and survives soft
@@ -1268,28 +1173,65 @@ speech: complete DNF over active percepts, permitting each `conjunction` /
 
 ---
 
-### Concepts are opaque; percepts and symbols are located (2026-09-14)
+### Two spaces, one index: symbol and concept (6.8 §14 addendum)
 
-Percepts are specifically characterised entities: they exist in space and
-time, so a percept event carries `.what`, `.where` and `.when` as separate
-coordinates, and the perceptual spaces read and write those coordinates
-(`architecture.canonical_shape` gives InputSpace, PartSpace, WholeSpace
-and SymbolSpace a where/when band). Symbols are a kind of percept: they
-represent concepts but occur, leaving a trace in the mind, so the
-symbolic layer keeps the band and muxes and demuxes around its `execute`.
-Concepts are generally characterised: a word resolved to its object
-concept is one code from a codebook lookup that has generalised over the
-where and when modalities as well as the content, so the conceptual event
-has no separate localising dimensions and cannot be cleanly divided.
-`canonical_shape("ConceptualSpace")` is therefore `(0, 0)`, the
-conceptual event width is the whole code, and nothing at the conceptual
-level splits, copies through or shifts a `.where` or `.when`: the CS
-grammar ops (lift, lower, verb, adverb, preposition) compose and reverse
-the whole event, the tense and aspect ops are the identity there (tense
-is part of the concept code; the symbolic realisation owns the `.when`
-coordinate), the STM holds whole codes, and the reconstruction traversal
-scores whole codes. Where and when re-enter when a concept is realised as
-a symbol or a percept.
+A concept lives in conceptual space; its symbol, its form, lives in perceptual
+space. The shared index pairs them. The implementation remains one vector,
+`[form | meaning]`, but its two faces name positions in two spaces. Letters
+that are only parts of a symbol require no conceptual row. Removing their
+reserve restores XOR_grammar's concept capacity to 6 and MM_grammar's to 8.
+The perceptual inventory is unchanged.
+
+There is no free order-zero word row. The paired dictionary cache is
+overwritten from the derivation each forward. Perception reconstruction alone
+trains native PS/WS prototypes and 11b evidence; the sentence reading detaches
+both. Its root remains live to train the sentence choosers.
+
+A word symbol's position in perceptual space is the evidence-weighted midpoint
+of its lattice interval over letters and WS types.
+Net evidence is `d = relu(e_for-e_against)`; the attention-only both corner is
+excluded. Parts give `L = max(d_part * part_code)`. WS property wholes give
+`U = min(1-d_whole*(1-whole_code))`, or one with no wholes. With weights
+`W_P = sum(d_part)` and `W_W = sum(d_whole)`, the form is
+`(W_P*L + W_W*U)/(W_P+W_W)`, and is `L` without wholes. A deterministic
+post-step room projection moves the maximal part down and minimal whole up
+by half each positive `L-U+m` violation, clamped to [0,1]; `m` defaults to zero.
+The exact remaining violations are measured, not assumed absent.
+
+Generally characterized codes have zero location/time coordinates in the
+native perceptual event block. Occurrences carry their own bracket and time.
+Occurrence rows are not the WS types used for the upper bound. They supply the
+concept's position in conceptual space: the detached, recency-weighted context
+mean on the complement of the form block. Existing references and leaf postings give the two-way
+lookup. A word primes its occurrence rows, and a primed row its constituents;
+this conduction admits no new row.
+
+At every order, identity comes from below through the fold of forms and meaning
+comes from above through contexts. At orders ≥ 1, composition of meanings also
+joins from below. Order-zero meaning is context only. Same-context concepts
+coinciding in conceptual space is correct and is not counted or repaired.
+Their symbols can have different forms. Max/min folds of forms can coincide,
+and product composition preserves partner differences only on the other
+operand's support; form support and root geometry are measured at both endpoints.
+
+Composition still applies the current binding kernel across the paired vector;
+its normalization can couple block magnitudes. The fold composing forms at all
+orders, Kleene meet and join on meanings, bootstrap of the complement from the
+conceptual wholes' locations, the catalogue's `not` items, and expectation's
+negative image acting on the concept face only (item 2) remain for the operators
+update. No bootstrap or co-activation objective is added here.
+
+XOR_grammar and MM_grammar retain 14-dimensional native events and paired
+representations, with six form content coordinates and an empty meaning
+complement. Their concepts are empty: identical contexts with no bootstrap.
+The XOR class and reconstruction table measures perception's composition of
+forms, its inverse, the affine read at unit norm, and one owner. The connectives
+over meanings are measured where meanings exist, as in MM_xor's field path.
+
+`canonical_shape("ConceptualSpace")` remains `(0,0)`. Lexical identity is read
+by scale-free perceptual cosine and retains either activation pole's spelling.
+The class reader's fixed unit-root transform is a readout convention, not a
+unit-sphere constraint on codes. The field path retains its existing ownership.
 
 All concepts are read within one attentive field; none is individually
 located. The field has exactly one bracket and one interval; occurrence
@@ -1410,29 +1352,19 @@ LTM is the exception: **a row's address is its
 `.when` alone**, and its `.where` records what it was looking at, so rows
 may share a `.where`.
 
-**The two modes share one structure.** The inventory — order-0 rows,
-definitions, symbol pairs, memberships — is one for both modes; no mode
-holds a private copy, and a checkpoint from either loads in the other.
-Serial mode is focused attention with the grammar's `lift` and `lower`;
-parallel mode is open attention with the field's sigma, pi and not. The
-mode exclusion of 11c holds **within a pass**. With `interleave:N`, the
-cursor stages the next N complete sentences and the native parallel pass
-reads them first. The ordinary serial reading then processes those same
-sentences using the shared inventory that the context pass has just updated.
-Context runs under no-grad, without backward or an optimizer step. Its
-updates are ordinary admission, participation and priming.
-There is no extra label read-back after either pass: the serial reading
-provides that symbolic processing. A shorter final group is also processed.
-The psychological reasons — the two modes share one conceptual structure
-in humans, the sharing erodes each side somewhat, the erosion is mostly a
-loss of online maintenance, and meditators gain the ability to switch
-modes rather than losing one — are set out in
+**Open and focused readings share one structure.** The order-0 rows,
+definitions, symbol pairs and memberships belong to one inventory. The open
+bracket reads it before narrowing; grammar composes the resulting word symbols.
+The former mode exclusion follows from operand types: field operations act
+within brackets, grammar operations act across symbols. There is no schedule
+flag and no second context forward. The open read takes no gradient step;
+native admission follows the selected narrowing walk.
+The psychological motivation is recorded in
 [Philosophy](Philosophy.md#attention-as-one-bracket-both-as-the-fields-report-and-the-sharing-of-the-two-modes-2026-09-25).
-The implementation provides `modeSchedule` as documented in [Params](Params.md).
 The original erosion experiment is archived in
-[FutureWork](FutureWork.md#shared-mode-erosion-measurement-item-9b). Its old
-interleave results do not describe the parallel-first schedule. Categorical
-discrimination remains a descriptive metric for item 4's logger.
+[FutureWork](FutureWork.md#shared-mode-erosion-measurement-item-9b). Its historical
+interleave results remain unchanged. Categorical discrimination remains a
+descriptive metric for item 4's logger.
 
 **`interpret`: word-concept to object-concept (item 7 amendment, September 29).**
 Every read word is interpreted under every binding. Its parts are fused
@@ -2122,8 +2054,8 @@ remain in the [item 11](benchmarks/2026-09-23-item11/README.md) and
    gathers and reductions. Dependencies within order 0 are evaluated in
    topological order. Located requirements match their designated brackets
    inside the subject before the readout union. Above order 0, each row
-   reads only the preceding order's symbols through sigma. `symbolicOrder`
-   bounds symbolizations, independently of the subsymbolic processing bound.
+   reads only the preceding order's symbols through sigma. `conceptLayers`
+   sizes that inventory; it is independent of the perceptual attention budget.
 
 4. **Idempotent union.** Max replaces probabilistic union. Weak repeated
    evidence stays weak and exact zero stays zero at every scope. No floor,
@@ -2634,7 +2566,8 @@ reuse it. The meter is host bookkeeping, not a semantic feature, memory owner,
 checkpoint field, parameter, loss, or additional compiled-result slot.
 Standalone audited readers may use their existing local bounds without one.
 The normal selected-meaning controller now instantiates the meter from
-`selectedThoughtBudget`, charges its own query/finish/descent/return choices,
+`attentionBudget`, shares it with perceptual narrowing, and charges its own
+query/finish/descent/return choices,
 and records each exact delta once in the row-local ordinary history. `what(Q)`
 reuses that object rather than starting a child allowance. The meter remains
 host accounting: it creates no semantic feature, learned parameter, residual
@@ -2648,3 +2581,72 @@ ordered role edges, repeated references, scope and each occurrence's own
 evidence; it does not add a parallel semantic store. Withdrawing a request
 origin removes its fact authority without turning retained content into a
 truth. See [nested retention](NestedRetention.md).
+
+## Two spaces, one index: the symbol in perceptual space, the concept in conceptual space (decided, Alec, 2026-10-04)
+
+Decided during the 6.8 §13–§15 rounds
+([plan §13.4](plans/2026-09-27-item-6-8-one-attention.md#134-perceptual-space-is-the-basis-of-zero-order-conceptual-space-alec-2026-10-04),
+[§14](plans/2026-09-27-item-6-8-one-attention.md#14-review-of-the-13-measurement-claude-2026-10-04),
+[§15](plans/2026-09-27-item-6-8-one-attention.md#15-review-of-the-14-measurement-claude-2026-10-04)).
+
+**The sign.** A concept lives in conceptual space; its symbol, its form,
+lives in perceptual space; the shared index pairs them (Saussure's signifier
+and signified). The stored representation is one vector `[form | meaning]`
+with per-block operations, the same object as two aligned vectors in two
+spaces. SymbolSpace is the index that joins a form to a concept and has no
+geometry of its own.
+
+**The form (order 0).** A word's position in perceptual space is the join
+of its parts at full presence: `L = ∨_{p : d_p > 0} c_p`, the coordinate-wise
+max over the part codes whose net evidence `d = relu(e⁺ − e⁻)` is positive.
+Evidence selects a part; it does not scale it. Certainty is the leaf's
+activation (the projection coefficient `(leaf·c)/(c·c)`), not the code's
+magnitude: full-presence codes replace the earlier unit-length constraint,
+and the 6.9 catalogue's "magnitude = certainty" row returns in this form. The
+wholes (the WS types read off the input) contain the form and do not enter
+its position: the room rule `L + m ≤ U`, `U = ∧` over the wholes, is enforced
+on the wholes only (a type grows to hold its members; a form does not shrink
+to fit). A higher-order symbol is the fold of its constituents' forms; until
+the operators update the binding kernel does this. The address bands
+(`.where`, `.when`) are zero in a code: the particular lives in its
+occurrence row, the type in the codebook, and the mereological structure of a
+genus is its structure (typed parts, arranged), not a location.
+
+**Codes are perception's.** In the conceptual derivation the percept
+prototypes and the 11b evidence are detached: no gradient from the sentence
+path (pair search, byte scorer, answer head) reaches them. Perception's codes
+are trained by perception's reconstruction only. Distinct letter sets then
+give distinct forms by construction; what makes forms far apart is the
+sparsity of the presences (dense codes' joins saturate toward everything,
+cos ≈ .98 at any scale; presences on ~30% of coordinates give ≈ .83).
+
+**The concept.** An order-0 concept's position in conceptual space is
+context, entirely: the mean of its occurrence rows' roots on the conceptual
+coordinates and the conceptual wholes it belongs to (sets one order up,
+situation and document codes, properties as concepts), by co-activation;
+zero before it has any; shared by concepts with the same contexts, which is
+correct (a concept is its contexts; `hello`/`loving` and `world`/`there` in
+the XOR corpus). Nothing enters from below (the arbitrariness of the sign).
+At orders ≥ 1 meaning has two sources, composition from below (the
+connectives over constituent meanings) and context from above; identity keeps
+one (the fold). One conceptual space serves every order; order is a stamp on
+the row (the fold-provenance record), and its one bearing on placement is
+direction: identity from below, meaning from above, at every rung. Minting is
+order's other role: the sigma fold makes the co-activating set one order
+above its members; a narrowing stays at its order.
+
+**The connectives.** With zero as uncertainty the connectives over codes are
+Kleene's: `∧ = min`, `∨ = max`, `not = −d` (the exchange of the two poles),
+the meet and join of the towers' cube, which is a Kleene algebra under the
+componentwise order; De Morgan is exact and no sign pools. The present
+binding kernel (normalized Hadamard product of signed carriers) is VSA
+binding whose sign is a phase, so `(−x)∘(−y) = x∘y`; it cannot host negation
+and composes forms only in the interim. The connectives over meanings are
+measured where meanings exist (MM_xor's field path); in the gate
+configurations the concepts are empty, so the XOR table measures perception's
+composition of forms, its inverse, one affine read shared with the sum
+control, and one owner (the composition mechanism gate, 6.8 plan §12.1).
+
+**Footprints.** Each operator declares what it reads and writes over form
+(perceptual space), meaning (conceptual space) and the poles (the symbol's
+activation): catalogue §1 rule 10.

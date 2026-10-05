@@ -19,11 +19,11 @@
        truthSet exercises the real-parse provisioning at first runEpoch.
        Do not consume from production code. -->
   <architecture>
-    <subsymbolicOrder>3</subsymbolicOrder>
+    <bindingDepth>3</bindingDepth>
     <data>
       <dataType>embedding</dataType>
     </data>
-    <symbolicOrder>1</symbolicOrder>
+    <conceptLayers>2</conceptLayers>
     <!-- sentenceProtocol defaults ON in serial mode, but its prelude +
          top-k priming gate has a pre-existing shape mismatch with
          default.grammar at the small space widths used here; FU3 only needs

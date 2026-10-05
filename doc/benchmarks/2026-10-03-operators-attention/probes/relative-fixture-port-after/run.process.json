@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_stm_relative_sentence_end_state.py",
+    "test/test_thought_operation_catalog.py"
+  ],
+  "pid": 89288,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 695944752,
+  "elapsed_seconds": 4.6299522499903105,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/relative-fixture-port-after/run.log"
+}

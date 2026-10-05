@@ -6,9 +6,9 @@
        is best effort from the forward evidence, with no stored input event
        or stack. Parallel field operators run here; grammar lift/lower do not. -->
   <architecture>
-    <serial>false</serial>
-    <subsymbolicOrder>2</subsymbolicOrder>
-    <symbolicOrder>1</symbolicOrder>
+
+    <bindingDepth>2</bindingDepth>
+    <conceptLayers>2</conceptLayers>
     <conceptualPi>true</conceptualPi>
     <attentionPromotion>true</attentionPromotion>
     <conceptPoolSize>4</conceptPoolSize>

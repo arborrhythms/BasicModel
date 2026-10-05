@@ -45,7 +45,7 @@ def test_registry_description_resolution_and_fact_scan_use_one_budget():
     description = ConceptualMeaning.from_description(torch.eye(8)[:3])
     slot = store.append_meaning(description, kind="fact", trust=.6)
     context = _context(cs, store=store)
-    question = registry.form("exist", store.occurrence_of(slot), context=context)
+    question = registry.form("what", store.occurrence_of(slot), context=context)
     meter = QueryWorkBudget(3)
     result = registry.execute(question, replace(context, work=meter))
     assert result.support_true == 0 and "work_budget" in result.incomplete
@@ -60,10 +60,10 @@ def test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance():
     store.append_meaning(meaning, kind="fact", trust=.7)
     meter = QueryWorkBudget(2)
     context = _context(_cs(), store=store, work=meter)
-    exist = _signature('exist', 'I1')
+    query = _signature('what', 'I1')
     context = replace(
         context,
-        continuation=lambda value: exist.invoke(context, value),
+        continuation=lambda value: query.invoke(context, value),
     )
     result = _signature('what', 'I1').invoke(
         context, replace(meaning, mode="interrogative"))
@@ -87,7 +87,7 @@ def test_arma_reserves_context_reads_before_running_the_predictor(monkeypatch):
         lambda *args: pytest.fail("prediction beyond work"),
     )
     space = SimpleNamespace(outputShape=(1, layer.concept_dim))
-    model = SimpleNamespace(symbolSpace=SimpleNamespace(discourse=layer))
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(expectation=layer))
     context = _context(
         space, model=model, work=QueryWorkBudget(2), discourse=layer)
     result = _signature('arma', 'I1').invoke(

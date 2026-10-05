@@ -1,0 +1,96 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_normal_narrowing_omits_padding_and_preserves_the_complete_walk ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x126751a00>
+
+    def test_normal_narrowing_omits_padding_and_preserves_the_complete_walk(monkeypatch):
+        from test_mm_xor import _fresh_model
+        import ModelAttention
+        model, _, _ = _fresh_model()
+        model.eval()
+        original = ModelAttention.narrow_words
+        calls = []
+        def bounded(chooser, keys, spans, known, **kwargs):
+            calls.append(keys.shape[1])
+            assert keys.shape[1] == 2, 'padding multiplied the bracket work'
+            actual = original(chooser, keys, spans, known, **kwargs)
+            padded = dict(kwargs)
+            for name in ('identities', 'prior', 'poles'):
+                if padded.get(name) is not None:
+                    padded[name] = torch.nn.functional.pad(padded[name],
+                        (0, 0, 0, 7) if name == 'poles' else (0, 7),
+                        value=-1 if name == 'identities' else 0)
+            reference = original(chooser,
+                torch.nn.functional.pad(keys, (0, 0, 0, 7)),
+                torch.nn.functional.pad(spans, (0, 0, 0, 7)),
+                torch.nn.functional.pad(known, (0, 7)), **padded)
+            for before, after in zip(reference.table, actual.table):
+                torch.testing.assert_close(after, before)
+            torch.testing.assert_close(actual.actions, reference.actions)
+            torch.testing.assert_close(actual.values, reference.values[:, :2])
+            torch.testing.assert_close(actual.accepted, reference.accepted[:, :2])
+            return actual
+        monkeypatch.setattr(ModelAttention, 'narrow_words', bounded)
+        with torch.no_grad():
+>           model._lex_embed_stem(model.inputSpace.prepInput(['hello world', 'hello']))
+
+test/test_one_attention.py:507: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13175: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:230: in stage_input
+    reading=read()
+            ^^^^^^
+bin/ModelAttention.py:219: in read
+    return narrow_words(chooser,keys,spans,known,budget=model.attention_budget,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+chooser = OperationSelectionLayer(
+  (ops): ModuleList(
+    (0): _BinaryGrammarOpAdapter(
+      (gl): IntersectionLayer()
+    )
+...marOpAdapter(
+      (gl): UnionLayer()
+    )
+  )
+  (unary_ops): ModuleList()
+  (chooser): AnchorDotTransformChooser()
+)
+keys = tensor([[[ 0.0000e+00,  0.0000e+00,  2.3740e-03,  2.0153e-02,  0.0000e+00,
+           2.2189e-02,  9.8017e-02,  9.9518...2,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,
+           0.0000e+00,  1.0000e+00,  0.0000e+00,  1.0000e+00]]])
+spans = tensor([[[ 0,  5],
+         [ 6, 11],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0],
+    ...0],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0],
+         [ 0,  0]]])
+known = tensor([[False, False, False, False, False, False, False, False],
+        [False, False, False, False, False, False, False, False]])
+kwargs = {'budget': 32, 'prior': tensor([[0.5541, 0.5607, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+        [0.5541, 0.5...       [0., 0.],
+         [0., 0.],
+         [0., 0.],
+         [0., 0.],
+         [0., 0.],
+         [0., 0.]]]), ...}
+
+    def bounded(chooser, keys, spans, known, **kwargs):
+        calls.append(keys.shape[1])
+>       assert keys.shape[1] == 2, 'padding multiplied the bracket work'
+E       AssertionError: padding multiplied the bracket work
+E       assert 8 == 2
+
+test/test_one_attention.py:487: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_one_attention.py::test_normal_narrowing_omits_padding_and_preserves_the_complete_walk
+1 failed in 2.28s

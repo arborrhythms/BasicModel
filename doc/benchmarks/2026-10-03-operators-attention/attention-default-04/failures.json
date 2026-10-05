@@ -1,0 +1,18 @@
+[
+  {
+    "nodeid": "test/test_stream_dataset.py::test_loadshards_word_limit_excludes_whole_sentence_without_clipping",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.0003966249933000654,
+    "message": "test/test_stream_dataset.py:231: in test_loadshards_word_limit_excludes_whole_sentence_without_clipping\n    assert td.train_input == [\"one two.\", \"final.\"]\nE   AssertionError: assert ['final.'] == ['one two.', 'final.']\nE     \nE     At index 0 diff: 'final.' != 'one two.'\nE     Right contains one more item: 'final.'\nE     Use -v to get more diff",
+    "stdout": "Loading text: 1 shard(s), max 1 docs from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1664/test_loadshards_word_limit_exc0\nLoaded 1 docs -> 1 sentences (1 train, 0 val, 0 test), dropped 2 whole sentences over 2 words\n"
+  },
+  {
+    "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.19337095800437964,
+    "message": "test/test_word_admission.py:104: in test_29_each_reading_publishes_only_its_words\n    assert not evidence[indices, b, e].any(), (configuration, text, word, lo, hi)\n               ^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   IndexError: The shape of the mask [5] at index 0 does not match the shape of the indexed tensor [4, 2] at index 0",
+    "stdout": ""
+  }
+]

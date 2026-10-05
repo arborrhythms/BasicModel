@@ -1,0 +1,297 @@
+{
+  "dictionary": [
+    {
+      "stage": 0,
+      "rows": 262,
+      "dimension": 14,
+      "centered_singular_values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "percept_concepts": [],
+      "context": [],
+      "word_perceptual_support": [],
+      "cosine_matrix_rows": [
+        0,
+        5,
+        12,
+        14
+      ],
+      "matrix_scope": "all observed primed rows",
+      "all_dictionary_pairs": {
+        "count": 68382,
+        "mean": 0.0,
+        "mean_square": 0.0
+      },
+      "norms": {
+        "min": 0.0,
+        "max": 0.0,
+        "mean": 0.0
+      },
+      "vq_ema_update": false,
+      "cluster_size_file": null,
+      "cluster_size": null
+    },
+    {
+      "stage": 1,
+      "rows": 262,
+      "dimension": 14,
+      "centered_singular_values": [
+        0.05553171783685684,
+        0.03184874355792999,
+        0.022587887942790985,
+        3.1274434153516495e-09
+      ],
+      "percept_concepts": [
+        [
+          0,
+          1,
+          2,
+          1
+        ],
+        [
+          0,
+          2,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          4,
+          3
+        ],
+        [
+          0,
+          4,
+          5,
+          4
+        ],
+        [
+          0,
+          6,
+          8,
+          9
+        ],
+        [
+          0,
+          7,
+          9,
+          10
+        ],
+        [
+          0,
+          8,
+          10,
+          11
+        ],
+        [
+          0,
+          9,
+          13,
+          13
+        ],
+        [
+          0,
+          10,
+          16,
+          15
+        ],
+        [
+          0,
+          11,
+          17,
+          16
+        ],
+        [
+          0,
+          12,
+          18,
+          17
+        ],
+        [
+          0,
+          13,
+          19,
+          18
+        ]
+      ],
+      "context": [],
+      "word_perceptual_support": [
+        {
+          "row": 0,
+          "word": "hello",
+          "dimension": 6,
+          "percept_event_width": 14,
+          "nonzero_coordinates": 6,
+          "nonzero_fraction": 1.0,
+          "minimum_absolute_value": 0.008912566117942333,
+          "minimum_nonzero_absolute_value": 0.008912566117942333
+        },
+        {
+          "row": 5,
+          "word": "world",
+          "dimension": 6,
+          "percept_event_width": 14,
+          "nonzero_coordinates": 5,
+          "nonzero_fraction": 0.8333333333333334,
+          "minimum_absolute_value": 0.0,
+          "minimum_nonzero_absolute_value": 0.009678640402853489
+        },
+        {
+          "row": 12,
+          "word": "there",
+          "dimension": 6,
+          "percept_event_width": 14,
+          "nonzero_coordinates": 5,
+          "nonzero_fraction": 0.8333333333333334,
+          "minimum_absolute_value": 0.0,
+          "minimum_nonzero_absolute_value": 0.025749776512384415
+        },
+        {
+          "row": 14,
+          "word": "loving",
+          "dimension": 6,
+          "percept_event_width": 14,
+          "nonzero_coordinates": 6,
+          "nonzero_fraction": 1.0,
+          "minimum_absolute_value": 0.012109532952308655,
+          "minimum_nonzero_absolute_value": 0.012109532952308655
+        }
+      ],
+      "cosine_matrix_rows": [
+        0,
+        5,
+        12,
+        14
+      ],
+      "matrix_scope": "all observed primed rows",
+      "all_dictionary_pairs": {
+        "count": 68382,
+        "mean": 0.0013351953000191876,
+        "mean_square": 0.0008121664303860747
+      },
+      "norms": {
+        "min": 0.0,
+        "max": 0.08174900710582733,
+        "mean": 0.0026514336932450533
+      },
+      "vq_ema_update": false,
+      "cluster_size_file": null,
+      "cluster_size": null
+    }
+  ],
+  "roots": {
+    "shape": [
+      4,
+      14
+    ],
+    "values": [
+      [
+        0.0012989707756787539,
+        0.0005556904361583292,
+        0.0035846312530338764,
+        0.0002418569929432124,
+        0.0015431941719725728,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0013056426541879773,
+        0.0,
+        0.00322550511918962,
+        0.0006467592902481556,
+        0.0015511204255744815,
+        0.0022582237143069506,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.002359178150072694,
+        0.0026032051537185907,
+        0.0035100604873150587,
+        0.0010123173706233501,
+        0.00206280080601573,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0025258325040340424,
+        0.0,
+        0.0033642377238720655,
+        0.002883497392758727,
+        0.002208518795669079,
+        0.0019521572394296527,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "pairwise_cosines": [
+      [
+        0.9999999403953552,
+        0.8495259881019592,
+        0.902026891708374,
+        0.7939974069595337
+      ],
+      [
+        0.8495259881019592,
+        0.9999998807907104,
+        0.7454185485839844,
+        0.9045202732086182
+      ],
+      [
+        0.902026891708374,
+        0.7454185485839844,
+        1.0,
+        0.7830902934074402
+      ],
+      [
+        0.7939974069595337,
+        0.9045202732086182,
+        0.7830902934074402,
+        1.0
+      ]
+    ],
+    "singular_values": [
+      0.00942413229495287,
+      0.0029660568106919527,
+      0.0018311325693503022,
+      0.0009985379874706268
+    ],
+    "centered_singular_values": [
+      0.002985467202961445,
+      0.0022344638127833605,
+      0.0010020826011896133,
+      1.768217100517333e-10
+    ]
+  },
+  "note": "No new forward or optimizer step; roots from the measured first trial and endpoint; dictionary pairs are cosine, not dot products."
+}

@@ -10,12 +10,12 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import InterSentenceLayer, TernaryTruthStore
+from Layers import BracketExpectation, TernaryTruthStore
 
 
 def layer(batch=1, consolidated=False):
     torch.manual_seed(165)
-    result = InterSentenceLayer(
+    result = BracketExpectation(
         n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
         batch=batch, expectation_scope="structured")
     if consolidated:
@@ -110,7 +110,7 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
                 for entry in entries]
     torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
     assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
-    packed = InterSentenceLayer(n_symbols=8, max_depth=8, n_dim=8,
+    packed = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
         concept_dim=8, expectation_scope='structured')
     streaming = copy.deepcopy(packed)
     packed._ltm_store = f.store if consolidated else None
@@ -173,7 +173,7 @@ def test_nonfinite_scored_role_error_is_rejected():
 
 
 def test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration():
-    old = InterSentenceLayer(
+    old = BracketExpectation(
         n_symbols=4, max_depth=8, n_dim=4, concept_dim=4)
     new = layer()
     before = copy.deepcopy(new._inter_predictor.state_dict())
@@ -191,7 +191,7 @@ def test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed():
 
     disc = layer(consolidated=True)
     disc._ltm_store.append_idea(torch.ones(4), trust=1.)
-    host = SimpleNamespace(symbolSpace=SimpleNamespace(discourse=disc))
+    host = SimpleNamespace(symbolSpace=SimpleNamespace(expectation=disc))
     assert disc.expect_next_meaning() is None
 
 
@@ -203,7 +203,7 @@ def test_new_document_is_reset_before_forward():
     host = SimpleNamespace(
         inputSpace=SimpleNamespace(data=SimpleNamespace(
             source_addresses={"train": [{"document": 12}]})),
-        symbolSpace=SimpleNamespace(discourse=disc))
+        symbolSpace=SimpleNamespace(expectation=disc))
     BasicModel._stage_expectation_documents(host, "train", [[0]], 1)
     assert disc.expect_next_meaning() is None
 
@@ -235,7 +235,7 @@ def test_expectation_scope_is_a_checked_configuration_choice():
 
 def test_unknown_expectation_scope_is_rejected_at_construction():
     with pytest.raises(ValueError, match="expectation_scope"):
-        InterSentenceLayer(n_symbols=4, max_depth=8, n_dim=4,
+        BracketExpectation(n_symbols=4, max_depth=8, n_dim=4,
                            concept_dim=4, expectation_scope="flattened")
 
 
@@ -243,7 +243,7 @@ def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch):
     from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
 
     model = _make_model(_SERIAL_CONFIG)
-    discourse = model.symbolSpace.discourse
+    discourse = model.symbolSpace.expectation
     bound = []
 
     def forbid_external_binding(*args, **kwargs):
@@ -257,7 +257,7 @@ def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch):
     store = model.symbolSpace.ltm_store
     assert int((store.rel_type[:len(store)] != store.REL_DEF).sum()) == 3
     assert not any(discourse._inter_context)
-    assert model.symbolSpace.discourse.expect_next_meaning() is None
+    assert model.symbolSpace.expectation.expect_next_meaning() is None
 
 
 @pytest.mark.usefixtures('eager_reading')
@@ -265,7 +265,7 @@ def test_truth_ingestion_preserves_all_external_row_contexts_and_losses():
     from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
 
     model = _make_model(_SERIAL_CONFIG)
-    disc = model.symbolSpace.discourse
+    disc = model.symbolSpace.expectation
     disc.train()
     disc.ensure_batch(2)
     d = disc.concept_dim

@@ -392,7 +392,7 @@ def test_bind_contained_in_conceptual_space():
     # The head-facing event is the corpus-callosum glue of THAT stage's
     # bind (+ the empty band at D == muxedSize), written by bind_streams
     # onto the FLOWING sub (the per-batch CS_sub handed downstream). At
-    # subsymbolicOrder>1 the flowing sub is the LAST stage's (MM_20M ships
+    # bindingDepth>1 the flowing sub is the LAST stage's (MM_20M ships
     # sO=3), so compare against the LAST stage's carrier+combine -- not
     # stage 0's (which only coincides with the flow when T==1).
     last = m._combine_last_cs_sub

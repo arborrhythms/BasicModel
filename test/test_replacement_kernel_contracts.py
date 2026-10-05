@@ -86,11 +86,12 @@ def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive, 
     order = terminal_model_index(model, meaning.role_refs)
     for trust in (positive, -negative):
         if trust:
-            store.append_meaning(meaning, kind='fact', trust=trust, order=order)
+            store.append_meaning(meaning, kind='fact', trust=trust, order=order,
+                                 evidence=(max(trust, 0), max(-trust, 0)))
     occurrence = store.append_meaning(meaning, kind='unverified', trust=0, order=order)
     with model._query_boundary_scope((0,)):
         from QueryWork import QueryWorkBudget
-        query = registry.form('exist', store.row(occurrence)['occurrence'],
+        query = registry.form('what', store.row(occurrence)['occurrence'],
                               context=model._thought_grammar_context(meaning,
                                   row=0, work=QueryWorkBudget(32), continuation=None))
     before = len(store)

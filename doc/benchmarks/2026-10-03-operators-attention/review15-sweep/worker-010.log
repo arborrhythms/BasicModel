@@ -1,0 +1,31 @@
+...........F.......................F.................................... [ 63%]
+........................................s                                [100%]
+=================================== FAILURES ===================================
+__ test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True] ___
+test/test_grammar_separator.py:94: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back
+    assert all(len(text.split()) == 2 for text in decoded), decoded
+E   AssertionError: ('hello', 'hello', 'world loving', 'there')
+E   assert False
+E    +  where False = all(<generator object test_mixing_separator_is_perceived_but_not_pushed_or_read_back.<locals>.<genexpr> at 0x121e31b60>)
+_________ test_normal_text_reconstruction_updates_the_grammar_chooser __________
+test/test_grammar_word_learning.py:188: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    assert "operand_order.weight" in changed
+E   AssertionError: assert 'operand_order.weight' in set()
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser
+2 failed, 110 passed, 1 skipped, 2 warnings in 60.01s (0:01:00)

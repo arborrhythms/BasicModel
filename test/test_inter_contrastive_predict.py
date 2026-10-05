@@ -26,7 +26,7 @@ class TestInterContrastivePredict(unittest.TestCase):
     def test_predictor_trains_end_to_end(self):
         Models.TheData.load('sequences')
         m, _ = BaseModel.from_config(_CONFIG)
-        disc = m.symbolSpace.discourse
+        disc = m.symbolSpace.expectation
         self.assertIsNotNone(disc, "config must build the discourse predictor")
         self.assertGreater(disc._inter_contrastive_weight, 0.0)
         # Precondition (b): documents must exceed the byte slab width so the

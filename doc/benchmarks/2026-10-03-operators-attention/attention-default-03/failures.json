@@ -1,0 +1,874 @@
+[
+  {
+    "nodeid": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.08108875001198612,
+    "message": "test/test_analyse_chunking_forward.py:132: in test_meronomy_synthesis_owns_full_surface_lexing\n    lexicon = [t for t in self._tokens(\"meronomy\", lexer=\"word\")[0] if t]\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_analyse_chunking_forward.py:119: in _tokens\n    model.forward(inp)\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22994: in _forward_per_stage\n    if sentence_state is not None else self._forward_head(body_sub))\n                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:17052: in _forward_head\n    result = self.outputSpace(sub)\n             ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:21272: in forward\n    x = self.forwardBegin(vspace, returnVectors=True)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:8385: in forwardBegin\n    x = x.reshape(x.shape[0], -1, _w if _w > 0 else self.nInputDim)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: shape '[1, -1, 320]' is invalid for input of size 40",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.00846075001754798,
+    "message": "test/test_definition_taxonomy.py:143: in test_referenced_phrase_admission_is_atomic\n    assert clause.refs[2] == ('clause', 0)\nE   AssertionError: assert 7 == ('clause', 0)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.007693082996411249,
+    "message": "test/test_definition_taxonomy.py:143: in test_referenced_phrase_admission_is_atomic\n    assert clause.refs[2] == ('clause', 0)\nE   AssertionError: assert 7 == ('clause', 0)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.15476195799419656,
+    "message": "test/test_discourse_space.py:250: in test_discourse_layer_absent_when_sentenceExpectation_false\n    self.assertIsNone(model.symbolSpace.expectation)\nE   AssertionError: BracketExpectation(\nE     (predictor): Sequential(\nE       (0): Linear(in_features=98, out_features=28, bias=True)\nE       (1): Tanh()\nE       (2): Linear(in_features=28, out_features=14, bias=True)\nE     )\nE     (_inter_predictor): SentenceExpectation(\nE       (network): Sequential(\nE         (0): Linear(in_features=360, out_features=90, bias=True)\nE         (1): Tanh()\nE         (2): Linear(in_features=90, out_features=45, bias=True)\nE       )\nE     )\nE     (word_predictor): Sequential(\nE       (0): Linear(in_features=98, out_features=28, bias=True)\nE       (1): Tanh()\nE       (2): Linear(in_features=28, out_features=14, bias=True)\nE     )\nE     (_ltm_store): TernaryTruthStore()\nE   ) is not None",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_field_learning.py::test_primed_reading_writes_the_shared_field_scope",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.00024741599918343127,
+    "message": "test/test_field_learning.py:80: in test_primed_reading_writes_the_shared_field_scope\n    BasicModel._primed_reading_step(model)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'BasicModel' has no attribute '_primed_reading_step'. Did you mean: '_prime_seen_step'?",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 2.9707519999938086,
+    "message": "test/test_category_em_smoke.py:144: in test_codebook_enables_and_em_populates_on_real_model\n    assert len(getattr(ws, \"_category_assign\", {})) > 0, (\nE   AssertionError: no MetaSymbol -> centroid assignment recorded\nE   assert 0 > 0\nE    +  where 0 = len({})\nE    +    where {} = getattr(ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...AttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n  (_category_vq): VectorQuantize()\\n), '_category_assign', {})",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.29778341701603495,
+    "message": "test/test_generation_catalog.py:24: in test_declared_generation_catalog_shares_one_optimizer_owner\n    assert bool(language.generate_policy is not None) is output_loop\nE   assert True is False\nE    +  where True = bool(Linear(in_features=136, out_features=23, bias=True) is not None)\nE    +    where Linear(in_features=136, out_features=23, bias=True) = LanguageSpace(\\n  (clause_scope): ClauseScope()\\n  (generate_policy): Linear(in_features=136, out_features=23, bias=True)\\n).generate_policy",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.001323625008808449,
+    "message": "test/test_generation_catalog.py:115: in test_alias_catalog_reordering_preserves_shared_identity_without_rng_or_state\n    first = catalog((\"CS\", \"SS\"))\n            ^^^^^^^^^^^^^^^^^^^^^\ntest/test_generation_catalog.py:108: in catalog\n    assert torch.equal(torch.get_rng_state(), before)\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10e7853a0>(tensor([0, 0, 0,  ..., 0, 0, 0], dtype=torch.uint8), tensor([0, 0, 0,  ..., 0, 0, 0], dtype=torch.uint8))\nE    +    where <built-in method equal of type object at 0x10e7853a0> = torch.equal\nE    +    and   tensor([0, 0, 0,  ..., 0, 0, 0], dtype=torch.uint8) = <function get_rng_state at 0x10c371d00>()\nE    +      where <function get_rng_state at 0x10c371d00> = torch.get_rng_state",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 1.066376709000906,
+    "message": "test/test_gradient_factorization.py:143: in test_normal_batch_logs_owned_optimizer_gradients\n    assert any(row['writers'] == ['output'] for row in report['parameters'])\nE   assert False\nE    +  where False = any(<generator object test_normal_batch_logs_owned_optimizer_gradients.<locals>.<genexpr> at 0x14f197440>)",
+    "stdout": "wner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.sigma.layer.raw_U\", \"writers\": []}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.sigma.layer.biasWeight\", \"writers\": []}, {\"elements\": 896, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.routing_proj.weight\", \"writers\": []}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.3.layers.0.routing_proj.bias\", \"writers\": []}, {\"elements\": 3584, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.0.weight\", \"writers\": []}, {\"elements\": 32, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.0.bias\", \"writers\": []}, {\"elements\": 512, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.2.weight\", \"writers\": []}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.predictor.2.bias\", \"writers\": []}, {\"elements\": 102, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.kind_weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.kind_bias\", \"writers\": []}, {\"elements\": 41616, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.0.weight\", \"writers\": []}, {\"elements\": 102, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.0.bias\", \"writers\": []}, {\"elements\": 5202, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.2.weight\", \"writers\": []}, {\"elements\": 51, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.network.2.bias\", \"writers\": []}, {\"elements\": 3584, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.word_predictor.0.weight\", \"writers\": [\"expectation\"]}, {\"elements\": 32, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.word_predictor.0.bias\", \"writers\": [\"expectation\"]}, {\"elements\": 512, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.word_predictor.2.weight\", \"writers\": [\"expectation\"]}, {\"elements\": 16, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2.word_predictor.2.bias\", \"writers\": [\"expectation\"]}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace._readout_bias\", \"writers\": []}, {\"elements\": 128, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.W\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.biasWeight\", \"writers\": []}, {\"elements\": 128, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.W\", \"writers\": []}, {\"elements\": 128, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.biasWeight\", \"writers\": []}, {\"elements\": 6, \"owner\": \"output\", \"parameter\": \"answer_attention.space_bias\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.consume_gate\", \"writers\": []}, {\"elements\": 64, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.weight\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.bias\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.bias\", \"writers\": []}, {\"elements\": 464, \"owner\": \"output\", \"parameter\": \"question_conditioners.16.weight\", \"writers\": []}, {\"elements\": 256, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_L\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.d\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_U\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.biasWeight\", \"writers\": []}]}\r\n"
+  },
+  {
+    "nodeid": "test/test_meronomy.py::test_words_drops_separators",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.0002551250217948109,
+    "message": "test/test_meronomy.py:163: in test_words_drops_separators\n    assert words(\"ab12cd\") == [\"ab12cd\"]              # no separator -> one word\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: assert ['ab', 'cd'] == ['ab12cd']\nE     \nE     At index 0 diff: 'ab' != 'ab12cd'\nE     Left contains one more item: 'cd'\nE     Use -v to get more diff",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.06571941697620787,
+    "message": "test/test_mixing_reconstruction_bank.py:26: in test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes\n    assert candidates == [word.encode('utf-8') for word in surface.split()], candidates\nE   AssertionError: [b'caf']\nE   assert [b'caf'] == [b'caf\\xc3\\xa9']\nE     \nE     At index 0 diff: b'caf' != b'caf\\xc3\\xa9'\nE     Use -v to get more diff",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.0770912499865517,
+    "message": "test/test_mnist.py:48: in test_real_mnist_subset_trains_one_short_batch\n    result,_=model.runBatch(train=True,batchSize=2,split='train',optimizer=optimizer,batch_override=batch)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13580: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13707: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14082: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8777: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10259: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8462: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.07704104200820439,
+    "message": "test/test_mnist.py:48: in test_real_mnist_subset_trains_one_short_batch\n    result,_=model.runBatch(train=True,batchSize=2,split='train',optimizer=optimizer,batch_override=batch)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13580: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13707: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14082: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8777: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10259: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8462: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> true(S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00031241701799444854,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> false(S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00012991699622943997,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> non(S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00013004199718125165,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> conjunction(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00013324999599717557,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> disjunction(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00013391600805334747,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> what(S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00013333300012163818,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> where(S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00012883299496024847,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> when(S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00012825001613236964,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> query(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00013499998021870852,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> swap(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.0001450830022804439,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> equals(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00013041700003668666,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> not(S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.0001272080116905272,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> part(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00012054099352099001,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> intersection(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00013550001312978566,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> join(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00012179199256934226,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[15-S -> lower(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.0001324170152656734,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[16-S -> lift(S, S)]",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00012758301454596221,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip",
+    "phase": "setup",
+    "outcome": "failed",
+    "duration": 0.00012787501327693462,
+    "message": "test/test_partition_grammar_rewrite.py:62: in grammar\n    return _make_grammar()\n           ^^^^^^^^^^^^^^^\ntest/test_partition_grammar_rewrite.py:56: in _make_grammar\n    g.configure(_POST_REWRITE_GRAMMAR)\nbin/Language.py:1236: in configure\n    self._fill_section(self.rules_upward, grammar_dict)\nbin/Language.py:1519: in _fill_section\n    self._fill_rule_list(target, direct, space_role=default_space_role)\nbin/Language.py:1687: in _fill_rule_list\n    self._check_operator_availability(rule.method_name, face=face)\nbin/Language.py:1694: in _check_operator_availability\n    raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')\nE   ValueError: true is retired; query content with what or use thought quantize",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_interleave_lifecycle.py::test_input_encoder_bytes_and_packed_sentence_boundaries[False]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.6190953750046901,
+    "message": "test/test_interleave_lifecycle.py:83: in test_input_encoder_bytes_and_packed_sentence_boundaries\n    assert int(accepted.sum())==5\nE   assert 6 == 5\nE    +  where 6 = int(tensor(6))\nE    +    where tensor(6) = <built-in method sum of Tensor object at 0x13f7244b0>()\nE    +      where <built-in method sum of Tensor object at 0x13f7244b0> = tensor([[ True,  True, False,  True, False, False, False, False, False, False,\\n         False, False, False, False, Fa...ue, False,  True,  True, False, False, False, False, False, False,\\n         False, False, False, False, False, False]]).sum",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_interleave_lifecycle.py::test_input_encoder_bytes_and_packed_sentence_boundaries[True]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.654081375017995,
+    "message": "test/test_interleave_lifecycle.py:83: in test_input_encoder_bytes_and_packed_sentence_boundaries\n    assert int(accepted.sum())==5\nE   assert 6 == 5\nE    +  where 6 = int(tensor(6))\nE    +    where tensor(6) = <built-in method sum of Tensor object at 0x13f630140>()\nE    +      where <built-in method sum of Tensor object at 0x13f630140> = tensor([[ True,  True, False,  True, False,  True, False,  True,  True, False,\\n         False, False, False, False, False, False]]).sum",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_anchors_via_projection",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.0489058330131229,
+    "message": "test/test_intra_routing_grad_to_router.py:150: in test_grad_reaches_unary_anchors_via_projection\n    self.assertIsNotNone(\nE   AssertionError: unexpectedly None : unary apply_anchor must receive grad from rule_probs.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.017708125000353903,
+    "message": "test/test_negative_expectation.py:475: in test_native_nonzero_composition_is_bit_identical_at_every_stance\n    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets=\"8\", batch_size=1,\ntest/test_compiled_word_chunk.py:402: in _tiny_canonical_model\n    init_config(\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1613/test_native_nonzero_compositio0/tiny_chunk_model.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1613/test_native_nonzero_compositio0/tiny_chunk_model.xml:93: element readingAttention: Schemas validity error : Element 'readingAttention': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1613/test_native_nonzero_compositio0/tiny_chunk_model.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_occurrence_coordinates.py::test_native_program_captures_the_symbol_band_and_one_field_time",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.5882905000180472,
+    "message": "test/test_occurrence_coordinates.py:39: in test_native_program_captures_the_symbol_band_and_one_field_time\n    torch.testing.assert_close(addresses, expected)\nE   AssertionError: The values for attribute 'shape' do not match: torch.Size([3]) != torch.Size([5]).",
+    "stdout": "batch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.2929069999954663,
+    "message": "test/test_occurrence_coordinates.py:139: in test_input_symbols_keep_their_word_starts_even_when_the_word_repeats\n    assert len(program.rows) == 5\nE   assert 3 == 5\nE    +  where 3 = len(tensor([0, 0, 1]))\nE    +    where tensor([0, 0, 1]) = AnswerProgram(rows=tensor([0, 0, 1]), word_rows=tensor([0, 0, 1]), activations=tensor([0.7838, 0.7838, 0.2924]), leave...orders=tensor([0, 0, 0]), leaf_evidence=tensor([[0.7838, 0.0000],\\n        [0.7838, 0.0000],\\n        [0.2924, 0.0000]])).rows",
+    "stdout": "batch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.6037477920181118,
+    "message": "test/test_query_native_ids.py:28: in test_real_sentence_capture_owns_native_object_ids_across_later_staging\n    torch.testing.assert_close(program.concept_ids, expected[row, active[row]])\nE   AssertionError: The values for attribute 'shape' do not match: torch.Size([3]) != torch.Size([5]).",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[False]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.0013356669805943966,
+    "message": "test/test_readback_operand_unaries.py:59: in test_saved_roots_follow_operand_unaries\n    recovered, _, _, unavailable, _ = inverse(roots, basis)\n                                      ^^^^^^^^^^^^^^^^^^^^^\ntest/test_readback_operand_unaries.py:53: in reconstruct\n    return Models.BasicModel._reconstruct_sentences(\nbin/Models.py:12076: in _reconstruct_sentences\n    ready, targets, target_valid = self._byte_tables(B, W)\n                                   ^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_byte_tables'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[True]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.03454045800026506,
+    "message": "torch._dynamo.exc.ObservedAttributeError: raised exception AttributeError(\"'SimpleNamespace' object has no attribute '_byte_tables'\")\n\nThe above exception was the direct cause of the following exception:\ntest/test_readback_operand_unaries.py:59: in test_saved_roots_follow_operand_unaries\n    recovered, _, _, unavailable, _ = inverse(roots, basis)\n                                      ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper\n    raise e.with_traceback(\nE   torch._dynamo.exc.Unsupported: Observed exception\nE     Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.\nE     Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance(\"force_eager\")`. \nE     Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.\nE   \nE     Developer debug context: raised exception AttributeError(\"'SimpleNamespace' object has no attribute '_byte_tables'\")\nE   \nE    For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html\nE   \nE   from user code:\nE      File \"/Users/arogers/github/WikiOracle/basicmodel/test/test_readback_operand_unaries.py\", line 53, in reconstruct\nE       return Models.BasicModel._reconstruct_sentences(\nE              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE     File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 12076, in _reconstruct_sentences\nE       ready, targets, target_valid = self._byte_tables(B, W)\nE                                      ^^^^^^^^^^^^^^^^^^^^^^^\nE   \nE   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_reader_trial_ownership.py::test_generation_lesson_merge_keeps_its_sentence_row",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.0006976669828873128,
+    "message": "test/test_reader_trial_ownership.py:36: in test_generation_lesson_merge_keeps_its_sentence_row\n    torch.testing.assert_close(values.grad,torch.tensor([0.,2.]))\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 1 / 2 (50.0%)\nE   Greatest absolute difference: 1.0 at index (0,) (up to 1e-05 allowed)\nE   Greatest relative difference: inf at index (0,) (up to 1.3e-06 allowed)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.017738208000082523,
+    "message": "test/test_shamatha_inline_grammar.py:49: in test_grammar_block_parses_disjunction\n    self.assertIn(\"S\", cfg)\nE   AssertionError: 'S' not found in {'compose': {'rule': [{'_': 'F = divide.forward(F)', 'operands': 'field'}, {'_': 'F = descend.forward(F)', 'operands': 'field'}, {'_': 'F = gloss.forward(F)', 'operands': 'field'}, {'_': 'F = and.forward(F)', 'operands': 'field'}, {'_': 'F = or.forward(F)', 'operands': 'field'}, 'P = sigma(P)', 'C = pi(C)', 'S = sigma(S)', 'S = disjunction(S, S)', 'S = not(S)', 'S = union(C, C)', 'S = C', 'C = intersection(C, C)', 'C = P']}}",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 1.236891459004255,
+    "message": "test/test_prepared_answer_boundary.py:80: in test_prepared_answer_generates_more_words_than_the_captured_input\n    assert lengths.tolist() == [4, 1]\nE   assert [16, 1] == [4, 1]\nE     \nE     At index 0 diff: 16 != 4\nE     Use -v to get more diff",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.08430779201444238,
+    "message": "test/test_relation_closing.py:79: in test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows\n    result = model.forward(model.inputSpace.prepInput(inputs))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13151: in _lex_embed_stem\n    self._validate_reconstruction_bank()\nbin/Models.py:11752: in _validate_reconstruction_bank\n    raise RuntimeError(\"tied reconstruction bank was not staged after concept admission\")\nE   RuntimeError: tied reconstruction bank was not staged after concept admission",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.016613124986179173,
+    "message": "test/test_router_fires_per_word.py:198: in test_default_router_wire_serial_is_both\n    model = _make_serial_model()\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:90: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpr6_7nz5x.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpr6_7nz5x.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpr6_7nz5x.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[both]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01699120900593698,
+    "message": "test/test_router_fires_per_word.py:206: in test_serial_words_use_the_shared_operation_layer\n    model = _make_serial_model(router_wire_serial=mode, word_capacity=16)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:90: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp2qvhn4av.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp2qvhn4av.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp2qvhn4av.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_serial_words_use_the_shared_operation_layer[per-word]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.015879749989835545,
+    "message": "test/test_router_fires_per_word.py:206: in test_serial_words_use_the_shared_operation_layer\n    model = _make_serial_model(router_wire_serial=mode, word_capacity=16)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:90: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpv0bdfgr5.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpv0bdfgr5.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpv0bdfgr5.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_boundary_no_serial_forward_compose",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01605095897684805,
+    "message": "test/test_router_fires_per_word.py:220: in test_router_wire_serial_boundary_no_serial_forward_compose\n    model = _make_serial_model(router_wire_serial=\"boundary\")\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:90: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpf_rsi8ah.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpf_rsi8ah.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpf_rsi8ah.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_router_wire_serial_off_no_serial_forward_compose",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.018151124997530133,
+    "message": "test/test_router_fires_per_word.py:235: in test_router_wire_serial_off_no_serial_forward_compose\n    model = _make_serial_model(router_wire_serial=\"off\")\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:90: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxjnxzvmo.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxjnxzvmo.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxjnxzvmo.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_boundary_generate_gated_by_router_wire_serial",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01589287500246428,
+    "message": "test/test_router_fires_per_word.py:276: in test_boundary_generate_gated_by_router_wire_serial\n    assert _generate_fires(\"both\") >= 1, (\n           ^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:254: in _generate_fires\n    model = _make_serial_model(router_wire_serial=mode)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_router_fires_per_word.py:90: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0q_etjax.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0q_etjax.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp0q_etjax.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.015555291989585385,
+    "message": "test/test_router_fires_per_word.py:290: in test_invalid_router_wire_serial_raises_loud\n    with pytest.raises(ValueError, match=\"routerWireSerial\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: Regex pattern did not match.\nE     Expected regex: 'routerWireSerial'\nE     Actual message: \"XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpw6q73wbw.xml\\n  (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\\n/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpw6q73wbw.xml:8: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\\n/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpw6q73wbw.xml fails to validate\\nFix the config, or update data/model.xsd if this is a new config element.\"",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-True-True]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.0004011249984614551,
+    "message": "test/test_sparse_compile_boundary.py:195: in test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook\n    assert len(compile_calls) == 2\nE   assert 0 == 2\nE    +  where 0 = len([])",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_produces_single_S_and_targets",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01599154100404121,
+    "message": "test/test_stm_recon_from_cleared_cache.py:184: in test_forward_produces_single_S_and_targets\n    model = _make_serial_model()\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp74nw6c3l.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp74nw6c3l.xml:15: element conceptLayers: Schemas validity error : Element 'conceptLayers': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp74nw6c3l.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_cache_clears_and_chart_generate_rederives_from_stm",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01439879200188443,
+    "message": "test/test_stm_recon_from_cleared_cache.py:200: in test_cache_clears_and_chart_generate_rederives_from_stm\n    model = _make_serial_model()\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpk192rcps.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpk192rcps.xml:15: element conceptLayers: Schemas validity error : Element 'conceptLayers': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpk192rcps.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01401824998902157,
+    "message": "test/test_stm_recon_from_cleared_cache.py:237: in test_reverse_from_cleared_cache_is_drivable_and_decodable\n    model = _make_serial_model()\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpyl47kaws.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpyl47kaws.xml:15: element conceptLayers: Schemas validity error : Element 'conceptLayers': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpyl47kaws.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_body_preserves_finiteness_on_finite_seed",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.014300875016488135,
+    "message": "test/test_stm_recon_from_cleared_cache.py:256: in test_reverse_body_preserves_finiteness_on_finite_seed\n    model = _make_serial_model()\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp3pqxupnl.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp3pqxupnl.xml:15: element conceptLayers: Schemas validity error : Element 'conceptLayers': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp3pqxupnl.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_forward_stm_idea_is_finite",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.013614708004752174,
+    "message": "test/test_stm_recon_from_cleared_cache.py:288: in test_forward_stm_idea_is_finite\n    model = _make_serial_model()\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpz8h6h5ku.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpz8h6h5ku.xml:15: element conceptLayers: Schemas validity error : Element 'conceptLayers': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpz8h6h5ku.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_stm_recon_from_cleared_cache.py::test_reverse_perceptual_preserves_finiteness_on_finite_seed",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.013350833003642038,
+    "message": "test/test_stm_recon_from_cleared_cache.py:323: in test_reverse_perceptual_preserves_finiteness_on_finite_seed\n    model = _make_serial_model()\n            ^^^^^^^^^^^^^^^^^^^^\ntest/test_stm_recon_from_cleared_cache.py:82: in _make_serial_model\n    init_config(path=cfg, defaults_path=_DEFAULTS)\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpk_a1vh06.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpk_a1vh06.xml:15: element conceptLayers: Schemas validity error : Element 'conceptLayers': This element is not expected.\nE   /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpk_a1vh06.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_syntactic_order.py::test_syntactic_order_defaults_zero_and_reads_config",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.040937833982752636,
+    "message": "test/test_syntactic_order.py:57: in test_syntactic_order_defaults_zero_and_reads_config\n    assert \"<symbolicOrder>\" in src\nE   assert '<symbolicOrder>' in '<?xml version=\"1.0\" ?>\\n<model xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\\n       xsi:noNamespaceSchemaLoc...S)</rule>\\n          </symbols>\\n        </compose>\\n      </grammar>\\n    </language>\\n  </SymbolSpace>\\n\\n</model>\\n'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_syntactic_order.py::test_syntactic_order_negative_rejected",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.013509417010936886,
+    "message": "test/test_syntactic_order.py:134: in test_syntactic_order_negative_rejected\n    with pytest.raises(ValueError):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE ValueError",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_without_state_credit",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.0007695000094827265,
+    "message": "test/test_supplied_answer_training.py:118: in test_native_trial_reads_the_completed_point_without_state_credit\n    error = BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),\nbin/Models.py:19824: in _sentence_answer_error\n    construction = self.reverseOutput(understanding, held,\nE   TypeError: test_native_trial_reads_the_completed_point_without_state_credit.<locals>.realize() got an unexpected keyword argument 'score'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.00959120798506774,
+    "message": "test/test_surface_grammar.py:78: in test_selected_surface_preserves_complete_content_meaning\n    assert recovered.metadata() == original.metadata()\n           ^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'NoneType' object has no attribute 'metadata'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.6382974580046721,
+    "message": "test/test_sentence_comparison.py:58: in test_sentence_trials_keep_their_own_perception_pullbacks\n    model.runBatch(train=True, optimizer=optimizer, batchSize=2, split='runtime',\nbin/Models.py:13580: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13707: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14082: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8777: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10283: in what\n    construction = self.reverseOutput(self._last_understanding, derivation,**options)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9577: in reverseOutput\n    value,audit=output_pair(realize,score)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/WalkTrials.py:35: in output_pair\n    first=score(greedy)\n          ^^^^^^^^^^^^^\nbin/Models.py:14081: in score_answer\n    return self._output_target_cost(construction,values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9719: in _output_target_cost\n    if pred is None:raise RuntimeError('output trial and supplied answer do not align')\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: output trial and supplied answer do not align",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.020248000015271828,
+    "message": "test/test_sentence_compose.py:79: in test_real_packed_ends_train_before_the_next_sentence\n    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',\ntest/test_compiled_word_chunk.py:402: in _tiny_canonical_model\n    init_config(\nbin/util.py:2033: in init_config\n    TheXMLConfig.overlay(path)\nbin/util.py:1475: in overlay\n    over = self._parse_xml(path)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/util.py:1881: in _parse_xml\n    XMLConfig._validate_against_schema(path)\nbin/util.py:1937: in _validate_against_schema\n    raise ValueError(\nE   ValueError: XML schema validation failed for /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1622/test_real_packed_ends_train_be0/tiny_chunk_model.xml\nE     (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1622/test_real_packed_ends_train_be0/tiny_chunk_model.xml:93: element symbolicOrder: Schemas validity error : Element 'symbolicOrder': This element is not expected.\nE   /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-1622/test_real_packed_ends_train_be0/tiny_chunk_model.xml fails to validate\nE   Fix the config, or update data/model.xsd if this is a new config element.",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_sentence_end_state.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.00018604201613925397,
+    "message": "test/test_sentence_end_state.py:87: in test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path\n    compiled = torch.compile(BasicModel._tensor_record_operation_values, backend='eager', fullgraph=True)\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: type object 'BasicModel' has no attribute '_tensor_record_operation_values'. Did you mean: '_tensor_record_operation'?",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_sentence_identity.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.009249208989785984,
+    "message": "test/test_sentence_identity.py:36: in test_referenced_phrase_is_read_from_ltm_without_an_inventory_row\n    assert inventory(f.cs) == before\nE   AssertionError: assert {'next_id': 1...', 7, 1): 10}} == {'next_id': 1...}, 'keys': {}}\nE     \nE     Differing items:\nE     {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}} != {'placement': {1: 0, 2: 0, 3: 0, 4: 0, ...}}\nE     {'keys': {('singleton', 7): 10, ('part-kind', 7, 1): 10}} != {'keys': {}}\nE     {'next_id': 11} != {'next_id': 10}\nE     {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 5): 3, ...}} != {'rows': {(0, 1): 0, (0, 2): 1, (0, 3): 2, (0, 5): 3, ...}}\nE     Use -v to get more diff",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_union_difference_ops.py::test_grammar_config_declares_sum_product",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.06439899999531917,
+    "message": "test/test_union_difference_ops.py:226: in test_grammar_config_declares_sum_product\n    assert {r.method_name for r in rules} == {\"sum\", \"product\"}, (\nE   AssertionError: [RuleDef(space_role='SS', canonical='F -> divide.forward(F)', arity=1, method_name='divide', lhs='F', rhs_symbols=('F'...pt', 'knowing', 'symbolic', 'serial', 'priming', 'budget'), field_eligible=True, order_delta=0, case_head_role=0), ...]\nE   assert set() == {'product', 'sum'}\nE     \nE     Extra items in the right set:\nE     'product'\nE     'sum'\nE     Use -v to get more diff",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_recon_bench.py::test_run_record_schema_smoke",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.46621062501799315,
+    "message": "test/test_recon_bench.py:18: in test_run_record_schema_smoke\n    rec = run_config(\"data/MM_xor_fixture.xml\", epochs=1, seed=0,\nbin/recon_bench.py:215: in run_config\n    _epoch_loop()\nbin/recon_bench.py:199: in _epoch_loop\n    out_loss, rec_loss, _, _ = model.runEpoch(\nbin/Models.py:15688: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:14973: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:14188: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:14290: in _commit_autobind_from_stash\n    self._maybe_autobind_words(\nbin/Spaces.py:14508: in _maybe_autobind_words\n    return self._autobind_property_concepts(\nbin/Spaces.py:14441: in _autobind_property_concepts\n    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:62: in lookup_word\n    cs._preflight_concept_row(0)\nbin/Spaces.py:14694: in _preflight_concept_row\n    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')\nE   RuntimeError: concept row capacity exhausted before word admission; no identity was minted",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\n"
+  },
+  {
+    "nodeid": "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.1000344589992892,
+    "message": "test/test_recon_bench.py:55: in test_decode_rows_align_with_last_eval_batch\n    rec = run_config(\"data/MM_xor_fixture.xml\", epochs=1, seed=0,\nbin/recon_bench.py:215: in run_config\n    _epoch_loop()\nbin/recon_bench.py:199: in _epoch_loop\n    out_loss, rec_loss, _, _ = model.runEpoch(\nbin/Models.py:15688: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:14973: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:14188: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:14290: in _commit_autobind_from_stash\n    self._maybe_autobind_words(\nbin/Spaces.py:14508: in _maybe_autobind_words\n    return self._autobind_property_concepts(\nbin/Spaces.py:14441: in _autobind_property_concepts\n    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:62: in lookup_word\n    cs._preflight_concept_row(0)\nbin/Spaces.py:14694: in _preflight_concept_row\n    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')\nE   RuntimeError: concept row capacity exhausted before word admission; no identity was minted",
+    "stdout": "batch = 0 (warm-up, 100.00%)\r\n"
+  },
+  {
+    "nodeid": "test/test_reconstruction_bank_contract.py::test_first_sight_admits_concepts_before_reconstruction",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.2854449170117732,
+    "message": "test/test_reconstruction_bank_contract.py:78: in test_first_sight_admits_concepts_before_reconstruction\n    before = owner._concept_allocator.next_id\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.6308658329944592,
+    "message": "test/test_reconstruction_scope.py:69: in test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction\n    assert float(model._recon_sentence_costs[0, 1]) == 0.\nE   assert 6.988933563232422 == 0.0\nE    +  where 6.988933563232422 = float(tensor(6.9889))",
+    "stdout": "batch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.08771316599450074,
+    "message": "test/test_where_encoding_period.py:105: in test_reconstruct_buffer_period_assert_holds\n    model.runEpoch(batchSize=4, split=\"test\")\nbin/Models.py:15688: in runEpoch\n    self.dispatch_per_row_reset(hard_eos)\nbin/Models.py:14973: in dispatch_per_row_reset\n    space.Reset()\nbin/Spaces.py:14188: in Reset\n    self._commit_autobind_from_stash()\nbin/Spaces.py:14290: in _commit_autobind_from_stash\n    self._maybe_autobind_words(\nbin/Spaces.py:14508: in _maybe_autobind_words\n    return self._autobind_property_concepts(\nbin/Spaces.py:14441: in _autobind_property_concepts\n    word = self.interpret.lookup_word(parts, prop_rows, form=key, word_reading=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Interpret.py:62: in lookup_word\n    cs._preflight_concept_row(0)\nbin/Spaces.py:14694: in _preflight_concept_row\n    raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')\nE   RuntimeError: concept row capacity exhausted before word admission; no identity was minted",
+    "stdout": "batch = 0 (warm-up, 100.00%)\r\n"
+  },
+  {
+    "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.1632457089726813,
+    "message": "test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)\nE   assert ([tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]])] and False)\nE    +  where False = <built-in method equal of type object at 0x10ea193a0>(tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\\n         [ 32,   0,   0,   0,   0,   0],\\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]))\nE    +    where <built-in method equal of type object at 0x10ea193a0> = torch.equal\nE    +    and   tensor([[[104, 101, 108, 108, 111,   0],\\n         [ 32,   0,   0,   0,   0,   0],\\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._ar_target_word_bytes",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-True]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.14693020901177078,
+    "message": "test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)\nE   assert ([tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]])] and False)\nE    +  where False = <built-in method equal of type object at 0x10ea193a0>(tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\\n         [ 32,   0,   0,   0,   0,   0],\\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]))\nE    +    where <built-in method equal of type object at 0x10ea193a0> = torch.equal\nE    +    and   tensor([[[104, 101, 108, 108, 111,   0],\\n         [ 32,   0,   0,   0,   0,   0],\\n         [119, 111, 114, 108, 100,  ...    [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._ar_target_word_bytes",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-False]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.16531329200370237,
+    "message": "test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)\nE   assert ([tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]])] and False)\nE    +  where False = <built-in method equal of type object at 0x10ea193a0>(tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\\n         [ 32,   0,   0,   0,   0,   0],\\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]))\nE    +    where <built-in method equal of type object at 0x10ea193a0> = torch.equal\nE    +    and   tensor([[[104, 101, 108, 108, 111,   0],\\n         [ 32,   0,   0,   0,   0,   0],\\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._ar_target_word_bytes",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[True-True]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.16358362502069212,
+    "message": "test/test_grammar_separator.py:64: in test_mixing_separator_is_perceived_but_not_pushed_or_read_back\n    assert targets and torch.equal(targets[-1], isp._ar_target_word_bytes)\nE   assert ([tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [  0,   0,   0,   0,   0, ...   [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]])] and False)\nE    +  where False = <built-in method equal of type object at 0x10ea193a0>(tensor([[[104, 101, 108, 108, 111,   0],\\n         [119, 111, 114, 108, 100,   0],\\n         [  0,   0,   0,   0,   0,  ...    [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]), tensor([[[104, 101, 108, 108, 111,   0],\\n         [ 32,   0,   0,   0,   0,   0],\\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]))\nE    +    where <built-in method equal of type object at 0x10ea193a0> = torch.equal\nE    +    and   tensor([[[104, 101, 108, 108, 111,   0],\\n         [ 32,   0,   0,   0,   0,   0],\\n         [119, 111, 114, 108, 100,  ...    [ 32,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0],\\n         [  0,   0,   0,   0,   0,   0]]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._ar_target_word_bytes",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.05919724999694154,
+    "message": "test/test_grammar_word_learning.py:167: in test_normal_text_reconstruction_updates_the_grammar_chooser\n    assert model.output_in_loop and model.output_policy_weight > 0\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'output_policy_weight'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 1.9190133750089444,
+    "message": "test/test_output_path_supervised.py:378: in test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row\n    assert got[\"changed\"][got[\"active_index\"]]\nE   assert False",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "nodeid": "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.6208728330093436,
+    "message": "test/test_output_path_supervised.py:500: in test_native_checkpoint_restores_active_answer_widths\n    m.conceptualSpace.synthesis_layer.raw_L[1, 0] = 0.17\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'synthesis_layer'. Did you mean: 'synthesis_operator'?",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-development]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.6213177919853479,
+    "message": "test/test_output_path_supervised.py:500: in test_native_checkpoint_restores_active_answer_widths\n    m.conceptualSpace.synthesis_layer.raw_L[1, 0] = 0.17\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'synthesis_layer'. Did you mean: 'synthesis_operator'?",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.2899402079929132,
+    "message": "test/test_output_walk.py:71: in test_walk_unreduces_a_rule_stamped_top_and_emits_its_constituents\n    assert n_emitted.tolist() == [live + 1]\nE   assert [2] == [3]\nE     \nE     At index 0 diff: 2 != 3\nE     Use -v to get more diff",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.28418929199688137,
+    "message": "test/test_output_walk.py:99: in test_walk_reports_truncation_when_work_is_pending\n    assert bool(truncated.all()) and n_emitted.tolist() == [0]\nE   assert (False)\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method all of Tensor object at 0x122ab4690>()\nE    +      where <built-in method all of Tensor object at 0x122ab4690> = tensor([False]).all",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.28457474999595433,
+    "message": "test/test_output_walk.py:130: in test_walk_handles_mixed_output_lengths_per_row\n    assert n_emitted.tolist() == [live + 1, live]\nE   assert [2, 2] == [3, 2]\nE     \nE     At index 0 diff: 2 != 3\nE     Use -v to get more diff",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_generate_policy_returns_sampled_action_credit_without_imitation",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.2816392919921782,
+    "message": "test/test_output_walk.py:166: in test_generate_policy_returns_sampled_action_credit_without_imitation\n    assert cost.shape == (1,) and float(cost.detach()) > 0\nE   assert (torch.Size([1]) == (1,)\nE     \nE     Use -v to get more diff and 0.0 > 0)\nE    +  where 0.0 = float(tensor([0.]))\nE    +    where tensor([0.]) = <built-in method detach of Tensor object at 0x145b13c00>()\nE    +      where <built-in method detach of Tensor object at 0x145b13c00> = tensor([0.]).detach",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[1.0]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 1.228898624976864,
+    "message": "test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight\n    got = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:13580: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13707: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14082: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8777: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10259: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8462: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22980: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17190: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21529: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21088: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20231: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:156: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20229: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19555: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:281: in backward_probe\n    assert m._output_policy_cost is None\n           ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_only_with_nonzero_weight[0.0]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 1.1239721669990104,
+    "message": "test/test_output_walk.py:332: in test_runbatch_trains_generate_policy_only_with_nonzero_weight\n    got = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:13580: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13707: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14082: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8777: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10259: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8462: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22980: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17190: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21529: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21088: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20231: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:156: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20229: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19555: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:281: in backward_probe\n    assert m._output_policy_cost is None\n           ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_does_not_train_generate_policy_without_supplied_answers",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 1.1736055000219494,
+    "message": "test/test_output_walk.py:369: in test_runbatch_does_not_train_generate_policy_without_supplied_answers\n    learned = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:13580: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13707: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14082: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8777: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10259: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8462: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22980: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17190: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21529: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21088: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20231: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:156: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20229: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19555: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:281: in backward_probe\n    assert m._output_policy_cost is None\n           ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_runbatch_generate_policy_masks_rows_without_supplied_answers",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.9830387500114739,
+    "message": "test/test_output_walk.py:407: in test_runbatch_generate_policy_masks_rows_without_supplied_answers\n    got = _policy_training_probe(\ntest/test_output_walk.py:312: in _policy_training_probe\n    m.runBatch(train=True, batchSize=2, split=\"train\", optimizer=opt,\nbin/Models.py:13580: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13707: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14082: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8777: in _what_or_think\n    return self.what(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10259: in what\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8462: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22980: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17190: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21529: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21088: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20231: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:156: in sentence_pair\n    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))\nbin/Models.py:20229: in train_trial\n    self._sentence_train_step(loss)\nbin/Models.py:19555: in _sentence_train_step\n    self._backward_training_loss(loss, self._sentence_amp_scaler)\ntest/test_output_walk.py:281: in backward_probe\n    assert m._output_policy_cost is None\n           ^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute '_output_policy_cost'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.5538236249994952,
+    "message": "test/test_output_walk.py:553: in test_materialised_idea_follows_the_symbol_rows\n    assert bool((rows[:, :2] >= 0).all()) and bool((rows[:, 0] != rows[:, 1]).all())\nE   assert (False)\nE    +  where False = bool(tensor(False))\nE    +    where tensor(False) = <built-in method all of Tensor object at 0x1493a16d0>()\nE    +      where <built-in method all of Tensor object at 0x1493a16d0> = tensor([[ 0,  1],\\n        [ 3, -1]]) >= 0.all",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_output_rule_inventory_comes_from_generate_even_without_compose_rule",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.3100043330050539,
+    "message": "test/test_output_walk.py:641: in test_output_rule_inventory_comes_from_generate_even_without_compose_rule\n    assert count.tolist() == [live + 1]\nE   assert [2] == [3]\nE     \nE     At index 0 diff: 2 != 3\nE     Use -v to get more diff",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.29820724998717196,
+    "message": "test/test_output_walk.py:728: in test_generate_walk_with_no_declared_rules_only_emits\n    assert language.generate_policy.out_features == 1\nE   assert 22 == 1\nE    +  where 22 = Linear(in_features=136, out_features=22, bias=True).out_features\nE    +    where Linear(in_features=136, out_features=22, bias=True) = LanguageSpace(\\n  (clause_scope): ClauseScope()\\n  (generate_policy): Linear(in_features=136, out_features=22, bias=True)\\n).generate_policy",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.009852125018369406,
+    "message": "test/test_thought_answer_adapters.py:141: in test_typed_results_survive_resolve_and_reverse_without_execution\n    result = model.reverseOutput(understanding, derivation)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9624: in reverseOutput\n    self._compiled_output_walk()(\nbin/Models.py:12870: in _output_generate_walk\n    R2, R1 = len(language._generate_binary_ops), len(language._generate_unary_ops)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_generate_binary_ops'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[code]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.010134957992704585,
+    "message": "test/test_thought_answer_adapters.py:141: in test_typed_results_survive_resolve_and_reverse_without_execution\n    result = model.reverseOutput(understanding, derivation)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9624: in reverseOutput\n    self._compiled_output_walk()(\nbin/Models.py:12870: in _output_generate_walk\n    R2, R1 = len(language._generate_binary_ops), len(language._generate_unary_ops)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_generate_binary_ops'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.017900042003020644,
+    "message": "test/test_thought_answer_adapters.py:141: in test_typed_results_survive_resolve_and_reverse_without_execution\n    result = model.reverseOutput(understanding, derivation)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:9624: in reverseOutput\n    self._compiled_output_walk()(\nbin/Models.py:12870: in _output_generate_walk\n    R2, R1 = len(language._generate_binary_ops), len(language._generate_unary_ops)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_generate_binary_ops'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.42621333300485276,
+    "message": "test/test_word_interpretation.py:202: in test_every_serial_word_runs_interpret_before_composition\n    assert (ids[active] != objects[active]).all()\nE   assert tensor(False)\nE    +  where tensor(False) = <built-in method all of Tensor object at 0x12fe2ee40>()\nE    +    where <built-in method all of Tensor object at 0x12fe2ee40> = tensor([ 1, -1,  3, -1,  5]) != tensor([ 2, -1,  4, -1,  6]).all",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.0001355410204268992,
+    "message": "test/test_xor_grammar.py:207: in test_signal_router_has_grammar_ops_attached\n    self.assertTrue(\nE   AssertionError: False is not true : Expected at least one unary space_role attached",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.00010387497604824603,
+    "message": "test/test_xor_grammar.py:253: in test_signal_router_rule_ids_match_grammar\n    self.assertIn(not_id, all_unary_rule_ids,\nE   AssertionError: 0 not found in set() : Grammar 'not' rule_id must be attached to some unary space_role",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.016836874972796068,
+    "message": "test/test_basicmodel.py:457: in test_simple_model_ergodic\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01531487499596551,
+    "message": "test/test_basicmodel.py:443: in test_simple_model_traditional\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestSimpleModel::test_simple_model_ergodic_shapes",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01359245800995268,
+    "message": "test/test_basicmodel.py:799: in test_simple_model_ergodic_shapes\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.01322495800559409,
+    "message": "test/test_basicmodel.py:814: in test_simple_model_traditional_shapes\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_ergodic_shapes",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.013287499983562157,
+    "message": "test/test_basicmodel.py:867: in test_simple_model_ergodic_shapes\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.013317541975993663,
+    "message": "test/test_basicmodel.py:901: in test_simple_model_loss_runs\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_traditional_shapes",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.013940000004367903,
+    "message": "test/test_basicmodel.py:882: in test_simple_model_traditional_shapes\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestModelTypeVariants::test_concept_with_attention",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.014880250004353002,
+    "message": "test/test_basicmodel.py:1822: in test_concept_with_attention\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.014167874993290752,
+    "message": "test/test_basicmodel.py:1789: in test_conceptual_order_1\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.014021791983395815,
+    "message": "test/test_basicmodel.py:1806: in test_percept_no_attention\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.012557416019262746,
+    "message": "test/test_basicmodel.py:2907: in test_simple_model_subspace_activation\n    _, end_state, out, _ = model.forward(x)\n                           ^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.013579582999227569,
+    "message": "test/test_basicmodel.py:2923: in test_subspace_activation_stored\n    model.forward(x)\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8273: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22963: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13143: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:41: in stage_input\n    surface=bytes(raw_rows[b]);end=0;row=[]\n            ^^^^^^^^^^^^^^^^^^\nE   ValueError: bytes must be in range(0, 256)",
+    "stdout": ""
+  }
+]

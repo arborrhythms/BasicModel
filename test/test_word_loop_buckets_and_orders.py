@@ -22,7 +22,7 @@ from recon_bench import _build_model, _resolve_config
 
 
 def _surface(n):
-    return " ".join(f"w{i}" for i in range(int(n)))
+    return " ".join("word" for i in range(int(n)))
 
 
 def test_smallest_fixed_word_bucket_is_selected():
@@ -72,7 +72,7 @@ def test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories():
     # the two eight-location live fields; it does not equate row capacities.
     assert ps == 32768
     assert cs == 65536
-    assert ws == 8
+    assert ws == 9
     assert root.find("./WholeSpace/propertyBasis") is None
     assert int(root.findtext("./ConceptualSpace/activeVectors")) == 32768
     assert root.find("./WholeSpace/activeVectors") is None
@@ -101,5 +101,6 @@ def test_one_operation_layer_owns_both_arities():
     model = _grammar_model()
     shared = model.symbolSpace.languageLayer.operation_layer
     assert model._stm_reducer() is shared
-    assert shared.r_reduce > 0 and shared.r_apply > 0
+    assert shared.r_reduce > 0 and shared.r_apply == 0
+    assert 5 in shared.attention_operations
     assert not hasattr(model.symbolSpace.languageLayer, '_unary_layers')

@@ -1,0 +1,43 @@
+--- review13-before/doc/plans/2026-09-27-item-6-8-one-attention.md
++++ doc/plans/2026-09-27-item-6-8-one-attention.md
+@@ -935,3 +935,40 @@
+ dated, not tuned around; MM_xor, the control and reconstruction carry the
+ mechanism evidence, and the no-regression rule applies to those three until
+ the class gate is sound again.
++
++**Two scales, one vector (Alec, 2026-10-04).** Alec's concern: order-0
++concepts are mereological and higher-order concepts distributional, "a bit at
++odds; the order-0 distribution might be difficult to overcome to create the
++metric determined by the contextual distribution." Bands were considered and
++rejected: higher-order concepts have no form, so a form band is a strict
++segmentation they cannot fill, and inside a meaning band nothing keeps
++vectors apart; the collapse recurs. Alec: "give parts the low order bits of
++the spatial encoding ... the same way that positional encoding is used to
++make minor deviations between vectors in a meaningful space ... and use
++wholes (context) as the major metric of conceptual space (the higher order
++bits)."
++
++The code is one vector at two scales, c = M + ε·F: M the context term (the
++normalized recency-weighted mean of the roots of the word's occurrence rows,
++detached), F the form term (the evidence-weighted sum of its percept-concept
++rows, live), ε small.
++
++- Similarity is M's: cosine is dominated by context; the form perturbs it at
++  order ε, as position perturbs a token embedding. Synonyms sit together,
++  differing in the low bits.
++- Identity is F's: codes with identical contexts differ by εF and never
++  coincide. The pressure that keeps meaning vectors apart comes from bits
++  that are always distinct; nothing learns it. The permissible collapse is of
++  the high bits only.
++- Higher orders have no form and need none: under coordinate-wise
++  composition, (M₁+εF₁)∘(M₂+εF₂) = M₁∘M₂ + ε(M₁∘F₂+F₁∘M₂) + ε²F₁∘F₂, the
++  constituents' meanings composed with identity residue at order ε.
++
++**ε from evidence against prior (recommended; no constant).** With n the
++word's stored occurrences, c = (n·M + F)/(n + 1): a new word is all form; a
++word seen twice (XOR_grammar) is one-third form and reads XOR with weights of
++order 3; a word seen ten thousand times is context in all but its last
++digits. The center between parts and wholes moves toward the wholes as they
++accumulate. The alternative is a fixed ε, as positional encodings use; it
++must not be made tiny, since the XOR reader needs weights of order 1/ε to
++read identity. For Codex, item 1: one vector, two scales, c = (n·M + F)/(n+1).

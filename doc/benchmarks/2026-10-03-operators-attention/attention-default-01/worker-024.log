@@ -1,0 +1,155 @@
+FF.FFF...............................ssssssss........................... [ 88%]
+..FFF....                                                                [100%]
+=================================== FAILURES ===================================
+____________________ test_protocol_on_by_default_in_serial _____________________
+test/test_sentence_protocol.py:71: in test_protocol_on_by_default_in_serial
+    m.forward(_xor_input())
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22852: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13078: in _lex_embed_stem
+    self._validate_reconstruction_bank()
+bin/Models.py:11679: in _validate_reconstruction_bank
+    raise RuntimeError("tied reconstruction bank was not staged after concept admission")
+E   RuntimeError: tied reconstruction bank was not staged after concept admission
+___________________ test_protocol_off_is_dark_when_disabled ____________________
+test/test_sentence_protocol.py:82: in test_protocol_off_is_dark_when_disabled
+    m.forward(_xor_input())
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22852: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13078: in _lex_embed_stem
+    self._validate_reconstruction_bank()
+bin/Models.py:11679: in _validate_reconstruction_bank
+    raise RuntimeError("tied reconstruction bank was not staged after concept admission")
+E   RuntimeError: tied reconstruction bank was not staged after concept admission
+_________________ test_protocol_runs_pump_zero_and_sets_intent _________________
+test/test_sentence_protocol.py:111: in test_protocol_runs_pump_zero_and_sets_intent
+    m.forward(_xor_input())
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22852: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13078: in _lex_embed_stem
+    self._validate_reconstruction_bank()
+bin/Models.py:11679: in _validate_reconstruction_bank
+    raise RuntimeError("tied reconstruction bank was not staged after concept admission")
+E   RuntimeError: tied reconstruction bank was not staged after concept admission
+______________ test_no_mid_sentence_reground_even_under_conflict _______________
+test/test_sentence_protocol.py:148: in test_no_mid_sentence_reground_even_under_conflict
+    m.forward(_xor_input())
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22852: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13078: in _lex_embed_stem
+    self._validate_reconstruction_bank()
+bin/Models.py:11679: in _validate_reconstruction_bank
+    raise RuntimeError("tied reconstruction bank was not staged after concept admission")
+E   RuntimeError: tied reconstruction bank was not staged after concept admission
+_____________ test_protocol_word_learning_pumps_parallel_partition _____________
+test/test_sentence_protocol.py:174: in test_protocol_word_learning_pumps_parallel_partition
+    m.forward(_xor_input())
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8267: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22852: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13078: in _lex_embed_stem
+    self._validate_reconstruction_bank()
+bin/Models.py:11679: in _validate_reconstruction_bank
+    raise RuntimeError("tied reconstruction bank was not staged after concept admission")
+E   RuntimeError: tied reconstruction bank was not staged after concept admission
+________________ test_unary_output_shape_and_one_global_softmax ________________
+test/test_signal_router_unary.py:17: in test_unary_output_shape_and_one_global_softmax
+    hard, path, route = step(x)
+                        ^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7244: in forward
+    binary_scores = binary_scores.masked_fill(needs_cases[None, None], -torch.inf)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: masked_fill_ only supports boolean masks, but got mask with dtype float
+___________________ test_exactly_one_unary_position_changes ____________________
+test/test_signal_router_unary.py:28: in test_exactly_one_unary_position_changes
+    _, path, route = step(x)
+                     ^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7244: in forward
+    binary_scores = binary_scores.masked_fill(needs_cases[None, None], -torch.inf)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: masked_fill_ only supports boolean masks, but got mask with dtype float
+_________________ test_unary_and_stop_anchors_receive_gradient _________________
+test/test_signal_router_unary.py:37: in test_unary_and_stop_anchors_receive_gradient
+    _, path, _ = step(x)
+                 ^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7244: in forward
+    binary_scores = binary_scores.masked_fill(needs_cases[None, None], -torch.inf)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: masked_fill_ only supports boolean masks, but got mask with dtype float
+=============================== warnings summary ===============================
+test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_protocol.py::test_protocol_on_by_default_in_serial
+FAILED test/test_sentence_protocol.py::test_protocol_off_is_dark_when_disabled
+FAILED test/test_sentence_protocol.py::test_protocol_runs_pump_zero_and_sets_intent
+FAILED test/test_sentence_protocol.py::test_no_mid_sentence_reground_even_under_conflict
+FAILED test/test_sentence_protocol.py::test_protocol_word_learning_pumps_parallel_partition
+FAILED test/test_signal_router_unary.py::test_unary_output_shape_and_one_global_softmax
+FAILED test/test_signal_router_unary.py::test_exactly_one_unary_position_changes
+FAILED test/test_signal_router_unary.py::test_unary_and_stop_anchors_receive_gradient
+8 failed, 65 passed, 8 skipped, 1 warning in 9.71s

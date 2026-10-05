@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_one_attention.py::test_small_grammar_model_has_the_same_fixed_word_whole",
+    "test/test_grounded_xor.py",
+    "test/test_basicmodel.py"
+  ],
+  "pid": 99722,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 2280147896,
+  "elapsed_seconds": 23.021953499992378,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/native-controls-and-word-before/run.log"
+}

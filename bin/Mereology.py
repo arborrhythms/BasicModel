@@ -12,7 +12,7 @@ measures that share it:
 
 The mixin is pure (no `__init__`, no state of its own); it accesses
 model-owned attributes (`self.wholeSpace`, `self.conceptualSpace`,
-`self.symbolSpace`, `self.subsymbolicOrder`) via ``self``.  Mix in by
+`self.symbolSpace`, `self.bindingDepth`) via ``self``.  Mix in by
 inheriting *first*: ``class BaseModel(Mereology, nn.Module): ...``.
 
 See ``doc/research/three-surfaces.md`` and the
@@ -243,7 +243,7 @@ class Mereology:
         targets.
       * ``self.symbolSpace``      -- chart / grammar host for
         ``host_layer`` lookups in ``_lookup_host_layer``.
-      * ``self.subsymbolicOrder`` -- number of stages for the default
+      * ``self.bindingDepth`` -- number of stages for the default
         derivation path.
     """
 
@@ -490,7 +490,7 @@ class Mereology:
         """Build the outer-to-inner rule sequence for hoc_shape.
 
         Default-only mode: synthesize a fixed alternating
-        ``[sigma(SS), pi(CS)] * subsymbolicOrder`` path -- no chart was
+        ``[sigma(SS), pi(CS)] * bindingDepth`` path -- no chart was
         consulted (Phase 1.5 fast-path bypass keeps current_rules
         empty), so every position followed the per-space_role default
         unary rule.
@@ -500,7 +500,7 @@ class Mereology:
         subsymbolic in pipeline-reverse order) and concatenate. Same
         canonical-path convention as ``_row_zero_rules`` at Language.py:2247.
         """
-        n_stages = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
+        n_stages = max(1, int(getattr(self, 'bindingDepth', 1) or 1))
         path = []
 
         ss = getattr(self, 'symbolSpace', None)
@@ -727,7 +727,7 @@ class Mereology:
             active_indices=idx, active_count=count, K_cap=int(K_cap))
 
     def _reverse_one_subsymbolic_order(self, x, stage_idx):
-        """Back-project ``x`` through one subsymbolicOrder stage:
+        """Back-project ``x`` through one bindingDepth stage:
         WholeSpace.sigma.reverse -> ConceptualSpace.pi.reverse.
 
         Legacy helper retained for callers that pre-date the

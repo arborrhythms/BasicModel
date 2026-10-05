@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_accessible_mind.py",
+    "test/test_grammar_binary_ops.py",
+    "test/test_grammar_space_scoped_starts.py",
+    "test/test_selected_relation_meaning.py",
+    "test/test_concept_binding_operators.py"
+  ],
+  "pid": 84486,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 493847968,
+  "elapsed_seconds": 4.892125540995039,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/operator-rest-after-01/run.log"
+}

@@ -12,7 +12,7 @@ from Models import BasicModel
     ('meronomy', 'meronomy', False, 'perception: no grammar'),
 ])
 def test_reconstruction_scope_follows_live_reading_and_grammar(synthesis, analysis, grammar, expected):
-    model = SimpleNamespace(serial=True,
+    model = SimpleNamespace(word_brackets=True,
         perceptualSpace=SimpleNamespace(_meronomy=synthesis == 'meronomy'),
         wholeSpace=SimpleNamespace(analysis_mode=analysis),
         symbolSpace=SimpleNamespace(languageLayer=SimpleNamespace(
@@ -59,6 +59,15 @@ def test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction(tmp_pa
         isp = model.inputSpace
         isp._ar_bank_valid[isp._ar_concept_lookup_sentence_ids == 1] = False
     monkeypatch.setattr(model, '_stage_snapshot_bytes', without_second_sentence)
+    prime=model._prime_sentence_symbols
+    def without_prior_candidates(sid):
+        from dataclasses import replace
+        prime(sid)
+        if sid == 1:
+            bank=model._sentence_primed_bank
+            model._sentence_primed_bank=replace(bank,rows=torch.full_like(bank.rows,-1),
+                byte_valid=torch.zeros_like(bank.byte_valid))
+    monkeypatch.setattr(model,'_prime_sentence_symbols',without_prior_candidates)
     try:
         model._install_unit_span_fn()
         raw = model.inputSpace.prepPackedInput([['quorp flarn', 'wug blim']])
